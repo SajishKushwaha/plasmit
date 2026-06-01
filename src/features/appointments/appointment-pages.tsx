@@ -46,6 +46,7 @@ import {
   mockVisitorDirections,
 } from "@/data/appointments";
 import type { AppointmentRecord, DoctorSchedule, FollowUpRecord, FrontOfficeWorkItem, QueueEntry, TeleconsultationRecord, TokenRecord } from "@/types";
+import { useDoctorContext } from "@/features/auth/doctor-context";
 
 function includes(value: string, search: string) {
   return value.toLowerCase().includes(search.toLowerCase());
@@ -103,6 +104,8 @@ export function AppointmentsPage() {
 
 export function AppointmentBookingPage() {
   const [patientId, setPatientId] = React.useState("pat-001");
+  const { weeklySlots, availStatus } = useDoctorContext();
+  
   return (
     <ProtectedAppointment>
       {({ readOnly }) => (
@@ -115,7 +118,72 @@ export function AppointmentBookingPage() {
               <AppointmentPatientStrip patientId={patientId} />
             </TabsContent>
             <TabsContent value="visit"><FormGrid fields={["Department", "Visit type", "Appointment type", "Priority", "Reason for visit", "Referral source", "Notes", "Teleconsultation consent"]} /></TabsContent>
-            <TabsContent value="slot" className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{mockAppointmentSlots.map((slot) => <Card key={slot.id}><CardContent className="p-3"><div className="flex items-center justify-between gap-2"><div className="font-medium">{slot.time}</div><OperationalStatus status={slot.status} /></div><div className="mt-1 text-xs text-muted-foreground">{slot.doctor} • {slot.room} • {slot.duration} min</div><Button className="mt-3 w-full" variant="outline" disabled={slot.status === "Booked" || slot.status === "Doctor unavailable"}>Choose slot</Button></CardContent></Card>)}</TabsContent>
+            <TabsContent value="slot" className="space-y-4">
+              {weeklySlots.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Dr. Ananya Rao's Configured Sessions (Dynamic)</div>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {weeklySlots.map((slot) => {
+                      const isUnavailable = availStatus === "Off Duty" || availStatus === "On Break";
+                      const isFull = slot.occupied >= slot.capacity;
+                      const statusStr = isUnavailable ? "Doctor unavailable" : isFull ? "Booked" : "Available";
+                      
+                      return (
+                        <Card key={slot.id} className="border-medical-blue-100 bg-medical-blue-50/20 hover:shadow-sm transition">
+                          <CardContent className="p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="font-semibold text-slate-900 tabular-nums">{slot.day} • {slot.time} - {slot.end}</div>
+                              <OperationalStatus status={statusStr} />
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground flex items-center justify-between">
+                              <span>Dr. Ananya Rao • {slot.branch}</span>
+                              <span className="bg-white/80 border border-slate-100 rounded px-1 text-[10px]">{slot.mode}</span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400">
+                              <span>Booked count</span>
+                              <span>{slot.occupied} / {slot.capacity} Patients</span>
+                            </div>
+                            <Button 
+                              className="mt-3 w-full text-xs font-semibold" 
+                              variant="outline" 
+                              disabled={isUnavailable || isFull}
+                              onClick={() => toast.success(`Selected dynamic slot: ${slot.day} ${slot.time} - ${slot.end} with Dr. Ananya Rao`)}
+                            >
+                              Choose slot
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Other Department Slots</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {mockAppointmentSlots.map((slot) => (
+                    <Card key={slot.id}>
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="font-medium tabular-nums">{slot.time}</div>
+                          <OperationalStatus status={slot.status} />
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">{slot.doctor} • {slot.room} • {slot.duration} min</div>
+                        <Button 
+                          className="mt-3 w-full" 
+                          variant="outline" 
+                          disabled={slot.status === "Booked" || slot.status === "Doctor unavailable"}
+                          onClick={() => toast.success(`Selected static slot: ${slot.time} with ${slot.doctor}`)}
+                        >
+                          Choose slot
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
             <TabsContent value="confirm"><Card><CardContent className="space-y-3 p-4"><AppointmentPatientStrip patientId={patientId} /><DetailRow label="Token preview" value="Generated after save/check-in" /><DetailRow label="Reminder" value="SMS/WhatsApp/email placeholders" /><DetailRow label="Audit" value="Override, reschedule, and conflict actions require reason" /></CardContent></Card></TabsContent>
           </Tabs>
           <StickyActionBar readOnly={readOnly} saveLabel="Save appointment" />
@@ -130,10 +198,56 @@ function FormGrid({ fields }: { fields: string[] }) {
 }
 
 export function SchedulesPage() {
+  const { weeklySlots } = useDoctorContext();
   const columns = React.useMemo<ColumnDef<DoctorSchedule>[]>(() => [
     { header: "Doctor", accessorKey: "doctor" }, { header: "Department", accessorKey: "department" }, { header: "Day", accessorKey: "dayOfWeek" }, { header: "Start", accessorKey: "startTime" }, { header: "End", accessorKey: "endTime" }, { header: "Slot", cell: ({ row }) => `${row.original.slotDuration} min` }, { header: "Room", accessorKey: "room" }, { header: "Max", accessorKey: "maxPatients" }, { header: "Status", cell: ({ row }) => <OperationalStatus status={row.original.status} /> },
   ], []);
-  return <ProtectedAppointment>{({ readOnly }) => <><PageHeader eyebrow="Phase 4 • Scheduling" title="Doctor Scheduling" description="Doctor availability, recurring slots, blocks, templates, rooms, and capacity placeholders." actions={<><PrintAction label="Print schedule" /><Button disabled={readOnly}><Plus className="h-4 w-4" />Add schedule</Button></>} /><Tabs defaultValue="schedules" className="space-y-4"><TabsList><TabsTrigger value="schedules">Schedules</TabsTrigger><TabsTrigger value="availability">Availability</TabsTrigger><TabsTrigger value="blocks">Leaves & blocks</TabsTrigger><TabsTrigger value="templates">Templates</TabsTrigger><TabsTrigger value="rooms">Rooms</TabsTrigger><TabsTrigger value="capacity">Capacity</TabsTrigger></TabsList><TabsContent value="schedules"><DataTable data={mockDoctorSchedules} columns={columns} /></TabsContent><TabsContent value="availability"><CardGrid items={mockAppointmentSlots.map((slot) => `${slot.doctor} • ${slot.time} • ${slot.status}`)} /></TabsContent><TabsContent value="blocks"><AlertBanner icon={ShieldAlert} tone="warning" title="Affected appointment warning">Blocks show affected appointment count and suggested reschedule placeholders.</AlertBanner><FormGrid fields={["Doctor", "Date range", "Start time", "End time", "Reason", "Block type", "Affected appointments", "Suggested reschedule"]} /></TabsContent><TabsContent value="templates"><CardGrid items={["Cardiology morning OPD • Mon-Sat • 15 min", "Orthopedics walk-in • Mon-Fri • 15 min", "Pediatrics review • Wed • 20 min"]} /></TabsContent><TabsContent value="rooms"><CardGrid items={mockRooms.map((room) => `${room.name} • ${room.department} • ${room.status}`)} /></TabsContent><TabsContent value="capacity"><CardGrid items={mockCounters.map((counter) => `${counter.name} • ${counter.type} • Capacity ${counter.capacity}`)} /></TabsContent></Tabs></>}</ProtectedAppointment>;
+  return <ProtectedAppointment>{({ readOnly }) => <><PageHeader eyebrow="Phase 4 • Scheduling" title="Doctor Scheduling" description="Doctor availability, recurring slots, blocks, templates, rooms, and capacity placeholders." actions={<><PrintAction label="Print schedule" /><Button disabled={readOnly}><Plus className="h-4 w-4" />Add schedule</Button></>} /><Tabs defaultValue="schedules" className="space-y-4"><TabsList><TabsTrigger value="schedules">Schedules</TabsTrigger><TabsTrigger value="availability">Availability</TabsTrigger><TabsTrigger value="blocks">Leaves & blocks</TabsTrigger><TabsTrigger value="templates">Templates</TabsTrigger><TabsTrigger value="rooms">Rooms</TabsTrigger><TabsTrigger value="capacity">Capacity</TabsTrigger></TabsList><TabsContent value="schedules"><DataTable data={mockDoctorSchedules} columns={columns} /></TabsContent>
+            <TabsContent value="availability">
+              <div className="space-y-4">
+                {weeklySlots.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Active Live Doctor Slots (Dynamic)</div>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {weeklySlots.map((slot) => (
+                        <Card key={slot.id} className="border-emerald-100 bg-emerald-50/10">
+                          <CardContent className="p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-800 uppercase">
+                                {slot.day}
+                              </span>
+                              <Badge className={
+                                slot.mode === "OPD" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                slot.mode === "Video" ? "bg-sky-50 text-sky-700 border-sky-200" :
+                                "bg-indigo-50 text-indigo-700 border-indigo-200"
+                              }>
+                                {slot.mode}
+                              </Badge>
+                            </div>
+                            <div className="text-base font-bold text-slate-900 tabular-nums">
+                              {slot.time} - {slot.end}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Dr. Ananya Rao • {slot.branch} • Room: OPD 3
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-50 pt-2">
+                              <span>Patient Load</span>
+                              <span className="font-semibold text-slate-700">{slot.occupied} / {slot.capacity} Patients</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Static System Slots</div>
+                  <CardGrid items={mockAppointmentSlots.map((slot) => `${slot.doctor} • ${slot.time} • Room ${slot.room} • ${slot.status}`)} />
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="blocks"><AlertBanner icon={ShieldAlert} tone="warning" title="Affected appointment warning">Blocks show affected appointment count and suggested reschedule placeholders.</AlertBanner><FormGrid fields={["Doctor", "Date range", "Start time", "End time", "Reason", "Block type", "Affected appointments", "Suggested reschedule"]} /></TabsContent><TabsContent value="templates"><CardGrid items={["Cardiology morning OPD • Mon-Sat • 15 min", "Orthopedics walk-in • Mon-Fri • 15 min", "Pediatrics review • Wed • 20 min"]} /></TabsContent><TabsContent value="rooms"><CardGrid items={mockRooms.map((room) => `${room.name} • ${room.department} • ${room.status}`)} /></TabsContent><TabsContent value="capacity"><CardGrid items={mockCounters.map((counter) => `${counter.name} • ${counter.type} • Capacity ${counter.capacity}`)} /></TabsContent></Tabs></>}</ProtectedAppointment>;
 }
 
 function CardGrid({ items }: { items: string[] }) {

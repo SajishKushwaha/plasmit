@@ -120,6 +120,42 @@ export type UserRecord = {
   failedLogins: number;
 };
 
+export type DoctorRecord = {
+  id: string;
+  doctorId: string;
+  name: string;
+  gender: "Female" | "Male" | "Other";
+  dateOfBirth: string;
+  mobile: string;
+  email: string;
+  profilePhotoName?: string;
+  profilePhotoUrl?: string;
+  departmentId: string;
+  department: string;
+  specialization: string;
+  qualification: string;
+  experience: string;
+  registrationNumber: string;
+  branch: string;
+  room: string;
+  consultationTypes: string[];
+  consultationFee: string;
+  emergencyFee: string;
+  slotDuration: string;
+  maxPatientsPerSlot: number;
+  availabilityStatus: "Available" | "On leave" | "Unavailable";
+  opdTiming: string;
+  breakTiming: string;
+  telemedicineTiming: string;
+  leaveSchedule: string;
+  status: "Active" | "Inactive";
+  telemedicine: boolean;
+  activeOpd: boolean;
+  username: string;
+  role: "Doctor";
+  allowedModules: string[];
+};
+
 export type DepartmentRecord = {
   id: string;
   code: string;
@@ -130,6 +166,21 @@ export type DepartmentRecord = {
   users: number;
   status: "Active" | "Inactive";
   enabledWorkflows: string[];
+  branch: string;
+  floor: string;
+  roomWing: string;
+  contactNumber: string;
+  email: string;
+  totalDoctors: number;
+  assignedDoctorIds: string[];
+  opdTiming: string;
+  workingDays: string;
+  emergencyAvailable: boolean;
+  emergencyContactDoctor: string;
+  patientCapacityPerDay: number;
+  servicesOffered: string[];
+  feeRange: string;
+  linkedServices: string[];
 };
 
 export type BranchRecord = {

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   Activity,
   AlertTriangle,
@@ -14,8 +13,8 @@ import {
   Stethoscope,
   Users,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { useRole } from "@/components/providers/role-provider";
 import { Button } from "@/components/ui/button";
@@ -24,9 +23,16 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { StatCard } from "@/components/ui/stat-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dashboardQuickActions } from "@/data/navigation";
-import { appointmentTimeline, bedOccupancy, dashboardStats, departmentActivity, recentActivity } from "@/data/mock";
+import { bedOccupancy, dashboardStats, departmentActivity, recentActivity } from "@/data/mock";
 
 const statIcons = [Stethoscope, IdCard, CalendarClock, Users, BedDouble, BedDouble, FlaskConical, Pill, CreditCard, AlertTriangle];
+const AppointmentTimelineChart = dynamic(
+  () => import("@/features/dashboard/appointment-timeline-chart").then((module) => module.AppointmentTimelineChart),
+  {
+    ssr: false,
+    loading: () => <div className="h-[220px] rounded-md bg-surface-muted" />,
+  },
+);
 
 export function DashboardPage() {
   const { role } = useRole();
@@ -45,12 +51,7 @@ export function DashboardPage() {
     <div className="space-y-5">
       <section className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-5">
         {dashboardStats.map((stat, index) => (
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            initial={{ opacity: 0, y: 8 }}
-            key={stat.id}
-            transition={{ delay: index * 0.025 }}
-          >
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300" key={stat.id} style={{ animationDelay: `${index * 25}ms` }}>
             <StatCard
               label={stat.label}
               value={stat.value}
@@ -60,7 +61,7 @@ export function DashboardPage() {
               icon={statIcons[index] ?? Activity}
               currency={stat.id === "revenue"}
             />
-          </motion.div>
+          </div>
         ))}
       </section>
 
@@ -78,7 +79,7 @@ export function DashboardPage() {
               const Icon = action.icon;
               return (
                 <Button asChild className="h-auto justify-start p-3" key={action.id} variant="outline">
-                  <Link href={action.route}>
+                  <Link href={action.route} prefetch={false}>
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                       <Icon className="h-4 w-4" />
                     </span>
@@ -123,23 +124,7 @@ export function DashboardPage() {
               </div>
               <div className="min-h-[260px] rounded-lg border border-border p-3">
                 <div className="mb-3 text-sm font-semibold text-foreground">Appointment Timeline</div>
-                <ResponsiveContainer height={220} width="100%">
-                  <BarChart data={appointmentTimeline} margin={{ left: -24, right: 8, top: 8, bottom: 0 }}>
-                    <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
-                    <XAxis dataKey="time" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip
-                      cursor={{ fill: "hsl(var(--surface-muted))" }}
-                      contentStyle={{
-                        background: "hsl(var(--surface))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                        color: "hsl(var(--foreground))",
-                      }}
-                    />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <AppointmentTimelineChart />
               </div>
             </div>
           </CardContent>

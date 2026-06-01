@@ -2,9 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,10 +24,36 @@ export function AppSidebar({
   onCollapsedChange: (collapsed: boolean) => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { role } = useRole();
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
-  const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
-  const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
+  const [currentHash, setCurrentHash] = useState("");
+
+  useEffect(() => {
+    const updateHash = () => setCurrentHash(window.location.hash);
+    updateHash();
+    window.addEventListener("hashchange", updateHash);
+    return () => window.removeEventListener("hashchange", updateHash);
+  }, []);
+
+  const visibleItems = useMemo(
+    () => navigationItems.filter((item) => item.allowedRoles.includes(role)),
+    [role],
+  );
+  const groups = useMemo(
+    () => Array.from(new Set(visibleItems.map((item) => item.group))),
+    [visibleItems],
+  );
+
+  const prefetchRoute = useCallback(
+    (route: string) => {
+      const routePath = route.split("#")[0] || "/";
+      if (routePath !== pathname) {
+        router.prefetch(route);
+      }
+    },
+    [pathname, router],
+  );
 
   return (
     <aside
@@ -32,6 +62,7 @@ export function AppSidebar({
         collapsed ? "w-[72px]" : "w-[264px]",
       )}
     >
+      {/* Logo */}
       <div className={cn("flex h-20 items-center border-b border-border px-3", collapsed ? "justify-center" : "justify-start")}>
         {collapsed ? (
           <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-border bg-white shadow-sm">
@@ -56,18 +87,39 @@ export function AppSidebar({
         )}
       </div>
 
+      {/* Nav */}
       <nav className="min-h-0 flex-1 overflow-y-auto px-2.5 py-4">
         {groups.map((group) => (
           <div className="mb-4" key={group}>
-            {!collapsed ? <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground/55">{group}</div> : null}
+            {!collapsed ? (
+              <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground/55">
+                {group}
+              </div>
+            ) : null}
             <div className="space-y-1">
               {visibleItems
                 .filter((item) => item.group === group)
                 .map((item) => {
                   const Icon = item.icon;
                   const hasChildren = Boolean(item.children?.length);
-                  const childActive = item.children?.some((child) => pathname === child.route) ?? false;
-                  const active = pathname === item.route || childActive || (item.route !== "/dashboard" && pathname.startsWith(`${item.route}/`));
+                  const [itemPath = "/", itemHash] = item.route.split("#");
+                  const itemRoutePath = itemPath || "/";
+                  const itemRouteHash = itemHash ? `#${itemHash}` : "";
+                  const exactRouteActive =
+                    pathname === itemRoutePath &&
+                    (itemRouteHash ? currentHash === itemRouteHash : !currentHash);
+                  const childActive = item.children?.some((child) => {
+                    const [childPath = "/", childHash] = child.route.split("#");
+                    const childRouteHash = childHash ? `#${childHash}` : "";
+                    return pathname === (childPath || "/") && (childRouteHash ? currentHash === childRouteHash : !currentHash);
+                  }) ?? false;
+                  const active =
+                    exactRouteActive ||
+                    childActive ||
+                    (!itemRouteHash &&
+                      itemRoutePath !== "/dashboard" &&
+                      itemRoutePath !== "/doctor-dashboard" &&
+                      pathname.startsWith(`${itemRoutePath}/`));
                   const expanded = openItems[item.id] ?? active;
                   const neuroIcu = item.id === "neuro-icu";
 
@@ -81,7 +133,7 @@ export function AppSidebar({
                             neuroIcu && !active && "hover:bg-[linear-gradient(90deg,rgba(79,110,247,0.10),rgba(124,107,255,0.10))] hover:text-[#4F6EF7]",
                             neuroIcu && active && "bg-[linear-gradient(90deg,#4F6EF7,#7C6BFF)] shadow-[0_10px_26px_rgba(79,110,247,0.34),0_0_0_1px_rgba(124,107,255,0.22)]",
                           )}
-                          onClick={() => setOpenItems((current) => ({ ...current, [item.id]: !expanded }))}
+                          onClick={() => setOpenItems((curr) => ({ ...curr, [item.id]: !expanded }))}
                           type="button"
                         >
                           <Icon className="h-4 w-4 shrink-0" />
@@ -91,17 +143,20 @@ export function AppSidebar({
                         {expanded ? (
                           <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
                             {item.children?.map((child) => {
-                              const childIsActive = pathname === child.route;
+                              const [childPath = "/", childHash] = child.route.split("#");
+                              const childRouteHash = childHash ? `#${childHash}` : "";
+                              const childIsActive = pathname === (childPath || "/") && (childRouteHash ? currentHash === childRouteHash : !currentHash);
                               return (
                                 <Link
                                   className={cn(
                                     "flex min-h-8 items-center rounded-md px-2 py-1.5 text-xs font-semibold outline-none transition hover:bg-primary-soft hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/25",
                                     childIsActive && "bg-primary-soft text-primary",
-                                    neuroIcu && "hover:bg-[rgba(79,110,247,0.10)] hover:text-[#4F6EF7]",
-                                    neuroIcu && childIsActive && "bg-[rgba(79,110,247,0.12)] text-[#4F6EF7] shadow-[inset_2px_0_0_#7C6BFF]",
                                   )}
                                   href={child.route}
                                   key={child.id}
+                                  onFocus={() => prefetchRoute(child.route)}
+                                  onMouseEnter={() => prefetchRoute(child.route)}
+                                  prefetch={false}
                                 >
                                   <span className="min-w-0 flex-1 truncate">{child.label}</span>
                                   {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}
@@ -126,11 +181,18 @@ export function AppSidebar({
                       )}
                       href={item.route}
                       key={item.id}
+                      onFocus={() => prefetchRoute(item.route)}
+                      onMouseEnter={() => prefetchRoute(item.route)}
+                      prefetch={false}
                       title={collapsed ? item.label : undefined}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       {!collapsed ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
                       {!collapsed && item.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}
+                      {/* Emergency alert red dot */}
+                      {item.id === "doctor-emergency-alerts" && !collapsed ? (
+                        <span className="h-2 w-2 rounded-full bg-rose-400" />
+                      ) : null}
                     </Link>
                   );
                 })}
@@ -139,6 +201,7 @@ export function AppSidebar({
         ))}
       </nav>
 
+      {/* Bottom section — same for all roles */}
       <div className="border-t border-border p-2.5">
         <Button
           className={cn("w-full", collapsed && "px-0")}

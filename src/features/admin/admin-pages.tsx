@@ -1,14 +1,17 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Building2,
+  CalendarDays,
   Check,
   Copy,
   Download,
   Eye,
   FileText,
+  KeyRound,
   Lock,
   Plus,
   Printer,
@@ -17,7 +20,10 @@ import {
   ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
+  Trash2,
+  Upload,
   UserCog,
+  UserRoundCheck,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +42,7 @@ import {
   mockBranches,
   mockDepartments,
   mockDevices,
+  mockDoctors,
   mockHospitalProfile,
   mockIpRules,
   mockMfaPolicy,
@@ -61,7 +68,7 @@ import {
   adminFullAccessRoles,
   adminReadOnlyRoles,
 } from "@/features/admin/admin-shared";
-import type { AdminRoleRecord, AuditLog, BranchRecord, DepartmentRecord, PermissionRecord, Role, SecuritySession, TrustedDevice, UserRecord } from "@/types";
+import type { AdminRoleRecord, AuditLog, BranchRecord, DepartmentRecord, DoctorRecord, PermissionRecord, Role, SecuritySession, TrustedDevice, UserRecord } from "@/types";
 
 function textMatch(value: string, search: string) {
   return value.toLowerCase().includes(search.toLowerCase());
@@ -298,32 +305,657 @@ function UserDrawer({ user, onOpenChange, roleById, deptById }: { user: UserReco
 }
 
 export function DepartmentsPage() {
+  const [departments, setDepartments] = React.useState<DepartmentRecord[]>(mockDepartments);
   const [search, setSearch] = React.useState("");
+  const [status, setStatus] = React.useState("All status");
+  const [branch, setBranch] = React.useState("All branches");
+  const [emergency, setEmergency] = React.useState("All emergency");
+  const [formOpen, setFormOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<DepartmentRecord | null>(null);
-  const filtered = mockDepartments.filter((dept) => textMatch(`${dept.name} ${dept.code} ${dept.type} ${dept.head}`, search));
+  const [confirm, setConfirm] = React.useState<DepartmentRecord | null>(null);
+  const branches = ["All branches", ...Array.from(new Set(departments.map((dept) => dept.branch)))];
+  const filtered = departments.filter((dept) =>
+    textMatch(`${dept.name} ${dept.code} ${dept.head} ${dept.location}`, search) &&
+    (status === "All status" || dept.status === status) &&
+    (branch === "All branches" || dept.branch === branch) &&
+    (emergency === "All emergency" || (emergency === "Emergency enabled" ? dept.emergencyAvailable : !dept.emergencyAvailable)),
+  );
   const columns = React.useMemo<ColumnDef<DepartmentRecord>[]>(() => [
     { header: "Department", cell: ({ row }) => <div><div className="font-medium">{row.original.name}</div><div className="text-xs text-muted-foreground">{row.original.code}</div></div> },
-    { header: "Type", accessorKey: "type" },
-    { header: "Head", accessorKey: "head" },
-    { header: "Location", accessorKey: "location" },
-    { header: "Users", accessorKey: "users" },
+    { header: "Head doctor", accessorKey: "head" },
+    { header: "Total doctors", accessorKey: "totalDoctors" },
+    { header: "OPD timing", accessorKey: "opdTiming" },
+    { header: "Floor/location", cell: ({ row }) => <div><div>{row.original.floor}</div><div className="text-xs text-muted-foreground">{row.original.roomWing}</div></div> },
+    { header: "Emergency", cell: ({ row }) => row.original.emergencyAvailable ? <Badge tone="critical">Enabled</Badge> : <Badge tone="muted">No</Badge> },
     { header: "Status", cell: ({ row }) => <StatusBadge status={row.original.status} /> },
-    { header: "Actions", cell: ({ row }) => <Button size="sm" variant="outline" onClick={() => setSelected(row.original)}>Open</Button> },
+    { header: "Actions", cell: ({ row }) => <div className="flex flex-wrap gap-1"><Button size="sm" variant="outline" onClick={() => setSelected(row.original)}><Eye className="h-3.5 w-3.5" />View</Button><Button size="sm" variant="ghost" onClick={() => setFormOpen(true)}>Edit</Button><Button size="sm" variant="ghost" onClick={() => pageToast("Assign doctors")}>Assign</Button><Button size="sm" variant="ghost" onClick={() => pageToast("Manage OPD timing")}>Timing</Button><Button size="sm" variant="ghost" onClick={() => setConfirm(row.original)}>{row.original.status === "Active" ? "Deactivate" : "Activate"}</Button><Button size="sm" variant="ghost" onClick={() => setConfirm(row.original)}><Trash2 className="h-3.5 w-3.5" /></Button></div> },
   ], []);
   return (
     <ProtectedAdmin>
       {({ readOnly }) => (
         <>
-          <PageHeader eyebrow="Phase 2 • Master Setup" title="Department Management" description="Operational department master for future OPD, IPD, LIS, billing, and reporting modules." actions={<Button disabled={readOnly}><Plus className="h-4 w-4" />Add department</Button>} />
-          <SummaryGrid><StatCard label="Total departments" value={mockDepartments.length} icon={Building2} change="Master" context="Reusable setup" tone="info" /><StatCard label="Clinical" value={mockDepartments.filter((d) => d.type === "Clinical").length} icon={ShieldCheck} change="Ready" context="OPD/IPD mapping" tone="success" /><StatCard label="Support" value={mockDepartments.filter((d) => d.type === "Support" || d.type === "Store").length} icon={Users} change="Ops" context="Support workflows" tone="warning" /><StatCard label="Active" value={mockDepartments.filter((d) => d.status === "Active").length} icon={Check} change="Enabled" context="Available now" tone="success" /></SummaryGrid>
-          <FilterBar search={search} onSearch={setSearch} placeholder="Search department, code, head..." />
+          <div className="flex justify-end">
+            <Button disabled={readOnly} onClick={() => setFormOpen(true)}><Plus className="h-4 w-4" />Add department</Button>
+          </div>
+          <SummaryGrid><StatCard label="Total departments" value={departments.length} icon={Building2} change="Master" context="Reusable setup" tone="info" /><StatCard label="Active departments" value={departments.filter((d) => d.status === "Active").length} icon={Check} change="Enabled" context="Available now" tone="success" /><StatCard label="Doctors assigned" value={departments.reduce((sum, dept) => sum + dept.totalDoctors, 0)} icon={Users} change="Mapped" context="Across departments" tone="info" /><StatCard label="OPD departments" value={departments.filter((d) => d.enabledWorkflows.includes("OPD") || d.opdTiming !== "Not applicable").length} icon={CalendarDays} change="Scheduled" context="Timing configured" tone="warning" /><StatCard label="Emergency-enabled" value={departments.filter((d) => d.emergencyAvailable).length} icon={ShieldAlert} change="Priority" context="Emergency coverage" tone="danger" /></SummaryGrid>
+          <FilterBar search={search} onSearch={setSearch} placeholder="Search department by name, code, or head doctor..."><NativeSelect label="Status" value={status} onChange={setStatus} options={["All status", "Active", "Inactive"]} /><NativeSelect label="Branch" value={branch} onChange={setBranch} options={branches} /><NativeSelect label="Emergency" value={emergency} onChange={setEmergency} options={["All emergency", "Emergency enabled", "No emergency"]} /></FilterBar>
           <DataTable data={filtered} columns={columns} />
-          <Drawer open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)} title={selected?.name ?? "Department"} description="Department settings and workflow readiness.">
-            {selected ? <DrawerTabs><TabsList><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="staff">Staff mapping</TabsTrigger><TabsTrigger value="settings">Operating settings</TabsTrigger><TabsTrigger value="audit">Audit</TabsTrigger></TabsList><TabsContent value="overview"><DetailRow label="Code" value={selected.code} /><DetailRow label="Type" value={selected.type} /><DetailRow label="Location" value={selected.location} /><DetailRow label="Status" value={<StatusBadge status={selected.status} />} /></TabsContent><TabsContent value="staff"><DetailRow label="Head" value={selected.head} /><DetailRow label="Users" value={selected.users} /></TabsContent><TabsContent value="settings" className="space-y-2">{selected.enabledWorkflows.map((item) => <Badge key={item} tone="info">{item}</Badge>)}</TabsContent><TabsContent value="audit"><DetailRow label="Updated by" value="Hospital Admin" /><DetailRow label="Last review" value="Today 08:45" /></TabsContent></DrawerTabs> : null}
-          </Drawer>
+          <DepartmentDrawer department={selected} onOpenChange={(open) => !open && setSelected(null)} />
+          <DepartmentFormDrawer existingDepartments={departments} open={formOpen} onCreate={(department) => setDepartments((current) => [department, ...current])} onOpenChange={setFormOpen} readOnly={readOnly} />
+          <ConfirmDrawer open={Boolean(confirm)} onOpenChange={(open) => !open && setConfirm(null)} title="Department confirmation" target={confirm?.name ?? ""} action={confirm?.status === "Active" ? "Deactivate" : "Activate"} />
         </>
       )}
     </ProtectedAdmin>
+  );
+}
+
+export function DoctorsPage() {
+  const [doctors, setDoctors] = React.useState<DoctorRecord[]>(mockDoctors);
+  const [search, setSearch] = React.useState("");
+  const [department, setDepartment] = React.useState("All departments");
+  const [status, setStatus] = React.useState("All status");
+  const [branch, setBranch] = React.useState("All branches");
+  const [availability, setAvailability] = React.useState("All availability");
+  const [selected, setSelected] = React.useState<DoctorRecord | null>(null);
+  const [formOpen, setFormOpen] = React.useState(false);
+  const [confirm, setConfirm] = React.useState<DoctorRecord | null>(null);
+  const departments = ["All departments", ...mockDepartments.map((dept) => dept.name)];
+  const branches = ["All branches", ...Array.from(new Set(doctors.map((doctor) => doctor.branch)))];
+  const filtered = doctors.filter((doctor) =>
+    textMatch(`${doctor.name} ${doctor.mobile} ${doctor.email} ${doctor.department} ${doctor.specialization}`, search) &&
+    (department === "All departments" || doctor.department === department) &&
+    (status === "All status" || doctor.status === status) &&
+    (branch === "All branches" || doctor.branch === branch) &&
+    (availability === "All availability" || doctor.availabilityStatus === availability),
+  );
+  const columns = React.useMemo<ColumnDef<DoctorRecord>[]>(() => [
+    { header: "Doctor name", cell: ({ row }) => <div><div className="font-medium">{row.original.name}</div><div className="text-xs text-muted-foreground">{row.original.doctorId}</div></div> },
+    { header: "Department", accessorKey: "department" },
+    { header: "Specialization", accessorKey: "specialization" },
+    { header: "Mobile", accessorKey: "mobile" },
+    { header: "Email", accessorKey: "email" },
+    { header: "Availability", cell: ({ row }) => <StatusBadge status={row.original.availabilityStatus} /> },
+    { header: "OPD timing", accessorKey: "opdTiming" },
+    { header: "Branch", accessorKey: "branch" },
+    { header: "Status", cell: ({ row }) => <StatusBadge status={row.original.status} /> },
+    { header: "Actions", cell: ({ row }) => <div className="flex flex-wrap gap-1"><Button size="sm" variant="outline" onClick={() => setSelected(row.original)}><Eye className="h-3.5 w-3.5" />View</Button><Button size="sm" variant="ghost" onClick={() => setFormOpen(true)}>Edit</Button><Button size="sm" variant="ghost" onClick={() => pageToast("Manage availability")}>Availability</Button><Button size="sm" variant="ghost" onClick={() => pageToast("Assign department")}>Assign</Button><Button size="sm" variant="ghost" onClick={() => pageToast("Password reset")}><KeyRound className="h-3.5 w-3.5" /></Button><Button size="sm" variant="ghost" onClick={() => setConfirm(row.original)}>{row.original.status === "Active" ? "Deactivate" : "Activate"}</Button><Button size="sm" variant="ghost" onClick={() => setConfirm(row.original)}><Trash2 className="h-3.5 w-3.5" /></Button></div> },
+  ], []);
+
+  return (
+    <ProtectedAdmin>
+      {({ readOnly }) => (
+        <>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" onClick={() => pageToast("Doctor CSV export")}><Download className="h-4 w-4" />Export CSV</Button>
+            <Button variant="outline" onClick={() => pageToast("Bulk upload doctors")}><Upload className="h-4 w-4" />Bulk upload</Button>
+            <Button disabled={readOnly} onClick={() => setFormOpen(true)}><Plus className="h-4 w-4" />Add doctor</Button>
+          </div>
+          <SummaryGrid><StatCard label="Total doctors" value={doctors.length} icon={Users} change="Staff master" context="Credentialed doctors" tone="info" /><StatCard label="Available doctors" value={doctors.filter((doctor) => doctor.availabilityStatus === "Available").length} icon={UserRoundCheck} change="Now" context="Can accept appointments" tone="success" /><StatCard label="On leave" value={doctors.filter((doctor) => doctor.availabilityStatus === "On leave").length} icon={CalendarDays} change="Planned" context="Leave schedule" tone="warning" /><StatCard label="Active OPD doctors" value={doctors.filter((doctor) => doctor.activeOpd).length} icon={ShieldCheck} change="OPD" context="Today schedule" tone="success" /><StatCard label="Telemedicine doctors" value={doctors.filter((doctor) => doctor.telemedicine).length} icon={UserCog} change="Virtual" context="Online consult ready" tone="info" /></SummaryGrid>
+          <FilterBar search={search} onSearch={setSearch} placeholder="Search doctor by name, phone, email, department, specialization..."><NativeSelect label="Department" value={department} onChange={setDepartment} options={departments} /><NativeSelect label="Status" value={status} onChange={setStatus} options={["All status", "Active", "Inactive"]} /><NativeSelect label="Branch" value={branch} onChange={setBranch} options={branches} /><NativeSelect label="Availability" value={availability} onChange={setAvailability} options={["All availability", "Available", "On leave", "Unavailable"]} /></FilterBar>
+          <DataTable data={filtered} columns={columns} />
+          <DoctorDrawer doctor={selected} onOpenChange={(open) => !open && setSelected(null)} />
+          <DoctorFormDrawer existingDoctors={doctors} open={formOpen} onCreate={(doctor) => setDoctors((current) => [doctor, ...current])} onOpenChange={setFormOpen} readOnly={readOnly} />
+          <ConfirmDrawer open={Boolean(confirm)} onOpenChange={(open) => !open && setConfirm(null)} title="Doctor confirmation" target={confirm?.name ?? ""} action={confirm?.status === "Active" ? "Deactivate" : "Activate"} />
+        </>
+      )}
+    </ProtectedAdmin>
+  );
+}
+
+function DoctorDrawer({ doctor, onOpenChange }: { doctor: DoctorRecord | null; onOpenChange: (open: boolean) => void }) {
+  return (
+    <Drawer open={Boolean(doctor)} onOpenChange={onOpenChange} title={doctor?.name ?? "Doctor"} description="Profile, department, schedule, fees, permissions, and validation status.">
+      {doctor ? (
+        <DrawerTabs>
+          <TabsList><TabsTrigger value="profile">Profile</TabsTrigger><TabsTrigger value="work">Work setup</TabsTrigger><TabsTrigger value="availability">Availability</TabsTrigger><TabsTrigger value="login">Login</TabsTrigger></TabsList>
+          <TabsContent value="profile"><DetailRow label="Doctor ID" value={doctor.doctorId} /><DetailRow label="Department" value={doctor.department} /><DetailRow label="Specialization" value={doctor.specialization} /><DetailRow label="Mobile" value={doctor.mobile} /><DetailRow label="Email" value={doctor.email} /><DetailRow label="Registration" value={doctor.registrationNumber} /></TabsContent>
+          <TabsContent value="work"><DetailRow label="Branch" value={doctor.branch} /><DetailRow label="Room" value={doctor.room} /><DetailRow label="Consultation" value={doctor.consultationTypes.join(", ")} /><DetailRow label="Fee" value={doctor.consultationFee} /><DetailRow label="Emergency" value={doctor.emergencyFee} /><DetailRow label="Slot" value={`${doctor.slotDuration} • ${doctor.maxPatientsPerSlot} patient/slot`} /></TabsContent>
+          <TabsContent value="availability"><DetailRow label="Status" value={<StatusBadge status={doctor.availabilityStatus} />} /><DetailRow label="OPD timing" value={doctor.opdTiming} /><DetailRow label="Break" value={doctor.breakTiming} /><DetailRow label="Telemedicine" value={doctor.telemedicineTiming} /><DetailRow label="Leave" value={doctor.leaveSchedule} /></TabsContent>
+          <TabsContent value="login"><DetailRow label="Username" value={doctor.username} /><DetailRow label="Password" value="Temporary password masked" masked /><DetailRow label="Role" value={doctor.role} /><DetailRow label="Modules" value={doctor.allowedModules.join(", ")} /><DetailRow label="Status" value={<StatusBadge status={doctor.status} />} /></TabsContent>
+        </DrawerTabs>
+      ) : null}
+    </Drawer>
+  );
+}
+
+function DepartmentDrawer({ department, onOpenChange }: { department: DepartmentRecord | null; onOpenChange: (open: boolean) => void }) {
+  const assignedDoctors = mockDoctors.filter((doctor) => department?.assignedDoctorIds.includes(doctor.id));
+  return (
+    <Drawer open={Boolean(department)} onOpenChange={onOpenChange} title={department?.name ?? "Department"} description="Department profile, location, doctor assignment, OPD, emergency, and services.">
+      {department ? <DrawerTabs><TabsList><TabsTrigger value="overview">Details</TabsTrigger><TabsTrigger value="location">Location</TabsTrigger><TabsTrigger value="doctors">Doctors</TabsTrigger><TabsTrigger value="opd">OPD</TabsTrigger><TabsTrigger value="services">Services</TabsTrigger></TabsList><TabsContent value="overview"><DetailRow label="Code" value={department.code} /><DetailRow label="Type" value={department.type} /><DetailRow label="Description" value={`${department.name} operational master setup`} /><DetailRow label="Status" value={<StatusBadge status={department.status} />} /></TabsContent><TabsContent value="location"><DetailRow label="Branch" value={department.branch} /><DetailRow label="Floor" value={department.floor} /><DetailRow label="Room/wing" value={department.roomWing} /><DetailRow label="Contact" value={department.contactNumber} /><DetailRow label="Email" value={department.email} /></TabsContent><TabsContent value="doctors" className="space-y-2"><DetailRow label="Head" value={department.head} /><DetailRow label="Total doctors" value={department.totalDoctors} />{assignedDoctors.map((doctor) => <MiniRecord key={doctor.id} title={doctor.name} meta={`${doctor.specialization} • ${doctor.availabilityStatus}`} />)}</TabsContent><TabsContent value="opd"><DetailRow label="OPD timing" value={department.opdTiming} /><DetailRow label="Working days" value={department.workingDays} /><DetailRow label="Emergency" value={department.emergencyAvailable ? "Enabled" : "No"} /><DetailRow label="Emergency doctor" value={department.emergencyContactDoctor} /><DetailRow label="Capacity" value={`${department.patientCapacityPerDay} patients/day`} /></TabsContent><TabsContent value="services" className="space-y-2"><DetailRow label="Fee range" value={department.feeRange} /><div className="flex flex-wrap gap-2">{department.servicesOffered.map((item) => <Badge key={item} tone="info">{item}</Badge>)}</div><div className="flex flex-wrap gap-2">{department.linkedServices.map((item) => <Badge key={item} tone="muted">{item}</Badge>)}</div></TabsContent></DrawerTabs> : null}
+    </Drawer>
+  );
+}
+
+function StepNote({ items }: { items: string[] }) {
+  return <div className="rounded-lg border border-border bg-surface-muted p-3 text-xs text-muted-foreground">{items.join(" • ")}</div>;
+}
+
+type DepartmentFormState = {
+  name: string;
+  code: string;
+  description: string;
+  icon: string;
+  branch: string;
+  floor: string;
+  roomWing: string;
+  contactNumber: string;
+  email: string;
+  head: string;
+  assignedDoctors: string;
+  primaryConsultant: string;
+  onCallDoctors: string;
+  opdTiming: string;
+  workingDays: string;
+  emergencyAvailable: string;
+  emergencyContactDoctor: string;
+  patientCapacityPerDay: string;
+  servicesOffered: string;
+  feeRange: string;
+  linkedServices: string;
+  status: string;
+};
+
+const emptyDepartmentForm: DepartmentFormState = {
+  name: "",
+  code: "",
+  description: "",
+  icon: "Building",
+  branch: "Plasmit Main Hospital",
+  floor: "",
+  roomWing: "",
+  contactNumber: "",
+  email: "",
+  head: mockDoctors[0]?.name ?? "",
+  assignedDoctors: mockDoctors.map((doctor) => doctor.name).slice(0, 1).join(", "),
+  primaryConsultant: mockDoctors[0]?.name ?? "",
+  onCallDoctors: "",
+  opdTiming: "",
+  workingDays: "Mon-Sat",
+  emergencyAvailable: "No",
+  emergencyContactDoctor: "",
+  patientCapacityPerDay: "0",
+  servicesOffered: "",
+  feeRange: "",
+  linkedServices: "",
+  status: "Active",
+};
+
+type DoctorFormState = {
+  fullName: string;
+  gender: string;
+  dateOfBirth: string;
+  mobile: string;
+  email: string;
+  profilePhotoName: string;
+  profilePhotoUrl: string;
+  doctorId: string;
+  department: string;
+  specialization: string;
+  qualification: string;
+  experience: string;
+  registrationNumber: string;
+  licenseDocument: string;
+  branch: string;
+  room: string;
+  consultationTypes: string;
+  consultationFee: string;
+  emergencyFee: string;
+  slotDuration: string;
+  maxPatientsPerSlot: string;
+  weeklySchedule: string;
+  opdTiming: string;
+  breakTiming: string;
+  telemedicineTiming: string;
+  leaveSchedule: string;
+  availabilityStatus: string;
+  username: string;
+  temporaryPassword: string;
+  role: string;
+  allowedModules: string;
+  status: string;
+};
+
+const emptyDoctorForm: DoctorFormState = {
+  fullName: "Dr. ",
+  gender: "Female",
+  dateOfBirth: "",
+  mobile: "",
+  email: "",
+  profilePhotoName: "",
+  profilePhotoUrl: "",
+  doctorId: "",
+  department: mockDepartments[0]?.name ?? "",
+  specialization: "",
+  qualification: "",
+  experience: "",
+  registrationNumber: "",
+  licenseDocument: "Upload pending",
+  branch: "Plasmit Main Hospital",
+  room: "",
+  consultationTypes: "OPD, Follow-up",
+  consultationFee: "",
+  emergencyFee: "",
+  slotDuration: "15 min",
+  maxPatientsPerSlot: "1",
+  weeklySchedule: "Mon-Sat",
+  opdTiming: "",
+  breakTiming: "",
+  telemedicineTiming: "",
+  leaveSchedule: "No planned leave",
+  availabilityStatus: "Available",
+  username: "",
+  temporaryPassword: "",
+  role: "Doctor",
+  allowedModules: "OPD, Appointments, EMR",
+  status: "Active",
+};
+
+function DoctorFormDrawer({
+  existingDoctors,
+  open,
+  onCreate,
+  onOpenChange,
+  readOnly,
+}: {
+  existingDoctors: DoctorRecord[];
+  open: boolean;
+  onCreate: (doctor: DoctorRecord) => void;
+  onOpenChange: (open: boolean) => void;
+  readOnly?: boolean;
+}) {
+  const [form, setForm] = React.useState<DoctorFormState>(emptyDoctorForm);
+  const [error, setError] = React.useState("");
+
+  function updateField(field: keyof DoctorFormState, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+    if (error) {
+      setError("");
+    }
+  }
+
+  function resetAndClose() {
+    setForm(emptyDoctorForm);
+    setError("");
+    onOpenChange(false);
+  }
+
+  function splitValues(value: string) {
+    return value.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+
+  function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("Profile photo must be an image file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((current) => ({
+        ...current,
+        profilePhotoName: file.name,
+        profilePhotoUrl: typeof reader.result === "string" ? reader.result : "",
+      }));
+      setError("");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleSave() {
+    const fullName = form.fullName.trim();
+    const doctorId = form.doctorId.trim().toUpperCase();
+    const mobile = form.mobile.trim();
+    const email = form.email.trim().toLowerCase();
+    const registrationNumber = form.registrationNumber.trim();
+    const department = form.department.trim();
+    const departmentRecord = mockDepartments.find((item) => item.name === department);
+
+    if (!fullName || fullName === "Dr.") {
+      setError("Full name is required.");
+      return;
+    }
+    if (!doctorId) {
+      setError("Doctor ID / Employee ID is required.");
+      return;
+    }
+    if (!department || !departmentRecord) {
+      setError("Department is required before save.");
+      return;
+    }
+    if (!mobile) {
+      setError("Mobile number is required.");
+      return;
+    }
+    if (!email) {
+      setError("Email is required.");
+      return;
+    }
+    if (!registrationNumber) {
+      setError("Medical registration number is required.");
+      return;
+    }
+    if (existingDoctors.some((doctor) => doctor.doctorId.toLowerCase() === doctorId.toLowerCase())) {
+      setError("Duplicate doctor ID found.");
+      return;
+    }
+    if (existingDoctors.some((doctor) => doctor.mobile === mobile)) {
+      setError("Duplicate mobile number found.");
+      return;
+    }
+    if (existingDoctors.some((doctor) => doctor.email.toLowerCase() === email)) {
+      setError("Duplicate email found.");
+      return;
+    }
+    if (existingDoctors.some((doctor) => doctor.registrationNumber.toLowerCase() === registrationNumber.toLowerCase())) {
+      setError("Duplicate medical registration number found.");
+      return;
+    }
+
+    const consultationTypes = splitValues(form.consultationTypes);
+    const allowedModules = splitValues(form.allowedModules);
+    const availabilityStatus = form.availabilityStatus === "On leave" || form.availabilityStatus === "Unavailable" ? form.availabilityStatus : "Available";
+    const status = form.status === "Inactive" ? "Inactive" : "Active";
+
+    const newDoctor: DoctorRecord = {
+      id: `doc-${doctorId.toLowerCase()}-${Date.now()}`,
+      doctorId,
+      name: fullName,
+      gender: form.gender === "Male" || form.gender === "Other" ? form.gender : "Female",
+      dateOfBirth: form.dateOfBirth || "Not provided",
+      mobile,
+      email,
+      profilePhotoName: form.profilePhotoName || undefined,
+      profilePhotoUrl: form.profilePhotoUrl || undefined,
+      departmentId: departmentRecord.id,
+      department,
+      specialization: form.specialization.trim() || "General Medicine",
+      qualification: form.qualification.trim() || "Not provided",
+      experience: form.experience.trim() || "0 years",
+      registrationNumber,
+      branch: form.branch.trim() || "Plasmit Main Hospital",
+      room: form.room.trim() || "Not assigned",
+      consultationTypes: consultationTypes.length ? consultationTypes : ["OPD"],
+      consultationFee: form.consultationFee.trim() || "₹0",
+      emergencyFee: form.emergencyFee.trim() || "₹0",
+      slotDuration: form.slotDuration.trim() || "15 min",
+      maxPatientsPerSlot: Number(form.maxPatientsPerSlot) || 1,
+      availabilityStatus,
+      opdTiming: form.opdTiming.trim() || "Not configured",
+      breakTiming: form.breakTiming.trim() || "Not configured",
+      telemedicineTiming: form.telemedicineTiming.trim() || "Not enabled",
+      leaveSchedule: form.leaveSchedule.trim() || "No planned leave",
+      status,
+      telemedicine: consultationTypes.includes("Telemedicine") || Boolean(form.telemedicineTiming.trim()),
+      activeOpd: status === "Active" && Boolean(form.opdTiming.trim()) && availabilityStatus === "Available",
+      username: form.username.trim() || email.split("@")[0],
+      role: "Doctor",
+      allowedModules: allowedModules.length ? allowedModules : ["OPD", "Appointments", "EMR"],
+    };
+
+    onCreate(newDoctor);
+    toast.success(`${newDoctor.name} added`);
+    resetAndClose();
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={(nextOpen) => nextOpen ? onOpenChange(true) : resetAndClose()} title="Add doctor" description="Five-step doctor setup with department, schedule, fee, availability, and login mapping." className="md:w-[720px]" footer={<div className="flex justify-end gap-2"><Button variant="outline" onClick={resetAndClose}>Cancel</Button><Button disabled={readOnly} onClick={handleSave}><Save className="h-4 w-4" />Save doctor</Button></div>}>
+      <Tabs defaultValue="basic" className="space-y-4">
+        <TabsList><TabsTrigger value="basic">Basic</TabsTrigger><TabsTrigger value="professional">Professional</TabsTrigger><TabsTrigger value="work">Work</TabsTrigger><TabsTrigger value="availability">Availability</TabsTrigger><TabsTrigger value="login">Login</TabsTrigger></TabsList>
+        {error ? <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs font-medium text-danger">{error}</div> : null}
+        <TabsContent value="basic" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Full name" value={form.fullName} onChange={(value) => updateField("fullName", value)} />
+            <GenderSelect value={form.gender} onChange={(value) => updateField("gender", value)} />
+            <DepartmentInput label="Date of birth" type="date" value={form.dateOfBirth} onChange={(value) => updateField("dateOfBirth", value)} />
+            <DepartmentInput label="Mobile number" value={form.mobile} onChange={(value) => updateField("mobile", value)} />
+            <DepartmentInput label="Email" type="email" value={form.email} onChange={(value) => updateField("email", value)} />
+            <DoctorPhotoUpload fileName={form.profilePhotoName} previewUrl={form.profilePhotoUrl} onChange={handlePhotoUpload} />
+          </div>
+          <StepNote items={["Required fields validation", "Duplicate email check", "Duplicate mobile check"]} />
+        </TabsContent>
+        <TabsContent value="professional" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Doctor ID / Employee ID" value={form.doctorId} onChange={(value) => updateField("doctorId", value.toUpperCase())} />
+            <DepartmentInput label="Department" value={form.department} onChange={(value) => updateField("department", value)} />
+            <DepartmentInput label="Specialization" value={form.specialization} onChange={(value) => updateField("specialization", value)} />
+            <DepartmentInput label="Qualification" value={form.qualification} onChange={(value) => updateField("qualification", value)} />
+            <DepartmentInput label="Experience" value={form.experience} onChange={(value) => updateField("experience", value)} />
+            <DepartmentInput label="Medical registration number" value={form.registrationNumber} onChange={(value) => updateField("registrationNumber", value)} />
+            <DepartmentInput label="License document upload" value={form.licenseDocument} onChange={(value) => updateField("licenseDocument", value)} />
+          </div>
+          <StepNote items={["Duplicate doctor ID check", "Medical registration validation", "Department required before save"]} />
+        </TabsContent>
+        <TabsContent value="work" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Branch" value={form.branch} onChange={(value) => updateField("branch", value)} />
+            <DepartmentInput label="Room / cabin number" value={form.room} onChange={(value) => updateField("room", value)} />
+            <DepartmentInput label="Consultation type" value={form.consultationTypes} onChange={(value) => updateField("consultationTypes", value)} />
+            <DepartmentInput label="Consultation fee" value={form.consultationFee} onChange={(value) => updateField("consultationFee", value)} />
+            <DepartmentInput label="Emergency fee" value={form.emergencyFee} onChange={(value) => updateField("emergencyFee", value)} />
+            <DepartmentInput label="Appointment slot duration" value={form.slotDuration} onChange={(value) => updateField("slotDuration", value)} />
+            <DepartmentInput label="Max patients per slot" type="number" value={form.maxPatientsPerSlot} onChange={(value) => updateField("maxPatientsPerSlot", value)} />
+          </div>
+        </TabsContent>
+        <TabsContent value="availability" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Weekly schedule" value={form.weeklySchedule} onChange={(value) => updateField("weeklySchedule", value)} />
+            <DepartmentInput label="OPD timing" value={form.opdTiming} onChange={(value) => updateField("opdTiming", value)} />
+            <DepartmentInput label="Break timing" value={form.breakTiming} onChange={(value) => updateField("breakTiming", value)} />
+            <DepartmentInput label="Telemedicine timing" value={form.telemedicineTiming} onChange={(value) => updateField("telemedicineTiming", value)} />
+            <DepartmentInput label="Leave schedule" value={form.leaveSchedule} onChange={(value) => updateField("leaveSchedule", value)} />
+            <DepartmentInput label="Available / unavailable" value={form.availabilityStatus} onChange={(value) => updateField("availabilityStatus", value)} />
+          </div>
+          <StepNote items={["Slot overlap validation", "Leave schedule blocks appointment slots"]} />
+        </TabsContent>
+        <TabsContent value="login" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Username" value={form.username} onChange={(value) => updateField("username", value)} />
+            <DepartmentInput label="Temporary password" type="password" value={form.temporaryPassword} onChange={(value) => updateField("temporaryPassword", value)} />
+            <DepartmentInput label="Doctor role" value={form.role} onChange={(value) => updateField("role", value)} />
+            <DepartmentInput label="Allowed modules" value={form.allowedModules} onChange={(value) => updateField("allowedModules", value)} />
+            <DepartmentInput label="Active / inactive status" value={form.status} onChange={(value) => updateField("status", value)} />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </Drawer>
+  );
+}
+
+function DepartmentFormDrawer({
+  existingDepartments,
+  open,
+  onCreate,
+  onOpenChange,
+  readOnly,
+}: {
+  existingDepartments: DepartmentRecord[];
+  open: boolean;
+  onCreate: (department: DepartmentRecord) => void;
+  onOpenChange: (open: boolean) => void;
+  readOnly?: boolean;
+}) {
+  const [form, setForm] = React.useState<DepartmentFormState>(emptyDepartmentForm);
+  const [error, setError] = React.useState("");
+
+  function updateField(field: keyof DepartmentFormState, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+    if (error) {
+      setError("");
+    }
+  }
+
+  function resetAndClose() {
+    setForm(emptyDepartmentForm);
+    setError("");
+    onOpenChange(false);
+  }
+
+  function splitValues(value: string) {
+    return value.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+
+  function handleSave() {
+    const name = form.name.trim();
+    const code = form.code.trim().toUpperCase();
+    const assignedDoctorNames = splitValues(form.assignedDoctors);
+    const emergencyEnabled = form.emergencyAvailable.toLowerCase().startsWith("y");
+    const active = form.status !== "Inactive";
+
+    if (!name) {
+      setError("Department name is required.");
+      return;
+    }
+    if (!code) {
+      setError("Department code is required.");
+      return;
+    }
+    if (existingDepartments.some((department) => department.code.toLowerCase() === code.toLowerCase())) {
+      setError("Department code must be unique.");
+      return;
+    }
+    if (active && !form.head.trim()) {
+      setError("Head doctor is required for an active department.");
+      return;
+    }
+    if (form.opdTiming.trim() && !assignedDoctorNames.length) {
+      setError("At least one doctor is required before enabling OPD.");
+      return;
+    }
+
+    const assignedDoctorIds = mockDoctors.filter((doctor) => assignedDoctorNames.includes(doctor.name)).map((doctor) => doctor.id);
+    const newDepartment: DepartmentRecord = {
+      id: `dept-${code.toLowerCase()}-${Date.now()}`,
+      code,
+      name,
+      type: "Clinical",
+      head: form.head.trim() || "Not assigned",
+      location: [form.roomWing.trim(), form.floor.trim()].filter(Boolean).join(", ") || form.branch,
+      users: assignedDoctorNames.length,
+      status: active ? "Active" : "Inactive",
+      enabledWorkflows: [form.opdTiming.trim() ? "OPD" : "", emergencyEnabled ? "Emergency" : "", "Appointment"].filter(Boolean),
+      branch: form.branch.trim() || "Plasmit Main Hospital",
+      floor: form.floor.trim() || "Not assigned",
+      roomWing: form.roomWing.trim() || "Not assigned",
+      contactNumber: form.contactNumber.trim() || "Not assigned",
+      email: form.email.trim() || "Not assigned",
+      totalDoctors: assignedDoctorNames.length,
+      assignedDoctorIds,
+      opdTiming: form.opdTiming.trim() || "Not configured",
+      workingDays: form.workingDays.trim() || "Mon-Sat",
+      emergencyAvailable: emergencyEnabled,
+      emergencyContactDoctor: form.emergencyContactDoctor.trim() || form.head.trim() || "Not assigned",
+      patientCapacityPerDay: Number(form.patientCapacityPerDay) || 0,
+      servicesOffered: splitValues(form.servicesOffered),
+      feeRange: form.feeRange.trim() || "Not configured",
+      linkedServices: splitValues(form.linkedServices),
+    };
+
+    onCreate(newDepartment);
+    toast.success(`${newDepartment.name} department added`);
+    resetAndClose();
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={(nextOpen) => nextOpen ? onOpenChange(true) : resetAndClose()} title="Add department" description="Five-step department setup with location, doctors, OPD, emergency, and linked services." className="md:w-[720px]" footer={<div className="flex justify-end gap-2"><Button variant="outline" onClick={resetAndClose}>Cancel</Button><Button disabled={readOnly} onClick={handleSave}><Save className="h-4 w-4" />Save department</Button></div>}>
+      <Tabs defaultValue="details" className="space-y-4">
+        <TabsList><TabsTrigger value="details">Details</TabsTrigger><TabsTrigger value="location">Location</TabsTrigger><TabsTrigger value="doctors">Doctors</TabsTrigger><TabsTrigger value="opd">OPD</TabsTrigger><TabsTrigger value="services">Services</TabsTrigger></TabsList>
+        {error ? <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs font-medium text-danger">{error}</div> : null}
+        <TabsContent value="details" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Department name" value={form.name} onChange={(value) => updateField("name", value)} />
+            <DepartmentInput label="Department code" value={form.code} onChange={(value) => updateField("code", value.toUpperCase())} />
+            <DepartmentInput label="Description" value={form.description} onChange={(value) => updateField("description", value)} />
+            <DepartmentInput label="Department icon" value={form.icon} onChange={(value) => updateField("icon", value)} />
+          </div>
+          <StepNote items={["Department name required", "Department code unique"]} />
+        </TabsContent>
+        <TabsContent value="location" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Branch" value={form.branch} onChange={(value) => updateField("branch", value)} />
+            <DepartmentInput label="Floor" value={form.floor} onChange={(value) => updateField("floor", value)} />
+            <DepartmentInput label="Room/wing" value={form.roomWing} onChange={(value) => updateField("roomWing", value)} />
+            <DepartmentInput label="Contact number" value={form.contactNumber} onChange={(value) => updateField("contactNumber", value)} />
+            <DepartmentInput label="Department email" type="email" value={form.email} onChange={(value) => updateField("email", value)} />
+          </div>
+        </TabsContent>
+        <TabsContent value="doctors" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Department head" value={form.head} onChange={(value) => updateField("head", value)} />
+            <DepartmentInput label="Assign doctors" value={form.assignedDoctors} onChange={(value) => updateField("assignedDoctors", value)} />
+            <DepartmentInput label="Primary consultant" value={form.primaryConsultant} onChange={(value) => updateField("primaryConsultant", value)} />
+            <DepartmentInput label="On-call doctors" value={form.onCallDoctors} onChange={(value) => updateField("onCallDoctors", value)} />
+          </div>
+          <StepNote items={["Head doctor required for active department", "Assigned doctors shown dynamically on department page"]} />
+        </TabsContent>
+        <TabsContent value="opd" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="OPD timing" value={form.opdTiming} onChange={(value) => updateField("opdTiming", value)} />
+            <DepartmentInput label="Weekly working days" value={form.workingDays} onChange={(value) => updateField("workingDays", value)} />
+            <DepartmentInput label="Emergency availability yes/no" value={form.emergencyAvailable} onChange={(value) => updateField("emergencyAvailable", value)} />
+            <DepartmentInput label="Emergency contact doctor" value={form.emergencyContactDoctor} onChange={(value) => updateField("emergencyContactDoctor", value)} />
+            <DepartmentInput label="Patient capacity per day" type="number" value={form.patientCapacityPerDay} onChange={(value) => updateField("patientCapacityPerDay", value)} />
+          </div>
+          <StepNote items={["At least one doctor required before enabling OPD", "OPD timing overlap validation"]} />
+        </TabsContent>
+        <TabsContent value="services" className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DepartmentInput label="Services offered" value={form.servicesOffered} onChange={(value) => updateField("servicesOffered", value)} />
+            <DepartmentInput label="Consultation fee range" value={form.feeRange} onChange={(value) => updateField("feeRange", value)} />
+            <DepartmentInput label="Lab/radiology linked services" value={form.linkedServices} onChange={(value) => updateField("linkedServices", value)} />
+            <DepartmentInput label="Status active/inactive" value={form.status} onChange={(value) => updateField("status", value)} />
+          </div>
+          <StepNote items={["Cannot delete department if active doctors/patients exist"]} />
+        </TabsContent>
+      </Tabs>
+    </Drawer>
+  );
+}
+
+function DepartmentInput({ label, onChange, type = "text", value }: { label: string; onChange: (value: string) => void; type?: string; value: string }) {
+  return <label className="space-y-1 text-sm"><span className="font-medium text-foreground">{label}</span><Input value={value} type={type} onChange={(event) => onChange(event.target.value)} /></label>;
+}
+
+function GenderSelect({ onChange, value }: { onChange: (value: string) => void; value: string }) {
+  return (
+    <label className="space-y-1 text-sm">
+      <span className="font-medium text-foreground">Gender</span>
+      <select
+        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option>Female</option>
+        <option>Male</option>
+        <option>Other</option>
+      </select>
+    </label>
+  );
+}
+
+function DoctorPhotoUpload({
+  fileName,
+  onChange,
+  previewUrl,
+}: {
+  fileName: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  previewUrl: string;
+}) {
+  return (
+    <label className="space-y-1 text-sm">
+      <span className="font-medium text-foreground">Profile photo</span>
+      <div className="flex min-h-9 items-center gap-3 rounded-md border border-input bg-background px-3 py-2">
+        {previewUrl ? <Image src={previewUrl} alt="Doctor profile preview" width={40} height={40} unoptimized className="h-10 w-10 rounded-md border border-border object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">Photo</div>}
+        <div className="min-w-0 flex-1">
+          <input className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-surface-muted file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-foreground" type="file" accept="image/*" onChange={onChange} />
+          <div className="mt-1 truncate text-xs text-muted-foreground">{fileName || "No image selected"}</div>
+        </div>
+      </div>
+    </label>
   );
 }
 

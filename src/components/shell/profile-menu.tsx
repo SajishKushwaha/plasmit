@@ -65,6 +65,7 @@ export function ProfileMenu() {
             <Link
               className="mt-2 flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none hover:bg-surface-muted focus:bg-surface-muted"
               href="/settings/ui"
+              prefetch={false}
             >
               <ShieldCheck className="h-4 w-4" />
               UI Settings

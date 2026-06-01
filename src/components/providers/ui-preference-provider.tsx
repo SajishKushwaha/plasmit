@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "next-themes";
 
 import {
   defaultPreference,
@@ -74,14 +73,26 @@ function applyPrimaryVariables(preference: UiPreference) {
   root.dataset.density = preference.density;
 }
 
+function applyThemeMode(mode: UiPreference["mode"]) {
+  const root = document.documentElement;
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const shouldUseDark = mode === "dark" || (mode === "system" && prefersDark);
+  root.classList.toggle("dark", shouldUseDark);
+}
+
 export function UiPreferenceProvider({ children }: { children: React.ReactNode }) {
-  const { setTheme } = useTheme();
   const preference = React.useSyncExternalStore(subscribePreference, readPreference, () => defaultPreference);
 
   React.useEffect(() => {
-    setTheme(preference.mode);
+    applyThemeMode(preference.mode);
     applyPrimaryVariables(preference);
-  }, [preference, setTheme]);
+    if (preference.mode !== "system") return;
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemThemeChange = () => applyThemeMode("system");
+    media.addEventListener("change", handleSystemThemeChange);
+    return () => media.removeEventListener("change", handleSystemThemeChange);
+  }, [preference]);
 
   const setPreference = React.useCallback(
     (nextPreference: UiPreference) => {
@@ -89,11 +100,11 @@ export function UiPreferenceProvider({ children }: { children: React.ReactNode }
       cachedPreferenceValue = normalizedPreference;
       cachedPreferenceRaw = JSON.stringify(normalizedPreference);
       window.localStorage.setItem(uiPreferenceStorageKey, cachedPreferenceRaw);
-      setTheme(normalizedPreference.mode);
+      applyThemeMode(normalizedPreference.mode);
       applyPrimaryVariables(normalizedPreference);
       window.dispatchEvent(new Event(preferenceChangeEvent));
     },
-    [setTheme],
+    [],
   );
 
   const resetPreference = React.useCallback(() => {

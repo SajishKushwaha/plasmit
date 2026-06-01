@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronLeft,
@@ -24,7 +24,6 @@ export function AppSidebar({
   onCollapsedChange: (collapsed: boolean) => void;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { role } = useRole();
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const [currentHash, setCurrentHash] = useState("");
@@ -43,16 +42,6 @@ export function AppSidebar({
   const groups = useMemo(
     () => Array.from(new Set(visibleItems.map((item) => item.group))),
     [visibleItems],
-  );
-
-  const prefetchRoute = useCallback(
-    (route: string) => {
-      const routePath = route.split("#")[0] || "/";
-      if (routePath !== pathname) {
-        router.prefetch(route);
-      }
-    },
-    [pathname, router],
   );
 
   return (
@@ -154,8 +143,6 @@ export function AppSidebar({
                                   )}
                                   href={child.route}
                                   key={child.id}
-                                  onFocus={() => prefetchRoute(child.route)}
-                                  onMouseEnter={() => prefetchRoute(child.route)}
                                   prefetch={false}
                                 >
                                   <span className="min-w-0 flex-1 truncate">{child.label}</span>
@@ -181,8 +168,6 @@ export function AppSidebar({
                       )}
                       href={item.route}
                       key={item.id}
-                      onFocus={() => prefetchRoute(item.route)}
-                      onMouseEnter={() => prefetchRoute(item.route)}
                       prefetch={false}
                       title={collapsed ? item.label : undefined}
                     >

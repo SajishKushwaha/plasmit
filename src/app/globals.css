@@ -4,10 +4,10 @@
 
 :root {
   color-scheme: light;
-  --background: 240 38% 98%;
-  --foreground: 249 19% 18%;
+  --background: 220 38% 96%;
+  --foreground: 230 28% 12%;
   --surface: 0 0% 100%;
-  --surface-muted: 240 33% 97%;
+  --surface-muted: 220 30% 95%;
   --surface-elevated: 0 0% 100%;
   --border: 260 20% 91%;
   --input: 260 20% 88%;
@@ -18,7 +18,7 @@
   --secondary: 0 0% 100%;
   --secondary-foreground: 249 19% 18%;
   --muted: 245 27% 95%;
-  --muted-foreground: 255 9% 46%;
+  --muted-foreground: 232 12% 35%;
   --success: 155 44% 42%;
   --success-foreground: 0 0% 100%;
   --warning: 31 77% 45%;
@@ -30,7 +30,7 @@
   --critical: 344 81% 54%;
   --critical-foreground: 0 0% 100%;
   --sidebar: 0 0% 100%;
-  --sidebar-foreground: 255 9% 46%;
+  --sidebar-foreground: 232 12% 35%;
   --sidebar-active: 248 87% 67%;
   --sidebar-active-foreground: 0 0% 100%;
   --header: 0 0% 100%;
@@ -52,19 +52,19 @@
 
 .dark {
   color-scheme: light;
-  --background: 240 38% 98%;
-  --foreground: 249 19% 18%;
+  --background: 220 38% 96%;
+  --foreground: 230 28% 12%;
   --surface: 0 0% 100%;
-  --surface-muted: 240 33% 97%;
+  --surface-muted: 220 30% 95%;
   --surface-elevated: 0 0% 100%;
   --border: 260 20% 91%;
   --input: 260 20% 88%;
   --secondary: 0 0% 100%;
   --secondary-foreground: 249 19% 18%;
   --muted: 245 27% 95%;
-  --muted-foreground: 255 9% 46%;
+  --muted-foreground: 232 12% 35%;
   --sidebar: 0 0% 100%;
-  --sidebar-foreground: 255 9% 46%;
+  --sidebar-foreground: 232 12% 35%;
   --header: 0 0% 100%;
   --header-border: 260 20% 91%;
   --shadow-color: 249 19% 18%;
@@ -83,10 +83,36 @@ html {
 body {
   min-height: 100%;
   overflow-x: clip;
-  background: #f8f9fc;
+  background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: Gellix, var(--font-inter), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-size: 15.5px;
+  font-weight: 450;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+}
+
+.text-sm {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+}
+
+.font-normal {
+  font-weight: 500;
+}
+
+.font-medium {
+  font-weight: 600;
+}
+
+.font-semibold {
+  font-weight: 700;
 }
 
 ::selection {

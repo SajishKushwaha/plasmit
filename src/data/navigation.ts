@@ -120,6 +120,11 @@ export const navigationItems: NavigationItem[] = [
     allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"],
     status: "ready",
   },
+  {
+    id: "discharge", label: "Discharge", icon: FileText, route: "/discharge", group: "Clinical",
+    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"],
+    status: "ready",
+  },
   { id: "emergency",           label: "Emergency",      icon: Ambulance,     route: "/emergency",    group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Billing Executive", "Management"], status: "ready" },
   { id: "doctor-management",   label: "Doctor Management", icon: UserRound,  route: "/admin/doctors", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Management"], status: "ready" },
   { id: "department-management", label: "Department Management", icon: Building2, route: "/admin/departments", group: "Master Setup", allowedRoles: ["Super Admin", "Hospital Admin", "Management", "HR Manager"], status: "ready" },

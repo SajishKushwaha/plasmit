@@ -1,6 +1,9 @@
 "use client";
 
-import { AlertTriangle, BedDouble, LockKeyhole, ShieldAlert, UserRound } from "lucide-react";
+import * as React from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AlertTriangle, BedDouble, LockKeyhole, Printer, RefreshCcw, Save, Search, ShieldAlert, UserRound } from "lucide-react";
+import { toast } from "sonner";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -8,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/ui/status-pill";
 import { PatientAlertChips } from "@/features/patients/patient-shared";
-import { getPatientById } from "@/data/patients";
-import { mockInfectionIsolationFlags } from "@/data/ipd";
+import { getPatientById, mockPatients, mockPatientVisits } from "@/data/patients";
+import { mockAdmissions, mockInfectionIsolationFlags } from "@/data/ipd";
 import type { AdmissionRecord, BedRecord, Role, StatusTone, TriagePriority } from "@/types";
 
 export const ipdAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"];
@@ -29,6 +33,7 @@ export function ProtectedIpd({ children }: { children: (state: { role: Role; rea
   }
   return (
     <div className="space-y-4">
+      <IpdPatientWorkspaceHeader />
       {children({ role: access.role, readOnly: access.readOnly })}
     </div>
   );
@@ -48,6 +53,125 @@ export function IpdStatus({ status }: { status: string }) {
 
 export function TriageBadge({ priority }: { priority: TriagePriority | string }) {
   return <StatusPill tone={ipdTone(priority)}>{priority}</StatusPill>;
+}
+
+function patientName(patient: (typeof mockPatients)[number]) {
+  return `${patient.firstName} ${patient.middleName ? `${patient.middleName} ` : ""}${patient.lastName}`.trim();
+}
+
+function patientSearchText(patient: (typeof mockPatients)[number]) {
+  return [
+    patient.id,
+    patient.uhid,
+    patient.firstName,
+    patient.middleName ?? "",
+    patient.lastName,
+    patient.mobile,
+    patient.department,
+    patient.status,
+  ].join(" ").toLowerCase();
+}
+
+function IpdPatientWorkspaceHeader() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const requestedPatientId = searchParams.get("patientId") ?? "pat-001";
+  const patient = mockPatients.find((record) => record.id === requestedPatientId) ?? mockPatients[0];
+  const [patientSearch, setPatientSearch] = React.useState("");
+  const visits = mockPatientVisits.filter((visit) => visit.patientId === patient.id);
+  const admission = mockAdmissions.find((record) => record.patientId === patient.id);
+  const allergyFlags = patient.alertFlags.filter((flag) => flag.toLowerCase().includes("allergy"));
+  const nonAllergyFlags = patient.alertFlags.filter((flag) => !flag.toLowerCase().includes("allergy"));
+  const encounterRefs = [
+    admission?.admissionNo,
+    ...visits.map((visit) => visit.referenceNumber),
+  ].filter(Boolean);
+  const fields = [
+    ["IPD/OPD No.", encounterRefs.join(" / ") || "No active encounter"],
+    ["Ward/Bed", admission ? `${admission.ward} / ${admission.bedId}` : `${patient.department} OPD`],
+    ["Consultant", admission?.consultant ?? visits[0]?.provider ?? "Duty consultant"],
+    ["Allergy", allergyFlags.length ? allergyFlags.map((flag) => flag.replace(/^Allergy:\s*/i, "")).join(", ") : "No known allergy"],
+  ];
+  const filteredPatients = React.useMemo(() => {
+    const query = patientSearch.trim().toLowerCase();
+    if (!query) return [];
+    return mockPatients.filter((record) => patientSearchText(record).includes(query)).slice(0, 8);
+  }, [patientSearch]);
+
+  const selectPatient = (patientId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("patientId", patientId);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    setPatientSearch("");
+  };
+
+  return (
+    <Card className="sticky top-16 z-30 overflow-visible border-border bg-white shadow-soft">
+      <CardContent className="relative space-y-3 p-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-lg font-bold text-foreground">{patientName(patient)}</h1>
+              <Badge tone="muted">{patient.id}</Badge>
+              {(nonAllergyFlags.length ? nonAllergyFlags : []).map((flag) => (
+                <Badge key={flag} tone="warning">{flag}</Badge>
+              ))}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground">
+              <span>{patient.uhid}</span>
+              <span>{patient.age}/{patient.gender.charAt(0)}</span>
+              <span>{fields[1][1]}</span>
+            </div>
+          </div>
+          <div className="flex min-w-0 flex-1 flex-wrap justify-start gap-2 xl:justify-end">
+            <div className="relative min-w-64 flex-1 xl:max-w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                aria-label="Search IPD patient"
+                className="h-9 bg-white pl-9 text-sm font-semibold"
+                placeholder="Search patient / UHID"
+                value={patientSearch}
+                onChange={(event) => setPatientSearch(event.target.value)}
+              />
+              {patientSearch ? (
+                <div className="absolute left-0 top-10 z-50 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-white p-1 shadow-soft">
+                  {filteredPatients.length ? filteredPatients.map((record) => (
+                    <button
+                      className="flex w-full flex-col rounded-md px-3 py-2 text-left text-sm outline-none hover:bg-surface-muted focus-visible:bg-surface-muted"
+                      key={record.id}
+                      onClick={() => selectPatient(record.id)}
+                      type="button"
+                    >
+                      <span className="truncate font-semibold text-foreground">{patientName(record)}</span>
+                      <span className="truncate text-xs text-muted-foreground">{record.uhid} | {record.age}/{record.gender} | {record.department}</span>
+                    </button>
+                  )) : (
+                    <div className="px-3 py-3 text-sm text-muted-foreground">No patient found.</div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+            <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button>
+            <Button size="sm" variant="outline" onClick={() => toast.info("Last IPD draft restored")}><RefreshCcw className="h-4 w-4" />Restore</Button>
+            <Button size="sm" onClick={() => toast.success("IPD draft autosaved")}><Save className="h-4 w-4" />Save</Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3 text-xs">
+          {fields.map(([label, value]) => (
+            <div className="rounded-md bg-surface-muted px-2.5 py-1.5" key={label}>
+              <span className="font-semibold text-muted-foreground">{label}: </span>
+              <span className="font-semibold text-foreground">{value}</span>
+            </div>
+          ))}
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Badge tone="info">Autosave 20 sec</Badge>
+            <Badge tone="muted">Shortcuts ready</Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export function InpatientHeader({ admission }: { admission: AdmissionRecord }) {

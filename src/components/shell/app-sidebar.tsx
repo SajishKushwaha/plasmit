@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,10 +35,15 @@ export function AppSidebar({
     return () => window.removeEventListener("hashchange", updateHash);
   }, []);
 
-  const visibleItems = useMemo(
-    () => navigationItems.filter((item) => item.allowedRoles.includes(role)),
-    [role],
-  );
+  const visibleItems = useMemo(() => {
+    const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
+
+    if (role === "Super Admin") {
+      return roleItems.filter((item) => item.id === "nursing" || item.id === "surgery");
+    }
+
+    return roleItems;
+  }, [role]);
   const groups = useMemo(
     () => Array.from(new Set(visibleItems.map((item) => item.group))),
     [visibleItems],
@@ -56,12 +61,12 @@ export function AppSidebar({
         {collapsed ? (
           <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-border bg-white shadow-sm">
             <Image
-              src="/plasmit-sidebar-logo.webp"
-              alt="Plasmit Healthcare IT Vector"
-              width={110}
-              height={44}
+              src="/plasmit-logo-mark.png"
+              alt="Plasmit Healthcare IT logo mark"
+              width={160}
+              height={320}
               priority
-              className="h-9 w-[90px] max-w-none -translate-x-1 object-contain object-left"
+              className="h-10 w-10 object-contain"
             />
           </div>
         ) : (
@@ -194,8 +199,7 @@ export function AppSidebar({
           variant="ghost"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          {!collapsed ? "Collapse" : null}
+          {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
         </Button>
       </div>
     </aside>

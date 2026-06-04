@@ -50,9 +50,7 @@ export function TopHeader() {
         <div className="hidden items-center gap-2 text-sm font-bold text-foreground lg:flex">
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <span className="truncate">{hospitalContext.name}</span>
-          <span className="hidden text-muted-foreground sm:inline">/ {hospitalContext.branch}</span>
         </div>
-        <div className="hidden text-xs text-muted-foreground md:block">{hospitalContext.department} • {hospitalContext.shift}</div>
       </div>
       <CommandSearch />
       <RoleSwitcher className="hidden sm:flex" />

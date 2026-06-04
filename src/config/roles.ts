@@ -90,6 +90,7 @@ export const doctorAllowedModules = [
   "/clinical-examination",
   "/rapid-review",
   "/emergency",
+  "/poct",
 ];
 
 /**
@@ -135,13 +136,13 @@ export const roleModuleAccess: Record<Role, {
     ],
   },
   Nurse: {
-    allowed: ["/dashboard", "/admission", "/ipd", "/opd", "/emergency"],
+    allowed: ["/dashboard", "/admission", "/ipd", "/intake-output", "/nurse", "/poct", "/opd", "/emergency", "/surgery"],
   },
   Receptionist: {
-    allowed: ["/dashboard", "/appointments", "/front-office", "/billing-desk"],
+    allowed: ["/dashboard", "/appointments", "/front-office", "/billing-desk", "/surgery"],
   },
   "Lab Technician": {
-    allowed: ["/dashboard", "/laboratory"],
+    allowed: ["/dashboard", "/laboratory", "/poct"],
   },
   Radiologist: {
     allowed: ["/dashboard", "/radiology"],

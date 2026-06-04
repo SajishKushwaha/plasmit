@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 
 import { useUiPreference } from "@/components/providers/ui-preference-provider";
 import { AppFooter } from "@/components/shell/app-footer";
@@ -17,11 +18,26 @@ const AppSidebar = dynamic(
 );
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const { preference, setPreference } = useUiPreference();
   const [collapsed, setCollapsed] = React.useState(false);
+  const [authenticated, setAuthenticated] = React.useState(false);
+  const [checkingAuth, setCheckingAuth] = React.useState(true);
   const sidebarCollapsed =
     preference.sidebar === "collapsed" ||
     (preference.sidebar === "auto" && collapsed);
+
+  React.useEffect(() => {
+    if (window.localStorage.getItem("hk-general-auth") === "true") {
+      setAuthenticated(true);
+      setCheckingAuth(false);
+      return;
+    }
+
+    setCheckingAuth(false);
+    router.replace("/login");
+  }, [router]);
+
   const handleCollapsedChange = React.useCallback(
     (nextCollapsed: boolean) => {
       if (preference.sidebar === "auto") {
@@ -35,6 +51,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     },
     [preference, setPreference],
   );
+
+  if (checkingAuth || !authenticated) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-[#eef7f9] text-slate-600">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#b7e5ea] border-t-[#0b8f9a]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh max-w-full overflow-x-hidden bg-[#f8f9fc] text-foreground">

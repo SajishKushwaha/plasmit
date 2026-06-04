@@ -19,8 +19,9 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmDrawer, DetailRow, StickyActionBar } from "@/features/admin/admin-shared";
 import { PatientMini } from "@/features/appointments/appointment-shared";
-import { BedCard, InpatientHeader, InpatientSafetyPanel, IpdStatus, ProtectedIpd, TriageBadge } from "@/features/ipd/ipd-shared";
-import { AbdominalDashboardPage, CvsDashboardPage, DrainsOverviewPage, LinesDevicesOverviewPage } from "@/features/icu-monitoring/icu-monitoring-pages";
+import { BedCard, InpatientSafetyPanel, IpdStatus, ProtectedIpd, TriageBadge } from "@/features/ipd/ipd-shared";
+import { AbdominalDashboardPage, CvsDashboardPage, DrainsOverviewPage, IcuPatientSearchHeader, LinesDevicesOverviewPage } from "@/features/icu-monitoring/icu-monitoring-pages";
+import { NeuroOverviewPage } from "@/features/neuro-icu/neuro-icu-pages";
 import {
   getAdmissionById,
   mockAdmissions,
@@ -46,7 +47,7 @@ function PrintButton({ label = "Print" }: { label?: string }) {
   return <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />{label}</Button>;
 }
 
-const ipdUnifiedTabs = ["ipd", "cvs", "abdominal", "drains", "lines-devices"] as const;
+const ipdUnifiedTabs = ["ipd", "cvs", "abdominal", "drains", "lines-devices", "neuro-icu"] as const;
 type IpdUnifiedTab = (typeof ipdUnifiedTabs)[number];
 
 function getIpdUnifiedTab(value: string | null): IpdUnifiedTab {
@@ -70,6 +71,7 @@ export function IpdUnifiedModulePage() {
         <TabsTrigger value="abdominal">Abdominal</TabsTrigger>
         <TabsTrigger value="drains">Drains & Tubes</TabsTrigger>
         <TabsTrigger value="lines-devices">Lines & Devices</TabsTrigger>
+        <TabsTrigger value="neuro-icu">Neuro ICU</TabsTrigger>
       </TabsList>
       <TabsContent value="ipd">
         <IpdDashboardPage />
@@ -89,6 +91,14 @@ export function IpdUnifiedModulePage() {
       </TabsContent>
       <TabsContent value="lines-devices">
         <LinesDevicesOverviewPage />
+      </TabsContent>
+      <TabsContent value="neuro-icu">
+        <React.Suspense fallback={null}>
+          <div className="space-y-4">
+            <IcuPatientSearchHeader />
+            <NeuroOverviewPage />
+          </div>
+        </React.Suspense>
       </TabsContent>
     </Tabs>
   );
@@ -112,7 +122,7 @@ function AdmissionDrawer({ admission, onClose }: { admission: AdmissionRecord | 
 
 export function AdmissionDetailPage({ admissionId }: { admissionId: string }) {
   const admission = getAdmissionById(admissionId) ?? mockAdmissions[0];
-  return <ProtectedIpd>{({ readOnly }) => <><PageHeader eyebrow="Phase 6 • Inpatient" title="Admission Detail" description="Central inpatient workspace with bed, ward, nursing, MAR, transfer, discharge, and package context." actions={<><PrintButton label="Print summary" /><Button disabled={readOnly}>Transfer</Button><Button disabled={readOnly}>Start discharge</Button></>} /><InpatientHeader admission={admission} /><InpatientSafetyPanel patientId={admission.patientId} /><Tabs defaultValue="overview" className="space-y-4"><TabsList><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="rounds">Rounds</TabsTrigger><TabsTrigger value="nursing">Nursing</TabsTrigger><TabsTrigger value="mar">MAR</TabsTrigger><TabsTrigger value="io">Intake-output</TabsTrigger><TabsTrigger value="transfers">Transfers</TabsTrigger><TabsTrigger value="discharge">Discharge</TabsTrigger><TabsTrigger value="audit">Audit</TabsTrigger></TabsList><TabsContent value="overview"><SummaryGrid><InfoCard title="Admission" value={admission.status} /><InfoCard title="Diagnosis" value={admission.diagnosis} /><InfoCard title="Bed/Ward" value={`${admission.bedId} • ${admission.ward}`} /><InfoCard title="Consultant" value={admission.consultant} /></SummaryGrid></TabsContent><TabsContent value="rounds"><GenericTable rows={mockDoctorRounds.filter(r => r.admissionId === admission.id)} /></TabsContent><TabsContent value="nursing"><GenericTable rows={mockNursingTasks.filter(t => t.admissionId === admission.id)} /></TabsContent><TabsContent value="mar"><MarTable admissionId={admission.id} /></TabsContent><TabsContent value="io"><GenericTable rows={mockIntakeOutput.filter(i => i.admissionId === admission.id)} /></TabsContent><TabsContent value="transfers"><GenericTable rows={mockTransfers.filter(t => t.admissionId === admission.id)} /></TabsContent><TabsContent value="discharge"><GenericTable rows={mockDischarges.filter(d => d.admissionId === admission.id)} /></TabsContent><TabsContent value="audit"><AlertBanner icon={ShieldAlert} tone="info" title="Future audit">Bed, medication, transfer, and discharge state changes will be audited.</AlertBanner></TabsContent></Tabs><StickyActionBar readOnly={readOnly} saveLabel="Save inpatient workspace" /></>}</ProtectedIpd>;
+  return <ProtectedIpd>{({ readOnly }) => <><PageHeader eyebrow="Phase 6 • Inpatient" title="Admission Detail" description="Central inpatient workspace with bed, ward, nursing, MAR, transfer, discharge, and package context." actions={<><PrintButton label="Print summary" /><Button disabled={readOnly}>Transfer</Button><Button disabled={readOnly}>Start discharge</Button></>} /><InpatientSafetyPanel patientId={admission.patientId} /><Tabs defaultValue="overview" className="space-y-4"><TabsList><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="rounds">Rounds</TabsTrigger><TabsTrigger value="nursing">Nursing</TabsTrigger><TabsTrigger value="mar">MAR</TabsTrigger><TabsTrigger value="io">Intake-output</TabsTrigger><TabsTrigger value="transfers">Transfers</TabsTrigger><TabsTrigger value="discharge">Discharge</TabsTrigger><TabsTrigger value="audit">Audit</TabsTrigger></TabsList><TabsContent value="overview"><SummaryGrid><InfoCard title="Admission" value={admission.status} /><InfoCard title="Diagnosis" value={admission.diagnosis} /><InfoCard title="Bed/Ward" value={`${admission.bedId} • ${admission.ward}`} /><InfoCard title="Consultant" value={admission.consultant} /></SummaryGrid></TabsContent><TabsContent value="rounds"><GenericTable rows={mockDoctorRounds.filter(r => r.admissionId === admission.id)} /></TabsContent><TabsContent value="nursing"><GenericTable rows={mockNursingTasks.filter(t => t.admissionId === admission.id)} /></TabsContent><TabsContent value="mar"><MarTable admissionId={admission.id} /></TabsContent><TabsContent value="io"><GenericTable rows={mockIntakeOutput.filter(i => i.admissionId === admission.id)} /></TabsContent><TabsContent value="transfers"><GenericTable rows={mockTransfers.filter(t => t.admissionId === admission.id)} /></TabsContent><TabsContent value="discharge"><GenericTable rows={mockDischarges.filter(d => d.admissionId === admission.id)} /></TabsContent><TabsContent value="audit"><AlertBanner icon={ShieldAlert} tone="info" title="Future audit">Bed, medication, transfer, and discharge state changes will be audited.</AlertBanner></TabsContent></Tabs><StickyActionBar readOnly={readOnly} saveLabel="Save inpatient workspace" /></>}</ProtectedIpd>;
 }
 
 export function BedsPage({ mode = "beds" }: { mode?: "beds" | "wards" | "icu" }) {

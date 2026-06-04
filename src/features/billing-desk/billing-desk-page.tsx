@@ -283,7 +283,7 @@ function BillingDeskTopbar() {
 function WorkflowTabs({ active, onChange }: { active: BillingDeskStep; onChange: (step: BillingDeskStep) => void }) {
   return (
     <Card className="sticky top-16 z-10">
-      <CardContent className="flex gap-1 overflow-x-auto p-2">
+      <CardContent className="tabs-scroll-list relative flex gap-1 overflow-x-auto p-2 pb-3">
         {billingDeskSteps.slice(0, 9).map((step) => {
           const Icon = step.icon;
           const selected = active === step.id;

@@ -1,5 +1,6 @@
-import { DischargeManagementPage } from "@/features/discharge/discharge-pages";
+import { SimpleIpdPage } from "@/features/ipd/ipd-pages";
+import { mockDischarges } from "@/data/ipd";
 
 export default function Page() {
-  return <DischargeManagementPage />;
+  return <SimpleIpdPage title="Discharge" description="Checklist, summary, billing placeholder, approval, delay/LAMA/deceased states, and print." rows={mockDischarges} />;
 }

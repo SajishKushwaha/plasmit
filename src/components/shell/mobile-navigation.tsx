@@ -19,7 +19,11 @@ export function MobileNavigation() {
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
   const { role, roles, setRole } = useRole();
-  const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
+  const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
+  const visibleItems =
+    role === "Super Admin"
+      ? roleItems.filter((item) => item.id === "nursing" || item.id === "surgery")
+      : roleItems;
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
 
   return (

@@ -9,12 +9,14 @@ import {
   CreditCard,
   FlaskConical,
   IdCard,
+  LogOut,
   Pill,
   Stethoscope,
   Users,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useRole } from "@/components/providers/role-provider";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,7 @@ const AppointmentTimelineChart = dynamic(
 
 export function DashboardPage() {
   const { role } = useRole();
+  const router = useRouter();
   const quickActions =
     role === "Doctor"
       ? dashboardQuickActions.filter((action) => ["consult", "sample", "monitor"].includes(action.id))
@@ -47,9 +50,27 @@ export function DashboardPage() {
             ? dashboardQuickActions.filter((action) => ["bill", "monitor", "inventory"].includes(action.id))
             : dashboardQuickActions;
 
+  function handleLogout() {
+    window.localStorage.removeItem("hk-general-auth");
+    window.localStorage.removeItem("hk-general-remember");
+    window.localStorage.removeItem("plasmit-role");
+    router.replace("/login");
+  }
+
   return (
     <div className="space-y-5">
-      <section className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Hospital Dashboard</h1>
+          <p className="text-sm font-medium text-muted-foreground">Secure HK General ERP workspace</p>
+        </div>
+        <Button variant="outline" onClick={handleLogout}>
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
+      </div>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {dashboardStats.map((stat, index) => (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300" key={stat.id} style={{ animationDelay: `${index * 25}ms` }}>
             <StatCard
@@ -113,8 +134,8 @@ export function DashboardPage() {
                   <span>Doctors</span>
                   <span>Status</span>
                 </div>
-                {departmentActivity.map((item) => (
-                  <div className="grid grid-cols-[1.2fr_0.7fr_0.7fr_0.8fr] items-center border-b border-border px-3 py-3 text-sm last:border-0" key={item.department}>
+                {departmentActivity.map((item, index) => (
+                  <div className={`grid grid-cols-[1.2fr_0.7fr_0.7fr_0.8fr] items-center border-b border-border px-3 py-3 text-sm last:border-0 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`} key={item.department}>
                     <span className="font-medium text-foreground">{item.department}</span>
                     <span>{item.queue}</span>
                     <span>{item.doctors}</span>
@@ -143,8 +164,8 @@ export function DashboardPage() {
                 <TabsTrigger value="tasks">Tasks</TabsTrigger>
               </TabsList>
               <TabsContent value="alerts" className="space-y-2">
-                {recentActivity.map((item) => (
-                  <div className="rounded-lg border border-border bg-surface-muted p-3" key={item.id}>
+                {recentActivity.map((item, index) => (
+                  <div className={`rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`} key={item.id}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-medium text-foreground">{item.title}</div>
@@ -156,10 +177,10 @@ export function DashboardPage() {
                 ))}
               </TabsContent>
               <TabsContent value="beds" className="space-y-3">
-                {bedOccupancy.map((item) => {
+                {bedOccupancy.map((item, index) => {
                   const pct = Math.round((item.occupied / item.total) * 100);
                   return (
-                    <div key={item.ward}>
+                    <div className={`rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`} key={item.ward}>
                       <div className="mb-1 flex justify-between text-xs">
                         <span className="font-medium text-foreground">{item.ward}</span>
                         <span className="text-muted-foreground">{item.occupied}/{item.total}</span>
@@ -172,8 +193,8 @@ export function DashboardPage() {
                 })}
               </TabsContent>
               <TabsContent value="tasks" className="space-y-2">
-                {["Approve emergency discount", "Acknowledge critical lab alert", "Review ICU discharge readiness"].map((task) => (
-                  <div className="flex items-center gap-3 rounded-lg border border-border p-3" key={task}>
+                {["Approve emergency discount", "Acknowledge critical lab alert", "Review ICU discharge readiness"].map((task, index) => (
+                  <div className={`flex items-center gap-3 rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`} key={task}>
                     <ClipboardCheck className="h-4 w-4 text-primary" />
                     <span className="text-sm text-foreground">{task}</span>
                   </div>

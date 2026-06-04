@@ -133,22 +133,7 @@ export function LoginPage() {
     <main className="relative min-h-dvh overflow-hidden bg-[#eef6ff] text-slate-950">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(96,165,250,0.18),transparent_34%),radial-gradient(circle_at_88%_14%,rgba(191,219,254,0.38),transparent_30%),linear-gradient(135deg,#f8fbff_0%,#eff6ff_48%,#eaf3ff_100%)]" />
       <div className="relative mx-auto grid min-h-dvh w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 py-6 lg:grid-cols-2 lg:px-8">
-        <section className="hidden min-h-[calc(100dvh-3rem)] flex-col justify-between overflow-hidden rounded-[32px] border border-white/75 bg-white/45 p-8 shadow-[0_24px_70px_rgba(22,78,99,0.10)] backdrop-blur lg:flex xl:p-10">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/plasmit-sidebar-logo.webp"
-              alt="Plasmit Healthcare IT Vector logo"
-              width={220}
-              height={89}
-              priority
-              className="h-auto w-[180px] object-contain"
-            />
-            <div className="sr-only">
-              <div className="text-sm font-bold tracking-tight text-slate-950">HK General</div>
-              <div className="text-xs font-medium text-slate-500">Hong Kong General Hospital</div>
-            </div>
-          </div>
-
+        <section className="hidden min-h-[calc(100dvh-3rem)] flex-col justify-center overflow-hidden rounded-[32px] border border-white/75 bg-white/45 p-8 shadow-[0_24px_70px_rgba(22,78,99,0.10)] backdrop-blur lg:flex xl:p-10">
           <div className="flex flex-1 items-center justify-center py-6">
             <div className="relative w-full max-w-[520px]">
               <div className="absolute -left-10 top-8 h-44 w-44 rounded-full bg-[#bfdbfe]/70 blur-3xl" />
@@ -183,30 +168,10 @@ export function LoginPage() {
               </div>
             </div>
           </div>
-
-          <div className="flex items-center justify-between gap-4 text-xs font-medium text-slate-500">
-            <span>© 2026 HK General Hospital. All rights reserved.</span>
-            <Link className="text-[#2563eb] underline-offset-4 hover:underline" href="/forgot-password">Technical assistance</Link>
-          </div>
         </section>
 
         <section className="flex min-h-[calc(100dvh-3rem)] min-w-0 items-center justify-center px-0 py-6 sm:px-4 lg:px-8">
           <div className="w-[calc(100vw-2rem)] min-w-0 max-w-[455px] animate-[loginCardIn_560ms_cubic-bezier(.2,.8,.2,1)_both] sm:w-full">
-            <div className="mb-7 flex items-center justify-center gap-3 lg:hidden">
-              <Image
-                src="/plasmit-sidebar-logo.webp"
-                alt="Plasmit Healthcare IT Vector logo"
-                width={220}
-                height={89}
-                priority
-                className="h-auto w-[180px] object-contain"
-              />
-              <div className="sr-only">
-                <div className="text-base font-bold tracking-tight text-slate-950">HK General</div>
-                <div className="text-xs font-medium text-slate-500">Hong Kong General Hospital</div>
-              </div>
-            </div>
-
             <div className="min-w-0 rounded-[28px] border border-white/80 bg-white/90 p-6 shadow-[0_28px_80px_rgba(15,82,92,0.16)] backdrop-blur sm:p-8">
               <div className="mb-7 text-center">
                 <Image

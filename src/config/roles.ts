@@ -13,6 +13,7 @@ export const roleRoutes: Record<Role, string> = {
   "Hospital Admin": "/dashboard",
   Doctor: "/doctor-dashboard",
   Nurse: "/icu-nursing",
+  "Blood Bank": "/blood-bank/blood-request",
   Receptionist: "/dashboard",
   "Lab Technician": "/dashboard",
   Radiologist: "/dashboard",
@@ -85,6 +86,7 @@ export const adminPermissions = [
  */
 export const doctorAllowedModules = [
   "/doctor-dashboard",
+  "/doctor",
   "/appointments",
   "/opd",
   "/clinical-examination",
@@ -137,6 +139,9 @@ export const roleModuleAccess: Record<Role, {
   },
   Nurse: {
     allowed: ["/icu-nursing", "/dashboard", "/admission", "/ipd", "/intake-output", "/nurse", "/poct", "/opd", "/emergency", "/surgery"],
+  },
+  "Blood Bank": {
+    allowed: ["/blood-bank"],
   },
   Receptionist: {
     allowed: ["/dashboard", "/appointments", "/front-office", "/billing-desk", "/surgery"],

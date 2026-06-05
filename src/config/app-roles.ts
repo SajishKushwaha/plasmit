@@ -5,6 +5,7 @@ export const roles: Role[] = [
   "Hospital Admin",
   "Doctor",
   "Nurse",
+  "Blood Bank",
   "Receptionist",
   "Lab Technician",
   "Radiologist",

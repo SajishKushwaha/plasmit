@@ -5,6 +5,7 @@ export type Role =
   | "Hospital Admin"
   | "Doctor"
   | "Nurse"
+  | "Blood Bank"
   | "Receptionist"
   | "Lab Technician"
   | "Radiologist"

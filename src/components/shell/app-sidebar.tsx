@@ -43,7 +43,7 @@ export function AppSidebar({
     }
 
     if (role === "Nurse") {
-      return roleItems.filter((item) => item.id.startsWith("icu-nursing-"));
+      return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-"));
     }
 
     return roleItems;

@@ -111,10 +111,26 @@ export function AppSidebar({
                     const childRouteHash = childHash ? `#${childHash}` : "";
                     return pathname === (childPath || "/") && (childRouteHash ? currentHash === childRouteHash : !currentHash);
                   }) ?? false;
+                  const moreSpecificRouteActive = visibleItems.some((candidate) => {
+                    if (candidate.id === item.id) return false;
+                    const [candidatePath = "/", candidateHash] = candidate.route.split("#");
+                    const candidateRoutePath = candidatePath || "/";
+                    const candidateRouteHash = candidateHash ? `#${candidateHash}` : "";
+                    const candidateMatches =
+                      pathname === candidateRoutePath ||
+                      (!candidateRouteHash && candidateRoutePath !== "/dashboard" && candidateRoutePath !== "/doctor-dashboard" && pathname.startsWith(`${candidateRoutePath}/`));
+
+                    return (
+                      candidateMatches &&
+                      (!candidateRouteHash || currentHash === candidateRouteHash) &&
+                      candidateRoutePath.startsWith(`${itemRoutePath}/`)
+                    );
+                  });
                   const active =
                     exactRouteActive ||
                     childActive ||
-                    (!itemRouteHash &&
+                    (!moreSpecificRouteActive &&
+                      !itemRouteHash &&
                       itemRoutePath !== "/dashboard" &&
                       itemRoutePath !== "/doctor-dashboard" &&
                       pathname.startsWith(`${itemRoutePath}/`));

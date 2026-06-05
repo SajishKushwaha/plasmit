@@ -4,13 +4,55 @@ export type RapidResponseLevel = "Routine" | "RN Review" | "MDT Review" | "MER C
 export type RapidZone = "Safe" | "Yellow" | "Red" | "Purple";
 export type RapidQueueStatus = "New" | "In review" | "Acknowledged" | "Escalated" | "Closed";
 export type AdultObservationRiskLevel = "critical" | "highRisk" | "warning" | "normal" | "empty";
+export type RapidPulseRhythm =
+  | "Regular"
+  | "Irregular"
+  | "Regularly irregular"
+  | "Irregularly irregular"
+  | "Ectopic beats felt"
+  | "Sinus rhythm"
+  | "AF"
+  | "SVT"
+  | "VT"
+  | "VF"
+  | "Complete heart block"
+  | "Not assessed"
+  | "Other";
+export type RapidPulseSource = "Manual" | "Manual radial pulse" | "Apical pulse" | "Monitor" | "Pulse oximeter" | "Arterial line";
+export type RapidPulseSite = "Radial" | "Brachial" | "Carotid" | "Femoral" | "Dorsalis pedis" | "Posterior tibial" | "Apical" | "Arterial line";
+export type RapidPulseQuality = "Normal" | "Weak/thready" | "Bounding" | "Not palpable" | "Unequal peripheral pulses" | "Diminished";
+export type RapidPulseSymptom = "Chest pain" | "Palpitation" | "Dizziness" | "Syncope" | "Shortness of breath";
+export type RapidPulseAction = "Doctor informed" | "ECG requested" | "Repeat vitals" | "No immediate action";
+export type RapidEcgRhythm =
+  | "Not confirmed"
+  | "Sinus rhythm"
+  | "Sinus bradycardia"
+  | "Sinus tachycardia"
+  | "AF"
+  | "Atrial fibrillation"
+  | "Atrial flutter"
+  | "SVT"
+  | "VT"
+  | "Ventricular tachycardia"
+  | "VF"
+  | "Ventricular fibrillation"
+  | "Paced rhythm"
+  | "Complete heart block"
+  | "Heart block"
+  | "Other ECG rhythm";
 export type AdultObservationVitalType =
   | "respiratoryRate"
   | "oxygenSaturation"
   | "oxygenFlowRate"
+  | "fio2"
   | "deliveryMethod"
   | "bloodPressure"
   | "pulseRate"
+  | "monitorHeartRate"
+  | "pulseDeficit"
+  | "pulseRhythm"
+  | "pulseQuality"
+  | "pulseSite"
   | "temperature"
   | "consciousnessSedation"
   | "painScore"
@@ -42,9 +84,17 @@ export type RapidObservationSet = {
   respiratoryRate: string;
   spo2: string;
   oxygenFlow: string;
+  fio2?: string;
   deliveryMethod?: "Room air" | "Nasal cannula" | "Simple mask" | "Venturi mask" | "NRBM" | "CPAP" | "Ventilator";
   bloodPressure: string;
   pulse: string;
+  monitorHeartRate?: string;
+  pulseRhythm?: RapidPulseRhythm;
+  pulseSource?: RapidPulseSource;
+  pulseSite?: RapidPulseSite;
+  pulseQuality?: RapidPulseQuality;
+  pulseSymptoms?: RapidPulseSymptom[];
+  pulseActionTaken?: RapidPulseAction;
   temperature: string;
   consciousness: string;
   painScore: string;
@@ -109,15 +159,60 @@ type AdultObservationRiskRanges = Partial<Record<Exclude<AdultObservationRiskLev
 
 export const adultObservationHours = Array.from({ length: 24 }, (_, hour) => `${hour.toString().padStart(2, "0")}:00`);
 
+export const rapidPulseRhythmOptions: RapidPulseRhythm[] = [
+  "Regular",
+  "Sinus rhythm",
+  "Irregular",
+  "Regularly irregular",
+  "Irregularly irregular",
+  "Ectopic beats felt",
+  "AF",
+  "SVT",
+  "VT",
+  "VF",
+  "Complete heart block",
+  "Not assessed",
+  "Other",
+];
+export const rapidPulseSourceOptions: RapidPulseSource[] = ["Manual radial pulse", "Apical pulse", "Monitor", "Pulse oximeter", "Arterial line"];
+export const rapidPulseSiteOptions: RapidPulseSite[] = ["Radial", "Brachial", "Carotid", "Femoral", "Dorsalis pedis", "Posterior tibial", "Apical", "Arterial line"];
+export const rapidPulseQualityOptions: RapidPulseQuality[] = ["Normal", "Weak/thready", "Bounding", "Not palpable", "Unequal peripheral pulses", "Diminished"];
+export const rapidPulseSymptomOptions: RapidPulseSymptom[] = ["Chest pain", "Palpitation", "Dizziness", "Syncope", "Shortness of breath"];
+export const rapidPulseActionOptions: RapidPulseAction[] = ["Doctor informed", "ECG requested", "Repeat vitals", "No immediate action"];
+export const rapidEcgRhythmOptions: RapidEcgRhythm[] = [
+  "Not confirmed",
+  "Sinus rhythm",
+  "Sinus bradycardia",
+  "Sinus tachycardia",
+  "AF",
+  "Atrial fibrillation",
+  "Atrial flutter",
+  "SVT",
+  "VT",
+  "Ventricular tachycardia",
+  "VF",
+  "Ventricular fibrillation",
+  "Paced rhythm",
+  "Complete heart block",
+  "Heart block",
+  "Other ECG rhythm",
+];
+
 export const adultObservationChartRows: Array<{ vitalType: AdultObservationVitalType; label: string; unit?: string }> = [
   { vitalType: "respiratoryRate", label: "Respiratory Rate", unit: "/min" },
   { vitalType: "oxygenSaturation", label: "O2 Saturation", unit: "%" },
   { vitalType: "oxygenFlowRate", label: "O2 Flow Rate", unit: "L/min" },
+  { vitalType: "fio2", label: "FiO2", unit: "%" },
   { vitalType: "deliveryMethod", label: "Delivery Method" },
   { vitalType: "bloodPressure", label: "Blood Pressure", unit: "mmHg" },
   { vitalType: "pulseRate", label: "Pulse Rate", unit: "/min" },
+  { vitalType: "monitorHeartRate", label: "Monitor Heart Rate", unit: "/min" },
+  { vitalType: "pulseDeficit", label: "Pulse Deficit", unit: "bpm" },
+  { vitalType: "pulseRhythm", label: "Pulse Rhythm" },
+  { vitalType: "pulseQuality", label: "Pulse Quality" },
+  { vitalType: "pulseSite", label: "Pulse Site" },
   { vitalType: "temperature", label: "Temperature", unit: "deg C" },
-  { vitalType: "consciousnessSedation", label: "Consciousness / Sedation" },
+  { vitalType: "consciousnessSedation", label: "GCS Score" },
   { vitalType: "painScore", label: "Pain Score" },
   { vitalType: "intervention", label: "Intervention" },
 ];
@@ -149,11 +244,28 @@ export const adultObservationRiskConfig: Record<string, AdultObservationRiskRang
     warning: [{ min: 1, max: 5 }],
     normal: [{ min: 0, max: 0 }],
   },
+  fio2: {
+    critical: [{ min: 80 }],
+    highRisk: [{ min: 60, max: 79 }],
+    warning: [{ min: 25, max: 59 }],
+    normal: [{ min: 21, max: 24 }],
+  },
   pulseRate: {
     critical: [{ min: 140 }, { max: 40 }],
     highRisk: [{ min: 120, max: 139 }, { min: 41, max: 50 }],
     warning: [{ min: 100, max: 119 }, { min: 51, max: 59 }],
     normal: [{ min: 60, max: 99 }],
+  },
+  monitorHeartRate: {
+    critical: [{ min: 140 }, { max: 40 }],
+    highRisk: [{ min: 120, max: 139 }, { min: 41, max: 50 }],
+    warning: [{ min: 100, max: 119 }, { min: 51, max: 59 }],
+    normal: [{ min: 60, max: 99 }],
+  },
+  pulseDeficit: {
+    highRisk: [{ min: 20 }],
+    warning: [{ min: 11, max: 19 }],
+    normal: [{ min: 0, max: 10 }],
   },
   temperature: {
     critical: [{ min: 39.1 }, { max: 35 }],
@@ -184,6 +296,9 @@ export function getRiskLevel(vitalType: AdultObservationVitalType, value: string
   const hasValue = value !== null && value !== undefined && String(value).trim() !== "" && String(value).trim() !== "--";
   if (!hasValue) return "empty";
 
+  if (vitalType === "pulseRhythm") return pulseRhythmRiskLevel(String(value));
+  if (vitalType === "pulseQuality") return pulseQualityRiskLevel(String(value));
+
   const ranges = adultObservationRiskConfig[vitalType];
   if (!ranges) return "normal";
 
@@ -192,6 +307,62 @@ export function getRiskLevel(vitalType: AdultObservationVitalType, value: string
 
   const order: Array<Exclude<AdultObservationRiskLevel, "empty">> = ["critical", "highRisk", "warning", "normal"];
   return order.find((level) => ranges[level]?.some((range) => valueInRange(numericValue, range))) ?? "normal";
+}
+
+export function pulseRhythmRiskLevel(value: string | null | undefined): AdultObservationRiskLevel {
+  const rhythm = String(value ?? "").trim().toLowerCase();
+  if (!rhythm || rhythm === "--" || rhythm === "not assessed") return "empty";
+  if (rhythm.includes("ventricular fibrillation") || rhythm === "vf" || rhythm.includes("ventricular tachycardia") || rhythm === "vt" || rhythm.includes("complete heart block")) return "critical";
+  if (rhythm === "irregular" || rhythm === "irregularly irregular" || rhythm === "af" || rhythm.includes("atrial fibrillation") || rhythm.includes("svt") || rhythm.includes("heart block")) return "highRisk";
+  if (rhythm === "regularly irregular" || rhythm === "ectopic beats felt" || rhythm === "other" || rhythm.includes("flutter") || rhythm.includes("bradycardia") || rhythm.includes("tachycardia")) return "warning";
+  return "normal";
+}
+
+export function pulseRhythmRiskScore(value: string | null | undefined) {
+  const risk = pulseRhythmRiskLevel(value);
+  if (risk === "critical") return 3;
+  if (risk === "highRisk") return 2;
+  if (risk === "warning") return 1;
+  if (risk === "normal") return 0;
+  return null;
+}
+
+export function pulseQualityRiskLevel(value: string | null | undefined): AdultObservationRiskLevel {
+  const quality = String(value ?? "").trim().toLowerCase();
+  if (!quality || quality === "--" || quality === "not assessed") return "empty";
+  if (quality === "not palpable") return "critical";
+  if (quality === "weak/thready" || quality === "unequal peripheral pulses") return "highRisk";
+  if (quality === "bounding" || quality === "diminished") return "warning";
+  return "normal";
+}
+
+export function pulseDeficitValue(monitorHeartRate: string | number | null | undefined, pulseRate: string | number | null | undefined) {
+  const monitor = parseObservationNumber("monitorHeartRate", monitorHeartRate ?? "");
+  const pulse = parseObservationNumber("pulseRate", pulseRate ?? "");
+  if (monitor === null || pulse === null) return null;
+  return Math.abs(monitor - pulse);
+}
+
+export function pulseDeficitRiskLevel(monitorHeartRate: string | number | null | undefined, pulseRate: string | number | null | undefined): AdultObservationRiskLevel {
+  const deficit = pulseDeficitValue(monitorHeartRate, pulseRate);
+  if (deficit === null) return "empty";
+  if (deficit >= 20) return "highRisk";
+  if (deficit > 10) return "warning";
+  return "normal";
+}
+
+export function inferFio2FromOxygenSupport(oxygenFlow: string, deliveryMethod?: RapidObservationSet["deliveryMethod"]) {
+  const method = deliveryMethod?.toLowerCase() ?? "";
+  const flowText = oxygenFlow.toLowerCase();
+  const flow = Number.parseFloat(flowText.match(/\d+(\.\d+)?/)?.[0] ?? "");
+
+  if (flowText === "air" || flowText.includes("room air") || method === "room air" || flow === 0) return "21%";
+  if (method.includes("nasal")) return `${Math.min(44, 20 + Math.max(1, flow || 1) * 4)}%`;
+  if (method.includes("simple mask")) return `${Math.min(60, Math.max(40, 35 + Math.max(5, flow || 5) * 3))}%`;
+  if (method.includes("venturi")) return flow >= 8 ? "50%" : flow >= 6 ? "40%" : "28%";
+  if (method.includes("nrbm")) return flow >= 12 ? "90%" : "80%";
+  if (method.includes("cpap") || method.includes("ventilator")) return "40%";
+  return "21%";
 }
 
 function valueInRange(value: number, range: AdultObservationRange) {
@@ -220,9 +391,17 @@ type HourlyObservationSeed = {
   respiratoryRate: string;
   spo2: string;
   oxygenFlow: string;
+  fio2?: string;
   deliveryMethod?: RapidObservationSet["deliveryMethod"];
   bloodPressure: string;
   pulse: string;
+  monitorHeartRate?: string;
+  pulseRhythm?: RapidPulseRhythm;
+  pulseSource?: RapidPulseSource;
+  pulseSite?: RapidPulseSite;
+  pulseQuality?: RapidPulseQuality;
+  pulseSymptoms?: RapidPulseSymptom[];
+  pulseActionTaken?: RapidPulseAction;
   temperature: string;
   consciousness: string;
   painScore: string;
@@ -236,21 +415,34 @@ type HourlyObservationSeed = {
   reviewedAt?: string;
 };
 
-function createHourlyObservationHistory(prefix: string, seeds: HourlyObservationSeed[]): RapidObservationSet[] {
+const rapidReviewWeekDates = ["2026-05-21", "2026-05-22", "2026-05-23", "2026-05-24", "2026-05-25", "2026-05-26", "2026-05-27"];
+const rapidReviewLatestDate = rapidReviewWeekDates.at(-1) ?? "2026-05-27";
+
+function createHourlyObservationHistory(prefix: string, seeds: HourlyObservationSeed[], observationDate = rapidReviewLatestDate): RapidObservationSet[] {
   return seeds.map((seed) => {
     const hour = seed.hour.toString().padStart(2, "0");
+    const pulseRhythm = seed.pulseRhythm ?? defaultPulseRhythm(seed.pulse, seed.responseLevel);
+    const pulseSource = seed.pulseSource ?? (seed.responseLevel === "MER Call" || seed.responseLevel === "MDT Review" ? "Monitor" : "Manual radial pulse");
     return {
       id: `${prefix}-${hour}`,
-      observationDate: "2026-05-24",
-      recordedAt: `Today ${hour}:00`,
+      observationDate,
+      recordedAt: `${formatObservationDateLabel(observationDate)} ${hour}:00`,
       recordedBy: seed.recordedBy ?? "Ward Nurse",
       shift: observationShift(seed.hour),
       respiratoryRate: seed.respiratoryRate,
       spo2: seed.spo2,
       oxygenFlow: seed.oxygenFlow,
+      fio2: seed.fio2 ?? inferFio2FromOxygenSupport(seed.oxygenFlow, seed.deliveryMethod),
       deliveryMethod: seed.deliveryMethod,
       bloodPressure: seed.bloodPressure,
       pulse: seed.pulse,
+      monitorHeartRate: seed.monitorHeartRate ?? defaultMonitorHeartRate(seed.pulse, pulseRhythm),
+      pulseRhythm,
+      pulseSource,
+      pulseSite: seed.pulseSite ?? (pulseSource === "Arterial line" ? "Arterial line" : pulseSource === "Apical pulse" ? "Apical" : "Radial"),
+      pulseQuality: seed.pulseQuality ?? defaultPulseQuality(seed.responseLevel),
+      pulseSymptoms: seed.pulseSymptoms ?? defaultPulseSymptoms(seed.responseLevel),
+      pulseActionTaken: seed.pulseActionTaken ?? defaultPulseAction(seed.responseLevel),
       temperature: seed.temperature,
       consciousness: seed.consciousness,
       painScore: seed.painScore,
@@ -264,6 +456,170 @@ function createHourlyObservationHistory(prefix: string, seeds: HourlyObservation
       note: seed.note,
     };
   });
+}
+
+function createWeeklyObservationHistory(prefix: string, seeds: HourlyObservationSeed[]): RapidObservationSet[] {
+  return rapidReviewWeekDates.flatMap((date, dateIndex) => {
+    const daysBeforeLatest = rapidReviewWeekDates.length - 1 - dateIndex;
+    const daySeeds = seeds.map((seed) => adjustSeedForWeek(seed, daysBeforeLatest));
+    return createHourlyObservationHistory(`${prefix}-${date}`, daySeeds, date);
+  });
+}
+
+function createWeeklyPediatricHistory(prefix: string): RapidObservationSet[] {
+  const seeds: HourlyObservationSeed[] = [
+    { hour: 9, recordedBy: "Pediatric Nurse", respiratoryRate: "24", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "104/68", pulse: "98", temperature: "37.0", consciousness: "0", painScore: "2", urineOutput: "Not applicable", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pre-nebulization respiratory observation." },
+    { hour: 12, recordedBy: "Pediatric Nurse", respiratoryRate: "22", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "104/68", pulse: "94", temperature: "36.9", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Improving after nebulization." },
+    { hour: 15, recordedBy: "Pediatric Nurse", respiratoryRate: "20", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "104/68", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Observation stable." },
+    { hour: 18, recordedBy: "Pediatric Nurse", respiratoryRate: "20", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "104/68", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Ready for doctor review." },
+  ];
+  return rapidReviewWeekDates.flatMap((date, dateIndex) => {
+    const daysBeforeLatest = rapidReviewWeekDates.length - 1 - dateIndex;
+    const daySeeds = seeds.map((seed) => adjustSeedForWeek(seed, daysBeforeLatest));
+    return createHourlyObservationHistory(`${prefix}-${date}`, daySeeds, date);
+  });
+}
+
+function adjustSeedForWeek(seed: HourlyObservationSeed, daysBeforeLatest: number): HourlyObservationSeed {
+  if (daysBeforeLatest === 0) return seed;
+
+  const relief = Math.min(daysBeforeLatest, 4);
+  const adjustedResponse = responseForOlderObservation(seed.responseLevel, daysBeforeLatest);
+  const adjustedZone = zoneForOlderObservation(seed.dominantZone, daysBeforeLatest);
+  const oxygenFlow = adjustOxygenFlow(seed.oxygenFlow, relief);
+  const deliveryMethod = oxygenFlow === "Air" ? "Room air" : seed.deliveryMethod;
+
+  return {
+    ...seed,
+    respiratoryRate: adjustNumberText(seed.respiratoryRate, -relief, 12, 36),
+    spo2: adjustPercentText(seed.spo2, relief, 88, 99),
+    oxygenFlow,
+    fio2: undefined,
+    deliveryMethod,
+    bloodPressure: adjustBloodPressure(seed.bloodPressure, relief),
+    pulse: adjustNumberText(seed.pulse, -relief * 3, 50, 140),
+    monitorHeartRate: undefined,
+    pulseRhythm: undefined,
+    pulseQuality: undefined,
+    temperature: adjustNumberText(seed.temperature, -relief * 0.1, 35.8, 39.2, 1),
+    consciousness: adjustGcs(seed.consciousness, relief),
+    painScore: adjustPainScore(seed.painScore, relief),
+    urineOutput: adjustUrineOutput(seed.urineOutput, relief),
+    dominantZone: adjustedZone,
+    responseLevel: adjustedResponse,
+    reviewStatus: adjustedResponse === "Routine" ? "Reviewed" : seed.reviewStatus,
+    reviewedBy: adjustedResponse === "Routine" ? "Auto screening" : seed.reviewedBy,
+    reviewedAt: adjustedResponse === "Routine" ? "Same time" : seed.reviewedAt,
+    doctorAction: adjustedResponse === "Routine" ? "Continue routine observation" : seed.doctorAction,
+    note: `${seed.note} Day-${daysBeforeLatest} trend sample.`,
+  };
+}
+
+function responseForOlderObservation(responseLevel: RapidResponseLevel, daysBeforeLatest: number): RapidResponseLevel {
+  if (daysBeforeLatest >= 4) return "Routine";
+  if (daysBeforeLatest >= 2 && (responseLevel === "MER Call" || responseLevel === "MDT Review")) return "RN Review";
+  if (daysBeforeLatest >= 1 && responseLevel === "MER Call") return "MDT Review";
+  return responseLevel;
+}
+
+function zoneForOlderObservation(zone: RapidZone, daysBeforeLatest: number): RapidZone {
+  if (daysBeforeLatest >= 4) return "Safe";
+  if (daysBeforeLatest >= 2 && (zone === "Purple" || zone === "Red")) return "Yellow";
+  if (daysBeforeLatest >= 1 && zone === "Purple") return "Red";
+  return zone;
+}
+
+function formatObservationDateLabel(date: string) {
+  const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return date;
+  return `${Number(match[3])} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(match[2]) - 1] ?? match[2]} ${match[1]}`;
+}
+
+function adjustNumberText(value: string, delta: number, min: number, max: number, decimals = 0) {
+  const current = Number.parseFloat(value);
+  if (!Number.isFinite(current)) return value;
+  const next = Math.min(max, Math.max(min, current + delta));
+  return decimals ? next.toFixed(decimals) : `${Math.round(next)}`;
+}
+
+function adjustPercentText(value: string, delta: number, min: number, max: number) {
+  const current = Number.parseFloat(value);
+  if (!Number.isFinite(current)) return value;
+  const next = Math.min(max, Math.max(min, current + delta));
+  return `${Math.round(next)}%`;
+}
+
+function adjustBloodPressure(value: string, relief: number) {
+  const [sysText, diaText] = value.split("/");
+  const systolic = Number.parseFloat(sysText ?? "");
+  const diastolic = Number.parseFloat(diaText ?? "");
+  if (!Number.isFinite(systolic) || !Number.isFinite(diastolic)) return value;
+  const systolicTarget = systolic < 100 ? systolic + relief * 4 : systolic > 150 ? systolic - relief * 3 : systolic;
+  const diastolicTarget = diastolic < 65 ? diastolic + relief * 2 : diastolic > 90 ? diastolic - relief * 2 : diastolic;
+  return `${Math.round(systolicTarget)}/${Math.round(diastolicTarget)}`;
+}
+
+function adjustOxygenFlow(value: string, relief: number) {
+  const lower = value.toLowerCase();
+  if (lower === "air" || lower.includes("room air")) return "Air";
+  const flow = Number.parseFloat(value.match(/\d+(\.\d+)?/)?.[0] ?? "");
+  if (!Number.isFinite(flow)) return value;
+  const next = Math.max(0, flow - relief);
+  return next === 0 ? "Air" : `${Math.round(next)} L/min`;
+}
+
+function adjustGcs(value: string, relief: number) {
+  const score = Number.parseInt(value, 10);
+  if (!Number.isFinite(score)) return value;
+  return `${Math.max(0, score - Math.ceil(relief / 2))}`;
+}
+
+function adjustPainScore(value: string, relief: number) {
+  const score = Number.parseFloat(value);
+  if (!Number.isFinite(score)) return value;
+  return `${Math.max(0, Math.round(score - relief))}`;
+}
+
+function adjustUrineOutput(value: string, relief: number) {
+  const output = Number.parseFloat(value);
+  if (!Number.isFinite(output)) return value;
+  return `${Math.round(output + relief * 4)} ml/hr`;
+}
+
+function defaultMonitorHeartRate(pulse: string, rhythm: RapidPulseRhythm) {
+  const value = Number.parseFloat(pulse);
+  if (!Number.isFinite(value)) return pulse;
+  const risk = pulseRhythmRiskLevel(rhythm);
+  if (risk === "critical") return `${Math.round(value + 18)}`;
+  if (risk === "highRisk") return `${Math.round(value + 12)}`;
+  if (risk === "warning") return `${Math.round(value + 6)}`;
+  return `${Math.round(value)}`;
+}
+
+function defaultPulseRhythm(pulse: string, responseLevel: RapidResponseLevel): RapidPulseRhythm {
+  const value = Number.parseFloat(pulse);
+  if (responseLevel === "MER Call") return "Irregularly irregular";
+  if (responseLevel === "MDT Review" || value >= 120) return "Irregular";
+  if (responseLevel === "RN Review" || value >= 100) return "Regularly irregular";
+  return "Regular";
+}
+
+function defaultPulseQuality(responseLevel: RapidResponseLevel): RapidPulseQuality {
+  if (responseLevel === "MER Call") return "Weak/thready";
+  if (responseLevel === "MDT Review") return "Diminished";
+  return "Normal";
+}
+
+function defaultPulseSymptoms(responseLevel: RapidResponseLevel): RapidPulseSymptom[] {
+  if (responseLevel === "MER Call") return ["Shortness of breath", "Dizziness"];
+  if (responseLevel === "MDT Review") return ["Palpitation"];
+  return [];
+}
+
+function defaultPulseAction(responseLevel: RapidResponseLevel): RapidPulseAction {
+  if (responseLevel === "MER Call" || responseLevel === "MDT Review") return "ECG requested";
+  if (responseLevel === "RN Review") return "Repeat vitals";
+  return "No immediate action";
 }
 
 function observationShift(hour: number): NonNullable<RapidObservationSet["shift"]> {
@@ -317,7 +673,7 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
     trigger: "Purple zone observation with threatened circulation and reduced consciousness.",
     urineOutput: "20 ml/hr for 4 hrs",
     reviewDue: "Now",
-    observationHistory: createHourlyObservationHistory("obs-er", [
+    observationHistory: createWeeklyObservationHistory("obs-er", [
       { hour: 0, recordedBy: "ER Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "122/78", pulse: "84", temperature: "36.8", consciousness: "0", painScore: "2", urineOutput: "60 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Stable overnight observation." },
       { hour: 1, recordedBy: "ER Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "120/78", pulse: "86", temperature: "36.8", consciousness: "0", painScore: "2", urineOutput: "58 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "No acute concern." },
       { hour: 2, recordedBy: "ER Nurse", respiratoryRate: "19", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "120/76", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "2", urineOutput: "56 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Routine hourly vitals." },
@@ -349,7 +705,7 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
       { id: "bp", label: "Blood pressure", value: "84/50", unit: "mmHg", zone: "Purple", trend: "Worsening", note: "Shock-risk blood pressure range." },
       { id: "pulse", label: "Pulse rate", value: "132", unit: "/min", zone: "Red", trend: "Worsening", note: "Tachycardia with low BP." },
       { id: "temp", label: "Temperature", value: "38.9", unit: "deg C", zone: "Yellow", trend: "Stable", note: "Fever marker." },
-      { id: "loc", label: "Consciousness", value: "3", unit: "sedation", zone: "Purple", trend: "Worsening", note: "Difficult to rouse or unresponsive." },
+      { id: "loc", label: "GCS Score", value: "3", unit: "score", zone: "Purple", trend: "Worsening", note: "Difficult to rouse or unresponsive." },
     ],
     recommendedActions: ["Place emergency call with location", "Initiate life support as required", "Notify senior doctor", "Increase observations after intervention"],
   },
@@ -371,7 +727,7 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
     trigger: "Red zone pulse and urine output below 30 ml/hr for 4 hours.",
     urineOutput: "25 ml/hr for 4 hrs",
     reviewDue: "12 min",
-    observationHistory: createHourlyObservationHistory("obs-mj", [
+    observationHistory: createWeeklyObservationHistory("obs-mj", [
       { hour: 0, recordedBy: "Renal Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "132/80", pulse: "86", temperature: "36.8", consciousness: "0", painScore: "2", urineOutput: "48 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Renal ward overnight baseline." },
       { hour: 1, recordedBy: "Renal Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "132/80", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "2", urineOutput: "47 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Fluid balance stable." },
       { hour: 2, recordedBy: "Renal Nurse", respiratoryRate: "19", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "134/82", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "3", urineOutput: "46 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Routine observation." },
@@ -425,7 +781,7 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
     trigger: "Yellow zone respiratory rate, O2 saturation, and pain score.",
     urineOutput: "70 ml/hr",
     reviewDue: "25 min",
-    observationHistory: createHourlyObservationHistory("obs-ak", [
+    observationHistory: createWeeklyObservationHistory("obs-ak", [
       { hour: 0, recordedBy: "Ward Nurse", respiratoryRate: "17", spo2: "99%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "124/78", pulse: "78", temperature: "36.7", consciousness: "0", painScore: "2", urineOutput: "80 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Post-op overnight stable." },
       { hour: 1, recordedBy: "Ward Nurse", respiratoryRate: "17", spo2: "99%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "124/78", pulse: "80", temperature: "36.7", consciousness: "0", painScore: "2", urineOutput: "78 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Routine hourly charting." },
       { hour: 2, recordedBy: "Ward Nurse", respiratoryRate: "18", spo2: "99%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "126/78", pulse: "80", temperature: "36.8", consciousness: "0", painScore: "2", urineOutput: "78 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "No new complaint." },
@@ -479,12 +835,7 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
     trigger: "Stable observation set after nebulization review.",
     urineOutput: "Not applicable",
     reviewDue: "Routine",
-    observationHistory: [
-      { id: "obs-ah-1", recordedAt: "Today 14:15", recordedBy: "Pediatric Nurse", respiratoryRate: "26", spo2: "94%", oxygenFlow: "Air", bloodPressure: "104/68", pulse: "104", temperature: "37.1", consciousness: "0", painScore: "2", urineOutput: "Not applicable", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pre-nebulization respiratory observation." },
-      { id: "obs-ah-2", recordedAt: "Today 14:45", recordedBy: "Pediatric Nurse", respiratoryRate: "23", spo2: "96%", oxygenFlow: "Air", bloodPressure: "104/68", pulse: "96", temperature: "37.0", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Improving after nebulization." },
-      { id: "obs-ah-3", recordedAt: "Today 15:25", recordedBy: "Pediatric Nurse", respiratoryRate: "21", spo2: "97%", oxygenFlow: "Air", bloodPressure: "104/68", pulse: "90", temperature: "36.9", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Observation stable." },
-      { id: "obs-ah-4", recordedAt: "Today 15:55", recordedBy: "Pediatric Nurse", respiratoryRate: "20", spo2: "98%", oxygenFlow: "Air", bloodPressure: "104/68", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Ready for doctor review." },
-    ],
+    observationHistory: createWeeklyPediatricHistory("obs-ah"),
     metrics: [
       { id: "rr", label: "Respiratory rate", value: "20", unit: "/min", zone: "Safe", trend: "Improving", note: "Stable." },
       { id: "spo2", label: "O2 saturation", value: "98", unit: "%", zone: "Safe", trend: "Improving", note: "Room air." },
@@ -508,6 +859,7 @@ export const rapidResponseRules: RapidResponseRule[] = [
       "Respiratory or cardiac arrest.",
       "Threatened airway, significant bleeding, or unexpected seizure.",
       "Any observation in purple zone.",
+      "VT, VF, not palpable pulse, or suspected pulseless rhythm.",
       "Staff are seriously worried about the patient.",
     ],
     actions: [
@@ -526,6 +878,7 @@ export const rapidResponseRules: RapidResponseRule[] = [
     criteria: [
       "Any red zone observation.",
       "Unrelieved chest pain.",
+      "Pulse deficit >=20 bpm, weak/thready pulse, or high-risk rhythm.",
       "Urine output below 30 ml/hr over 4 hours or no voiding for more than 12 hours.",
       "Review not attended after escalation.",
     ],
@@ -545,6 +898,7 @@ export const rapidResponseRules: RapidResponseRule[] = [
     criteria: [
       "Any yellow zone observation.",
       "New or unexplained behaviour change.",
+      "Pulse deficit >10 bpm or new abnormal pulse quality.",
       "Pain, anxiety, or oxygen requirement needs review.",
       "Staff are worried and want clinical input.",
     ],
@@ -575,6 +929,30 @@ export const rapidObservationRows: RapidObservationRow[] = [
     doctorNote: "Escalate faster when saturation is falling despite oxygen.",
   },
   {
+    metric: "O2 flow rate",
+    safe: "0 L/min or room air",
+    yellow: "1-5 L/min",
+    red: "6-7 L/min or rapidly increasing need",
+    purple: ">=8 L/min or high-flow support with instability",
+    doctorNote: "Confirm device, prescribed target SpO2, and escalation plan if oxygen need is rising.",
+  },
+  {
+    metric: "FiO2",
+    safe: "21-24%",
+    yellow: "25-59%",
+    red: "60-79%",
+    purple: ">=80%",
+    doctorNote: "Review oxygen response, ABG need, and respiratory support if FiO2 remains high.",
+  },
+  {
+    metric: "Delivery method",
+    safe: "Room air or ordered low-flow device",
+    yellow: "New nasal cannula or simple mask requirement",
+    red: "Venturi, NRBM, CPAP, or rapid device escalation",
+    purple: "Ventilator/NRBM with falling SpO2 or respiratory distress",
+    doctorNote: "Verify device fit, flow setting, humidification, and target saturation order.",
+  },
+  {
     metric: "Blood pressure",
     safe: "90-180 systolic",
     yellow: "181-199 or 80-89",
@@ -591,6 +969,46 @@ export const rapidObservationRows: RapidObservationRow[] = [
     doctorNote: "Correlate with BP, temperature, pain, and rhythm.",
   },
   {
+    metric: "Monitor heart rate",
+    safe: "50-110 bpm",
+    yellow: "111-120 or 40-49",
+    red: "121-140 or 30-39",
+    purple: "<30 or >140",
+    doctorNote: "Compare with manual pulse and assess monitor trace quality before acting.",
+  },
+  {
+    metric: "Pulse deficit",
+    safe: "0-10 bpm",
+    yellow: "11-19 bpm",
+    red: ">=20 bpm",
+    purple: "Pulseless or unstable rhythm",
+    doctorNote: "Compare monitor heart rate with manual pulse and order ECG if persistent.",
+  },
+  {
+    metric: "Pulse rhythm",
+    safe: "Regular or sinus rhythm",
+    yellow: "Ectopic beats, regularly irregular, tachy/brady rhythm",
+    red: "AF, SVT, irregularly irregular, heart block",
+    purple: "VT, VF, complete heart block with instability",
+    doctorNote: "Request ECG, check electrolytes, symptoms, perfusion, and cardiology escalation need.",
+  },
+  {
+    metric: "Pulse quality",
+    safe: "Normal",
+    yellow: "Bounding or diminished",
+    red: "Weak/thready or unequal peripheral pulses",
+    purple: "Not palpable",
+    doctorNote: "Assess perfusion, capillary refill, BP trend, and pulse site.",
+  },
+  {
+    metric: "Pulse site",
+    safe: "Documented peripheral site with clear pulse",
+    yellow: "Difficult peripheral pulse or site changed",
+    red: "Central/apical pulse needed or unequal site finding",
+    purple: "No palpable pulse at appropriate site",
+    doctorNote: "Use central pulse if unstable and document site, quality, symmetry, and escalation.",
+  },
+  {
     metric: "Temperature",
     safe: "36.1-37.9 deg C",
     yellow: "35.1-36.0 or 38.0-38.9",
@@ -599,12 +1017,20 @@ export const rapidObservationRows: RapidObservationRow[] = [
     doctorNote: "Review sepsis risk and warming or cooling plan.",
   },
   {
-    metric: "Consciousness / sedation",
+    metric: "GCS score",
     safe: "Alert or score 0",
     yellow: "Drowsy or score 1",
     red: "Very drowsy or score 2",
     purple: "Difficult to rouse or score 3",
     doctorNote: "Protect airway and review sedatives, glucose, and neuro status.",
+  },
+  {
+    metric: "Pain score",
+    safe: "0-3 /10",
+    yellow: "4-6 /10 or increasing pain",
+    red: "7-10 /10, uncontrolled, or new severe pain",
+    purple: "Severe pain with shock, chest pain, or acute neuro/abdominal concern",
+    doctorNote: "Treat pain, identify cause, reassess response, and escalate new severe pain urgently.",
   },
 ];
 
@@ -614,6 +1040,14 @@ export const consciousnessScores = [
   { score: "2", meaning: "Frequently drowsy, easy to rouse", action: "MDT review and medication review" },
   { score: "3", meaning: "Difficult to rouse or unresponsive", action: "MER call and airway support" },
 ];
+
+export function gcsScoreLabel(value: string | number | null | undefined) {
+  const text = String(value ?? "").trim();
+  if (!text || text === "--") return "--";
+  const score = text.match(/[0-3]/)?.[0] ?? text;
+  const item = consciousnessScores.find((option) => option.score === score);
+  return item ? `${item.score}/${item.meaning}` : text;
+}
 
 export function rapidLevelTone(level: RapidResponseLevel): StatusTone {
   if (level === "MER Call") return "critical";

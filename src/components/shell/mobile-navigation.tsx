@@ -98,7 +98,12 @@ export function MobileNavigation() {
                       const Icon = item.icon;
                       const hasChildren = Boolean(item.children?.length);
                       const childActive = item.children?.some((child) => pathname === child.route) ?? false;
-                      const active = pathname === item.route || childActive || (item.route !== "/dashboard" && pathname.startsWith(`${item.route}/`));
+                      const moreSpecificRouteActive = visibleItems.some((candidate) => (
+                        candidate.id !== item.id &&
+                        candidate.route.startsWith(`${item.route}/`) &&
+                        (pathname === candidate.route || pathname.startsWith(`${candidate.route}/`))
+                      ));
+                      const active = pathname === item.route || childActive || (!moreSpecificRouteActive && item.route !== "/dashboard" && pathname.startsWith(`${item.route}/`));
                       const expanded = openItems[item.id] ?? active;
 
                       if (hasChildren) {

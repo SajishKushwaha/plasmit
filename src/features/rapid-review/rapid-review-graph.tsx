@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Activity, BarChart3, HeartPulse, Search, Table2, UsersRound } from "lucide-react";
+import { Activity, BarChart3, HeartPulse, RefreshCcw, Search, Table2, UsersRound } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +13,12 @@ import { NativeSelect } from "@/features/admin/admin-shared";
 import { cn } from "@/lib/utils";
 import type { StatusTone } from "@/types";
 import {
-  adultObservationHours,
   adultObservationRiskPalette,
+  gcsScoreLabel,
   getRiskLevel,
+  inferFio2FromOxygenSupport,
+  pulseDeficitValue,
+  pulseRhythmRiskScore,
   rapidLevelTone,
   rapidZoneTone,
   type AdultObservationRiskLevel,
@@ -28,8 +31,12 @@ type ReviewGraphMetricId =
   | "respiratoryRate"
   | "oxygenSaturation"
   | "oxygenFlowRate"
+  | "fio2"
   | "bloodPressure"
   | "pulseRate"
+  | "monitorHeartRate"
+  | "pulseDeficit"
+  | "pulseRhythm"
   | "temperature"
   | "consciousnessSedation"
   | "painScore";
@@ -46,8 +53,14 @@ type ReviewGraphMetric = {
 };
 
 type ReviewGraphPoint = {
+  date: string;
   hour: string;
+  time: string;
+  xLabel: string;
   value: number | null;
+  displayValue: string;
+  fio2: string;
+  risk: AdultObservationRiskLevel;
 };
 
 const reviewGraphLineColor = "#2563eb";
@@ -84,6 +97,16 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
     display: (observation) => observation.oxygenFlow,
   },
   {
+    id: "fio2",
+    vitalType: "fio2",
+    label: "FiO2",
+    shortLabel: "FiO2",
+    unit: "%",
+    normalText: "Room air 21%, rising oxygen need is higher risk",
+    extractor: (observation) => parseObservationNumber(fio2Value(observation)),
+    display: (observation) => fio2Value(observation),
+  },
+  {
     id: "bloodPressure",
     vitalType: "bloodPressure",
     label: "Blood Pressure",
@@ -104,6 +127,39 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
     display: (observation) => observation.pulse,
   },
   {
+    id: "monitorHeartRate",
+    vitalType: "monitorHeartRate",
+    label: "Monitor Heart Rate",
+    shortLabel: "HR",
+    unit: "bpm",
+    normalText: "Normal 60-99 bpm",
+    extractor: (observation) => parseObservationNumber(monitorHeartRateValue(observation)),
+    display: (observation) => monitorHeartRateValue(observation),
+  },
+  {
+    id: "pulseDeficit",
+    vitalType: "pulseDeficit",
+    label: "Pulse Deficit",
+    shortLabel: "Deficit",
+    unit: "bpm",
+    normalText: "Normal <= 10 bpm difference",
+    extractor: (observation) => pulseDeficitValue(monitorHeartRateValue(observation), observation.pulse),
+    display: (observation) => {
+      const value = pulseDeficitValue(monitorHeartRateValue(observation), observation.pulse);
+      return value === null ? "--" : `${value}`;
+    },
+  },
+  {
+    id: "pulseRhythm",
+    vitalType: "pulseRhythm",
+    label: "Pulse Rhythm",
+    shortLabel: "Rhythm",
+    unit: "risk score",
+    normalText: "Regular = normal, irregular = risk",
+    extractor: (observation) => pulseRhythmRiskScore(pulseRhythmLabel(observation)),
+    display: (observation) => pulseRhythmLabel(observation),
+  },
+  {
     id: "temperature",
     vitalType: "temperature",
     label: "Temperature",
@@ -116,12 +172,12 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "consciousnessSedation",
     vitalType: "consciousnessSedation",
-    label: "Consciousness / Sedation",
-    shortLabel: "LOC",
+    label: "GCS Score",
+    shortLabel: "GCS",
     unit: "score",
     normalText: "Normal score 0",
     extractor: (observation) => parseObservationNumber(observation.consciousness),
-    display: (observation) => observation.consciousness,
+    display: (observation) => gcsScoreLabel(observation.consciousness),
   },
   {
     id: "painScore",
@@ -144,13 +200,19 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
   const [singleDate, setSingleDate] = React.useState("");
   const [dateFrom, setDateFrom] = React.useState("");
   const [dateTo, setDateTo] = React.useState("");
+  const [timeMode, setTimeMode] = React.useState("All times");
+  const [timeFrom, setTimeFrom] = React.useState("");
+  const [timeTo, setTimeTo] = React.useState("");
 
   const metric = reviewGraphMetrics.find((item) => item.id === metricId) ?? reviewGraphMetrics[0];
   const selectedPatient = patients.find((patient) => patient.id === patientId) ?? patients[0];
   const patientDates = selectedPatient ? uniqueObservationDates(selectedPatient.observationHistory) : [];
   const latestDataDate = latestAvailableDate(patientDates);
   const filteredObservations = selectedPatient
-    ? selectedPatient.observationHistory.filter((observation) => observationMatchesDateFilter(observation, dateMode, singleDate, dateFrom, dateTo, latestDataDate))
+    ? selectedPatient.observationHistory
+      .filter((observation) => observationMatchesDateFilter(observation, dateMode, singleDate, dateFrom, dateTo, latestDataDate))
+      .filter((observation) => observationMatchesTimeFilter(observation, timeMode, timeFrom, timeTo))
+      .sort((a, b) => observationDateTimeSortValue(a).localeCompare(observationDateTimeSortValue(b)))
     : [];
   const patientMatches = React.useMemo(() => {
     return patients.filter((patient) => {
@@ -158,8 +220,9 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
       return searchText.toLowerCase().includes(search.toLowerCase());
     });
   }, [patients, search]);
-  const graphData = React.useMemo(() => buildReviewGraphData(filteredObservations, metric), [filteredObservations, metric]);
+  const graphData = buildReviewGraphData(filteredObservations, metric);
   const summary = buildReviewGraphSummary(filteredObservations, metric);
+  const filterSummary = `${dateFilterSummary(dateMode, singleDate, dateFrom, dateTo, latestDataDate)} | ${timeFilterSummary(timeMode, timeFrom, timeTo)}`;
 
   function updateDateMode(value: string) {
     setDateMode(value);
@@ -186,8 +249,8 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
           <Badge tone="info">Patient-wise</Badge>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <label className="space-y-1 text-sm xl:col-span-2">
+          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1.35fr)_minmax(240px,1fr)_180px] lg:items-end">
+            <label className="space-y-1 text-sm">
               <span className="font-medium text-foreground">Search patient</span>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -230,7 +293,13 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
             onDateMode={updateDateMode}
             onDateTo={setDateTo}
             onSingleDate={setSingleDate}
+            onTimeFrom={setTimeFrom}
+            onTimeMode={setTimeMode}
+            onTimeTo={setTimeTo}
             singleDate={singleDate}
+            timeFrom={timeFrom}
+            timeMode={timeMode}
+            timeTo={timeTo}
           />
 
           {search.trim() ? (
@@ -277,17 +346,17 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <GraphStatCard label="Selected vital" value={metric.shortLabel} context={metric.unit} tone="info" icon={BarChart3} />
-        <GraphStatCard label="Total entries" value={summary.totalEntries} context={dateFilterSummary(dateMode, singleDate, dateFrom, dateTo, latestDataDate)} tone="success" icon={Table2} />
+        <GraphStatCard label="Total entries" value={summary.totalEntries} context={filterSummary} tone="success" icon={Table2} />
         <GraphStatCard label="High/Critical" value={summary.highRiskCount + summary.criticalCount} context={`${summary.criticalCount} critical`} tone={summary.criticalCount ? "critical" : summary.highRiskCount ? "danger" : "success"} icon={HeartPulse} />
         <GraphStatCard label="Patient" value={selectedPatient?.patientName ?? "-"} context={selectedPatient ? `${selectedPatient.bed}, ${selectedPatient.ward}` : "Focused"} tone="info" icon={UsersRound} />
       </div>
 
       {viewMode !== "Table only" && selectedPatient ? (
-        <ReviewGraphPanel patient={selectedPatient} data={graphData} metric={metric} dateSummary={dateFilterSummary(dateMode, singleDate, dateFrom, dateTo, latestDataDate)} />
+        <ReviewGraphPanel patient={selectedPatient} data={graphData} metric={metric} dateSummary={filterSummary} />
       ) : null}
 
       {viewMode !== "Graph only" && selectedPatient ? (
-        <ReviewGraphTable patient={selectedPatient} observations={filteredObservations} metric={metric} dateSummary={dateFilterSummary(dateMode, singleDate, dateFrom, dateTo, latestDataDate)} />
+        <ReviewGraphTable patient={selectedPatient} observations={filteredObservations} metric={metric} dateSummary={filterSummary} />
       ) : null}
     </div>
   );
@@ -303,6 +372,12 @@ function ReviewGraphDateFilter({
   dateTo,
   onDateTo,
   latestDataDate,
+  timeMode,
+  onTimeMode,
+  timeFrom,
+  onTimeFrom,
+  timeTo,
+  onTimeTo,
 }: {
   dateMode: string;
   onDateMode: (mode: string) => void;
@@ -313,8 +388,15 @@ function ReviewGraphDateFilter({
   dateTo: string;
   onDateTo: (date: string) => void;
   latestDataDate: string;
+  timeMode: string;
+  onTimeMode: (mode: string) => void;
+  timeFrom: string;
+  onTimeFrom: (time: string) => void;
+  timeTo: string;
+  onTimeTo: (time: string) => void;
 }) {
   const modes = ["All dates", "Latest record date", "Today", "Yesterday", "Last 7 days", "Last 30 days", "Single date", "Custom range"];
+  const timeModes = ["All times", "Morning 06-13", "Afternoon 14-17", "Evening 18-21", "Night 22-05", "Business hours", "Custom time range"];
   const invalidRange = dateMode === "Custom range" && Boolean(dateFrom && dateTo && dateFrom > dateTo);
 
   return (
@@ -389,6 +471,57 @@ function ReviewGraphDateFilter({
           From date cannot be after To date.
         </div>
       ) : null}
+
+      <div className="mt-4 border-t border-border pt-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase text-muted-foreground">Time filter</div>
+            <div className="mt-1 text-sm text-foreground">{timeFilterSummary(timeMode, timeFrom, timeTo)}</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {timeModes.map((mode) => (
+              <Button
+                key={mode}
+                size="sm"
+                variant={timeMode === mode ? "default" : "outline"}
+                onClick={() => onTimeMode(mode)}
+              >
+                {mode}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {timeMode === "Custom time range" ? (
+          <div className="mt-3 grid gap-3 sm:grid-cols-[180px_180px_auto] sm:items-end">
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">From time</span>
+              <input
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                type="time"
+                value={timeFrom}
+                onChange={(event) => onTimeFrom(event.target.value)}
+              />
+            </label>
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">To time</span>
+              <input
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                type="time"
+                value={timeTo}
+                onChange={(event) => onTimeTo(event.target.value)}
+              />
+            </label>
+            <Button variant="outline" onClick={() => {
+              onTimeFrom("");
+              onTimeTo("");
+            }}>
+              <RefreshCcw className="h-4 w-4" />
+              Reset time
+            </Button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -408,25 +541,26 @@ function ReviewGraphPanel({
     <Card>
       <CardHeader>
         <div>
-          <CardTitle>{metric.label} - 24 Hour Graph</CardTitle>
+          <CardTitle>{metric.label} - Date / Time Trend</CardTitle>
           <CardDescription>{patient.patientName} - {patient.uhid} - {patient.bed}. {dateSummary}.</CardDescription>
         </div>
         <StatusPill tone="info">{metric.unit}</StatusPill>
       </CardHeader>
       <CardContent>
+        <ReviewGraphRiskLegend />
         <div className="h-[360px]">
           <ResponsiveContainer height="100%" width="100%">
             <LineChart data={data} margin={{ left: -16, right: 16, top: 8, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={1} />
+              <XAxis dataKey="xLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
               <YAxis tick={{ fontSize: 11 }} width={52} />
-              <Tooltip />
+              <Tooltip content={<ReviewGraphTooltip metric={metric} />} />
               <Legend />
               <Line
-                activeDot={{ r: 5 }}
+                activeDot={renderActiveReviewGraphDot}
                 connectNulls
                 dataKey="value"
-                dot={{ r: 2 }}
+                dot={renderReviewGraphDot}
                 name={`${patient.patientName} (${metric.shortLabel})`}
                 stroke={reviewGraphLineColor}
                 strokeWidth={2}
@@ -437,6 +571,79 @@ function ReviewGraphPanel({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ReviewGraphRiskLegend() {
+  const levels: AdultObservationRiskLevel[] = ["critical", "highRisk", "warning", "normal"];
+
+  return (
+    <div className="mb-3 flex flex-wrap gap-2">
+      {levels.map((level) => {
+        const palette = adultObservationRiskPalette[level];
+        return (
+          <span
+            className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium"
+            key={level}
+            style={{ backgroundColor: palette.background, borderColor: palette.border, color: palette.text }}
+          >
+            <span className="h-2.5 w-2.5 rounded-full border" style={{ backgroundColor: palette.background, borderColor: palette.text }} />
+            {palette.label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReviewGraphTooltip({ active, payload, metric }: { active?: boolean; payload?: Array<{ payload?: ReviewGraphPoint }>; metric: ReviewGraphMetric }) {
+  if (!active) return null;
+  const point = payload?.[0]?.payload;
+  if (!point) return null;
+  const palette = adultObservationRiskPalette[point.risk];
+
+  return (
+    <div className="rounded-md border border-border bg-background p-3 text-xs shadow-lg">
+      <div className="font-semibold text-foreground">{formatDateLabel(point.date)} - {point.time}</div>
+      <div className="mt-1 text-muted-foreground">{metric.label}: <span className="font-semibold text-foreground">{point.displayValue}</span></div>
+      {metric.id === "oxygenSaturation" ? (
+        <div className="mt-1 text-muted-foreground">FiO2: <span className="font-semibold text-foreground">{point.fio2}</span></div>
+      ) : null}
+      <div className="mt-2 inline-flex rounded-full border px-2 py-0.5 font-medium" style={{ backgroundColor: palette.background, borderColor: palette.border, color: palette.text }}>
+        {palette.label}
+      </div>
+    </div>
+  );
+}
+
+type ReviewGraphDotProps = {
+  active?: boolean;
+  cx?: number;
+  cy?: number;
+  payload?: ReviewGraphPoint;
+};
+
+function renderReviewGraphDot(props: unknown) {
+  return <ReviewGraphDot {...(props as ReviewGraphDotProps)} />;
+}
+
+function renderActiveReviewGraphDot(props: unknown) {
+  return <ReviewGraphDot {...(props as ReviewGraphDotProps)} active />;
+}
+
+function ReviewGraphDot({ active, cx, cy, payload }: ReviewGraphDotProps) {
+  if (typeof cx !== "number" || typeof cy !== "number" || payload?.value === null) return null;
+
+  const palette = adultObservationRiskPalette[payload?.risk ?? "empty"];
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      fill={palette.background}
+      r={active ? 6 : 4}
+      stroke={palette.text}
+      strokeWidth={active ? 2.5 : 2}
+    />
   );
 }
 
@@ -455,16 +662,17 @@ function ReviewGraphTable({
     <Card>
       <CardHeader>
         <div>
-          <CardTitle>{metric.label} - 24 Hour Data</CardTitle>
+          <CardTitle>{metric.label} - Date / Time Data</CardTitle>
           <CardDescription>{patient.patientName} patient-wise table. Date filter: {dateSummary}.</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[980px] border-collapse text-sm">
+          <table className="w-full min-w-[1080px] border-collapse text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="sticky left-0 z-10 border-b border-r border-border bg-surface-muted px-3 py-2 text-left">Hour</th>
+                <th className="sticky left-0 z-10 border-b border-r border-border bg-surface-muted px-3 py-2 text-left">Date</th>
+                <th className="border-b border-r border-border px-3 py-2 text-left">Time</th>
                 <th className="border-b border-r border-border px-3 py-2 text-left">Value</th>
                 <th className="border-b border-r border-border px-3 py-2 text-left">Risk</th>
                 <th className="border-b border-r border-border px-3 py-2 text-left">Response</th>
@@ -473,31 +681,36 @@ function ReviewGraphTable({
               </tr>
             </thead>
             <tbody>
-              {adultObservationHours.map((hour) => {
-                const observation = observations.find((item) => observationHourKey(item) === hour);
-                const value = observation ? metric.display(observation) : "--";
-                const numericValue = observation ? metric.extractor(observation) : null;
-                const risk = getRiskLevel(metric.vitalType, numericValue ?? value);
+              {observations.length ? observations.map((observation) => {
+                const value = metric.display(observation);
+                const numericValue = metric.extractor(observation);
+                const risk = getRiskLevel(metric.vitalType, metric.vitalType === "pulseRhythm" ? value : numericValue ?? value);
                 return (
-                  <tr className="border-b border-border last:border-0" key={hour}>
-                    <td className="sticky left-0 z-10 border-r border-border bg-background px-3 py-2 font-medium">{hour}</td>
+                  <tr className="border-b border-border last:border-0" key={observation.id}>
+                    <td className="sticky left-0 z-10 whitespace-nowrap border-r border-border bg-background px-3 py-2 font-medium">{formatDateLabel(observationDateValue(observation))}</td>
+                    <td className="whitespace-nowrap border-r border-border px-3 py-2">
+                      <div className="font-medium">{observationTimeLabel(observation)}</div>
+                      <div className="text-xs text-muted-foreground">{observation.shift ?? "Shift not set"}</div>
+                    </td>
                     <td className="border-r border-border px-3 py-2 font-semibold" style={riskCellStyle(risk)}>{value}</td>
                     <td className="border-r border-border px-3 py-2">
                       <Badge tone={riskBadgeTone(risk)}>{adultObservationRiskPalette[risk].label}</Badge>
                     </td>
                     <td className="border-r border-border px-3 py-2">
-                      {observation ? (
-                        <div className="flex flex-wrap gap-1">
-                          <Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge>
-                          <StatusPill tone={rapidLevelTone(observation.responseLevel)}>{observation.responseLevel}</StatusPill>
-                        </div>
-                      ) : <span className="text-muted-foreground">--</span>}
+                      <div className="flex flex-wrap gap-1">
+                        <Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge>
+                        <StatusPill tone={rapidLevelTone(observation.responseLevel)}>{observation.responseLevel}</StatusPill>
+                      </div>
                     </td>
-                    <td className="border-r border-border px-3 py-2 text-muted-foreground">{observation?.recordedBy ?? "--"}</td>
-                    <td className="min-w-[260px] border-r border-border px-3 py-2 text-muted-foreground">{observation?.note ?? "No value recorded"}</td>
+                    <td className="border-r border-border px-3 py-2 text-muted-foreground">{observation.recordedBy}</td>
+                    <td className="min-w-[260px] border-r border-border px-3 py-2 text-muted-foreground">{observation.note}</td>
                   </tr>
                 );
-              })}
+              }) : (
+                <tr>
+                  <td className="px-3 py-8 text-center text-muted-foreground" colSpan={7}>No graph data matched the selected date and time filter.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -538,9 +751,21 @@ function GraphStatCard({
 }
 
 function buildReviewGraphData(observations: RapidObservationSet[], metric: ReviewGraphMetric): ReviewGraphPoint[] {
-  return adultObservationHours.map((hour) => {
-    const observation = observations.find((item) => observationHourKey(item) === hour);
-    return { hour, value: observation ? metric.extractor(observation) : null };
+  return observations.map((observation) => {
+    const value = metric.extractor(observation);
+    const displayValue = metric.display(observation);
+    const date = observationDateValue(observation);
+    const time = observationTimeLabel(observation);
+    return {
+      date,
+      hour: observationHourKey(observation),
+      time,
+      xLabel: `${formatDateShortLabel(date)} ${time}`,
+      value,
+      displayValue,
+      fio2: fio2Value(observation),
+      risk: getRiskLevel(metric.vitalType, metric.vitalType === "pulseRhythm" ? displayValue : value ?? displayValue),
+    };
   });
 }
 
@@ -548,7 +773,7 @@ function buildReviewGraphSummary(observations: RapidObservationSet[], metric: Re
   return observations.reduce(
     (summary, observation) => {
       const value = metric.extractor(observation);
-      const risk = getRiskLevel(metric.vitalType, value ?? metric.display(observation));
+      const risk = getRiskLevel(metric.vitalType, metric.vitalType === "pulseRhythm" ? metric.display(observation) : value ?? metric.display(observation));
       summary.totalEntries += 1;
       if (risk === "critical") summary.criticalCount += 1;
       if (risk === "highRisk") summary.highRiskCount += 1;
@@ -586,6 +811,27 @@ function observationMatchesDateFilter(
   return true;
 }
 
+function observationMatchesTimeFilter(observation: RapidObservationSet, mode: string, timeFrom: string, timeTo: string) {
+  const minutes = observationTimeMinutes(observation);
+  if (minutes === null) return true;
+  if (mode === "All times") return true;
+  if (mode === "Morning 06-13") return minutesWithinRange(minutes, 6 * 60, 13 * 60 + 59);
+  if (mode === "Afternoon 14-17") return minutesWithinRange(minutes, 14 * 60, 17 * 60 + 59);
+  if (mode === "Evening 18-21") return minutesWithinRange(minutes, 18 * 60, 21 * 60 + 59);
+  if (mode === "Night 22-05") return minutesWithinRange(minutes, 22 * 60, 5 * 60 + 59);
+  if (mode === "Business hours") return minutesWithinRange(minutes, 9 * 60, 17 * 60 + 59);
+  if (mode === "Custom time range") {
+    const from = timeToMinutes(timeFrom);
+    const to = timeToMinutes(timeTo);
+    if (from === null && to === null) return true;
+    if (from !== null && to === null) return minutes >= from;
+    if (from === null && to !== null) return minutes <= to;
+    if (from === to) return true;
+    return minutesWithinRange(minutes, from ?? 0, to ?? 0);
+  }
+  return true;
+}
+
 function dateFilterSummary(mode: string, singleDate: string, dateFrom: string, dateTo: string, latestDataDate: string) {
   if (mode === "Latest record date") return latestDataDate ? formatDateLabel(latestDataDate) : "Latest record date";
   if (mode === "Single date") return singleDate ? formatDateLabel(singleDate) : "Single date";
@@ -599,6 +845,16 @@ function dateFilterSummary(mode: string, singleDate: string, dateFrom: string, d
   return mode;
 }
 
+function timeFilterSummary(mode: string, timeFrom: string, timeTo: string) {
+  if (mode === "Custom time range") {
+    if (timeFrom && timeTo) return `${timeFrom} to ${timeTo}`;
+    if (timeFrom) return `From ${timeFrom}`;
+    if (timeTo) return `Until ${timeTo}`;
+    return "Custom time range";
+  }
+  return mode;
+}
+
 function latestAvailableDate(dates: string[]) {
   return dates[0] ?? "";
 }
@@ -607,12 +863,27 @@ function observationDateValue(observation: RapidObservationSet) {
   return observation.observationDate ?? "2026-05-24";
 }
 
+function observationTimeLabel(observation: RapidObservationSet) {
+  const match = observation.recordedAt.match(/(\d{1,2}:\d{2})/);
+  return match?.[1] ?? observation.recordedAt.replace("Today ", "");
+}
+
 function formatDateLabel(value: string) {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return value;
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const monthIndex = Number(match[2]) - 1;
   return `${Number(match[3])} ${monthNames[monthIndex] ?? match[2]} ${match[1]}`;
+}
+
+function formatDateShortLabel(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
+  return `${Number(match[3])}/${match[2]}`;
+}
+
+function observationDateTimeSortValue(observation: RapidObservationSet) {
+  return `${observationDateValue(observation)} ${observationTimeLabel(observation)}`;
 }
 
 function todayDateValue() {
@@ -632,9 +903,26 @@ function dateToValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function observationTimeMinutes(observation: RapidObservationSet) {
+  return timeToMinutes(observationTimeLabel(observation));
+}
+
+function timeToMinutes(value: string) {
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours > 23 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+function minutesWithinRange(value: number, from: number, to: number) {
+  if (from <= to) return value >= from && value <= to;
+  return value >= from || value <= to;
+}
+
 function observationHourKey(observation: RapidObservationSet) {
-  const match = observation.recordedAt.match(/(\d{1,2}):\d{2}/);
-  const hour = Number.parseInt(match?.[1] ?? "", 10);
+  const hour = Number.parseInt(observationTimeLabel(observation).split(":")[0] ?? "", 10);
   return Number.isFinite(hour) ? `${hour.toString().padStart(2, "0")}:00` : "00:00";
 }
 
@@ -654,6 +942,23 @@ function oxygenFlowValue(value: string) {
   const lower = value.toLowerCase();
   if (lower === "air" || lower.includes("room air")) return 0;
   return parseObservationNumber(value);
+}
+
+function fio2Value(observation: RapidObservationSet) {
+  return observation.fio2 ?? inferFio2FromOxygenSupport(observation.oxygenFlow, observation.deliveryMethod);
+}
+
+function monitorHeartRateValue(observation: RapidObservationSet) {
+  return observation.monitorHeartRate?.trim() ? observation.monitorHeartRate : observation.pulse;
+}
+
+function pulseRhythmLabel(observation: RapidObservationSet) {
+  if (observation.pulseRhythm) return observation.pulseRhythm;
+  const pulse = Number.parseFloat(observation.pulse);
+  if (observation.responseLevel === "MER Call") return "Irregularly irregular";
+  if (observation.responseLevel === "MDT Review" || pulse >= 120) return "Irregular";
+  if (observation.responseLevel === "RN Review" || pulse >= 100) return "Regularly irregular";
+  return "Regular";
 }
 
 function riskCellStyle(risk: AdultObservationRiskLevel): React.CSSProperties {

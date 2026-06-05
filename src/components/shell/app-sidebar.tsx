@@ -42,6 +42,10 @@ export function AppSidebar({
       return roleItems.filter((item) => item.id === "nursing" || item.id === "surgery");
     }
 
+    if (role === "Nurse") {
+      return roleItems.filter((item) => item.id.startsWith("icu-nursing-"));
+    }
+
     return roleItems;
   }, [role]);
   const groups = useMemo(

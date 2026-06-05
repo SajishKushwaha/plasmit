@@ -26,6 +26,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dashboardQuickActions } from "@/data/navigation";
 import { bedOccupancy, dashboardStats, departmentActivity, recentActivity } from "@/data/mock";
+import { IcuNursingPage } from "@/features/icu-nursing/icu-nursing-pages";
 
 const statIcons = [Stethoscope, IdCard, CalendarClock, Users, BedDouble, BedDouble, FlaskConical, Pill, CreditCard, AlertTriangle];
 const AppointmentTimelineChart = dynamic(
@@ -39,12 +40,15 @@ const AppointmentTimelineChart = dynamic(
 export function DashboardPage() {
   const { role } = useRole();
   const router = useRouter();
+
+  if (role === "Nurse") {
+    return <IcuNursingPage module="station" />;
+  }
+
   const quickActions =
     role === "Doctor"
       ? dashboardQuickActions.filter((action) => ["consult", "sample", "monitor"].includes(action.id))
-      : role === "Nurse"
-        ? dashboardQuickActions.filter((action) => ["admit", "monitor", "sample"].includes(action.id))
-        : role === "Billing Executive"
+      : role === "Billing Executive"
           ? dashboardQuickActions.filter((action) => ["bill", "register"].includes(action.id))
           : role === "Management"
             ? dashboardQuickActions.filter((action) => ["bill", "monitor", "inventory"].includes(action.id))

@@ -12,7 +12,7 @@ export const roleRoutes: Record<Role, string> = {
   "Super Admin": "/dashboard",
   "Hospital Admin": "/dashboard",
   Doctor: "/doctor-dashboard",
-  Nurse: "/dashboard",
+  Nurse: "/icu-nursing",
   Receptionist: "/dashboard",
   "Lab Technician": "/dashboard",
   Radiologist: "/dashboard",
@@ -136,7 +136,7 @@ export const roleModuleAccess: Record<Role, {
     ],
   },
   Nurse: {
-    allowed: ["/dashboard", "/admission", "/ipd", "/intake-output", "/nurse", "/poct", "/opd", "/emergency", "/surgery"],
+    allowed: ["/icu-nursing", "/dashboard", "/admission", "/ipd", "/intake-output", "/nurse", "/poct", "/opd", "/emergency", "/surgery"],
   },
   Receptionist: {
     allowed: ["/dashboard", "/appointments", "/front-office", "/billing-desk", "/surgery"],

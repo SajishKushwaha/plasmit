@@ -23,6 +23,8 @@ export function MobileNavigation() {
   const visibleItems =
     role === "Super Admin"
       ? roleItems.filter((item) => item.id === "nursing" || item.id === "surgery")
+      : role === "Nurse"
+        ? roleItems.filter((item) => item.id.startsWith("icu-nursing-"))
       : roleItems;
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
 

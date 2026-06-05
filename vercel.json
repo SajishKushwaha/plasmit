@@ -1,18 +1,12 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "nodeVersion": "18.x",
-  "env": [
-    {
-      "key": "NEXT_PUBLIC_API_URL",
-      "value": ""
-    }
-  ],
-  "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
+  "name": "plasmit-hospital-hms",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build"
   }
 }

@@ -134,7 +134,6 @@ export function MobileNavigation() {
                                       href={child.route}
                                       key={child.id}
                                       onClick={() => setOpen(false)}
-                                      prefetch={false}
                                     >
                                       <span className="min-w-0 flex-1 truncate">{child.label}</span>
                                       {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}
@@ -156,7 +155,6 @@ export function MobileNavigation() {
                           href={item.route}
                           key={item.id}
                           onClick={() => setOpen(false)}
-                          prefetch={false}
                         >
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="min-w-0 flex-1 truncate">{item.label}</span>

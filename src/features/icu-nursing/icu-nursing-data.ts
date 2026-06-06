@@ -1,5 +1,6 @@
 export type IcuPatient = {
   id: string;
+  patientId: string;
   bed: string;
   name: string;
   mrn: string;
@@ -34,6 +35,7 @@ export type IcuTask = {
 export const icuPatients: IcuPatient[] = [
   {
     id: "p-405",
+    patientId: "pat-icu-405",
     bed: "405B",
     name: "Margaret Vance",
     mrn: "882-991-002",
@@ -57,6 +59,7 @@ export const icuPatients: IcuPatient[] = [
   },
   {
     id: "p-402",
+    patientId: "pat-icu-402",
     bed: "402A",
     name: "Robert Wilson",
     mrn: "114-22-B",
@@ -80,6 +83,7 @@ export const icuPatients: IcuPatient[] = [
   },
   {
     id: "p-407",
+    patientId: "pat-icu-407",
     bed: "407",
     name: "Maria Garcia",
     mrn: "98234-A",
@@ -103,6 +107,7 @@ export const icuPatients: IcuPatient[] = [
   },
   {
     id: "p-404",
+    patientId: "pat-icu-404",
     bed: "404",
     name: "James Doe",
     mrn: "114-22-B",

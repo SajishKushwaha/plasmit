@@ -168,7 +168,6 @@ export function AppSidebar({
                                   )}
                                   href={child.route}
                                   key={child.id}
-                                  prefetch={false}
                                 >
                                   <span className="min-w-0 flex-1 truncate">{child.label}</span>
                                   {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}
@@ -193,7 +192,6 @@ export function AppSidebar({
                       )}
                       href={item.route}
                       key={item.id}
-                      prefetch={false}
                       title={collapsed ? item.label : undefined}
                     >
                       <Icon className="h-4 w-4 shrink-0" />

@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NEXT_TELEMETRY_DISABLED=1 next dev --webpack",
+    "dev:turbo": "NEXT_TELEMETRY_DISABLED=1 next dev",
     "build": "next build",
+    "preview": "npm run build && npm run start",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"

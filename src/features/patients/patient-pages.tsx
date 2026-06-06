@@ -309,7 +309,7 @@ export function PatientProfilePage({ patientId }: { patientId: string }) {
     <ProtectedPatient>
       {({ readOnly }) => (
         <>
-          <PatientHeader patient={patient} />
+          <PatientHeader patient={patient} hidePageHeader />
           <div className="flex flex-wrap gap-2"><Button disabled={readOnly || patient.status === "Deceased"}><Plus className="h-4 w-4" />New visit</Button><Button variant="outline" disabled={readOnly}>Edit profile</Button><Button variant="outline" onClick={() => toast.info("Patient card print placeholder")}><Printer className="h-4 w-4" />Card</Button></div>
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="demographics">Demographics</TabsTrigger><TabsTrigger value="contacts">Contacts</TabsTrigger><TabsTrigger value="alerts">Alerts</TabsTrigger><TabsTrigger value="documents">Documents</TabsTrigger><TabsTrigger value="consents">Consents</TabsTrigger><TabsTrigger value="visits">Visit summary</TabsTrigger><TabsTrigger value="audit">Audit</TabsTrigger></TabsList>

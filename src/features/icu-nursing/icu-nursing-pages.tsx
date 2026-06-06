@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -15,7 +16,6 @@ import {
   MessageSquareText,
   Pill,
   RadioTower,
-  Search,
   ShieldAlert,
   Stethoscope,
   Syringe,
@@ -29,6 +29,12 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { handoverSteps, icuAlerts, icuMeds, icuPatients, icuTasks, journeyEvents, type IcuPatient, type IcuTask } from "@/features/icu-nursing/icu-nursing-data";
+import { AdministrationTimeline } from "@/features/nurse-drug-administration/administration-timeline";
+import { defaultAdministrationDetail, defaultFluidDetail, nurseDrugOrders } from "@/features/nurse-drug-administration/data";
+import { AdministrationDetailsPanel, FluidAdministrationDetailsPanel } from "@/features/nurse-drug-administration/detail-panels";
+import { DrugOrderReviewTab } from "@/features/nurse-drug-administration/order-review";
+import { NurseMedicationPatientSummary } from "@/features/nurse-drug-administration/patient-summary";
+import type { AdministrationCell, AdministrationDetail, FluidAdministrationDetail, NurseDrugOrder } from "@/features/nurse-drug-administration/types";
 
 type IcuNursingModule =
   | "station"
@@ -149,35 +155,286 @@ function AssignedPatients() {
 }
 
 function MedicationAdministration() {
+  const [administrationDetail, setAdministrationDetail] = React.useState<AdministrationDetail>(defaultAdministrationDetail);
+  const [fluidDetail, setFluidDetail] = React.useState<FluidAdministrationDetail>(defaultFluidDetail);
+  const [administrationOpen, setAdministrationOpen] = React.useState(false);
+  const [fluidOpen, setFluidOpen] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState(formatCurrentDate);
+  const [selectedPatientId, setSelectedPatientId] = React.useState("pat-icu-405");
+  const today = React.useMemo(() => formatCurrentDate(), []);
+
+  const displayedOrders = React.useMemo(() => {
+    if (selectedDate < today) {
+      return nurseDrugOrders.map((order) => ({
+        ...order,
+        lastAdministeredAt: order.lastAdministeredAt || "Yesterday 22:00",
+        cells: order.cells.map((cell) => ({
+          ...cell,
+          label: cell.label?.replace("Overdue ", "") ?? (cell.status === "infusion" ? `${order.dosage} infusion` : undefined),
+          status: cell.status === "empty" ? cell.status : ("administered" as const),
+        })),
+      }));
+    }
+
+    if (selectedDate > today) {
+      return nurseDrugOrders.map((order) => ({
+        ...order,
+        lastAdministeredAt: "",
+        lastAdministeredBy: "",
+        administeredVolume: 0,
+        cells: order.cells.map((cell) => ({
+          ...cell,
+          label: cell.status === "infusion" ? `${order.dosage} planned` : cell.label?.replace("Overdue ", ""),
+          status: cell.status === "empty" ? cell.status : ("due" as const),
+        })),
+      }));
+    }
+
+    return nurseDrugOrders;
+  }, [selectedDate, today]);
+
+  const medicationStats = React.useMemo(() => {
+    const cells = displayedOrders.flatMap((order) => order.cells);
+    return {
+      due: cells.filter((cell) => cell.status === "due").length,
+      overdue: cells.filter((cell) => cell.status === "overdue").length,
+      administered: cells.filter((cell) => cell.status === "administered").length,
+      highRisk: displayedOrders.filter((order) => order.route === "IV" || order.category === "Continuous").length,
+    };
+  }, [displayedOrders]);
+
+  const handleCellSelect = (order: NurseDrugOrder, cell?: AdministrationCell) => {
+    if (order.category === "Continuous" || order.form === "IV Fluid") {
+      setFluidDetail(buildFluidDetail(order, selectedDate));
+      setFluidOpen(true);
+      return;
+    }
+    setAdministrationDetail(buildAdministrationDetail(order, selectedDate, cell));
+    setAdministrationOpen(true);
+  };
+
   return (
-    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>Medication Log</CardTitle>
-            <CardDescription>Doctor order to pharmacy verification to dispense to nurse administration to completion.</CardDescription>
-          </div>
-          <Button size="sm" variant="outline"><Search className="h-4 w-4" />Scan barcode</Button>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {icuMeds.map((med) => (
-            <div className="grid gap-3 rounded-lg border border-border p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center" key={med.id}>
-              <div>
-                <div className="font-semibold">{med.name}</div>
-                <div className="text-xs text-muted-foreground">{med.patient} . {med.time} . Nurse signature: {med.nurseSignature}</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {["Doctor order", "Pharmacy verified", "Dispensed", "Nurse administers"].map((step, index) => (
-                    <Badge key={step} tone={index < 2 ? "success" : med.status === "Dispensed" ? "info" : "warning"}>{step}</Badge>
-                  ))}
+    <div className="space-y-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric icon={Pill} label="Due doses" value={medicationStats.due} tone="warning" />
+        <Metric icon={AlertTriangle} label="Overdue doses" value={medicationStats.overdue} tone="danger" />
+        <Metric icon={CheckCircle2} label="Administered" value={medicationStats.administered} tone="info" />
+        <Metric icon={ShieldAlert} label="High-risk meds" value={medicationStats.highRisk} tone="critical" />
+      </section>
+
+      <NurseMedicationPatientSummary patientId={selectedPatientId} onPatientChange={setSelectedPatientId} />
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="min-w-0 space-y-4">
+          <Card className="border-blue-100 bg-blue-50/40">
+            <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-foreground">Bedside medication administration record</div>
+                <div className="mt-1 text-xs font-medium text-muted-foreground">
+                  Verify patient, medicine, dose, route, time, allergy, order receipt, and counter-check before accepting administration.
                 </div>
               </div>
-              <Button>{med.status === "High-risk verification" ? "Double verify" : "Mark admin"}</Button>
-            </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline"><RadioTower className="h-4 w-4" />Scan barcode</Button>
+                <Button size="sm" variant="outline"><FileText className="h-4 w-4" />Print MAR</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Tabs defaultValue="administration" className="space-y-4">
+            <TabsList className="w-full gap-2 overflow-x-auto bg-primary/10 p-1 sm:w-fit">
+              <TabsTrigger
+                value="administration"
+                className="min-w-[168px] border border-primary/20 bg-background text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                MAR Timeline
+              </TabsTrigger>
+              <TabsTrigger
+                value="orders"
+                className="min-w-[132px] border border-primary/20 bg-background text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                Drug Orders
+              </TabsTrigger>
+              <TabsTrigger
+                value="audit"
+                className="min-w-[132px] border border-primary/20 bg-background text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                Audit
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="administration">
+              <AdministrationTimeline
+                orders={displayedOrders}
+                selectedDate={selectedDate}
+                today={today}
+                onDateChange={setSelectedDate}
+                onCellSelect={handleCellSelect}
+              />
+            </TabsContent>
+
+            <TabsContent value="orders">
+              <DrugOrderReviewTab orders={displayedOrders} />
+            </TabsContent>
+
+            <TabsContent value="audit">
+              <MedicationAuditPanel orders={displayedOrders} />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <MedicationSafetyPanel />
+      </section>
+
+      <AdministrationDetailsPanel
+        open={administrationOpen}
+        detail={administrationDetail}
+        onOpenChange={setAdministrationOpen}
+        onChange={setAdministrationDetail}
+      />
+      <FluidAdministrationDetailsPanel open={fluidOpen} detail={fluidDetail} onOpenChange={setFluidOpen} onChange={setFluidDetail} />
+    </div>
+  );
+}
+
+function formatCurrentTime() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+function formatCurrentDate() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function buildAdministrationDetail(order: NurseDrugOrder, selectedDate: string, cell?: AdministrationCell): AdministrationDetail {
+  const isOverdue = cell?.status === "overdue";
+  return {
+    ...defaultAdministrationDetail,
+    orderId: order.id,
+    orderName: order.name,
+    category: order.category,
+    administrationDate: selectedDate,
+    dosage: cell?.label?.replace("Overdue ", "") || order.dosage,
+    time: formatCurrentTime(),
+    lastAdministeredAt: order.lastAdministeredAt ?? "",
+    lastAdministeredBy: order.lastAdministeredBy ?? "",
+    action: isOverdue ? "Late administered" : "Administered",
+    reason: isOverdue ? "Scheduled dose overdue by more than 1 hour" : "",
+    counterChecked: order.route === "IV" || order.category === "Intermittent",
+    counterCheckedBy: "",
+    counterCheckedAt: "",
+  };
+}
+
+function buildFluidDetail(order: NurseDrugOrder, selectedDate: string): FluidAdministrationDetail {
+  const bagVolume = order.bagVolume ?? 500;
+  const volumeAdministered = order.administeredVolume ?? 0;
+  const volumeRemaining = Math.max(bagVolume - volumeAdministered, 0);
+
+  return {
+    ...defaultFluidDetail,
+    orderId: order.id,
+    orderName: order.name,
+    category: order.category,
+    administrationDate: selectedDate,
+    rate: order.dosage,
+    time: formatCurrentTime(),
+    lastAdministeredAt: order.lastAdministeredAt ?? "",
+    lastAdministeredBy: order.lastAdministeredBy ?? "",
+    bagVolume: String(bagVolume),
+    volumeAdministered: String(volumeAdministered),
+    volumeRemaining: String(volumeRemaining),
+    newBag: false,
+    bagCount: String(order.bagCount ?? 1),
+    bolusDose: order.bolusDose ?? "",
+    counterChecked: true,
+    counterCheckedBy: "",
+    counterCheckedAt: "",
+  };
+}
+
+function MedicationSafetyPanel() {
+  const rights = [
+    "Right patient matched with wristband and UHID",
+    "Right medication and active doctor order",
+    "Right dose, route, frequency, and time",
+    "Allergy, renal status, and interaction reviewed",
+    "Counter-check completed for IV/high-risk medication",
+  ];
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader>
+          <div>
+            <CardTitle className="text-red-800">Safety gate</CardTitle>
+            <CardDescription>Administration cannot be accepted safely without these bedside checks.</CardDescription>
+          </div>
+          <Badge tone="danger">Required</Badge>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {rights.map((item) => (
+            <label key={item} className="flex items-start gap-2 rounded-md border border-red-100 bg-white/80 p-2 text-xs font-semibold text-foreground">
+              <input className="mt-0.5 h-4 w-4 rounded border-input text-primary focus:ring-ring" type="checkbox" />
+              <span>{item}</span>
+            </label>
           ))}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Escalation rules</CardTitle>
+            <CardDescription>Auto-alert conditions for nurse and doctor review.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <ServiceItem icon={AlertTriangle} title="Overdue dose" body="Late by more than 60 minutes requires reason and audit trail." tone="warning" />
+          <ServiceItem icon={ShieldAlert} title="High-risk IV" body="Counter-check nurse name and time are mandatory." tone="critical" />
+          <ServiceItem icon={Pill} title="Discontinued order" body="Stopped medicines stay visible and blocked from administration." tone="info" />
+        </CardContent>
+      </Card>
+
       <ClinicalServicesPanel />
-    </section>
+    </div>
+  );
+}
+
+function MedicationAuditPanel({ orders }: { orders: NurseDrugOrder[] }) {
+  const auditRows = orders
+    .filter((order) => order.lastAdministeredAt || order.category === "Discontinued")
+    .map((order) => ({
+      id: order.id,
+      title: order.name,
+      meta: order.category === "Discontinued"
+        ? `Discontinued - ${order.discontinuedReason ?? "Reason not recorded"}`
+        : `${order.lastAdministeredAt} by ${order.lastAdministeredBy || "Nurse pending"}`,
+      status: order.category === "Discontinued" ? "Stopped" : "Signed",
+    }));
+
+  return (
+    <Card>
+      <CardHeader>
+        <div>
+          <CardTitle>Medication Audit Trail</CardTitle>
+          <CardDescription>Recent administration, discontinued orders, and signed nurse actions.</CardDescription>
+        </div>
+        <Badge tone="info">{auditRows.length} events</Badge>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {auditRows.map((row) => (
+          <div key={row.id} className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <div className="min-w-0">
+              <div className="font-semibold text-foreground">{row.title}</div>
+              <div className="text-xs text-muted-foreground">{row.meta}</div>
+            </div>
+            <Badge tone={row.status === "Stopped" ? "warning" : "success"}>{row.status}</Badge>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -459,7 +716,15 @@ function PatientCard({ patient, compact = false }: { patient: IcuPatient; compac
               <span>Last review: {patient.lastReview}</span>
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {["Open patient", "View vitals", "Escalate"].map((action) => <Button key={action} size="sm" variant="outline">{action}</Button>)}
+              <Button size="sm" variant="outline" asChild>
+                <Link href={`/patients/${patient.patientId}`}>Open patient</Link>
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link href={`/icu-monitoring/cvs?patientId=${patient.patientId}`}>View vitals</Link>
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link href={`/rapid-review?patientId=${patient.patientId}`}>Escalate</Link>
+              </Button>
             </div>
           </>
         ) : null}

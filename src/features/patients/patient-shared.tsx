@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useRole } from "@/components/providers/role-provider";
+import { cn } from "@/lib/utils";
 import type { PatientRecord, Role, StatusTone } from "@/types";
 
 export const patientAccessRoles: Role[] = [
@@ -83,36 +84,40 @@ export function PatientHeader({
   patient,
   title = "Patient Profile",
   description = "Patient identity, safety flags, and Phase 3 management context.",
+  hidePageHeader = false,
 }: {
   patient: PatientRecord;
   title?: string;
   description?: string;
+  hidePageHeader?: boolean;
 }) {
   return (
     <>
-      <PageHeader
-        eyebrow="Phase 3 • Patient Management"
-        title={title}
-        description={description}
-        actions={
-          <>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
-            <Button asChild>
-              <Link href={`/patients/${patient.id}`}>Open profile</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href={`/clinical-examination?patientId=${patient.id}`}>
-                <HeartPulse className="h-4 w-4" />
-                Clinical Exam
-              </Link>
-            </Button>
-          </>
-        }
-      />
-      <Card className="sticky top-[132px] z-20">
+      {!hidePageHeader ? (
+        <PageHeader
+          eyebrow="Phase 3 • Patient Management"
+          title={title}
+          description={description}
+          actions={
+            <>
+              <Button variant="outline" onClick={() => window.print()}>
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+              <Button asChild>
+                <Link href={`/patients/${patient.id}`}>Open profile</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href={`/clinical-examination?patientId=${patient.id}`}>
+                  <HeartPulse className="h-4 w-4" />
+                  Clinical Exam
+                </Link>
+              </Button>
+            </>
+          }
+        />
+      ) : null}
+      <Card className={cn(!hidePageHeader && "sticky top-[132px] z-20")}>
         <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-muted">

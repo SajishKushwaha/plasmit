@@ -21,6 +21,8 @@ export function RoleSwitcher({ className, portal = true }: { className?: string;
       router.push("/doctor-dashboard1");
     } else if (nextRole === "Nurse") {
       router.push("/icu-nursing");
+    } else if (nextRole === "Nurse ICU") {
+      router.push("/nursing-icu");
     } else {
       // Navigate to main dashboard for other roles
       router.push("/dashboard");

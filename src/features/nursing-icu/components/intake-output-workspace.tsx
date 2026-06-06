@@ -1,0 +1,935 @@
+"use client";
+
+import * as Dialog from "@radix-ui/react-dialog";
+import * as React from "react";
+import {
+  AlertTriangle,
+  BarChart3,
+  Droplets,
+  FileSearch,
+  ListFilter,
+  Plus,
+  RefreshCcw,
+  Search,
+  ShieldCheck,
+  Table2,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { StatusPill } from "@/components/ui/status-pill";
+import { cn } from "@/lib/utils";
+import type { StatusTone } from "@/types";
+import {
+  icuPatients,
+  intakeOutputRows,
+  type IcuIntakeOutput,
+} from "../nursing-icu-data";
+
+type IoView = "Hourly" | "12 Hours" | "24 Hours" | "Cumulative";
+type IoMode = "Table" | "Graph";
+type TimeWindow = "All time" | "Day shift" | "Night shift" | "Custom range";
+type MatrixRowType = "section" | "category" | "total" | "net";
+type SourceFilter = "All sources" | IcuIntakeOutput["source"];
+
+type MatrixRow = {
+  label: string;
+  type: MatrixRowType;
+  kind?: IcuIntakeOutput["kind"];
+};
+
+type Bucket = {
+  key: string;
+  label: string;
+  sublabel?: string;
+  match: (row: IcuIntakeOutput) => boolean;
+};
+
+type ActiveCell = {
+  title: string;
+  bucket: string;
+  total: number;
+  rows: IcuIntakeOutput[];
+} | null;
+
+type IoDraft = {
+  kind: IcuIntakeOutput["kind"];
+  category: string;
+  component: string;
+  quantity: string;
+  route: string;
+  source: IcuIntakeOutput["source"];
+  date: string;
+  time: string;
+  comment: string;
+};
+
+const selectedToday = "2026-06-06";
+const selectedFromDate = "2026-06-05";
+const hourOptions = ["All hours", ...Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`)] as const;
+const timeWindowOptions: TimeWindow[] = ["All time", "Day shift", "Night shift", "Custom range"];
+
+const intakeCategories = [
+  "Oral",
+  "P.O",
+  "Oral supplements",
+  "Gastric",
+  "NG Tube",
+  "Gastric wash",
+  "IV",
+  "Medicine",
+  "Fluid",
+  "Blood products",
+  "Others",
+];
+
+const outputCategories = [
+  "Est. Blood loss",
+  "Urine output",
+  "Stool output",
+  "Emesis output",
+  "Drain output",
+];
+
+const sourceOptions: SourceFilter[] = [
+  "All sources",
+  "Manual entry",
+  "Medication administration",
+  "Blood administration",
+  "Urine assessment",
+  "Stool assessment",
+  "Emesis assessment",
+  "Drain assessment",
+  "Infusion pump",
+];
+
+const draftSourceOptions: IcuIntakeOutput["source"][] = sourceOptions.filter((source): source is IcuIntakeOutput["source"] => source !== "All sources");
+
+const matrixRows: MatrixRow[] = [
+  { label: "Intake", type: "section" },
+  ...intakeCategories.map((label) => ({ label, type: "category" as const, kind: "Intake" as const })),
+  { label: "Intake total", type: "total", kind: "Intake" },
+  { label: "Output", type: "section" },
+  ...outputCategories.map((label) => ({ label, type: "category" as const, kind: "Output" as const })),
+  { label: "Output total", type: "total", kind: "Output" },
+  { label: "Intake/Output", type: "net" },
+];
+
+export function IntakeOutputWorkspace() {
+  const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
+  const [view, setView] = React.useState<IoView>("Hourly");
+  const [mode, setMode] = React.useState<IoMode>("Table");
+  const [selectedDate, setSelectedDate] = React.useState(selectedToday);
+  const [fromDate, setFromDate] = React.useState(selectedFromDate);
+  const [toDate, setToDate] = React.useState(selectedToday);
+  const [timeWindow, setTimeWindow] = React.useState<TimeWindow>("All time");
+  const [customStartTime, setCustomStartTime] = React.useState("06:00");
+  const [customEndTime, setCustomEndTime] = React.useState("17:30");
+  const [hourFilter, setHourFilter] = React.useState<(typeof hourOptions)[number]>("All hours");
+  const [sourceFilter, setSourceFilter] = React.useState<SourceFilter>("All sources");
+  const [query, setQuery] = React.useState("");
+  const [quickAddOpen, setQuickAddOpen] = React.useState(false);
+  const [manualRows, setManualRows] = React.useState<IcuIntakeOutput[]>([]);
+  const [activeCell, setActiveCell] = React.useState<ActiveCell>(null);
+  const [draft, setDraft] = React.useState<IoDraft>({
+    kind: "Intake",
+    category: "IV",
+    component: "Normal saline",
+    quantity: "100",
+    route: "IV",
+    source: "Manual entry",
+    date: selectedToday,
+    time: "12:00",
+    comment: "",
+  });
+
+  const selectedPatient = icuPatients.find((patient) => patient.id === patientId) ?? icuPatients[0];
+  const allRows = React.useMemo(() => [...manualRows, ...intakeOutputRows], [manualRows]);
+
+  const scopedRows = React.useMemo(() => {
+    const text = query.trim().toLowerCase();
+    return allRows.filter((row) => {
+      const inPatient = row.patientId === selectedPatient.id;
+      const inDate = view === "Cumulative" ? row.date >= fromDate && row.date <= toDate : row.date === selectedDate;
+      const inTime = isInTimeWindow(row, timeWindow, customStartTime, customEndTime);
+      const inHour = hourFilter === "All hours" || row.time.slice(0, 2) === hourFilter.slice(0, 2);
+      const inSource = sourceFilter === "All sources" || row.source === sourceFilter;
+      const inText = !text || [row.component, row.category, row.route, row.note, row.nurse, row.source].some((value) => value.toLowerCase().includes(text));
+      return inPatient && inDate && inTime && inHour && inSource && inText;
+    });
+  }, [allRows, customEndTime, customStartTime, fromDate, hourFilter, query, selectedDate, selectedPatient.id, sourceFilter, timeWindow, toDate, view]);
+
+  const buckets = React.useMemo(() => buildBuckets(view, selectedDate, scopedRows), [scopedRows, selectedDate, view]);
+  const totals = React.useMemo(() => summarizeRows(scopedRows), [scopedRows]);
+  const currentDayRows = React.useMemo(() => allRows.filter((row) => row.patientId === selectedPatient.id && row.date === selectedDate), [allRows, selectedDate, selectedPatient.id]);
+  const previousRows = React.useMemo(() => allRows.filter((row) => row.patientId === selectedPatient.id && row.date < selectedDate), [allRows, selectedDate, selectedPatient.id]);
+  const previousBalance = React.useMemo(() => summarizeRows(previousRows).balance, [previousRows]);
+  const alerts = React.useMemo(() => buildFluidAlerts(scopedRows, totals.balance), [scopedRows, totals.balance]);
+  const graphSeries = React.useMemo(() => buildGraphSeries(scopedRows, buckets), [buckets, scopedRows]);
+
+  const resetFilters = () => {
+    setSelectedDate(selectedToday);
+    setFromDate(selectedFromDate);
+    setToDate(selectedToday);
+    setTimeWindow("All time");
+    setCustomStartTime("06:00");
+    setCustomEndTime("17:30");
+    setHourFilter("All hours");
+    setSourceFilter("All sources");
+    setQuery("");
+    setView("Hourly");
+    setMode("Table");
+    toast.success("Intake/output filters reset");
+  };
+
+  const saveManualEntry = () => {
+    const quantity = Number(draft.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      toast.error("Quantity must be greater than zero");
+      return;
+    }
+
+    const row: IcuIntakeOutput = {
+      id: `io-manual-${Date.now()}`,
+      patientId: selectedPatient.id,
+      date: draft.date,
+      time: draft.time,
+      shift: getShift(draft.time),
+      kind: draft.kind,
+      category: draft.category,
+      component: draft.component.trim() || draft.category,
+      quantityMl: quantity,
+      route: draft.route.trim() || draft.category,
+      source: draft.source,
+      status: "Pending review",
+      intakeType: draft.kind === "Intake" ? draft.category : "",
+      intakeMl: draft.kind === "Intake" ? quantity : 0,
+      outputType: draft.kind === "Output" ? draft.category : "",
+      outputMl: draft.kind === "Output" ? quantity : 0,
+      balanceMl: draft.kind === "Intake" ? quantity : -quantity,
+      nurse: selectedPatient.assignedWardNurse,
+      capturedAt: draft.time,
+      note: draft.comment.trim() || "Manual bedside fluid balance entry",
+    };
+
+    setManualRows((rows) => [row, ...rows]);
+    setSelectedDate(row.date);
+    setFromDate((current) => (row.date < current ? row.date : current));
+    setToDate((current) => (row.date > current ? row.date : current));
+    setActiveCell({ title: row.category, bucket: row.time, total: row.quantityMl, rows: [row] });
+    setQuickAddOpen(false);
+    toast.success("Intake/output entry added");
+  };
+
+  const changeDraftKind = (kind: IcuIntakeOutput["kind"]) => {
+    setDraft((current) => ({
+      ...current,
+      kind,
+      category: kind === "Intake" ? "IV" : "Urine output",
+      route: kind === "Intake" ? "IV" : "Urinary catheter",
+    }));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border border-sky-200 bg-white shadow-sm">
+        <div className="grid gap-4 border-b border-sky-100 bg-sky-700 p-4 text-white lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase text-sky-100">
+              <Droplets className="h-4 w-4" />
+              ICU Fluid Balance
+              <span className="rounded-full bg-white/15 px-2 py-0.5">{selectedPatient.bedNo}</span>
+            </div>
+            <h2 className="mt-2 text-xl font-bold leading-tight">{selectedPatient.patientName}</h2>
+            <p className="mt-1 max-w-4xl text-sm text-sky-50">{selectedPatient.diagnosis} | {selectedPatient.assignedWardNurse} | {selectedPatient.admittingDoctor}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
+            <FluidHeaderMetric label="Intake" value={`${totals.intake} ml`} tone="info" />
+            <FluidHeaderMetric label="Output" value={`${totals.output} ml`} tone="success" />
+            <FluidHeaderMetric label="Balance" value={formatSignedMl(totals.balance)} tone={balanceTone(totals.balance)} />
+          </div>
+        </div>
+
+        <div className="border-b border-slate-100 bg-slate-50/80 p-3">
+          <div className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(230px,1fr)_140px_150px_150px_160px_120px]">
+              <FieldBlock label="Patient / bed">
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={patientId} onChange={(event) => setPatientId(event.target.value)}>
+                  {icuPatients.map((patient) => (
+                    <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+                  ))}
+                </select>
+              </FieldBlock>
+              <FieldBlock label="View">
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={view} onChange={(event) => setView(event.target.value as IoView)}>
+                  {(["Hourly", "12 Hours", "24 Hours", "Cumulative"] satisfies IoView[]).map((option) => <option key={option}>{option}</option>)}
+                </select>
+              </FieldBlock>
+              <FieldBlock label={view === "Cumulative" ? "From date" : "Date"}>
+                <Input value={view === "Cumulative" ? fromDate : selectedDate} type="date" onChange={(event) => view === "Cumulative" ? setFromDate(event.target.value) : setSelectedDate(event.target.value)} />
+              </FieldBlock>
+              <FieldBlock label="To date">
+                <Input disabled={view !== "Cumulative"} value={view === "Cumulative" ? toDate : selectedDate} type="date" onChange={(event) => setToDate(event.target.value)} />
+              </FieldBlock>
+              <FieldBlock label="Time window">
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={timeWindow} onChange={(event) => setTimeWindow(event.target.value as TimeWindow)}>
+                  {timeWindowOptions.map((option) => <option key={option}>{option}</option>)}
+                </select>
+              </FieldBlock>
+              <FieldBlock label="Hour">
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={hourFilter} onChange={(event) => setHourFilter(event.target.value as (typeof hourOptions)[number])}>
+                  {hourOptions.map((option) => <option key={option}>{option}</option>)}
+                </select>
+              </FieldBlock>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[120px_120px_190px_minmax(240px,1fr)_auto_auto_auto] xl:items-end">
+              <FieldBlock label="From time">
+                <Input disabled={timeWindow !== "Custom range"} value={customStartTime} type="time" onChange={(event) => setCustomStartTime(event.target.value)} />
+              </FieldBlock>
+              <FieldBlock label="To time">
+                <Input disabled={timeWindow !== "Custom range"} value={customEndTime} type="time" onChange={(event) => setCustomEndTime(event.target.value)} />
+              </FieldBlock>
+              <FieldBlock label="Source">
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as SourceFilter)}>
+                  {sourceOptions.map((source) => <option key={source}>{source}</option>)}
+                </select>
+              </FieldBlock>
+              <FieldBlock label="Search">
+                <div className="relative w-full">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input className="w-full pl-9" placeholder="Component, nurse, source..." value={query} onChange={(event) => setQuery(event.target.value)} />
+                </div>
+              </FieldBlock>
+              <div className="flex h-10 rounded-md border border-slate-300 bg-white p-1">
+                {(["Table", "Graph"] satisfies IoMode[]).map((option) => (
+                  <button
+                    className={cn("flex h-8 items-center gap-1 rounded px-3 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
+                    key={option}
+                    type="button"
+                    onClick={() => setMode(option)}
+                  >
+                    {option === "Table" ? <Table2 className="h-4 w-4" /> : <BarChart3 className="h-4 w-4" />}{option}
+                  </button>
+                ))}
+              </div>
+              <Button className="h-10 whitespace-nowrap" onClick={() => setQuickAddOpen(true)}>
+                <Plus className="h-4 w-4" />Quick add
+              </Button>
+              <Button className="h-10 whitespace-nowrap" variant="outline" onClick={resetFilters}>
+                <RefreshCcw className="h-4 w-4" />Reset
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <FluidMetricCard icon={Droplets} label="Current intake" value={`${totals.intake} ml`} detail={`${countRows(scopedRows, "Intake")} intake entries`} tone="info" />
+          <FluidMetricCard icon={Droplets} label="Current output" value={`${totals.output} ml`} detail={`${countRows(scopedRows, "Output")} output entries`} tone="success" />
+          <FluidMetricCard icon={ShieldCheck} label="Net balance" value={formatSignedMl(totals.balance)} detail={`Previous ${formatSignedMl(previousBalance)}`} tone={balanceTone(totals.balance)} />
+          <FluidMetricCard icon={AlertTriangle} label="Fluid alerts" value={alerts.length} detail={alerts[0]?.title ?? "No open fluid alert"} tone={alerts.some((alert) => alert.tone === "danger" || alert.tone === "critical") ? "danger" : alerts.length ? "warning" : "success"} />
+        </div>
+
+        {mode === "Table" ? (
+          <FluidBalanceMatrix buckets={buckets} rows={scopedRows} activeCell={activeCell} onSelectCell={setActiveCell} />
+        ) : (
+          <FluidBalanceGraph series={graphSeries} />
+        )}
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <FluidLedger rows={scopedRows} />
+          <RunningTotalPanel rows={currentDayRows} alerts={alerts} activeCell={activeCell} />
+        </div>
+      </div>
+
+      <QuickFluidEntryDialog
+        draft={draft}
+        open={quickAddOpen}
+        onChange={setDraft}
+        onKindChange={changeDraftKind}
+        onOpenChange={setQuickAddOpen}
+        onSave={saveManualEntry}
+        patientLabel={`${selectedPatient.bedNo} - ${selectedPatient.patientName}`}
+      />
+    </div>
+  );
+}
+
+function FluidHeaderMetric({ label, value, tone }: { label: string; value: string; tone: StatusTone }) {
+  return (
+    <div className="rounded-md border border-white/20 bg-white/15 px-3 py-2">
+      <div className="text-[11px] font-semibold uppercase text-sky-100">{label}</div>
+      <div className={cn("mt-1 text-lg font-bold text-white", tone === "danger" || tone === "critical" ? "text-rose-50" : "")}>{value}</div>
+    </div>
+  );
+}
+
+function FieldBlock({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <label className={cn("block min-w-0 space-y-1", className)}>
+      <span className="text-xs font-semibold uppercase text-slate-500">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function FluidMetricCard({ icon: Icon, label, value, detail, tone }: { icon: LucideIcon; label: string; value: React.ReactNode; detail: string; tone: StatusTone }) {
+  return (
+    <div className={cn("rounded-md border p-4 shadow-sm", metricToneClass(tone))}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs font-semibold uppercase text-slate-500">{label}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-950">{value}</div>
+        </div>
+        <span className="rounded-md bg-white/80 p-2 shadow-sm">
+          <Icon className="h-5 w-5" />
+        </span>
+      </div>
+      <p className="mt-3 text-xs text-slate-600">{detail}</p>
+    </div>
+  );
+}
+
+function FluidBalanceMatrix({ buckets, rows, activeCell, onSelectCell }: { buckets: Bucket[]; rows: IcuIntakeOutput[]; activeCell: ActiveCell; onSelectCell: (cell: ActiveCell) => void }) {
+  return (
+    <Card className="overflow-hidden border-slate-200">
+      <CardHeader className="border-b border-slate-100 bg-white">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Intake / Output Chart</CardTitle>
+            <CardDescription>Hourly, shift, 24-hour, and cumulative balance with source-level details.</CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <StatusPill tone="info">{rows.length} entries</StatusPill>
+            <StatusPill tone={rows.some((row) => row.status === "Pending review") ? "warning" : "success"}>{rows.filter((row) => row.status === "Pending review").length} pending</StatusPill>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1180px] border-collapse text-sm">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="sticky left-0 z-10 w-44 border-b border-r border-slate-200 bg-slate-50 px-3 py-3 text-left text-xs font-bold uppercase text-slate-600">Component</th>
+                {buckets.map((bucket) => (
+                  <th className="border-b border-r border-slate-200 px-3 py-3 text-center text-xs font-bold uppercase text-slate-600" key={bucket.key}>
+                    <span className="block">{bucket.label}</span>
+                    {bucket.sublabel ? <span className="mt-0.5 block text-[10px] font-medium normal-case text-slate-400">{bucket.sublabel}</span> : null}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {matrixRows.map((row) => (
+                <tr className={cn(row.type === "section" ? "bg-slate-900 text-white" : row.type === "total" || row.type === "net" ? "bg-slate-100 font-bold" : "bg-white", "border-b border-slate-100")} key={`${row.type}-${row.label}`}>
+                  <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", row.type === "section" ? "bg-slate-900 text-white" : row.type === "total" || row.type === "net" ? "bg-slate-100 text-slate-950" : row.kind === "Intake" ? "bg-sky-50 text-slate-900" : "bg-emerald-50 text-slate-900")}>
+                    {row.label}
+                  </td>
+                  {buckets.map((bucket) => {
+                    if (row.type === "section") return <td className="border-r border-slate-800 bg-slate-900 px-3 py-2" key={bucket.key} />;
+                    const cellRows = getCellRows(rows, row, bucket);
+                    const value = sumCellRows(cellRows, row.type);
+                    return (
+                      <td className="border-r border-slate-100 px-2 py-2 text-center" key={bucket.key}>
+                        <IoQuantityCell
+                          bucket={bucket}
+                          row={row}
+                          rows={cellRows}
+                          value={value}
+                          active={activeCell?.title === row.label && activeCell.bucket === bucket.label}
+                          onSelect={() => onSelectCell({ title: row.label, bucket: bucket.label, total: value, rows: cellRows })}
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function IoQuantityCell({ bucket, row, rows, value, active, onSelect }: { bucket: Bucket; row: MatrixRow; rows: IcuIntakeOutput[]; value: number; active: boolean; onSelect: () => void }) {
+  const title = rows.length ? rows.map((entry) => `${entry.component}: ${entry.quantityMl} ml at ${entry.time} | ${entry.source} | ${entry.note}`).join("\n") : "No entry";
+  const tone = row.type === "net" ? balanceTextClass(value) : row.kind === "Intake" ? "text-sky-800" : "text-emerald-800";
+  const surface = rows.length ? row.kind === "Intake" ? "bg-sky-50 border-sky-200 hover:bg-sky-100" : row.kind === "Output" ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100" : "bg-slate-50 border-slate-200 hover:bg-slate-100" : "bg-white border-transparent text-slate-300";
+
+  return (
+    <button
+      aria-label={`${row.label} ${bucket.label} ${value} ml`}
+      className={cn("min-h-9 w-full rounded-md border px-2 py-1 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-sky-200", surface, tone, active ? "ring-2 ring-sky-300" : "")}
+      title={title}
+      type="button"
+      onClick={onSelect}
+    >
+      {value ? formatSignedForNet(value, row.type) : "-"}
+    </button>
+  );
+}
+
+function FluidBalanceGraph({ series }: { series: Array<{ key: string; label: string; intake: number; output: number; balance: number }> }) {
+  const width = Math.max(760, series.length * 84);
+  const height = 270;
+  const pad = 36;
+  const maxVolume = Math.max(100, ...series.flatMap((point) => [point.intake, point.output, Math.abs(point.balance)]));
+  const plotHeight = height - pad * 2;
+  const plotWidth = width - pad * 2;
+  const baseline = height - pad;
+  const balancePoints = series.map((point, index) => {
+    const x = pad + (series.length <= 1 ? plotWidth / 2 : (index / (series.length - 1)) * plotWidth);
+    const normalized = (point.balance + maxVolume) / (maxVolume * 2);
+    const y = pad + (1 - normalized) * plotHeight;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <Card className="overflow-hidden border-slate-200">
+      <CardHeader className="border-b border-slate-100 bg-white">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Fluid Balance Graph</CardTitle>
+            <CardDescription>Blue intake, green output, and red/green net balance trend.</CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="info">Intake</Badge>
+            <Badge tone="success">Output</Badge>
+            <Badge tone="danger">Net watch</Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto p-4">
+          <svg className="block" height={height} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
+            <line stroke="#cbd5e1" strokeDasharray="4 4" x1={pad} x2={width - pad} y1={baseline} y2={baseline} />
+            {series.map((point, index) => {
+              const x = pad + (series.length <= 1 ? plotWidth / 2 : (index / (series.length - 1)) * plotWidth);
+              const intakeHeight = Math.max(4, (point.intake / maxVolume) * (plotHeight - 38));
+              const outputHeight = Math.max(4, (point.output / maxVolume) * (plotHeight - 38));
+              const balanceY = pad + (1 - ((point.balance + maxVolume) / (maxVolume * 2))) * plotHeight;
+              return (
+                <g key={point.key}>
+                  <rect fill="#0ea5e9" height={intakeHeight} rx="4" width="18" x={x - 23} y={baseline - intakeHeight} />
+                  <rect fill="#10b981" height={outputHeight} rx="4" width="18" x={x + 5} y={baseline - outputHeight} />
+                  <circle cx={x} cy={balanceY} fill={point.balance >= 0 ? "#f97316" : "#dc2626"} r="4" />
+                  <text fill="#475569" fontSize="10" textAnchor="middle" x={x} y={height - 10}>{point.label}</text>
+                </g>
+              );
+            })}
+            <polyline fill="none" points={balancePoints} stroke="#dc2626" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+          </svg>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FluidLedger({ rows }: { rows: IcuIntakeOutput[] }) {
+  return (
+    <Card className="border-slate-200">
+      <CardHeader className="border-b border-slate-100 bg-white">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Source Ledger</CardTitle>
+            <CardDescription>Medication, blood, assessment, drain, pump, and manual bedside entries.</CardDescription>
+          </div>
+          <StatusPill tone="info">{rows.length} visible</StatusPill>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[980px] border-collapse text-sm">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                {["Time", "Type", "Component", "Quantity", "Source", "Status", "Nurse", "Comment"].map((heading) => (
+                  <th className="border-b border-slate-200 px-3 py-2 text-left" key={heading}>{heading}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr className="border-b border-slate-100 last:border-0" key={row.id}>
+                  <td className="px-3 py-2 font-semibold text-slate-900">{row.date} {row.time}</td>
+                  <td className="px-3 py-2"><Badge tone={row.kind === "Intake" ? "info" : "success"}>{row.kind}</Badge></td>
+                  <td className="px-3 py-2">
+                    <div className="font-semibold text-slate-900">{row.component}</div>
+                    <div className="text-xs text-slate-500">{row.category} | {row.route}</div>
+                  </td>
+                  <td className={cn("px-3 py-2 font-bold", row.kind === "Intake" ? "text-sky-700" : "text-emerald-700")}>{row.quantityMl} ml</td>
+                  <td className="px-3 py-2">{row.source}</td>
+                  <td className="px-3 py-2"><Badge tone={statusTone(row.status)}>{row.status}</Badge></td>
+                  <td className="px-3 py-2">{row.nurse}</td>
+                  <td className="px-3 py-2 text-slate-600">{row.note}</td>
+                </tr>
+              ))}
+              {!rows.length ? (
+                <tr>
+                  <td className="px-3 py-8 text-center text-sm text-slate-500" colSpan={8}>No intake/output records found for the selected filters.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickFluidEntryDialog({
+  draft,
+  open,
+  onChange,
+  onKindChange,
+  onOpenChange,
+  onSave,
+  patientLabel,
+}: {
+  draft: IoDraft;
+  open: boolean;
+  onChange: (draft: IoDraft) => void;
+  onKindChange: (kind: IcuIntakeOutput["kind"]) => void;
+  onOpenChange: (open: boolean) => void;
+  onSave: () => void;
+  patientLabel: string;
+}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft outline-none">
+          <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-sky-700 p-4 text-white">
+            <div>
+              <Dialog.Title className="text-lg font-bold">Add Intake / Output</Dialog.Title>
+              <Dialog.Description className="mt-1 text-sm text-sky-50">{patientLabel} | component, quantity, time, source, and comment.</Dialog.Description>
+            </div>
+            <Dialog.Close asChild>
+              <button className="rounded-md p-2 text-sky-50 transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/50" type="button" aria-label="Close quick add">
+                <X className="h-5 w-5" />
+              </button>
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <QuickFluidEntry draft={draft} onChange={onChange} onKindChange={onKindChange} onSave={onSave} />
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoDraft; onChange: (draft: IoDraft) => void; onKindChange: (kind: IcuIntakeOutput["kind"]) => void; onSave: () => void }) {
+  const categories = draft.kind === "Intake" ? intakeCategories : outputCategories;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="text-sm font-bold text-slate-950">Entry type</div>
+          <Badge tone={draft.kind === "Intake" ? "info" : "success"}>{draft.kind}</Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {(["Intake", "Output"] satisfies IcuIntakeOutput["kind"][]).map((kind) => (
+            <Button className="h-9" key={kind} variant={draft.kind === kind ? "default" : "outline"} onClick={() => onKindChange(kind)}>{kind}</Button>
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <FieldBlock label="Category">
+          <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.category} onChange={(event) => onChange({ ...draft, category: event.target.value })}>
+            {categories.map((category) => <option key={category}>{category}</option>)}
+          </select>
+        </FieldBlock>
+        <FieldBlock label="Component">
+          <Input value={draft.component} onChange={(event) => onChange({ ...draft, component: event.target.value })} />
+        </FieldBlock>
+        <FieldBlock label="Quantity ml">
+          <Input inputMode="numeric" value={draft.quantity} onChange={(event) => onChange({ ...draft, quantity: event.target.value })} />
+        </FieldBlock>
+        <FieldBlock label="Time">
+          <Input type="time" value={draft.time} onChange={(event) => onChange({ ...draft, time: event.target.value })} />
+        </FieldBlock>
+        <FieldBlock label="Date">
+          <Input type="date" value={draft.date} onChange={(event) => onChange({ ...draft, date: event.target.value })} />
+        </FieldBlock>
+        <FieldBlock label="Source">
+          <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.source} onChange={(event) => onChange({ ...draft, source: event.target.value as IcuIntakeOutput["source"] })}>
+            {draftSourceOptions.map((source) => <option key={source}>{source}</option>)}
+          </select>
+        </FieldBlock>
+        <FieldBlock label="Route">
+          <Input value={draft.route} onChange={(event) => onChange({ ...draft, route: event.target.value })} />
+        </FieldBlock>
+        <FieldBlock className="md:col-span-2" label="Comment">
+          <textarea className="min-h-20 w-full rounded-md border border-slate-300 bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.comment} onChange={(event) => onChange({ ...draft, comment: event.target.value })} />
+        </FieldBlock>
+      </div>
+      <div className="flex justify-end border-t border-slate-200 pt-4">
+        <Button className="min-w-[160px]" onClick={onSave}>
+          <Plus className="h-4 w-4" />Add entry
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function RunningTotalPanel({ rows, alerts, activeCell }: { rows: IcuIntakeOutput[]; alerts: Array<{ title: string; detail: string; tone: StatusTone }>; activeCell: ActiveCell }) {
+  const sourceStats = buildSourceStats(rows);
+  const totals = summarizeRows(rows);
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 bg-white">
+          <CardTitle>Running Total</CardTitle>
+          <CardDescription>Current day source totals and review status.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          <TotalLine label="Intake" value={`${totals.intake} ml`} tone="info" />
+          <TotalLine label="Output" value={`${totals.output} ml`} tone="success" />
+          <TotalLine label="Net balance" value={formatSignedMl(totals.balance)} tone={balanceTone(totals.balance)} />
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-slate-500">
+              <ListFilter className="h-4 w-4" />Source sync
+            </div>
+            <div className="space-y-2">
+              {sourceStats.map((stat) => (
+                <div className="flex items-center justify-between gap-2 text-sm" key={stat.source}>
+                  <span className="text-slate-700">{stat.source}</span>
+                  <span className="font-bold text-slate-950">{stat.quantity} ml</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 bg-white">
+          <CardTitle>Review Panel</CardTitle>
+          <CardDescription>Alerts and selected cell details.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          {alerts.map((alert) => (
+            <div className={cn("rounded-md border p-3", metricToneClass(alert.tone))} key={alert.title}>
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4" />
+                <div>
+                  <div className="text-sm font-bold text-slate-950">{alert.title}</div>
+                  <div className="mt-1 text-xs text-slate-600">{alert.detail}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!alerts.length ? (
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">Fluid balance is within review limits.</div>
+          ) : null}
+
+          <div className="rounded-md border border-slate-200 bg-white p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-slate-500">
+              <FileSearch className="h-4 w-4" />Cell details
+            </div>
+            {activeCell?.rows.length ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-bold text-slate-950">{activeCell.title} / {activeCell.bucket}</span>
+                  <Badge tone={activeCell.total >= 0 ? "info" : "danger"}>{formatSignedMl(activeCell.total)}</Badge>
+                </div>
+                {activeCell.rows.map((row) => (
+                  <div className="rounded-md bg-slate-50 p-2 text-xs text-slate-700" key={row.id}>
+                    <div className="font-semibold text-slate-950">{row.component} - {row.quantityMl} ml</div>
+                    <div>{row.time} | {row.source} | {row.nurse}</div>
+                    <div className="mt-1 text-slate-500">{row.note}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500">Select a chart cell to view component-level details.</div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function TotalLine({ label, value, tone }: { label: string; value: string; tone: StatusTone }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
+      <span className="text-sm font-semibold text-slate-600">{label}</span>
+      <Badge tone={tone}>{value}</Badge>
+    </div>
+  );
+}
+
+function buildBuckets(view: IoView, selectedDate: string, rows: IcuIntakeOutput[]): Bucket[] {
+  if (view === "Hourly") {
+    return Array.from({ length: 24 }, (_, hour) => {
+      const label = `${String(hour).padStart(2, "0")}:00`;
+      return {
+        key: label,
+        label,
+        match: (row: IcuIntakeOutput) => row.date === selectedDate && Number(row.time.slice(0, 2)) === hour,
+      };
+    });
+  }
+
+  if (view === "12 Hours") {
+    return [
+      { key: "day", label: "06:00 - 17:30", sublabel: "Day shift", match: (row) => row.date === selectedDate && row.shift === "Day" },
+      { key: "night", label: "18:00 - 05:30", sublabel: "Night shift", match: (row) => row.date === selectedDate && row.shift === "Night" },
+    ];
+  }
+
+  if (view === "24 Hours") {
+    return [{ key: selectedDate, label: formatShortDate(selectedDate), sublabel: "24 hour total", match: (row) => row.date === selectedDate }];
+  }
+
+  const dates = Array.from(new Set(rows.map((row) => row.date))).sort();
+  const safeDates = dates.length ? dates : [selectedDate];
+  return safeDates.map((date) => ({
+    key: date,
+    label: formatShortDate(date),
+    sublabel: "Cumulative",
+    match: (row: IcuIntakeOutput) => row.date === date,
+  }));
+}
+
+function getCellRows(rows: IcuIntakeOutput[], matrixRow: MatrixRow, bucket: Bucket) {
+  return rows.filter((row) => {
+    if (!bucket.match(row)) return false;
+    if (matrixRow.type === "category") return row.kind === matrixRow.kind && row.category === matrixRow.label;
+    if (matrixRow.type === "total") return row.kind === matrixRow.kind;
+    if (matrixRow.type === "net") return true;
+    return false;
+  });
+}
+
+function sumCellRows(rows: IcuIntakeOutput[], type: MatrixRowType) {
+  if (type === "net") return rows.reduce((sum, row) => sum + row.balanceMl, 0);
+  return rows.reduce((sum, row) => sum + row.quantityMl, 0);
+}
+
+function summarizeRows(rows: IcuIntakeOutput[]) {
+  const intake = rows.reduce((sum, row) => sum + row.intakeMl, 0);
+  const output = rows.reduce((sum, row) => sum + row.outputMl, 0);
+  return { intake, output, balance: intake - output };
+}
+
+function countRows(rows: IcuIntakeOutput[], kind: IcuIntakeOutput["kind"]) {
+  return rows.filter((row) => row.kind === kind).length;
+}
+
+function buildGraphSeries(rows: IcuIntakeOutput[], buckets: Bucket[]) {
+  return buckets.map((bucket) => {
+    const bucketRows = rows.filter((row) => bucket.match(row));
+    const totals = summarizeRows(bucketRows);
+    return { key: bucket.key, label: bucket.label, ...totals };
+  });
+}
+
+function buildFluidAlerts(rows: IcuIntakeOutput[], balance: number): Array<{ title: string; detail: string; tone: StatusTone }> {
+  const lowUrine = rows.filter((row) => row.category === "Urine output" && row.quantityMl < 30);
+  const drainTotal = rows.filter((row) => row.category === "Drain output").reduce((sum, row) => sum + row.quantityMl, 0);
+  const pending = rows.filter((row) => row.status === "Pending review");
+  const alerts: Array<{ title: string; detail: string; tone: StatusTone }> = [];
+
+  if (lowUrine.length) {
+    alerts.push({ title: "Low urine output", detail: `${lowUrine.length} hour(s) below 30 ml. Escalate renal/fluid review.`, tone: "danger" });
+  }
+  if (balance > 500) {
+    alerts.push({ title: "Positive balance watch", detail: `${formatSignedMl(balance)} visible balance. Review fluids, vasopressors, and diuretic plan.`, tone: "warning" });
+  }
+  if (drainTotal > 200) {
+    alerts.push({ title: "Drain output rising", detail: `${drainTotal} ml drain output in selected window. Surgical review threshold crossed.`, tone: "warning" });
+  }
+  if (pending.length) {
+    alerts.push({ title: "Pending verification", detail: `${pending.length} entries need review/sign-off.`, tone: "info" });
+  }
+
+  return alerts;
+}
+
+function buildSourceStats(rows: IcuIntakeOutput[]) {
+  const stats = draftSourceOptions
+    .map((source) => ({
+      source,
+      quantity: rows.filter((row) => row.source === source).reduce((sum, row) => sum + row.quantityMl, 0),
+    }))
+    .filter((stat) => stat.quantity > 0);
+
+  return stats.length ? stats : [{ source: "No source activity", quantity: 0 }];
+}
+
+function getShift(time: string): IcuIntakeOutput["shift"] {
+  const hour = Number(time.slice(0, 2));
+  return hour >= 6 && hour < 18 ? "Day" : "Night";
+}
+
+function isInTimeWindow(row: IcuIntakeOutput, timeWindow: TimeWindow, startTime: string, endTime: string) {
+  if (timeWindow === "All time") return true;
+  if (timeWindow === "Day shift") return row.shift === "Day";
+  if (timeWindow === "Night shift") return row.shift === "Night";
+
+  const rowMinutes = toMinutes(row.time);
+  const startMinutes = toMinutes(startTime);
+  const endMinutes = toMinutes(endTime);
+
+  if (startMinutes <= endMinutes) {
+    return rowMinutes >= startMinutes && rowMinutes <= endMinutes;
+  }
+
+  return rowMinutes >= startMinutes || rowMinutes <= endMinutes;
+}
+
+function toMinutes(time: string) {
+  const [hours = "0", minutes = "0"] = time.split(":");
+  return Number(hours) * 60 + Number(minutes);
+}
+
+function formatSignedMl(value: number) {
+  if (value > 0) return `+${value} ml`;
+  if (value < 0) return `${value} ml`;
+  return "0 ml";
+}
+
+function formatSignedForNet(value: number, type: MatrixRowType) {
+  return type === "net" ? formatSignedMl(value) : `${value} ml`;
+}
+
+function formatShortDate(date: string) {
+  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short" }).format(new Date(`${date}T00:00:00`));
+}
+
+function balanceTone(value: number): StatusTone {
+  if (value > 500 || value < -300) return "danger";
+  if (value > 300 || value < -150) return "warning";
+  return "success";
+}
+
+function balanceTextClass(value: number) {
+  if (value > 500 || value < -300) return "text-rose-700";
+  if (value > 300 || value < -150) return "text-amber-700";
+  return "text-slate-800";
+}
+
+function metricToneClass(tone: StatusTone) {
+  if (tone === "danger" || tone === "critical") return "border-rose-200 bg-rose-50 text-rose-800";
+  if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-800";
+  if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (tone === "info") return "border-sky-200 bg-sky-50 text-sky-800";
+  return "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function statusTone(status: IcuIntakeOutput["status"]): StatusTone {
+  if (status === "Auto synced" || status === "Signed") return "success";
+  if (status === "Pending review") return "warning";
+  return "info";
+}

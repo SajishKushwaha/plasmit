@@ -102,12 +102,12 @@ export const navigationItems: NavigationItem[] = [
   { id: "appointments",        label: "Appointment",    icon: CalendarClock, route: "/appointments", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Receptionist", "Nurse", "Billing Executive", "Management"], status: "ready" },
   {
     id: "admission", label: "Admission", icon: DoorOpen, route: "/admission", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Billing Executive", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Billing Executive", "Management"],
     status: "ready",
   },
   { id: "opd",                 label: "OPD",            icon: Stethoscope,   route: "/opd",          group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Pharmacist", "Lab Technician", "Management"], status: "ready" },
-  { id: "clinical-examination",label: "Clinical Exam",  icon: ClipboardList, route: "/clinical-examination", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Management"], status: "ready" },
-  { id: "rapid-review",        label: "Rapid Review",   icon: Activity,      route: "/rapid-review", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Management"], status: "ready" },
+  { id: "clinical-examination",label: "Clinical Exam",  icon: ClipboardList, route: "/clinical-examination", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"], status: "ready" },
+  { id: "rapid-review",        label: "Rapid Review",   icon: Activity,      route: "/rapid-review", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"], status: "ready" },
   { id: "hospital-admin-ldt",   label: "LDT",            icon: FlaskConical,  route: "/hospital-admin/ldt", group: "Hospital Admin", allowedRoles: ["Hospital Admin"], status: "ready" },
   { id: "icu-nursing-station",  label: "Nurse Station",  icon: BedDouble,     route: "/icu-nursing", group: "Clinical", allowedRoles: ["Nurse"], status: "ready" },
   { id: "icu-nursing-patients", label: "Assigned Patients", icon: Users,     route: "/icu-nursing/patients", group: "Clinical", allowedRoles: ["Nurse"], status: "ready" },
@@ -144,12 +144,12 @@ export const navigationItems: NavigationItem[] = [
   },
   {
     id: "renal", label: "Renal", icon: Droplets, route: "/renal", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Lab Technician", "Billing Executive", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Lab Technician", "Billing Executive", "Management"],
     status: "ready",
   },
   {
     id: "intake-output", label: "Intake Output", icon: Droplets, route: "/intake-output", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"],
     status: "ready",
   },
   {
@@ -164,7 +164,7 @@ export const navigationItems: NavigationItem[] = [
   },
   {
     id: "ipd", label: "Monitoring", icon: BedDouble, route: "/ipd", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"],
     status: "ready",
   },
   {

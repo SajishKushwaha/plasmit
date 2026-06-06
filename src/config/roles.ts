@@ -87,10 +87,14 @@ export const adminPermissions = [
 export const doctorAllowedModules = [
   "/doctor-dashboard",
   "/doctor",
+  "/admission",
   "/appointments",
   "/opd",
   "/clinical-examination",
   "/rapid-review",
+  "/renal",
+  "/intake-output",
+  "/ipd",
   "/emergency",
   "/poct",
 ];

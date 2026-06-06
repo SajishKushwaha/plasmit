@@ -103,7 +103,7 @@ export function LoginPage() {
 
   React.useEffect(() => {
     if (window.localStorage.getItem(authStorageKey) === "true") {
-      router.replace("/dashboard");
+      router.replace("/doctor-dashboard");
     }
   }, [router]);
 
@@ -124,7 +124,7 @@ export function LoginPage() {
       setTransitioning(true);
       toast.success("Access granted");
       window.setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/doctor-dashboard");
       }, 320);
     }, 1000);
   }

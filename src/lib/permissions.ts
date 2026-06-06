@@ -7,6 +7,8 @@ import { useRole } from "@/components/providers/role-provider";
 import {
   doctorAllowedModules,
   doctorBlockedModules,
+  doctorIpdAllowedModules,
+  doctorOpdAllowedModules,
   getDefaultRouteForRole,
   hasPermission,
   isAdminOnlyRoute,
@@ -43,7 +45,7 @@ export function useDefaultRoute(): string {
  */
 export function useIsDoctor(): boolean {
   const { role } = useRole();
-  return role === "Doctor";
+  return role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD";
 }
 
 /**
@@ -85,6 +87,8 @@ export function canSwitchToRole(fromRole: Role, toRole: Role): boolean {
  * Get list of accessible modules for a role
  */
 export function getAccessibleModules(role: Role): string[] {
+  if (role === "Doctor OPD") return doctorOpdAllowedModules;
+  if (role === "Doctor IPD") return doctorIpdAllowedModules;
   return role === "Doctor" ? doctorAllowedModules : [];
 }
 
@@ -92,7 +96,7 @@ export function getAccessibleModules(role: Role): string[] {
  * Get list of blocked modules for a role
  */
 export function getBlockedModules(role: Role): string[] {
-  return role === "Doctor" ? [...doctorBlockedModules] : [];
+  return role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD" ? [...doctorBlockedModules] : [];
 }
 
 /**

@@ -19,6 +19,8 @@ export const diagnosticsAccessRoles: Role[] = [
   "Super Admin",
   "Hospital Admin",
   "Doctor",
+  "Doctor OPD",
+  "Doctor IPD",
   "Nurse",
   "Receptionist",
   "Lab Technician",
@@ -29,7 +31,7 @@ export const diagnosticsAccessRoles: Role[] = [
 
 export const labFullAccessRoles: Role[] = ["Super Admin", "Lab Technician"];
 export const radiologyFullAccessRoles: Role[] = ["Super Admin", "Radiologist"];
-export const diagnosticsReadOnlyRoles: Role[] = ["Hospital Admin", "Doctor", "Nurse", "Receptionist", "Billing Executive", "Management"];
+export const diagnosticsReadOnlyRoles: Role[] = ["Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Receptionist", "Billing Executive", "Management"];
 
 export function useDiagnosticsAccess(module: "lab" | "radiology" = "lab") {
   const { role } = useRole();

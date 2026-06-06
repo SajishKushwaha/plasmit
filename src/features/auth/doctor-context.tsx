@@ -118,7 +118,7 @@ function readStoredAvailStatus(): AvailStatus {
  */
 export function DoctorProvider({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
-  const isDoctor = role === "Doctor";
+  const isDoctor = role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD";
 
   // Availability Management States
   const [availStatus, setAvailStatusState] = React.useState<AvailStatus>("Available");
@@ -286,8 +286,9 @@ export function DoctorProvider({ children }: { children: React.ReactNode }) {
   }, [isDoctor]);
 
   const getPrimaryDashboard = React.useCallback((): string => {
+    if (role === "Doctor IPD") return "/doctor-dashboard1";
     return isDoctor ? "/doctor-dashboard" : "/dashboard";
-  }, [isDoctor]);
+  }, [isDoctor, role]);
 
   const value: DoctorContextType = React.useMemo(
     () => ({

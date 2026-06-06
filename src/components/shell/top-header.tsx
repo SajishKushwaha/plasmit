@@ -33,7 +33,7 @@ const ProfileMenu = dynamic(
 
 export function TopHeader() {
   const { role } = useRole();
-  const isDoctor = role === "Doctor";
+  const isDoctor = role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD";
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-1 border-b border-header-border bg-white/92 px-2 shadow-[0_1px_0_rgba(229,227,236,0.7)] backdrop-blur sm:gap-2 md:px-4">

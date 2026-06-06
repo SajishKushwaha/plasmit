@@ -19,6 +19,7 @@ const roleChangeEvent = "plasmit-role-change";
 function readStoredRole(): Role {
   if (typeof window === "undefined") return DEFAULT_ROLE;
   const saved = window.localStorage.getItem("plasmit-role");
+  if (saved === "Doctor") return "Doctor OPD";
   return saved && roles.includes(saved as Role) ? (saved as Role) : DEFAULT_ROLE;
 }
 

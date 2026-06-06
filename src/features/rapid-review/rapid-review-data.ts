@@ -652,7 +652,7 @@ export const rapidRoleAccess: Partial<Record<Role, { summary: string; actions: s
   },
 };
 
-export const rapidAllowedRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"];
+export const rapidAllowedRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Management"];
 
 export const rapidReviewPatients: RapidReviewPatient[] = [
   {

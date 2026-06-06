@@ -17,8 +17,8 @@ import { getPatientById, mockPatientVisits } from "@/data/patients";
 import { mockQueueEntries, mockTokens } from "@/data/appointments";
 import type { AppointmentRecord, DelayLevel, OperationalPriority, Role, StatusTone } from "@/types";
 
-export const appointmentAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Receptionist", "Doctor", "Nurse", "Billing Executive", "Management"];
-export const appointmentReadOnlyRoles: Role[] = ["Doctor", "Nurse", "Billing Executive", "Management"];
+export const appointmentAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Receptionist", "Doctor", "Doctor OPD", "Nurse", "Billing Executive", "Management"];
+export const appointmentReadOnlyRoles: Role[] = ["Doctor", "Doctor OPD", "Nurse", "Billing Executive", "Management"];
 
 export function useAppointmentAccess() {
   const { role } = useRole();

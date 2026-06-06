@@ -12,6 +12,8 @@ export const roleRoutes: Record<Role, string> = {
   "Super Admin": "/dashboard",
   "Hospital Admin": "/dashboard",
   Doctor: "/doctor-dashboard",
+  "Doctor OPD": "/doctor-dashboard",
+  "Doctor IPD": "/doctor-dashboard1",
   Nurse: "/icu-nursing",
   "Blood Bank": "/blood-bank/blood-request",
   Receptionist: "/dashboard",
@@ -86,15 +88,49 @@ export const adminPermissions = [
  */
 export const doctorAllowedModules = [
   "/doctor-dashboard",
+  "/doctor-dashboard1",
   "/doctor",
   "/admission",
   "/appointments",
   "/opd",
+  "/patients",
   "/clinical-examination",
   "/rapid-review",
   "/renal",
   "/intake-output",
   "/ipd",
+  "/laboratory",
+  "/radiology",
+  "/emergency",
+  "/poct",
+];
+
+export const doctorOpdAllowedModules = [
+  "/doctor-dashboard",
+  "/doctor",
+  "/appointments",
+  "/opd",
+  "/patients",
+  "/clinical-examination",
+  "/rapid-review",
+  "/laboratory",
+  "/radiology",
+  "/emergency",
+  "/poct",
+];
+
+export const doctorIpdAllowedModules = [
+  "/doctor-dashboard1",
+  "/doctor",
+  "/admission",
+  "/patients",
+  "/clinical-examination",
+  "/rapid-review",
+  "/renal",
+  "/intake-output",
+  "/ipd",
+  "/laboratory",
+  "/radiology",
   "/emergency",
   "/poct",
 ];
@@ -138,6 +174,28 @@ export const roleModuleAccess: Record<Role, {
       "CLINICAL_NOTES",
       "PRESCRIPTIONS",
       "TELEMEDICINE",
+      "EMERGENCY_ALERTS",
+    ],
+  },
+  "Doctor OPD": {
+    allowed: doctorOpdAllowedModules,
+    blocked: [...doctorBlockedModules],
+    features: [
+      "VIEW_DOCTOR_DASHBOARD",
+      "MANAGE_APPOINTMENTS",
+      "CLINICAL_NOTES",
+      "PRESCRIPTIONS",
+      "TELEMEDICINE",
+      "EMERGENCY_ALERTS",
+    ],
+  },
+  "Doctor IPD": {
+    allowed: doctorIpdAllowedModules,
+    blocked: [...doctorBlockedModules],
+    features: [
+      "VIEW_DOCTOR_DASHBOARD",
+      "CLINICAL_NOTES",
+      "PRESCRIPTIONS",
       "EMERGENCY_ALERTS",
     ],
   },
@@ -221,7 +279,7 @@ export function getDefaultRouteForRole(role: Role): string {
  * Check if user has specific permission
  */
 export function hasPermission(role: Role, permission: string): boolean {
-  if (role === "Doctor") {
+  if (role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD") {
     return doctorPermissions.includes(permission);
   }
   
@@ -236,7 +294,7 @@ export function hasPermission(role: Role, permission: string): boolean {
  * Get all permissions for a role
  */
 export function getPermissionsForRole(role: Role): string[] {
-  if (role === "Doctor") {
+  if (role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD") {
     return doctorPermissions;
   }
   

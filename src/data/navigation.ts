@@ -65,35 +65,36 @@ export const navigationItems: NavigationItem[] = [
   // =====================================================
   // DOCTOR: MAIN
   // =====================================================
-  { id: "doctor-dashboard",    label: "Dashboard",            icon: LayoutDashboard,   route: "/doctor-dashboard",     group: "Main",     allowedRoles: ["Doctor"], status: "ready" },
+  { id: "doctor-dashboard",    label: "Dashboard",            icon: LayoutDashboard,   route: "/doctor-dashboard",     group: "Main",     allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
+  { id: "doctor-dashboard1",   label: "Dashboard1",           icon: Activity,          route: "/doctor-dashboard1",    group: "Main",     allowedRoles: ["Doctor", "Doctor IPD"], status: "ready" },
 
   // =====================================================
   // DOCTOR: CLINICAL
   // =====================================================
-  { id: "doctor-appointments", label: "Appointments",         icon: CalendarClock,     route: "/appointments",         group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-opd-queue",    label: "OPD Queue",            icon: Stethoscope,       route: "/opd",                  group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-orders",       label: "Orders",               icon: ScanSearch,        route: "/doctor/orders",        group: "Doctor",   allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-prescription", label: "Prescription",         icon: Pill,              route: "/doctor/prescription",  group: "Doctor",   allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-consult",      label: "Consultations",        icon: UserRound,         route: "/rapid-review",         group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-patients",     label: "Patient Records",      icon: IdCard,            route: "/patients",             group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-rx",           label: "Prescriptions",        icon: Pill,              route: "/prescriptions",        group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-lab",          label: "Lab Reports",          icon: FlaskConical,      route: "/laboratory",           group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-radiology",    label: "Radiology",            icon: ScanSearch,        route: "/radiology",            group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-emergency",    label: "Emergency Alerts",     icon: ShieldAlert,       route: "/emergency",            group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-tele",         label: "Telemedicine",         icon: Video,             route: "/telemedicine",         group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-followups",    label: "Follow-ups",           icon: CalendarCheck,     route: "/follow-ups",           group: "Clinical", allowedRoles: ["Doctor"], status: "ready" },
+  { id: "doctor-appointments", label: "Appointments",         icon: CalendarClock,     route: "/appointments",         group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
+  { id: "doctor-opd-queue",    label: "OPD Queue",            icon: Stethoscope,       route: "/opd",                  group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
+  { id: "doctor-orders",       label: "Orders",               icon: ScanSearch,        route: "/doctor/orders",        group: "Doctor",   allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
+  { id: "doctor-prescription", label: "Prescription",         icon: Pill,              route: "/doctor/prescription",  group: "Doctor",   allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
+  { id: "doctor-consult",      label: "Consultations",        icon: UserRound,         route: "/rapid-review",         group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
+  { id: "doctor-patients",     label: "Patient Records",      icon: IdCard,            route: "/patients",             group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
+  { id: "doctor-rx",           label: "Prescriptions",        icon: Pill,              route: "/prescriptions",        group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
+  { id: "doctor-lab",          label: "Lab Reports",          icon: FlaskConical,      route: "/laboratory",           group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
+  { id: "doctor-radiology",    label: "Radiology",            icon: ScanSearch,        route: "/radiology",            group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
+  { id: "doctor-emergency",    label: "Emergency Alerts",     icon: ShieldAlert,       route: "/emergency",            group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
+  { id: "doctor-tele",         label: "Telemedicine",         icon: Video,             route: "/telemedicine",         group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
+  { id: "doctor-followups",    label: "Follow-ups",           icon: CalendarCheck,     route: "/follow-ups",           group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
 
   // =====================================================
   // DOCTOR: SCHEDULE
   // =====================================================
-  { id: "doctor-availability", label: "Availability Mgmt",   icon: CalendarRange,     route: "/doctor-availability", group: "Schedule", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-calendar",     label: "Calendar & Schedule",  icon: Calendar,          route: "/appointments",         group: "Schedule", allowedRoles: ["Doctor"], status: "ready" },
+  { id: "doctor-availability", label: "Availability Mgmt",   icon: CalendarRange,     route: "/doctor-availability", group: "Schedule", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
+  { id: "doctor-calendar",     label: "Calendar & Schedule",  icon: Calendar,          route: "/appointments",         group: "Schedule", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
 
   // =====================================================
   // DOCTOR: PLATFORM
   // =====================================================
-  { id: "doctor-messages",     label: "Messages",             icon: MessageSquareText, route: "/messages",             group: "Platform", allowedRoles: ["Doctor"], status: "ready" },
-  { id: "doctor-settings",     label: "Settings",             icon: Settings,          route: "/settings",             group: "Platform", allowedRoles: ["Doctor"], status: "ready" },
+  { id: "doctor-messages",     label: "Messages",             icon: MessageSquareText, route: "/messages",             group: "Platform", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
+  { id: "doctor-settings",     label: "Settings",             icon: Settings,          route: "/settings",             group: "Platform", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
 
   // =====================================================
   // ADMIN / MANAGEMENT: Clinical Operations
@@ -102,12 +103,12 @@ export const navigationItems: NavigationItem[] = [
   { id: "appointments",        label: "Appointment",    icon: CalendarClock, route: "/appointments", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Receptionist", "Nurse", "Billing Executive", "Management"], status: "ready" },
   {
     id: "admission", label: "Admission", icon: DoorOpen, route: "/admission", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Billing Executive", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse", "Receptionist", "Billing Executive", "Management"],
     status: "ready",
   },
   { id: "opd",                 label: "OPD",            icon: Stethoscope,   route: "/opd",          group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Pharmacist", "Lab Technician", "Management"], status: "ready" },
-  { id: "clinical-examination",label: "Clinical Exam",  icon: ClipboardList, route: "/clinical-examination", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"], status: "ready" },
-  { id: "rapid-review",        label: "Rapid Review",   icon: Activity,      route: "/rapid-review", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"], status: "ready" },
+  { id: "clinical-examination",label: "Clinical Exam",  icon: ClipboardList, route: "/clinical-examination", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Management"], status: "ready" },
+  { id: "rapid-review",        label: "Rapid Review",   icon: Activity,      route: "/rapid-review", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Management"], status: "ready" },
   { id: "hospital-admin-ldt",   label: "LDT",            icon: FlaskConical,  route: "/hospital-admin/ldt", group: "Hospital Admin", allowedRoles: ["Hospital Admin"], status: "ready" },
   { id: "icu-nursing-station",  label: "Nurse Station",  icon: BedDouble,     route: "/icu-nursing", group: "Clinical", allowedRoles: ["Nurse"], status: "ready" },
   { id: "icu-nursing-patients", label: "Assigned Patients", icon: Users,     route: "/icu-nursing/patients", group: "Clinical", allowedRoles: ["Nurse"], status: "ready" },
@@ -144,27 +145,27 @@ export const navigationItems: NavigationItem[] = [
   },
   {
     id: "renal", label: "Renal", icon: Droplets, route: "/renal", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Lab Technician", "Billing Executive", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse", "Lab Technician", "Billing Executive", "Management"],
     status: "ready",
   },
   {
     id: "intake-output", label: "Intake Output", icon: Droplets, route: "/intake-output", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse", "Management"],
     status: "ready",
   },
   {
     id: "poct-add", label: "Add POCT", icon: FlaskConical, route: "/poct/add", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Lab Technician", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Lab Technician", "Management"],
     status: "ready",
   },
   {
     id: "poct-results", label: "View POCT Result", icon: Microscope, route: "/poct/results", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Lab Technician", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Lab Technician", "Management"],
     status: "ready",
   },
   {
     id: "ipd", label: "Monitoring", icon: BedDouble, route: "/ipd", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"],
     status: "ready",
   },
   {

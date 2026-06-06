@@ -119,7 +119,7 @@ export function LoginPage() {
         return;
       }
       window.localStorage.setItem(authStorageKey, "true");
-      window.localStorage.setItem("plasmit-role", "Doctor");
+      window.localStorage.setItem("plasmit-role", "Doctor OPD");
       window.localStorage.setItem("hk-general-remember", remember ? "true" : "false");
       setTransitioning(true);
       toast.success("Access granted");

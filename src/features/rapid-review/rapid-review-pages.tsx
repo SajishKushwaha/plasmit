@@ -4424,7 +4424,8 @@ function ObservationReviewDialog({
   const patient = state?.patient ?? null;
   const observation = state?.observation ?? null;
   const [reviewStatus, setReviewStatus] = React.useState<ObservationReviewUpdate["reviewStatus"]>(observation?.responseLevel === "Routine" ? "Reviewed" : "Reviewed");
-  const [reviewedBy, setReviewedBy] = React.useState(role === "Doctor" ? "Current Doctor" : role);
+  const isDoctorRole = role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD";
+  const [reviewedBy, setReviewedBy] = React.useState(isDoctorRole ? "Current Doctor" : role);
   const [reviewedAt, setReviewedAt] = React.useState("24 May 2026, now");
   const [doctorAction, setDoctorAction] = React.useState(observation ? defaultDoctorAction(observation) : "Continue clinical review");
   const [note, setNote] = React.useState(observation?.note ?? "");
@@ -4856,7 +4857,7 @@ function buildClinicalConsultRequest({
     location: `${patient.bed}, ${patient.ward}`,
     date: todayDateValue(),
     time: currentTimeValue(),
-    requestedBy: role === "Doctor" ? "Current Doctor" : role,
+    requestedBy: role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD" ? "Current Doctor" : role,
     department,
     requestedTo,
     priority,
@@ -4867,7 +4868,7 @@ function buildClinicalConsultRequest({
     handoffSummary,
     status: "Requested",
     lastUpdated: "Just now",
-    events: [createClinicalConsultEvent("Requested", "Consult requested", role === "Doctor" ? "Current Doctor" : role, `Request sent to ${requestedTo}.`)],
+    events: [createClinicalConsultEvent("Requested", "Consult requested", role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD" ? "Current Doctor" : role, `Request sent to ${requestedTo}.`)],
   };
 }
 

@@ -19,6 +19,8 @@ export const patientAccessRoles: Role[] = [
   "Hospital Admin",
   "Receptionist",
   "Doctor",
+  "Doctor OPD",
+  "Doctor IPD",
   "Nurse",
   "Billing Executive",
   "Lab Technician",
@@ -26,7 +28,7 @@ export const patientAccessRoles: Role[] = [
   "Management",
 ];
 
-export const patientReadOnlyRoles: Role[] = ["Doctor", "Nurse", "Billing Executive", "Lab Technician", "Radiologist", "Management"];
+export const patientReadOnlyRoles: Role[] = ["Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Billing Executive", "Lab Technician", "Radiologist", "Management"];
 
 export function usePatientAccess() {
   const { role } = useRole();

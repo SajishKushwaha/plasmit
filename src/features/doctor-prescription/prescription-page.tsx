@@ -60,7 +60,7 @@ type DrugColumn = {
   render: (row: DrugRow, rowErrors: Partial<Record<"drugName" | "dosage", string>>, updateDrug: (row: DrugRow, values: Partial<DrugRow>) => void, onDelete: (id: string) => void) => React.ReactNode;
 };
 
-const doctorRoles: Role[] = ["Doctor", "Super Admin", "Hospital Admin"];
+const doctorRoles: Role[] = ["Doctor", "Doctor OPD", "Super Admin", "Hospital Admin"];
 const drugForms = ["Tablet", "Capsule", "Syrup", "Injection", "IV Fluid", "Cream", "Drops"] as const;
 const frequencies = ["OD", "BD", "TDS", "QID", "6 hrly", "8 hrly", "SOS", "Continuous", "Intermittent"] as const;
 const routes = ["Oral", "IV", "IM", "SC", "Topical", "Inhalation"] as const;

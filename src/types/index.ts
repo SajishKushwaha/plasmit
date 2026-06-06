@@ -4,6 +4,8 @@ export type Role =
   | "Super Admin"
   | "Hospital Admin"
   | "Doctor"
+  | "Doctor OPD"
+  | "Doctor IPD"
   | "Nurse"
   | "Blood Bank"
   | "Receptionist"

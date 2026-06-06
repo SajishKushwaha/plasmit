@@ -3,7 +3,8 @@ import type { Role } from "@/types";
 export const roles: Role[] = [
   "Super Admin",
   "Hospital Admin",
-  "Doctor",
+  "Doctor OPD",
+  "Doctor IPD",
   "Nurse",
   "Blood Bank",
   "Receptionist",

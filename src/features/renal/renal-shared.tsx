@@ -20,15 +20,16 @@ export const renalAllowedRoles: Role[] = [
   "Super Admin",
   "Hospital Admin",
   "Doctor",
+  "Doctor IPD",
   "Nurse",
   "Lab Technician",
   "Billing Executive",
   "Management",
 ];
 
-const renalEntryRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse"];
-const renalReviewRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor"];
-const renalLabRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Lab Technician"];
+const renalEntryRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse"];
+const renalReviewRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD"];
+const renalLabRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Lab Technician"];
 const renalBillingRoles: Role[] = ["Super Admin", "Hospital Admin", "Billing Executive"];
 
 export function useRenalAccess() {
@@ -70,7 +71,7 @@ export function RenalRoleBanner({ role }: { role: Role }) {
   if (role === "Nurse") {
     return <AlertBanner icon={Droplets} tone="info" title="Nursing renal chart">Intake, output, drains, and shift notes are enabled for this role.</AlertBanner>;
   }
-  if (role === "Doctor") {
+  if (role === "Doctor" || role === "Doctor IPD") {
     return <AlertBanner icon={ShieldAlert} tone="warning" title="Doctor review">Trends, alerts, renal orders, and sign-off actions are enabled for this role.</AlertBanner>;
   }
   if (role === "Lab Technician") {

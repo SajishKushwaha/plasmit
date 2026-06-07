@@ -124,7 +124,7 @@ export function LoginPage() {
       setTransitioning(true);
       toast.success("Access granted");
       window.setTimeout(() => {
-        router.push("/doctor-dashboard");
+        router.push("/doctor-dashboard1");
       }, 320);
     }, 1000);
   }
@@ -132,8 +132,8 @@ export function LoginPage() {
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#eef6ff] text-slate-950">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(96,165,250,0.18),transparent_34%),radial-gradient(circle_at_88%_14%,rgba(191,219,254,0.38),transparent_30%),linear-gradient(135deg,#f8fbff_0%,#eff6ff_48%,#eaf3ff_100%)]" />
-      <div className="relative mx-auto grid min-h-dvh w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 py-6 lg:grid-cols-2 lg:px-8">
-        <section className="hidden min-h-[calc(100dvh-3rem)] flex-col justify-center overflow-hidden rounded-[32px] border border-white/75 bg-white/45 p-8 shadow-[0_24px_70px_rgba(22,78,99,0.10)] backdrop-blur lg:flex xl:p-10">
+      <div >
+        {/* <section className="hidden min-h-[calc(100dvh-3rem)] flex-col justify-center overflow-hidden rounded-[32px] border border-white/75 bg-white/45 p-8 shadow-[0_24px_70px_rgba(22,78,99,0.10)] backdrop-blur lg:flex xl:p-10">
           <div className="flex flex-1 items-center justify-center py-6">
             <div className="relative w-full max-w-[520px]">
               <div className="absolute -left-10 top-8 h-44 w-44 rounded-full bg-[#bfdbfe]/70 blur-3xl" />
@@ -168,7 +168,7 @@ export function LoginPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
 
         <section className="flex min-h-[calc(100dvh-3rem)] min-w-0 items-center justify-center px-0 py-6 sm:px-4 lg:px-8">
           <div className="w-[calc(100vw-2rem)] min-w-0 max-w-[455px] animate-[loginCardIn_560ms_cubic-bezier(.2,.8,.2,1)_both] sm:w-full">
@@ -182,7 +182,7 @@ export function LoginPage() {
                   priority
                   className="mx-auto mb-5 h-auto w-[210px] object-contain"
                 />
-                <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-3xl">Welcome Back Doctor!</h1>
+                {/* <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-3xl">Welcome Back Doctor!</h1> */}
                 <p className="mt-2 text-sm font-medium text-slate-500">Let&apos;s get you logged in</p>
               </div>
 
@@ -243,9 +243,9 @@ export function LoginPage() {
                     />
                     Remember me
                   </label>
-                  <Link className="font-semibold text-[#2563eb] underline-offset-4 transition hover:text-[#1d4ed8] hover:underline" href="/forgot-password">
+                  {/* <Link className="font-semibold text-[#2563eb] underline-offset-4 transition hover:text-[#1d4ed8] hover:underline" href="/forgot-password">
                     Forgot password?
-                  </Link>
+                  </Link> */}
                 </div>
 
                 <button

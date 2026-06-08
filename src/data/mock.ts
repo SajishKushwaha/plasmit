@@ -25,6 +25,7 @@ export const users = [
   { id: "usr-1", name: "Ananya Sharma", role: "Hospital Admin" as Role, department: "Administration", status: "Active" },
   { id: "usr-2", name: "Dr. Rohan Mehta", role: "Doctor" as Role, department: "Cardiology", status: "Active" },
   { id: "usr-3", name: "Neha Singh", role: "Nurse" as Role, department: "ICU", status: "Active" },
+  { id: "usr-4", name: "Priya Menon", role: "Nurse ICU 2" as Role, department: "ICU 2", status: "Active" },
 ];
 
 export const dashboardStats = [

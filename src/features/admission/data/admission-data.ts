@@ -93,6 +93,18 @@ export const admissionScreens: AdmissionScreenConfig[] = [
     steps: ["1. Billing"],
   },
   {
+    id: "generate-qr",
+    label: "Generate QR",
+    route: "/admission/generate-qr",
+    role: "Admission Desk",
+    roleSummary: "Admission QR generation",
+    workspaceTitle: "Admission QR Workspace",
+    workspaceDescription:
+      "Generate and review the admission QR reference after patient lookup, doctor order, billing, bed allocation, and nursing handoff steps.",
+    chips: ["QR reference", "Active request", "Printable code", "Patient verification"],
+    steps: ["8. Generate QR"],
+  },
+  {
     id: "admin",
     label: "Admin",
     route: "/admission",
@@ -110,6 +122,7 @@ export const admissionScreens: AdmissionScreenConfig[] = [
       "5. Bed Manager",
       "6. Receive Patient",
       "7. Patient Care",
+      "8. Generate QR",
     ],
   },
 ];
@@ -172,10 +185,13 @@ export const admissionRequests: AdmissionRequest[] = [
     uhid: "UHID-20491",
     source: "Emergency",
     doctor: "Dr. Mohan Ahluvia",
-    type: "Regular",
+    admittingTeam: "Critical Care Team",
+    admissionCategory: "Non Elective",
+    type: "IPD Admission",
     ward: "ICU",
-    priority: "Urgent",
+    priority: "Critical",
     status: "Pending Bed Allotment",
+    allergyNote: "No known allergy recorded.",
   },
   {
     id: "req-002",
@@ -183,10 +199,13 @@ export const admissionRequests: AdmissionRequest[] = [
     uhid: "UHID-20493",
     source: "OPD",
     doctor: "Dr. Neha Rao",
-    type: "Observation",
+    admittingTeam: "Medical Team",
+    admissionCategory: "Elective",
+    type: "Regular",
     ward: "General Ward",
     priority: "Critical",
     status: "Pending Bed Allotment",
+    allergyNote: "Penicillin sensitivity to verify.",
   },
   {
     id: "req-003",
@@ -194,10 +213,13 @@ export const admissionRequests: AdmissionRequest[] = [
     uhid: "UHID-20492",
     source: "OPD",
     doctor: "Dr. Kamal Sen",
+    admittingTeam: "Surgical Team",
+    admissionCategory: "Elective",
     type: "Regular",
     ward: "Private Ward",
-    priority: "Routine",
+    priority: "Stable",
     status: "Accepted",
+    allergyNote: "No known allergy recorded.",
   },
 ];
 
@@ -290,4 +312,5 @@ export const admissionWorkflowCards = [
   { title: "Bed Manager", owner: "Bed Manager", route: "/admission/bed-manager", status: "Allotment" },
   { title: "Receive Patient", owner: "Nurse", route: "/admission/nurse-receive", status: "Handover" },
   { title: "Patient Care", owner: "Nurse", route: "/admission/nurse-care", status: "Care start" },
+  { title: "Generate QR", owner: "Admission Desk", route: "/admission/generate-qr", status: "Printable QR" },
 ];

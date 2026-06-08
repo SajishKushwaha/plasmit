@@ -4,6 +4,7 @@ import { AdmissionRequestsWorkspace } from "@/features/admission/components/admi
 import { BedManagerWorkspace } from "@/features/admission/components/bed-manager-workspace";
 import { BillingClearanceWorkspace } from "@/features/admission/components/billing-clearance-workspace";
 import { DoctorAdmissionOrder } from "@/features/admission/components/doctor-admission-order";
+import { GenerateQrWorkspace } from "@/features/admission/components/generate-qr-workspace";
 import { NurseCareWorkspace } from "@/features/admission/components/nurse-care-workspace";
 import { NurseReceiveWorkspace } from "@/features/admission/components/nurse-receive-workspace";
 import { PatientLookupWorkspace } from "@/features/admission/components/patient-lookup-workspace";
@@ -68,6 +69,14 @@ export function AdmissionNurseCarePage() {
   return (
     <AdmissionScreenLayout activeScreen="nurse-care" activeStep="2. Patient Care">
       <NurseCareWorkspace />
+    </AdmissionScreenLayout>
+  );
+}
+
+export function AdmissionGenerateQrPage() {
+  return (
+    <AdmissionScreenLayout activeScreen="generate-qr" activeStep="8. Generate QR">
+      <GenerateQrWorkspace />
     </AdmissionScreenLayout>
   );
 }

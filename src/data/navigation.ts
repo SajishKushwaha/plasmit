@@ -75,7 +75,7 @@ export const navigationItems: NavigationItem[] = [
   { id: "doctor-opd-queue",    label: "OPD Queue",            icon: Stethoscope,       route: "/opd",                  group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   { id: "doctor-orders",       label: "Orders",               icon: ScanSearch,        route: "/doctor/orders",        group: "Doctor",   allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
   { id: "doctor-prescription", label: "Prescription",         icon: Pill,              route: "/doctor/prescription",  group: "Doctor",   allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
-  { id: "doctor-consult",      label: "Consultations",        icon: UserRound,         route: "/rapid-review",         group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
+  { id: "doctor-consult",      label: "Consultations",        icon: UserRound,         route: "/rapid-review",         group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   { id: "doctor-patients",     label: "Patient Records",      icon: IdCard,            route: "/patients",             group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
   { id: "doctor-rx",           label: "Prescriptions",        icon: Pill,              route: "/prescriptions",        group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   { id: "doctor-lab",          label: "Lab Reports",          icon: FlaskConical,      route: "/laboratory",           group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
@@ -125,7 +125,7 @@ export const navigationItems: NavigationItem[] = [
     icon: HeartPulse,
     route: "/nursing-icu",
     group: "Clinical",
-    allowedRoles: ["Nurse ICU"],
+    allowedRoles: ["Nurse ICU", "Nurse ICU 2"],
     status: "ready",
     children: [
       { id: "nursing-icu-dashboard", label: "ICU Dashboard", route: "/nursing-icu", status: "ready" },

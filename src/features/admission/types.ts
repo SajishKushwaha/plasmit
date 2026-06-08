@@ -6,9 +6,10 @@ export type AdmissionScreenId =
   | "billing"
   | "bed-manager"
   | "nurse-receive"
-  | "nurse-care";
+  | "nurse-care"
+  | "generate-qr";
 
-export type AdmissionPriority = "Routine" | "Urgent" | "Critical" | "Emergency";
+export type AdmissionPriority = "Stable" | "Critical";
 
 export type AdmissionRequestStatus =
   | "Pending Bed Allotment"
@@ -47,11 +48,15 @@ export type AdmissionRequest = {
   patientId?: string;
   source: string;
   doctor: string;
+  admittingTeam?: string;
+  admissionCategory?: "Elective" | "Non Elective";
   type: string;
   ward: string;
   priority: AdmissionPriority;
   status: AdmissionRequestStatus;
+  allergyNote?: string;
   instructions?: string;
+  qrReference?: string;
   bedNo?: string;
   createdAt?: string;
 };

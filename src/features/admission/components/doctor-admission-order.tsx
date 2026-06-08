@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ClipboardPlus } from "lucide-react";
+import { ClipboardPlus, QrCode } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,15 +22,35 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+const electiveOptions = ["Daycare", "Plan", "Surgery", "Regular"];
+const nonElectiveOptions = ["IPD Admission", "OT Admission", "Transfer to Home", "Transfer to Ward", "Transfer to ICU"];
+const admittingTeams = ["Medical Team", "Surgical Team", "Critical Care Team", "Orthopedic Team", "Pediatric Team"];
+
 export function DoctorAdmissionOrder() {
   const { selectedPatient, activeRequest, state, actions } = useAdmissionStore();
+  const selectedPatientKey = selectedPatient?.id ?? "";
+  const [syncedPatientKey, setSyncedPatientKey] = React.useState(selectedPatientKey);
   const [patientName, setPatientName] = React.useState(selectedPatient?.name ?? "");
   const [uhid, setUhid] = React.useState(selectedPatient?.uhid ?? "Auto generated");
+  const [admissionCategory, setAdmissionCategory] = React.useState<"Elective" | "Non Elective">(
+    state.selectedScenario === "Emergency Unknown Patient" ? "Non Elective" : "Elective",
+  );
+  const [admissionSubtype, setAdmissionSubtype] = React.useState(
+    state.selectedScenario === "Emergency Unknown Patient" ? nonElectiveOptions[0] : electiveOptions[0],
+  );
+  const [qrReference, setQrReference] = React.useState("");
 
-  React.useEffect(() => {
+  if (syncedPatientKey !== selectedPatientKey) {
+    setSyncedPatientKey(selectedPatientKey);
     setPatientName(selectedPatient?.name ?? "");
     setUhid(selectedPatient?.uhid ?? "Auto generated");
-  }, [selectedPatient?.id, selectedPatient?.name, selectedPatient?.uhid]);
+  }
+
+  function generateQrReference() {
+    const id = `${uhid || "AUTO"}-${Date.now().toString(36).toUpperCase()}`;
+    setQrReference(id);
+    toast.success("Admission QR reference generated.");
+  }
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,11 +64,15 @@ export function DoctorAdmissionOrder() {
       patientName: name,
       uhid: String(form.get("uhid") ?? "") || "Auto generated",
       source: String(form.get("source") ?? "OPD"),
-      doctor: String(form.get("doctor") ?? "Dr. Mohan Ahluvia"),
-      type: String(form.get("type") ?? "Regular"),
+      doctor: String(form.get("admittingTeam") ?? "Medical Team"),
+      admittingTeam: String(form.get("admittingTeam") ?? "Medical Team"),
+      admissionCategory,
+      type: admissionSubtype,
       ward: String(form.get("ward") ?? "General Ward"),
-      priority: String(form.get("priority") ?? "Routine") as AdmissionPriority,
+      priority: String(form.get("priority") ?? "Stable") as AdmissionPriority,
+      allergyNote: String(form.get("allergyNote") ?? ""),
       instructions: String(form.get("instructions") ?? ""),
+      qrReference: qrReference || `${String(form.get("uhid") ?? "AUTO")}-PENDING-QR`,
     });
     toast.success("Admission request submitted.");
   }
@@ -69,14 +93,28 @@ export function DoctorAdmissionOrder() {
                 {["OPD", "Emergency", "Referral", "Daycare", "Transfer"].map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
-            <Field label="Admitting Doctor">
-              <select className={controlClass} name="doctor" defaultValue="Dr. Mohan Ahluvia">
-                {["Dr. Mohan Ahluvia", "Dr. Neha Rao", "Dr. Kamal Sen", "Dr. Aditi Shah"].map((option) => <option key={option}>{option}</option>)}
+            <Field label="Admitting Team">
+              <select className={controlClass} name="admittingTeam" defaultValue="Medical Team">
+                {admittingTeams.map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
             <Field label="Admission Type">
-              <select className={controlClass} name="type" defaultValue={state.selectedScenario === "Emergency Unknown Patient" ? "Emergency" : "Regular"}>
-                {["Regular", "Observation", "Emergency", "Day Care", "Planned Surgery"].map((option) => <option key={option}>{option}</option>)}
+              <select
+                className={controlClass}
+                name="admissionCategory"
+                value={admissionCategory}
+                onChange={(event) => {
+                  const nextCategory = event.target.value as "Elective" | "Non Elective";
+                  setAdmissionCategory(nextCategory);
+                  setAdmissionSubtype(nextCategory === "Elective" ? electiveOptions[0] : nonElectiveOptions[0]);
+                }}
+              >
+                {["Elective", "Non Elective"].map((option) => <option key={option}>{option}</option>)}
+              </select>
+            </Field>
+            <Field label={admissionCategory === "Elective" ? "Elective Type" : "Non Elective Type"}>
+              <select className={controlClass} name="type" value={admissionSubtype} onChange={(event) => setAdmissionSubtype(event.target.value)}>
+                {(admissionCategory === "Elective" ? electiveOptions : nonElectiveOptions).map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
             <Field label="Requested Ward">
@@ -85,15 +123,34 @@ export function DoctorAdmissionOrder() {
               </select>
             </Field>
             <Field label="Priority">
-              <select className={controlClass} name="priority" defaultValue={state.selectedScenario === "Emergency Unknown Patient" ? "Emergency" : "Routine"}>
-                {["Routine", "Urgent", "Critical", "Emergency"].map((option) => <option key={option}>{option}</option>)}
+              <select className={controlClass} name="priority" defaultValue={state.selectedScenario === "Emergency Unknown Patient" ? "Critical" : "Stable"}>
+                {["Stable", "Critical"].map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
             <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
-              <span className="font-medium text-foreground">Instructions</span>
+              <span className="font-medium text-foreground">Allergy Note</span>
+              <textarea className={`${controlClass} h-auto min-h-20 resize-y`} name="allergyNote" placeholder="Add allergy details, unknown allergy status, or safety alerts" />
+            </label>
+            <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
+              <span className="font-medium text-foreground">Instruction Note</span>
               <textarea className={`${controlClass} h-auto min-h-24 resize-y`} name="instructions" placeholder="Add admission instructions, precautions, or nursing notes" />
             </label>
           </div>
+
+          {/* <div className="rounded-lg border border-dashed border-border bg-surface-muted p-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold text-foreground">Generate QR</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {qrReference ? `QR reference: ${qrReference}` : "Create the admission QR reference after selecting admission details."}
+                </div>
+              </div>
+              <Button type="button" variant="outline" onClick={generateQrReference}>
+                <QrCode className="h-4 w-4" />
+                Generate QR
+              </Button>
+            </div>
+          </div> */}
 
           <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface-muted p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <span className="text-muted-foreground">
@@ -103,6 +160,10 @@ export function DoctorAdmissionOrder() {
               <Button type="button" variant="secondary" onClick={() => {
                 setPatientName(selectedPatient?.name ?? "");
                 setUhid(selectedPatient?.uhid ?? "Auto generated");
+                const nextCategory = state.selectedScenario === "Emergency Unknown Patient" ? "Non Elective" : "Elective";
+                setAdmissionCategory(nextCategory);
+                setAdmissionSubtype(nextCategory === "Elective" ? electiveOptions[0] : nonElectiveOptions[0]);
+                setQrReference("");
               }}>
                 Clear
               </Button>

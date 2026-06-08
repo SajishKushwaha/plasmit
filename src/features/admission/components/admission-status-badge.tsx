@@ -8,7 +8,7 @@ function toneFor(value: string): BadgeProps["tone"] {
   if (normalized.includes("urgent") || normalized.includes("pending") || normalized.includes("cleaning") || normalized.includes("medium")) {
     return "warning";
   }
-  if (normalized.includes("accepted") || normalized.includes("ready") || normalized.includes("available") || normalized.includes("low")) {
+  if (normalized.includes("accepted") || normalized.includes("ready") || normalized.includes("available") || normalized.includes("stable") || normalized.includes("low")) {
     return "success";
   }
   if (normalized.includes("occupied") || normalized.includes("reserved") || normalized.includes("isolation")) {

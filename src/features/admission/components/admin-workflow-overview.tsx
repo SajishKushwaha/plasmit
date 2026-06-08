@@ -21,6 +21,7 @@ function workflowStatus(title: string, state: ReturnType<typeof useAdmissionStor
   if (title === "Bed Manager") return `${state.requests.filter((item) => item.bedNo).length} allotted`;
   if (title === "Receive Patient") return `${state.receiveRecords.length} received`;
   if (title === "Patient Care") return `${state.careRecords.length} started`;
+  if (title === "Generate QR") return `${state.requests.filter((item) => item.qrReference).length} generated`;
   return "Open";
 }
 

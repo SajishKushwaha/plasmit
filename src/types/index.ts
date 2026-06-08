@@ -8,6 +8,7 @@ export type Role =
   | "Doctor IPD"
   | "Nurse"
   | "Nurse ICU"
+  | "Nurse ICU 2"
   | "Blood Bank"
   | "Receptionist"
   | "Lab Technician"

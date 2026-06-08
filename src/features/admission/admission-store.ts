@@ -31,10 +31,14 @@ type DoctorOrderInput = {
   uhid: string;
   source: string;
   doctor: string;
+  admittingTeam: string;
+  admissionCategory: AdmissionRequest["admissionCategory"];
   type: string;
   ward: string;
   priority: AdmissionPriority;
+  allergyNote: string;
   instructions: string;
+  qrReference: string;
 };
 
 type BillingReviewInput = {
@@ -123,17 +127,14 @@ function generatedUhid(prefix = "UHID") {
 }
 
 function estimateRisk(priority: AdmissionPriority): BillingClearance["risk"] {
-  if (priority === "Critical" || priority === "Emergency") return "High";
-  if (priority === "Urgent") return "Medium";
+  if (priority === "Critical") return "High";
   return "Low";
 }
 
 export function useAdmissionStore() {
-  const [state, setState] = React.useState<AdmissionStoreState>(() => initialState());
+  const [state, setState] = React.useState<AdmissionStoreState>(() => readState());
 
   React.useEffect(() => {
-    setState(readState());
-
     const handleStoreEvent = (event: Event) => {
       setState((event as CustomEvent<AdmissionStoreState>).detail ?? readState());
     };
@@ -204,11 +205,15 @@ export function useAdmissionStore() {
           patientId: patient?.id,
           source: input.source,
           doctor: input.doctor,
+          admittingTeam: input.admittingTeam,
+          admissionCategory: input.admissionCategory,
           type: input.type,
           ward: input.ward,
           priority: input.priority,
           status: "Pending Bed Allotment",
+          allergyNote: input.allergyNote,
           instructions: input.instructions,
+          qrReference: input.qrReference,
           createdAt: nowLabel(),
         };
         const clearance: BillingClearance = {
@@ -216,10 +221,10 @@ export function useAdmissionStore() {
           patient: request.patient,
           uhid: request.uhid,
           requestId: request.id,
-          holdType: input.priority === "Routine" ? "Self Pay" : "Pre-auth Pending",
+          holdType: input.priority === "Stable" ? "Self Pay" : "Pre-auth Pending",
           risk: estimateRisk(input.priority),
           estimate: input.ward === "ICU" ? 42000 : input.ward === "Private Ward" ? 28500 : 16000,
-          note: input.priority === "Routine" ? "Routine admission billing review." : "Priority admission requires billing clearance before final bed confirmation.",
+          note: input.priority === "Stable" ? "Stable admission billing review." : "Critical admission requires billing clearance before final bed confirmation.",
           status: "Pending",
         };
         return withActivity(
@@ -322,6 +327,25 @@ export function useAdmissionStore() {
           },
           "Patient care started",
           `${request?.patient ?? "Patient"} initial vitals recorded.`,
+        );
+      });
+    },
+    generateQr(requestId?: string) {
+      update((current) => {
+        const targetRequestId = requestId ?? current.activeRequestId ?? current.requests[0]?.id;
+        const request = current.requests.find((item) => item.id === targetRequestId);
+        if (!targetRequestId || !request) {
+          return withActivity(current, "QR generation blocked", "Select an admission request before generating QR.");
+        }
+        const qrReference = `${request.uhid || "AUTO"}-${targetRequestId.toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+        return withActivity(
+          {
+            ...current,
+            requests: current.requests.map((item) => (item.id === targetRequestId ? { ...item, qrReference } : item)),
+            activeRequestId: targetRequestId,
+          },
+          "Admission QR generated",
+          `${request.patient} QR reference created.`,
         );
       });
     },

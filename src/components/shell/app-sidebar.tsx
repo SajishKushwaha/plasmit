@@ -46,8 +46,21 @@ export function AppSidebar({
       return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-"));
     }
 
-    if (role === "Nurse ICU") {
+    if (role === "Nurse ICU" || role === "Nurse ICU 2") {
       return roleItems.filter((item) => item.id === "nursing-icu");
+    }
+
+    if (role === "Doctor IPD") {
+      const clinicalOrder = new Map([
+        ["doctor-patients", 0],
+        ["ipd", 1],
+        ["renal", 2],
+      ]);
+
+      return [...roleItems].sort((a, b) => {
+        if (a.group !== "Clinical" || b.group !== "Clinical") return 0;
+        return (clinicalOrder.get(a.id) ?? 100) - (clinicalOrder.get(b.id) ?? 100);
+      });
     }
 
     return roleItems;

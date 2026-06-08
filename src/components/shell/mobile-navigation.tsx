@@ -25,7 +25,7 @@ export function MobileNavigation() {
       ? roleItems.filter((item) => item.id === "nursing" || item.id === "surgery")
       : role === "Nurse"
         ? roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-"))
-      : role === "Nurse ICU"
+      : role === "Nurse ICU" || role === "Nurse ICU 2"
         ? roleItems.filter((item) => item.id === "nursing-icu")
       : roleItems;
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));

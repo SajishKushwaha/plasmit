@@ -19,7 +19,7 @@ export function AdmissionRequestsWorkspace() {
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<"All" | "Pending" | "Accepted" | "Ready">("Pending");
   const rows = state.requests.filter((request) => {
-    const text = `${request.patient} ${request.uhid} ${request.source} ${request.doctor} ${request.type} ${request.ward} ${request.priority} ${request.status}`.toLowerCase();
+    const text = `${request.patient} ${request.uhid} ${request.source} ${request.doctor} ${request.admittingTeam ?? ""} ${request.admissionCategory ?? ""} ${request.type} ${request.ward} ${request.priority} ${request.status} ${request.allergyNote ?? ""} ${request.qrReference ?? ""}`.toLowerCase();
     const statusMatch =
       status === "All" ||
       (status === "Pending" && request.status.includes("Pending")) ||
@@ -39,10 +39,27 @@ export function AdmissionRequestsWorkspace() {
         ),
       },
       { header: "Source", accessorKey: "source" },
-      { header: "Doctor", accessorKey: "doctor" },
-      { header: "Type", accessorKey: "type" },
+      { header: "Admitting Team", cell: ({ row }) => row.original.admittingTeam ?? row.original.doctor },
+      {
+        header: "Admission Type",
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium">{row.original.admissionCategory ?? "Admission"}</div>
+            <div className="text-xs text-muted-foreground">{row.original.type}</div>
+          </div>
+        ),
+      },
       { header: "Ward", accessorKey: "ward" },
       { header: "Priority", cell: ({ row }) => <AdmissionStatusBadge value={row.original.priority} /> },
+      {
+        header: "Notes / QR",
+        cell: ({ row }) => (
+          <div className="max-w-[220px] text-xs text-muted-foreground">
+            <div className="truncate">Allergy: {row.original.allergyNote || "Not added"}</div>
+            <div className="truncate">QR: {row.original.qrReference || "Pending"}</div>
+          </div>
+        ),
+      },
       { header: "Status", cell: ({ row }) => <AdmissionStatusBadge value={row.original.status} /> },
       {
         header: "Action",

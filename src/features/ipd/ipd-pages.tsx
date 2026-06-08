@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Ambulance, BedDouble, ClipboardCheck, FileText, HeartPulse, Pill, Plus, Printer, ShieldAlert } from "lucide-react";
+import { Activity, Ambulance, BedDouble, ClipboardCheck, FileText, HeartPulse, Pill, Plus, Printer, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shell/page-header";

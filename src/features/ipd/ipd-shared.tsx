@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, BedDouble, LockKeyhole, Printer, RefreshCcw, Save, Search, ShieldAlert, UserRound } from "lucide-react";
+import { Activity, AlertTriangle, BedDouble, LockKeyhole, Printer, RefreshCcw, Save, Search, ShieldAlert, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRole } from "@/components/providers/role-provider";
@@ -14,6 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/ui/status-pill";
 import { PatientAlertChips } from "@/features/patients/patient-shared";
+import { rapidAllowedRoles } from "@/features/rapid-review/rapid-review-data";
 import { getPatientById, mockPatients, mockPatientVisits } from "@/data/patients";
 import { mockAdmissions, mockInfectionIsolationFlags } from "@/data/ipd";
 import type { AdmissionRecord, BedRecord, Role, StatusTone, TriagePriority } from "@/types";
@@ -73,6 +75,8 @@ function patientSearchText(patient: (typeof mockPatients)[number]) {
 }
 
 function IpdPatientWorkspaceHeader() {
+  const { role } = useRole();
+  const rapidReviewAccess = rapidAllowedRoles.includes(role);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -152,6 +156,13 @@ function IpdPatientWorkspaceHeader() {
                 </div>
               ) : null}
             </div>
+            {rapidReviewAccess ? (
+              <Button size="sm" variant="outline" asChild>
+                <Link href="/rapid-review?tab=entry">
+                  <Activity className="h-4 w-4" />Rapid Review
+                </Link>
+              </Button>
+            ) : null}
             <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button>
             <Button size="sm" variant="outline" onClick={() => toast.info("Last IPD draft restored")}><RefreshCcw className="h-4 w-4" />Restore</Button>
             <Button size="sm" onClick={() => toast.success("IPD draft autosaved")}><Save className="h-4 w-4" />Save</Button>

@@ -637,6 +637,10 @@ export const rapidRoleAccess: Partial<Record<Role, { summary: string; actions: s
     summary: "Can monitor queues, support escalation, and print clinical review lists.",
     actions: ["Review", "Escalate", "Print"],
   },
+  "Doctor IPD": {
+    summary: "Can monitor queues, support escalation, and print clinical review lists.",
+    actions: ["Review", "Escalate", "Print"],
+  },
   Doctor: {
     summary: "Doctor can review abnormal observations, start MDT review, and sign clinical action.",
     actions: ["Review", "Escalate to MDT", "Call MER", "Print"],

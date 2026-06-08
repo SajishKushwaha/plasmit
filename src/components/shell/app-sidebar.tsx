@@ -54,7 +54,8 @@ export function AppSidebar({
       const clinicalOrder = new Map([
         ["doctor-patients", 0],
         ["ipd", 1],
-        ["renal", 2],
+        ["doctor-live-monitoring", 2],
+        ["doctor-ipd-results", 3],
       ]);
 
       return [...roleItems].sort((a, b) => {

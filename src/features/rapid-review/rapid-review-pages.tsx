@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useSearchParams } from "next/navigation";
 import {
   Activity,
   AlertTriangle,
@@ -291,8 +292,13 @@ function optionValue(value: string) {
   return value;
 }
 
+function isRapidReviewTab(value: string | null): value is string {
+  return Boolean(value && ["queue", "entry", "nurse-review", "doctor", "consults", "log", "chart", "rules", "review-graph"].includes(value));
+}
+
 export function RapidReviewPage() {
   const { role } = useRole();
+  const searchParams = useSearchParams();
   const roleProfile = rapidRoleAccess[role];
   const allowed = rapidAllowedRoles.includes(role);
   const readOnly = Boolean(roleProfile?.readOnly);
@@ -300,8 +306,14 @@ export function RapidReviewPage() {
   const [response, setResponse] = React.useState("All response");
   const [ward, setWard] = React.useState("All wards");
   const [sortBy, setSortBy] = React.useState("Clinical priority");
-  const [selectedPatientId, setSelectedPatientId] = React.useState(rapidReviewPatients[0]?.id ?? "");
-  const [activeTab, setActiveTab] = React.useState("queue");
+  const initialPatientId = searchParams.get("patient");
+  const initialTab = searchParams.get("tab");
+  const [selectedPatientId, setSelectedPatientId] = React.useState(
+    initialPatientId && rapidReviewPatients.some((patient) => patient.id === initialPatientId)
+      ? initialPatientId
+      : rapidReviewPatients[0]?.id ?? "",
+  );
+  const [activeTab, setActiveTab] = React.useState(isRapidReviewTab(initialTab) ? initialTab : "queue");
   const [dialogState, setDialogState] = React.useState<DialogState | null>(null);
   const [observationReviewDialog, setObservationReviewDialog] = React.useState<ObservationReviewDialogState>(null);
   const [updates, setUpdates] = React.useState<Record<string, ReviewUpdate>>({});

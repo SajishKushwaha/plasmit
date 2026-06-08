@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, ClipboardList, Download, FileText, HeartPulse, Pill, Plus, Printer, RefreshCcw, Search, ShieldAlert, Stethoscope, Syringe, Thermometer, Workflow } from "lucide-react";
+import { Activity, AlertTriangle, ClipboardList, Download, FileText, HeartPulse, Pill, Plus, Printer, RefreshCcw, Search, ShieldAlert, Stethoscope, Syringe, Thermometer, Workflow } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shell/page-header";
@@ -16,6 +16,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DetailRow, FilterBar, NativeSelect, StickyActionBar } from "@/features/admin/admin-shared";
 import { AppointmentDetailDrawer } from "@/features/appointments/appointment-shared";
+import { useRole } from "@/components/providers/role-provider";
+import { rapidAllowedRoles } from "@/features/rapid-review/rapid-review-data";
 import { PatientMini } from "@/features/appointments/appointment-shared";
 import {
   ClinicalLinkBar,
@@ -56,6 +58,8 @@ function SummaryGrid({ children }: { children: React.ReactNode }) {
 }
 
 export function OpdWorklistPage() {
+  const { role } = useRole();
+  const rapidReviewAccess = rapidAllowedRoles.includes(role);
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState("All status");
   const [selected, setSelected] = React.useState<OpdWorklistItem | null>(null);
@@ -88,6 +92,11 @@ export function OpdWorklistPage() {
           <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, UHID, token, doctor, status...">
             <NativeSelect label="Consultation status" value={status} onChange={setStatus} options={["All status", "Not started", "In progress", "Draft saved", "Completed"]} />
             <Button variant="outline" onClick={() => toast.success("Static OPD worklist refreshed")}><RefreshCcw className="h-4 w-4" />Refresh</Button>
+            {rapidReviewAccess ? (
+              <Button variant="outline" asChild>
+                <Link href="/rapid-review?tab=entry"><Activity className="h-4 w-4" />Rapid Review</Link>
+              </Button>
+            ) : null}
             <Button disabled={readOnly} asChild><Link href="/opd/consultation/visit-001"><Stethoscope className="h-4 w-4" />Start next</Link></Button>
           </FilterBar>
           <DataTable data={rows} columns={columns} />

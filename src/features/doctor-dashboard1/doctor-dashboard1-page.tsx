@@ -6,29 +6,31 @@ import {
   ClipboardList,
   FileText,
   FlaskConical,
-  HeartPulse,
   MessageCircle,
   Pill,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 type VitalTone = "green" | "orange" | "red";
+type PatientTone = "blue" | "orange" | "red";
 
 type Dashboard1Patient = {
   id: number;
   name: string;
   bed: string;
   diagnosis: string;
+  rapidReviewPatientId: string;
   hr: { value: number; tone: VitalTone };
   spo2: { value: number; tone: VitalTone };
   abps: { value: number; tone: VitalTone };
   abpd: { value: number; tone: VitalTone };
   temperature: { value: string; tone: VitalTone };
 };
+
+const rapidReviewPatientIds = ["rr-002", "rr-003", "rr-001", "rr-004"];
 
 const patients: Dashboard1Patient[] = [
   row(1, "HN_40*ICU-10***", "Upper Gastrointestinal bleeding", [120, "red"], [95, "green"], [120, "green"], [65, "green"], ["36.5", "green"]),
@@ -51,6 +53,17 @@ const patients: Dashboard1Patient[] = [
   row(18, "HN_17*isolatio-11***", "Pulmonary embolism", [69, "green"], [98, "green"], [97, "green"], [85, "green"], ["39.5", "red"]),
 ];
 
+const patientToneOrder: Record<PatientTone, number> = {
+  red: 0,
+  orange: 1,
+  blue: 2,
+};
+
+const orderedPatients = [...patients].sort((a, b) => {
+  const toneRank = patientToneOrder[patientTone(a)] - patientToneOrder[patientTone(b)];
+  return toneRank || a.id - b.id;
+});
+
 function row(
   id: number,
   bed: string,
@@ -66,12 +79,26 @@ function row(
     name: `Patient ${id}`,
     bed,
     diagnosis,
+    rapidReviewPatientId: rapidReviewPatientIds[(id - 1) % rapidReviewPatientIds.length],
     hr: { value: hr[0], tone: hr[1] },
     spo2: { value: spo2[0], tone: spo2[1] },
     abps: { value: abps[0], tone: abps[1] },
     abpd: { value: abpd[0], tone: abpd[1] },
     temperature: { value: temperature[0], tone: temperature[1] },
   };
+}
+
+function patientTone(patient: Dashboard1Patient): PatientTone {
+  const tones = [patient.hr.tone, patient.spo2.tone, patient.abps.tone, patient.abpd.tone, patient.temperature.tone];
+  if (tones.includes("red")) return "red";
+  if (tones.includes("orange")) return "orange";
+  return "blue";
+}
+
+function patientToneClass(tone: PatientTone) {
+  if (tone === "red") return "text-red-600";
+  if (tone === "orange") return "text-orange-500";
+  return "text-blue-700";
 }
 
 export function DoctorDashboard1Page() {
@@ -99,11 +126,17 @@ export function DoctorDashboard1Page() {
                 </tr>
               </thead>
               <tbody>
-                {patients.map((patient) => (
+                {orderedPatients.map((patient) => {
+                  const tone = patientTone(patient);
+
+                  return (
                   <tr className="border-b border-slate-100 bg-white hover:bg-slate-50" key={patient.id}>
                     <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-3 py-2">
-                      <Link className="block rounded-md px-1 py-0.5 transition hover:bg-slate-100" href="/patients">
-                        <div className={cn("font-bold", patient.id % 5 === 0 ? "text-orange-500" : patient.id % 3 === 0 ? "text-blue-700" : patient.id % 2 === 0 ? "text-red-500" : "text-rose-600")}>
+                      <Link
+                        className="block rounded-md px-1 py-0.5 transition hover:bg-slate-100"
+                        href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}
+                      >
+                        <div className={cn("font-bold", patientToneClass(tone))}>
                           {patient.name}
                         </div>
                         <div className="mt-0.5 font-semibold text-slate-700">{patient.bed}</div>
@@ -119,14 +152,15 @@ export function DoctorDashboard1Page() {
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.abps} href="/ipd" /></td>
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.abpd} href="/ipd" /></td>
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.temperature} href="/ipd" /></td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={FlaskConical} tone="dark" href="/laboratory" label="Open lab results" /></td>
+                    <td className="px-3 py-2 text-center"><RoundAction icon={FlaskConical} tone="dark" href="/results" label="Open results" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={Pill} tone="dark" href="/doctor/orders" label="Open medication and intervention" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={ClipboardList} tone="dark" href="/rapid-review" label="Open shift summary" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="/radiology" label="Open radiology" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={Activity} tone="red" href="/rapid-review" label="Open events" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={MessageCircle} tone="dark" href="/rapid-review" label="Open collaborate" /></td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -135,16 +169,13 @@ export function DoctorDashboard1Page() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
+          <Badge tone="danger">Patient order: red first</Badge>
+          <Badge tone="warning">Orange next</Badge>
+          <Badge tone="info">Blue stable</Badge>
           <Badge tone="success">Green: stable</Badge>
           <Badge tone="warning">Orange: warning</Badge>
           <Badge tone="danger">Red: urgent</Badge>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/ipd">
-            <HeartPulse className="h-4 w-4" />
-            Open ICU monitor
-          </Link>
-        </Button>
       </div>
     </div>
   );

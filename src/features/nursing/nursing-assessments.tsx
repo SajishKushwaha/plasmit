@@ -40,7 +40,58 @@ function timeColumnLabel(index: number) {
   return `TIME ${String(index + 1).padStart(2, "0")}`;
 }
 
+const nonNegativeAssessmentRows = new Set(["Urine assessment:Urine Volume (in ml)", "Urine assessment:Diaper weight (in ml)", "Stool assessment:Stool (ml)", "Emesis Assessment:Emesis (in ml)", "NG Aspiration assessment:Volume (ml)"]);
+
+function scoreFromSelectedOption(value: string) {
+  const score = Number(value.split("=").at(-1));
+  return Number.isFinite(score) ? score : 0;
+}
+
+function formatDateTimeDisplay(value: string) {
+  if (!value) return "";
+  const [date = "", time = ""] = value.split("T");
+  const [year, month, day] = date.split("-");
+  if (!year || !month || !day) return value.replace("T", "   ");
+  return `${day}/${month}/${year}   ${time}`;
+}
+
+function DateTimeFieldWithSave({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = React.useState(false);
+  const [draftValue, setDraftValue] = React.useState(value);
+
+  function openPicker() {
+    setDraftValue(value);
+    setOpen(true);
+  }
+
+  return (
+    <div className="relative">
+      <Input readOnly value={formatDateTimeDisplay(value)} onClick={openPicker} onFocus={openPicker} placeholder="Document" />
+      {open ? (
+        <div className="fixed left-1/2 top-1/2 z-50 w-72 -translate-x-1/2 -translate-y-1/2 rounded-md border border-border bg-surface p-3 shadow-soft">
+          <Input type="datetime-local" value={draftValue} onChange={(event) => setDraftValue(event.target.value)} />
+          <div className="mt-3 flex justify-end">
+            <Button
+              size="sm"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                onChange(draftValue);
+                setOpen(false);
+              }}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function AssessmentField({ row, value, onChange }: { row: AssessmentRow; value: string; onChange: (value: string) => void }) {
+  const disallowNegativeValue = nonNegativeAssessmentRows.has(`${row.group}:${row.label}`);
+  const showDateTimeSave = row.group === "Oxygen therapy Assessment" && (row.label === "Start" || row.label === "End") && row.fieldType === "Date and time";
+
   if (row.fieldType === "Dropdown") {
     return (
       <select className="h-9 w-full min-w-[150px] rounded-md border border-input bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={value} onChange={(event) => onChange(event.target.value)}>
@@ -52,7 +103,21 @@ function AssessmentField({ row, value, onChange }: { row: AssessmentRow; value: 
   if (row.fieldType === "Calculated") {
     return <div className="rounded-md border border-info/30 bg-info/10 px-2 py-2 text-sm text-info">{value || row.formula || "Auto calculated"}</div>;
   }
-  return <Input type={row.fieldType === "Number" ? "number" : row.fieldType === "Date and time" ? "datetime-local" : "text"} value={value} onChange={(event) => onChange(event.target.value)} placeholder="Document" />;
+  if (showDateTimeSave) {
+    return <DateTimeFieldWithSave value={value} onChange={onChange} />;
+  }
+  return (
+    <Input
+      min={disallowNegativeValue ? 0 : undefined}
+      type={row.fieldType === "Number" ? "number" : row.fieldType === "Date and time" ? "datetime-local" : "text"}
+      value={value}
+      onChange={(event) => {
+        const nextValue = event.target.value;
+        onChange(disallowNegativeValue && Number(nextValue) < 0 ? "" : nextValue);
+      }}
+      placeholder="Document"
+    />
+  );
 }
 
 function AssessmentTable({
@@ -87,6 +152,17 @@ function AssessmentTable({
   const canDelete = times.length > 1;
   const draftTimeTrimmed = draftTime.trim();
   const duplicateDraftTime = Boolean(deleteTime && draftTimeTrimmed && draftTimeTrimmed !== deleteTime && times.includes(draftTimeTrimmed));
+
+  function getMorseFallScore(time: string) {
+    return ["ri4", "ri5", "ri6", "ri7", "ri8", "ri9"].reduce((total, rowId) => total + scoreFromSelectedOption(values[`${rowId}-${time}`] ?? ""), 0);
+  }
+
+  function getAssessmentValue(row: AssessmentRow, time: string) {
+    if (group.id === "grp-fall" && row.id === "ri10") {
+      return `r4+r5+r6+r7+r8+r9 = ${getMorseFallScore(time)}`;
+    }
+    return values[`${row.id}-${time}`] ?? "";
+  }
 
   return (
     <Card>
@@ -191,12 +267,12 @@ function AssessmentTable({
                   <td className="px-3 py-2 align-top font-medium">{row.label}</td>
                   {times.map((time) => (
                     <td className="px-3 py-2 align-top" key={time}>
-                      <AssessmentField row={row} value={values[`${row.id}-${time}`] ?? ""} onChange={(value) => onValueChange(row.id, time, value)} />
+                      <AssessmentField row={row} value={getAssessmentValue(row, time)} onChange={(value) => onValueChange(row.id, time, value)} />
                     </td>
                   ))}
                   {showNow ? (
                     <td className="px-3 py-2 align-top">
-                      <AssessmentField row={row} value={values[`${row.id}-NOW`] ?? ""} onChange={(value) => onValueChange(row.id, "NOW", value)} />
+                      <AssessmentField row={row} value={getAssessmentValue(row, "NOW")} onChange={(value) => onValueChange(row.id, "NOW", value)} />
                     </td>
                   ) : null}
                   <td className="px-3 py-2 align-top text-xs text-muted-foreground">New time slot</td>
@@ -282,7 +358,6 @@ export function NursingAssessmentsPage() {
     <NursingShell
       title="Nursing Assessments"
       description="Clinical assessment documentation with configurable rows, comments, preferences, and intake/output flags."
-      hideHeaderCopy
     >
       <NursingPatientStrip />
       <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -302,6 +377,10 @@ export function NursingAssessmentsPage() {
                   setAssessmentSearchOpen(true);
                 }}
                 onFocus={() => setAssessmentSearchOpen(true)}
+                onClick={() => {
+                  setAssessmentSearch("");
+                  setAssessmentSearchOpen(true);
+                }}
                 placeholder="Search assessment"
               />
               {assessmentSearchOpen ? (
@@ -435,7 +514,7 @@ export function NursingAssessmentConfigurationPage() {
   }
 
   return (
-    <NursingShell title="Assessment Configuration" description="Configure grouper rows, content rows, field types, dropdown options, comments, and intake/output flags." hideHeaderCopy>
+    <NursingShell title="Assessment Configuration" description="Configure grouper rows, content rows, field types, dropdown options, comments, and intake/output flags.">
       <Tabs defaultValue="master">
         <TabsList>
           <TabsTrigger value="master">Assessments master</TabsTrigger>

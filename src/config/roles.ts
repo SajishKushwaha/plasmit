@@ -98,6 +98,7 @@ export const doctorAllowedModules = [
   "/patients",
   "/clinical-examination",
   "/rapid-review",
+  "/results",
   "/renal",
   "/intake-output",
   "/ipd",
@@ -115,6 +116,7 @@ export const doctorOpdAllowedModules = [
   "/patients",
   "/clinical-examination",
   "/rapid-review",
+  "/results",
   "/laboratory",
   "/radiology",
   "/emergency",
@@ -128,6 +130,7 @@ export const doctorIpdAllowedModules = [
   "/patients",
   "/clinical-examination",
   "/rapid-review",
+  "/results",
   "/renal",
   "/intake-output",
   "/ipd",
@@ -202,31 +205,31 @@ export const roleModuleAccess: Record<Role, {
     ],
   },
   Nurse: {
-    allowed: ["/icu-nursing", "/dashboard", "/admission", "/ipd", "/intake-output", "/nurse", "/poct", "/opd", "/emergency", "/surgery"],
+    allowed: ["/icu-nursing", "/dashboard", "/admission", "/ipd", "/intake-output", "/nurse", "/poct", "/opd", "/emergency", "/radiology", "/results", "/surgery"],
   },
   "Nurse ICU": {
     allowed: ["/nursing-icu"],
   },
   "Nurse ICU 2": {
-    allowed: ["/icu-command-center", "/nursing-icu"],
+    allowed: ["/icu-command-center", "/nursing-icu", "/worklist", "/nurse", "/radiology", "/results", "/surgery"],
   },
   "Blood Bank": {
     allowed: ["/blood-bank"],
   },
   Receptionist: {
-    allowed: ["/dashboard", "/appointments", "/front-office", "/billing-desk", "/surgery"],
+    allowed: ["/dashboard", "/appointments", "/front-office", "/billing-desk", "/radiology", "/results", "/surgery"],
   },
   "Lab Technician": {
-    allowed: ["/dashboard", "/laboratory", "/poct"],
+    allowed: ["/dashboard", "/laboratory", "/poct", "/results"],
   },
   Radiologist: {
-    allowed: ["/dashboard", "/radiology"],
+    allowed: ["/dashboard", "/radiology", "/results"],
   },
   Pharmacist: {
     allowed: ["/dashboard", "/pharmacy"],
   },
   "Billing Executive": {
-    allowed: ["/dashboard", "/billing", "/billing-desk", "/insurance"],
+    allowed: ["/dashboard", "/billing", "/billing-desk", "/insurance", "/radiology"],
   },
   "HR Manager": {
     allowed: ["/dashboard", "/hrms"],

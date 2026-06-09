@@ -48,7 +48,7 @@ const surgeryStorageEvent = "plasmit-surgery-storage-change";
 const surgeryStorageCache = new Map<string, { raw: string | null; value: unknown }>();
 
 function normalizeFilterValue(value: string) {
-  return value.toLowerCase().replace(/\s+/g, "");
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 function searchMatches(value: string, query: string) {
@@ -305,7 +305,7 @@ export function SurgeryDashboardPage() {
   const scheduledPatients = requests.filter((request) => request.status === "Scheduled" || scheduledRequestIds.has(request.id)).length;
   const scheduled = bookings.filter((booking) => booking.date === scheduleMetricDate).length;
   return (
-    <SurgeryShell title="Surgery Schedule" description="OT command center for surgery waiting list, acceptance, scheduling, slot status, and theatre utilization." hideHeaderCopy>
+    <SurgeryShell title="Surgery Schedule" description="OT command center for surgery waiting list, acceptance, scheduling, slot status, and theatre utilization.">
       <div className="grid gap-3 md:grid-cols-4">
         <Metric icon={<ClipboardList className="h-5 w-5" />} label="Waiting requests" value={pending} />
         <Metric icon={<Scissors className="h-5 w-5" />} label="Accepted" value={accepted} />
@@ -392,7 +392,7 @@ export function SurgeryWaitingListPage() {
   }
 
   return (
-    <SurgeryShell title="Surgery Waiting List" description="Requests placed by doctors, ready for filtering, editing, acceptance, and scheduling." hideHeaderCopy>
+    <SurgeryShell title="Surgery Waiting List" description="Requests placed by doctors, ready for filtering, editing, acceptance, and scheduling.">
       <Card>
         <CardHeader>
           <div>
@@ -537,7 +537,7 @@ export function SurgeryGlobalSearchPage() {
   }, [requests, searchValue]);
 
   return (
-    <SurgeryShell title="Global Search" description="Search surgery requests by patient name, patient ID, chief surgeon, requested by, anesthetist, or surgery name." hideHeaderCopy>
+    <SurgeryShell title="Global Search" description="Search surgery requests by patient name, patient ID, chief surgeon, requested by, anesthetist, or surgery name.">
       <Card>
         <CardHeader>
           <div>
@@ -832,7 +832,7 @@ export function SurgerySchedulePage() {
   }
 
   return (
-    <SurgeryShell title="OT Schedule" description="Schedule all OTs in 15-minute slots and update patient movement status." hideHeaderCopy>
+    <SurgeryShell title="OT Schedule" description="Schedule all OTs in 15-minute slots and update patient movement status.">
       <Card>
         <CardHeader><CardTitle>Patient details</CardTitle><CardDescription>Shown when user schedules against a patient.</CardDescription></CardHeader>
         <CardContent className="space-y-3">

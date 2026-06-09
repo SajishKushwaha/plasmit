@@ -1,5 +1,11 @@
-import { ResultsList } from "@/features/results/components/ResultsList";
+import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
 
-export default function Page() {
-  return <ResultsList />;
+export default function ResultsPage() {
+  return (
+    <ResultsCenterView
+      defaultDepartment="laboratory"
+      viewTitle="Results Center"
+      viewDescription="Unified results inbox for Laboratory, Radiology, POCT, reports, images, and critical alerts."
+    />
+  );
 }

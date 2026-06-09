@@ -22,13 +22,13 @@ export function MobileNavigation() {
   const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
   const visibleItems =
     role === "Super Admin"
-      ? roleItems.filter((item) => item.id === "nursing" || item.id === "surgery")
+      ? roleItems.filter((item) => ["nursing", "radiology-mnt", "results", "surgery"].includes(item.id))
       : role === "Nurse"
-        ? roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-"))
+        ? roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-") || item.id === "radiology-mnt" || item.id === "results")
       : role === "Nurse ICU"
         ? roleItems.filter((item) => item.id === "nursing-icu")
       : role === "Nurse ICU 2"
-        ? roleItems.filter((item) => item.id === "icu-command-center" || item.id === "nursing-icu")
+        ? roleItems.filter((item) => ["icu-command-center", "nursing-icu", "worklist", "nursing", "radiology-mnt", "results", "surgery"].includes(item.id))
       : roleItems;
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
 

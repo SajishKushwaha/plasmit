@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, LayoutDashboard, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
+import { ClipboardCheck, ClipboardList, LayoutDashboard, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -14,8 +14,8 @@ import { PageHeader } from "@/components/shell/page-header";
 import { cn } from "@/lib/utils";
 import type { Role, StatusTone } from "@/types";
 
-export const nursingAccessRoles: Role[] = ["Super Admin", "Nurse", "Management"];
-export const nursingFullAccessRoles: Role[] = ["Super Admin", "Nurse"];
+export const nursingAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU 2", "Management"];
+export const nursingFullAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Nurse", "Nurse ICU 2"];
 
 export function useNursingAccess() {
   const { role } = useRole();
@@ -48,20 +48,19 @@ export function NursingShell({
   description,
   children,
   actions,
-  hideHeaderCopy = false,
   showSectionNav = true,
 }: {
   title: string;
   description: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
-  hideHeaderCopy?: boolean;
   showSectionNav?: boolean;
 }) {
   const pathname = usePathname();
 
   const buttonLinks = [
     { href: "/nurse", label: "Dashboard", active: pathname === "/nurse", icon: LayoutDashboard },
+    { href: "/worklist", label: "Worklist", active: pathname === "/worklist", icon: ClipboardList },
     { href: "/nurse/assessments", label: "Assessment", active: pathname === "/nurse/assessments", icon: ClipboardCheck },
     {
       href: "/nurse/assessments/configuration",
@@ -70,12 +69,6 @@ export function NursingShell({
       icon: Settings,
     },
     { href: "/nurse/care-plans", label: "Care plan", active: pathname === "/nurse/care-plans", icon: UserRoundCheck },
-    {
-      href: "/nurse/care-plans/configuration",
-      label: "Care plan configuration",
-      active: pathname === "/nurse/care-plans/configuration",
-      icon: Settings,
-    },
   ];
 
   const defaultActions = (
@@ -90,26 +83,17 @@ export function NursingShell({
       ))}
     </>
   );
-  const headerActions = showSectionNav ? (actions ? <>{defaultActions}{actions}</> : defaultActions) : actions;
 
   return (
     <ProtectedNursing>
       {() => (
         <>
-          {hideHeaderCopy ? (
-            <div className="pt-4">
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-white px-3 py-3 shadow-sm">
-                {headerActions}
-              </div>
-            </div>
-          ) : (
-            <PageHeader
-              title={title}
-              description={description}
-              eyebrow="Nurse module"
-              actions={headerActions}
-            />
-          )}
+          <PageHeader
+            title={title}
+            description={description}
+            eyebrow="Nurse module"
+            actions={showSectionNav ? (actions ? <>{defaultActions}{actions}</> : defaultActions) : actions}
+          />
           <div className="space-y-4">{children}</div>
         </>
       )}
@@ -129,9 +113,9 @@ export function NursingQuickNav() {
   const pathname = usePathname();
   const items = [
     { label: "Assessments", href: "/nurse/assessments", icon: ClipboardCheck },
+    { label: "Worklist", href: "/worklist", icon: ClipboardList },
     { label: "Assessment configuration", href: "/nurse/assessments/configuration", icon: Settings },
     { label: "Care plans", href: "/nurse/care-plans", icon: UserRoundCheck },
-    { label: "Care plan configuration", href: "/nurse/care-plans/configuration", icon: Settings },
   ];
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -152,7 +136,7 @@ export function NursingQuickNav() {
 
 export function NursingPatientStrip() {
   return (
-    <Card>
+    <Card className="sticky top-[132px] z-20">
       <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

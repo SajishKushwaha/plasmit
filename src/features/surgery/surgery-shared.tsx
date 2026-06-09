@@ -13,8 +13,8 @@ import { PageHeader } from "@/components/shell/page-header";
 import { cn } from "@/lib/utils";
 import type { Role, StatusTone } from "@/types";
 
-export const surgeryAccessRoles: Role[] = ["Super Admin", "Nurse", "Receptionist", "Management"];
-export const surgeryFullAccessRoles: Role[] = ["Super Admin", "Nurse"];
+export const surgeryAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU 2", "Receptionist", "Management"];
+export const surgeryFullAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU 2"];
 
 export function useSurgeryAccess() {
   const { role } = useRole();
@@ -47,29 +47,17 @@ export function SurgeryShell({
   description,
   children,
   actions,
-  hideHeaderCopy = false,
 }: {
   title: string;
   description: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
-  hideHeaderCopy?: boolean;
 }) {
-  const headerActions = <><SurgerySectionNav />{actions}</>;
-
   return (
     <ProtectedSurgery>
       {() => (
         <>
-          {hideHeaderCopy ? (
-            <div className="pt-4">
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-white px-3 py-3 shadow-sm">
-                {headerActions}
-              </div>
-            </div>
-          ) : (
-            <PageHeader title={title} description={description} eyebrow="Surgery module" actions={headerActions} />
-          )}
+          <PageHeader title={title} description={description} eyebrow="Surgery module" actions={<><SurgerySectionNav />{actions}</>} />
           <div className="space-y-4">{children}</div>
         </>
       )}

@@ -127,7 +127,7 @@ type NursingIcuPageId =
 type PatientAction = "View" | "Monitor" | "Medication" | "Notes" | "Transfer" | "Discharge";
 
 const pageMeta: Record<NursingIcuPageId, { title: string; description: string; icon: typeof HeartPulse }> = {
-  dashboard: { title: "ICU Dashboard", description: "ICU census, alerts, bed occupancy, workload, pending activities, and shift summary.", icon: HeartPulse },
+  dashboard: { title: "Command Center", description: "Live critical-care operations overview.", icon: HeartPulse },
   "executive-dashboard": { title: "Executive Dashboard", description: "ICU occupancy, utilization, performance, compliance, response time, and operational health.", icon: BarChart3 },
   "notifications-tasks": { title: "Notifications & Tasks", description: "Command-level overdue tasks, critical notifications, doctor instructions, nursing work, and device alerts.", icon: ListChecks },
   "patient-search": { title: "Patient Search", description: "Search ICU patients by MRN, bed, doctor, risk, status, ventilator state, and alerts.", icon: Search },
@@ -335,13 +335,13 @@ export function NursingIcuModulePage({ page }: { page: NursingIcuPageId }) {
   return (
     <div className="space-y-4 pb-8">
       <PageHeader
-        eyebrow="Nursing / ICU"
+        eyebrow="Critical Care"
         title={meta.title}
         description={meta.description}
         actions={(
           <>
             <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button>
-            <Button variant="outline" onClick={() => recordAction("Nursing / ICU data refreshed") }><RefreshCcw className="h-4 w-4" />Refresh</Button>
+            <Button variant="outline" onClick={() => recordAction("Critical care data refreshed") }><RefreshCcw className="h-4 w-4" />Refresh</Button>
             <Button onClick={() => {
               setQuickAddOpen(true);
             }}><Plus className="h-4 w-4" />Add record</Button>
@@ -2941,7 +2941,7 @@ function PilotOutcomeDashboardCommand() {
 
 function AdoptionAnalyticsCommand() {
   const rows = [
-    { id: "aa-001", module: "ICU Dashboard", role: "Head Nurse", usage: "94%", actions: "Bed board, alerts, tasks", status: "High adoption" },
+    { id: "aa-001", module: "Command Center", role: "Head Nurse", usage: "94%", actions: "Bed board, alerts, tasks", status: "High adoption" },
     { id: "aa-002", module: "Medication Administration", role: "Ward Nurse", usage: "88%", actions: "Administer, hold, verify", status: "Good adoption" },
     { id: "aa-003", module: "Doctor Rounds", role: "Doctor", usage: "76%", actions: "Care plan, orders", status: "Needs coaching" },
     { id: "aa-004", module: "Device Operations", role: "Biomedical", usage: "64%", actions: "Mapping, signal review", status: "Pilot training" },

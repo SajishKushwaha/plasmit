@@ -66,7 +66,7 @@ export const assessmentGroups: AssessmentGroup[] = [
       { id: "r3", group: "Urine assessment", label: "Urine incontinence", fieldType: "Dropdown", selectable: "Single", options: ["Yes", "No"] },
       { id: "r4", group: "Urine assessment", label: "Unmeasured Urine occurrence", fieldType: "Dropdown", selectable: "Single", options: ["Yes", "No"] },
       { id: "r5", group: "Urine assessment", label: "Urine colour", fieldType: "Dropdown", selectable: "Single", options: ["Yellow/Straw", "Amber", "Brown", "Colourless", "Red", "Blue", "Orange", "Pink", "Unable to assess"], commentBox: true },
-      { id: "r6", group: "Urine assessment", label: "Urine appearance", fieldType: "Dropdown", selectable: "Multiple", options: ["Clear", "Cloudy", "Hazy", "Sediment", "Blood clots", "Mucous", "Purulent", "Unable to assess"], commentBox: true },
+      { id: "r6", group: "Urine assessment", label: "Urine appearance", fieldType: "Dropdown", selectable: "Multiple", options: ["Clear", "Cloudy", "Hazy", "Sediment", "Blood clots", "Mucous", "Purulent", "Red flecks", "Stones", "Unable to assess"], commentBox: true },
       { id: "r7", group: "Urine assessment", label: "Urine Odor", fieldType: "Dropdown", selectable: "Multiple", options: ["Fruity", "Malodorous", "No odor", "Unable to assess"], commentBox: true },
       { id: "r8", group: "Urine assessment", label: "Diaper weight (in ml)", fieldType: "Number", selectable: "None", output: true },
     ],
@@ -82,7 +82,7 @@ export const assessmentGroups: AssessmentGroup[] = [
       { id: "st3", group: "Stool assessment", label: "Bowel incontinence", fieldType: "Dropdown", selectable: "Single", options: ["Yes", "No"] },
       { id: "st4", group: "Stool assessment", label: "Stool amount", fieldType: "Dropdown", selectable: "Single", options: ["Smear", "Small", "Medium", "Large", "Unable to assess"] },
       { id: "st5", group: "Stool assessment", label: "Stool Appearance", fieldType: "Dropdown", selectable: "Multiple", options: ["Formed", "Loose", "Soft", "Hard", "Bloody", "Mucous", "Watery", "Unable to assess"] },
-      { id: "st6", group: "Stool assessment", label: "Stool colour", fieldType: "Dropdown", selectable: "Multiple", options: ["Black", "Brown", "Clay", "Green", "Meconium", "Red", "Tan", "Yellow", "Unable to assess"] },
+      { id: "st6", group: "Stool assessment", label: "Stool colour", fieldType: "Dropdown", selectable: "Multiple", options: ["Black", "Brown", "Clay", "Green", "Meconium", "Red", "Red streaks", "Tan", "Yellow", "Unable to assess"] },
     ],
   },
   {
@@ -91,13 +91,14 @@ export const assessmentGroups: AssessmentGroup[] = [
     displayName: "Morse Fall Risk",
     active: true,
     rows: [
-      { id: "ri4", group: "Morse Fall risk assessment", label: "History of falling", fieldType: "Dropdown", selectable: "Single", options: ["Yes=25", "No=0"] },
-      { id: "ri5", group: "Morse Fall risk assessment", label: "Secondary diagnosis", fieldType: "Dropdown", selectable: "Single", options: ["Yes=15", "No=0"] },
-      { id: "ri6", group: "Morse Fall risk assessment", label: "Ambulatory aids", fieldType: "Dropdown", selectable: "Single", options: ["None/bed rest/Nurse assist=0", "Crutches/Walker/Cane=15", "Furniture=30"] },
-      { id: "ri7", group: "Morse Fall risk assessment", label: "Intravenous therapy/Heparin/Saline lock", fieldType: "Dropdown", selectable: "Single", options: ["Yes=20", "No=0"] },
-      { id: "ri8", group: "Morse Fall risk assessment", label: "Gait/Transferring", fieldType: "Dropdown", selectable: "Single", options: ["Normal/Bed rest/Wheel chair=0", "Weak=10", "Impaired=20"] },
-      { id: "ri9", group: "Morse Fall risk assessment", label: "Score", fieldType: "Calculated", selectable: "None", formula: "ri4+ri5+ri6+ri7" },
-      { id: "ri10", group: "Morse Fall risk assessment", label: "Fall risk Intervention", fieldType: "Dropdown", selectable: "Single", options: ["Yellow fall risk band applied", "Non-skid socks applied", "Falling star sign placed at bedside", "Bed in lowest position"] },
+      { id: "ri4", group: "Morse Fall risk assessment", label: "History of falling    ri4", fieldType: "Dropdown", selectable: "Single", options: ["Yes=25", "No=0"] },
+      { id: "ri5", group: "Morse Fall risk assessment", label: "Secondary diagnosis     ri5", fieldType: "Dropdown", selectable: "Single", options: ["Yes=15", "No=0"] },
+      { id: "ri6", group: "Morse Fall risk assessment", label: "Ambulatory aids     ri6", fieldType: "Dropdown", selectable: "Single", options: ["None/bed rest/Nurse assist=0", "Crutches/Walker/Cane=15", "Furniture=30"] },
+      { id: "ri7", group: "Morse Fall risk assessment", label: "Intravanous therepy /heparin / salin lock     ri7", fieldType: "Dropdown", selectable: "Single", options: ["Yes=20", "No=0"] },
+      { id: "ri8", group: "Morse Fall risk assessment", label: "Gait/Transferring     r8", fieldType: "Dropdown", selectable: "Single", options: ["Normal/Bed rest/Wheel chair=0", "Weak=10", "Impaired=20"] },
+      { id: "ri9", group: "Morse Fall risk assessment", label: "Mental status     r9", fieldType: "Dropdown", selectable: "Single", options: ["Oriented to own ability=0", "Over estimates/Forgets limitations=15"] },
+      { id: "ri10", group: "Morse Fall risk assessment", label: "Score", fieldType: "Calculated", selectable: "None", formula: "ri4+ri5+ri6+ri7+ri8+ri9" },
+      { id: "ri11", group: "Morse Fall risk assessment", label: "Fall risk Intervention", fieldType: "Dropdown", selectable: "Single", options: ["Yellow fall risk band applied", "Non-skid socks applied", "Falling star sign placed at bedside", "Bed in lowest position", "Strecher/chair alarm in place", "Placed close to nurse station"] },
     ],
   },
   {
@@ -132,7 +133,7 @@ export const assessmentGroups: AssessmentGroup[] = [
   {
     id: "grp-braden",
     name: "Braden scale Assessment",
-    displayName: "Braden Scale",
+    displayName: "Braden Scale Assessment",
     active: true,
     rows: [
       { id: "br1", group: "Braden scale Assessment", label: "Sensory perceptions", fieldType: "Dropdown", selectable: "Single", options: ["Completely limited", "Very limited", "Slightly limited", "No impairment"] },
@@ -147,7 +148,7 @@ export const assessmentGroups: AssessmentGroup[] = [
   {
     id: "grp-oxygen",
     name: "Oxygen therapy Assessment",
-    displayName: "Oxygen Therapy",
+    displayName: "Oxygen Therapy Assessment",
     active: true,
     rows: [
       { id: "ox1", group: "Oxygen therapy Assessment", label: "ETCO2 Level", fieldType: "Free text", selectable: "None" },
@@ -162,7 +163,7 @@ export const assessmentGroups: AssessmentGroup[] = [
   {
     id: "grp-ng",
     name: "NG Aspiration assessment",
-    displayName: "NG Aspiration",
+    displayName: "NG Aspiration Assessment",
     active: true,
     rows: [
       { id: "ng1", group: "NG Aspiration assessment", label: "Volume (ml)", fieldType: "Number", selectable: "None", output: true },

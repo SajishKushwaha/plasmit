@@ -39,11 +39,11 @@ export function AppSidebar({
     const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
 
     if (role === "Super Admin") {
-      return roleItems.filter((item) => item.id === "nursing" || item.id === "surgery");
+      return roleItems.filter((item) => ["nursing", "radiology-mnt", "results", "surgery"].includes(item.id));
     }
 
     if (role === "Nurse") {
-      return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-"));
+      return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-") || item.id === "radiology-mnt" || item.id === "results");
     }
 
     if (role === "Nurse ICU") {
@@ -51,7 +51,8 @@ export function AppSidebar({
     }
 
     if (role === "Nurse ICU 2") {
-      return roleItems.filter((item) => item.id === "icu-command-center" || item.id === "nursing-icu");
+      const nurseIcu2Modules = new Set(["icu-command-center", "nursing-icu", "worklist", "nursing", "radiology-mnt", "results", "surgery"]);
+      return roleItems.filter((item) => nurseIcu2Modules.has(item.id));
     }
 
     if (role === "Doctor IPD") {

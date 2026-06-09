@@ -2,6 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   BarChart3,
@@ -57,6 +58,14 @@ type ActiveCell = {
   rows: IcuIntakeOutput[];
 } | null;
 
+type GraphPoint = {
+  key: string;
+  label: string;
+  intake: number;
+  output: number;
+  balance: number;
+};
+
 type IoDraft = {
   kind: IcuIntakeOutput["kind"];
   category: string;
@@ -75,25 +84,29 @@ const hourOptions = ["All hours", ...Array.from({ length: 24 }, (_, hour) => `${
 const timeWindowOptions: TimeWindow[] = ["All time", "Day shift", "Night shift", "Custom range"];
 
 const intakeCategories = [
-  "Oral",
-  "P.O",
-  "Oral supplements",
-  "Gastric",
-  "NG Tube",
-  "Gastric wash",
-  "IV",
-  "Medicine",
-  "Fluid",
-  "Blood products",
-  "Others",
+  "Oral Intake",
+  "Enteral Feed / Tube Feed",
+  "IV Fluids",
+  "IV Medication Dilution",
+  "Continuous Infusions",
+  "Blood & Blood Products",
+  "Parenteral Nutrition / TPN",
+  "Electrolyte Replacement",
+  "Irrigation Input",
+  "Other Intake",
 ];
 
 const outputCategories = [
-  "Est. Blood loss",
-  "Urine output",
-  "Stool output",
-  "Emesis output",
-  "Drain output",
+  "Urine",
+  "Fecal",
+  "Vomitus",
+  "NG Aspirate",
+  "Ryle's Tube Aspirate",
+  "Gastric Drainage",
+  "Gastrostomy Output",
+  "Abdominal Drain",
+  "Chest Drain",
+  "Blood Loss",
 ];
 
 const sourceOptions: SourceFilter[] = [
@@ -108,7 +121,7 @@ const sourceOptions: SourceFilter[] = [
   "Infusion pump",
 ];
 
-const draftSourceOptions: IcuIntakeOutput["source"][] = sourceOptions.filter((source): source is IcuIntakeOutput["source"] => source !== "All sources");
+const captureSourceOptions: IcuIntakeOutput["source"][] = sourceOptions.filter((source): source is IcuIntakeOutput["source"] => source !== "All sources");
 
 const matrixRows: MatrixRow[] = [
   { label: "Intake", type: "section" },
@@ -121,6 +134,16 @@ const matrixRows: MatrixRow[] = [
 ];
 
 export function IntakeOutputWorkspace() {
+  return (
+    <React.Suspense fallback={<FluidWorkspaceLoading />}>
+      <IntakeOutputWorkspaceInner />
+    </React.Suspense>
+  );
+}
+
+function IntakeOutputWorkspaceInner() {
+  const searchParams = useSearchParams();
+  const isFluidBalanceView = searchParams.get("view") === "fluid-balance";
   const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
   const [view, setView] = React.useState<IoView>("Hourly");
   const [mode, setMode] = React.useState<IoMode>("Table");
@@ -138,18 +161,18 @@ export function IntakeOutputWorkspace() {
   const [activeCell, setActiveCell] = React.useState<ActiveCell>(null);
   const [draft, setDraft] = React.useState<IoDraft>({
     kind: "Intake",
-    category: "IV",
+    category: "IV Fluids",
     component: "Normal saline",
     quantity: "100",
     route: "IV",
-    source: "Manual entry",
+    source: getCaptureSourceForIoCategory("Intake", "IV Fluids"),
     date: selectedToday,
     time: "12:00",
     comment: "",
   });
 
   const selectedPatient = icuPatients.find((patient) => patient.id === patientId) ?? icuPatients[0];
-  const allRows = React.useMemo(() => [...manualRows, ...intakeOutputRows], [manualRows]);
+  const allRows = React.useMemo(() => [...manualRows, ...intakeOutputRows.map(normalizeIoCategory)], [manualRows]);
 
   const scopedRows = React.useMemo(() => {
     const text = query.trim().toLowerCase();
@@ -171,6 +194,12 @@ export function IntakeOutputWorkspace() {
   const previousBalance = React.useMemo(() => summarizeRows(previousRows).balance, [previousRows]);
   const alerts = React.useMemo(() => buildFluidAlerts(scopedRows, totals.balance), [scopedRows, totals.balance]);
   const graphSeries = React.useMemo(() => buildGraphSeries(scopedRows, buckets), [buckets, scopedRows]);
+  const screenTitle = isFluidBalanceView ? "Fluid Balance Graph" : "Intake / Output Chart";
+  const screenEyebrow = isFluidBalanceView ? "ICU Fluid Balance Review" : "Bedside Intake / Output Entry";
+  const screenDescription = isFluidBalanceView
+    ? "Trend review for intake, output, net balance, low urine output, drain output, and shift-level escalation."
+    : "Capture and verify oral, IV, blood product, tube feed, urine, drain, stool, emesis, and manual bedside entries.";
+  const effectiveMode: IoMode = isFluidBalanceView ? "Graph" : mode;
 
   const resetFilters = () => {
     setSelectedDate(selectedToday);
@@ -205,7 +234,7 @@ export function IntakeOutputWorkspace() {
       component: draft.component.trim() || draft.category,
       quantityMl: quantity,
       route: draft.route.trim() || draft.category,
-      source: draft.source,
+      source: getCaptureSourceForIoCategory(draft.kind, draft.category),
       status: "Pending review",
       intakeType: draft.kind === "Intake" ? draft.category : "",
       intakeMl: draft.kind === "Intake" ? quantity : 0,
@@ -227,11 +256,11 @@ export function IntakeOutputWorkspace() {
   };
 
   const changeDraftKind = (kind: IcuIntakeOutput["kind"]) => {
+    const defaults = getIoDraftDefaults(kind);
     setDraft((current) => ({
       ...current,
       kind,
-      category: kind === "Intake" ? "IV" : "Urine output",
-      route: kind === "Intake" ? "IV" : "Urinary catheter",
+      ...defaults,
     }));
   };
 
@@ -241,12 +270,13 @@ export function IntakeOutputWorkspace() {
         <div className="grid gap-4 border-b border-sky-100 bg-sky-700 p-4 text-white lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase text-sky-100">
-              <Droplets className="h-4 w-4" />
-              ICU Fluid Balance
+              {isFluidBalanceView ? <BarChart3 className="h-4 w-4" /> : <Droplets className="h-4 w-4" />}
+              {screenEyebrow}
               <span className="rounded-full bg-white/15 px-2 py-0.5">{selectedPatient.bedNo}</span>
             </div>
-            <h2 className="mt-2 text-xl font-bold leading-tight">{selectedPatient.patientName}</h2>
-            <p className="mt-1 max-w-4xl text-sm text-sky-50">{selectedPatient.diagnosis} | {selectedPatient.assignedWardNurse} | {selectedPatient.admittingDoctor}</p>
+            <h2 className="mt-2 text-xl font-bold leading-tight">{screenTitle} - {selectedPatient.patientName}</h2>
+            <p className="mt-1 max-w-4xl text-sm text-sky-50">{screenDescription}</p>
+            <p className="mt-1 max-w-4xl text-xs text-sky-100">{selectedPatient.diagnosis} | {selectedPatient.assignedWardNurse} | {selectedPatient.admittingDoctor}</p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
             <FluidHeaderMetric label="Intake" value={`${totals.intake} ml`} tone="info" />
@@ -305,21 +335,29 @@ export function IntakeOutputWorkspace() {
                   <Input className="w-full pl-9" placeholder="Component, nurse, source..." value={query} onChange={(event) => setQuery(event.target.value)} />
                 </div>
               </FieldBlock>
-              <div className="flex h-10 rounded-md border border-slate-300 bg-white p-1">
-                {(["Table", "Graph"] satisfies IoMode[]).map((option) => (
-                  <button
-                    className={cn("flex h-8 items-center gap-1 rounded px-3 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
-                    key={option}
-                    type="button"
-                    onClick={() => setMode(option)}
-                  >
-                    {option === "Table" ? <Table2 className="h-4 w-4" /> : <BarChart3 className="h-4 w-4" />}{option}
-                  </button>
-                ))}
-              </div>
-              <Button className="h-10 whitespace-nowrap" onClick={() => setQuickAddOpen(true)}>
-                <Plus className="h-4 w-4" />Quick add
-              </Button>
+              {isFluidBalanceView ? (
+                <div className="flex h-10 items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 text-xs font-bold uppercase text-sky-800">
+                  <BarChart3 className="h-4 w-4" />Graph review
+                </div>
+              ) : (
+                <div className="flex h-10 rounded-md border border-slate-300 bg-white p-1">
+                  {(["Table", "Graph"] satisfies IoMode[]).map((option) => (
+                    <button
+                      className={cn("flex h-8 items-center gap-1 rounded px-3 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
+                      key={option}
+                      type="button"
+                      onClick={() => setMode(option)}
+                    >
+                      {option === "Table" ? <Table2 className="h-4 w-4" /> : <BarChart3 className="h-4 w-4" />}{option}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!isFluidBalanceView ? (
+                <Button className="h-10 whitespace-nowrap" onClick={() => setQuickAddOpen(true)}>
+                  <Plus className="h-4 w-4" />Quick add
+                </Button>
+              ) : null}
               <Button className="h-10 whitespace-nowrap" variant="outline" onClick={resetFilters}>
                 <RefreshCcw className="h-4 w-4" />Reset
               </Button>
@@ -336,16 +374,23 @@ export function IntakeOutputWorkspace() {
           <FluidMetricCard icon={AlertTriangle} label="Fluid alerts" value={alerts.length} detail={alerts[0]?.title ?? "No open fluid alert"} tone={alerts.some((alert) => alert.tone === "danger" || alert.tone === "critical") ? "danger" : alerts.length ? "warning" : "success"} />
         </div>
 
-        {mode === "Table" ? (
+        {isFluidBalanceView ? (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
+            <FluidBalanceGraph series={graphSeries} />
+            <FluidGraphReviewPanel alerts={alerts} previousBalance={previousBalance} rows={scopedRows} series={graphSeries} />
+          </div>
+        ) : effectiveMode === "Table" ? (
           <FluidBalanceMatrix buckets={buckets} rows={scopedRows} activeCell={activeCell} onSelectCell={setActiveCell} />
         ) : (
           <FluidBalanceGraph series={graphSeries} />
         )}
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <FluidLedger rows={scopedRows} />
-          <RunningTotalPanel rows={currentDayRows} alerts={alerts} activeCell={activeCell} />
-        </div>
+        {!isFluidBalanceView ? (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <FluidLedger rows={scopedRows} />
+            <RunningTotalPanel rows={currentDayRows} alerts={alerts} activeCell={activeCell} />
+          </div>
+        ) : null}
       </div>
 
       <QuickFluidEntryDialog
@@ -357,6 +402,19 @@ export function IntakeOutputWorkspace() {
         onSave={saveManualEntry}
         patientLabel={`${selectedPatient.bedNo} - ${selectedPatient.patientName}`}
       />
+    </div>
+  );
+}
+
+function FluidWorkspaceLoading() {
+  return (
+    <div className="space-y-4">
+      <div className="h-32 rounded-md border border-sky-100 bg-sky-50" />
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div className="h-24 rounded-md border border-slate-200 bg-slate-50" key={index} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -476,20 +534,16 @@ function IoQuantityCell({ bucket, row, rows, value, active, onSelect }: { bucket
   );
 }
 
-function FluidBalanceGraph({ series }: { series: Array<{ key: string; label: string; intake: number; output: number; balance: number }> }) {
+function FluidBalanceGraph({ series }: { series: GraphPoint[] }) {
   const width = Math.max(760, series.length * 84);
-  const height = 270;
+  const height = 300;
   const pad = 36;
-  const maxVolume = Math.max(100, ...series.flatMap((point) => [point.intake, point.output, Math.abs(point.balance)]));
-  const plotHeight = height - pad * 2;
+  const labelSpace = 24;
+  const maxVolume = Math.max(100, ...series.flatMap((point) => [point.intake, point.output]));
   const plotWidth = width - pad * 2;
-  const baseline = height - pad;
-  const balancePoints = series.map((point, index) => {
-    const x = pad + (series.length <= 1 ? plotWidth / 2 : (index / (series.length - 1)) * plotWidth);
-    const normalized = (point.balance + maxVolume) / (maxVolume * 2);
-    const y = pad + (1 - normalized) * plotHeight;
-    return `${x},${y}`;
-  }).join(" ");
+  const baseline = Math.round((height - labelSpace) / 2);
+  const intakePlotHeight = baseline - pad - 10;
+  const outputPlotHeight = height - labelSpace - baseline - 10;
 
   return (
     <Card className="overflow-hidden border-slate-200">
@@ -497,38 +551,134 @@ function FluidBalanceGraph({ series }: { series: Array<{ key: string; label: str
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle>Fluid Balance Graph</CardTitle>
-            <CardDescription>Blue intake, green output, and red/green net balance trend.</CardDescription>
+            <CardDescription>Blue intake is plotted above the baseline and green output below it.</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone="info">Intake</Badge>
             <Badge tone="success">Output</Badge>
-            <Badge tone="danger">Net watch</Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
+        <div className="flex flex-wrap gap-3 border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-600">
+          <FluidGraphLegendItem color="#0ea5e9" label="Intake above baseline" />
+          <FluidGraphLegendItem color="#10b981" label="Output below baseline" />
+          <span className="inline-flex items-center gap-2">
+            <span className="h-0 w-8 border-t border-dashed border-slate-400" />
+            Zero baseline
+          </span>
+        </div>
         <div className="overflow-x-auto p-4">
           <svg className="block" height={height} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
             <line stroke="#cbd5e1" strokeDasharray="4 4" x1={pad} x2={width - pad} y1={baseline} y2={baseline} />
             {series.map((point, index) => {
               const x = pad + (series.length <= 1 ? plotWidth / 2 : (index / (series.length - 1)) * plotWidth);
-              const intakeHeight = Math.max(4, (point.intake / maxVolume) * (plotHeight - 38));
-              const outputHeight = Math.max(4, (point.output / maxVolume) * (plotHeight - 38));
-              const balanceY = pad + (1 - ((point.balance + maxVolume) / (maxVolume * 2))) * plotHeight;
+              const intakeHeight = point.intake > 0 ? Math.max(4, (point.intake / maxVolume) * intakePlotHeight) : 0;
+              const outputHeight = point.output > 0 ? Math.max(4, (point.output / maxVolume) * outputPlotHeight) : 0;
               return (
                 <g key={point.key}>
                   <rect fill="#0ea5e9" height={intakeHeight} rx="4" width="18" x={x - 23} y={baseline - intakeHeight} />
-                  <rect fill="#10b981" height={outputHeight} rx="4" width="18" x={x + 5} y={baseline - outputHeight} />
-                  <circle cx={x} cy={balanceY} fill={point.balance >= 0 ? "#f97316" : "#dc2626"} r="4" />
+                  <rect fill="#10b981" height={outputHeight} rx="4" width="18" x={x + 5} y={baseline} />
                   <text fill="#475569" fontSize="10" textAnchor="middle" x={x} y={height - 10}>{point.label}</text>
                 </g>
               );
             })}
-            <polyline fill="none" points={balancePoints} stroke="#dc2626" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
           </svg>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function FluidGraphLegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  );
+}
+
+function FluidGraphReviewPanel({
+  rows,
+  alerts,
+  series,
+  previousBalance,
+}: {
+  rows: IcuIntakeOutput[];
+  alerts: Array<{ title: string; detail: string; tone: StatusTone }>;
+  series: GraphPoint[];
+  previousBalance: number;
+}) {
+  const totals = summarizeRows(rows);
+  const sourceStats = buildSourceStats(rows).slice(0, 5);
+  const fallbackPoint: GraphPoint = { key: "empty", label: "-", intake: 0, output: 0, balance: 0 };
+  const peakPositive = series.reduce((best, point) => point.balance > best.balance ? point : best, series[0] ?? fallbackPoint);
+  const peakNegative = series.reduce((best, point) => point.balance < best.balance ? point : best, series[0] ?? fallbackPoint);
+  const lowUrineCount = rows.filter((row) => row.category === "Urine" && row.quantityMl < 30).length;
+  const drainOutput = rows.filter((row) => ["Abdominal Drain", "Chest Drain", "Gastric Drainage", "Gastrostomy Output"].includes(row.category)).reduce((sum, row) => sum + row.quantityMl, 0);
+  const pendingCount = rows.filter((row) => row.status === "Pending review").length;
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 bg-white">
+          <CardTitle>Balance Review</CardTitle>
+          <CardDescription>Doctor/head nurse review summary for the selected date and time window.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          <TotalLine label="Current intake" value={`${totals.intake} ml`} tone="info" />
+          <TotalLine label="Current output" value={`${totals.output} ml`} tone="success" />
+          <TotalLine label="Net balance" value={formatSignedMl(totals.balance)} tone={balanceTone(totals.balance)} />
+          <TotalLine label="Previous balance" value={formatSignedMl(previousBalance)} tone={balanceTone(previousBalance)} />
+          <TotalLine label={`Peak positive (${peakPositive.label})`} value={formatSignedMl(peakPositive.balance)} tone={balanceTone(peakPositive.balance)} />
+          <TotalLine label={`Peak negative (${peakNegative.label})`} value={formatSignedMl(peakNegative.balance)} tone={balanceTone(peakNegative.balance)} />
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 bg-white">
+          <CardTitle>Scenario Checks</CardTitle>
+          <CardDescription>Common ICU fluid-balance review triggers.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          <FluidScenarioLine title="Low urine output" detail={lowUrineCount ? `${lowUrineCount} hour(s) below 30 ml` : "No low urine output in selected window"} tone={lowUrineCount ? "danger" : "success"} />
+          <FluidScenarioLine title="Drain output" detail={`${drainOutput} ml drain output`} tone={drainOutput > 200 ? "warning" : "success"} />
+          <FluidScenarioLine title="Positive balance" detail={formatSignedMl(totals.balance)} tone={totals.balance > 500 ? "warning" : "success"} />
+          <FluidScenarioLine title="Pending verification" detail={`${pendingCount} entry(s) pending`} tone={pendingCount ? "info" : "success"} />
+          {alerts.map((alert) => (
+            <div className={cn("rounded-md border p-3", metricToneClass(alert.tone))} key={alert.title}>
+              <div className="text-sm font-bold text-slate-950">{alert.title}</div>
+              <div className="mt-1 text-xs text-slate-600">{alert.detail}</div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 bg-white">
+          <CardTitle>Source Sync</CardTitle>
+          <CardDescription>Where visible fluid records are coming from.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 p-4">
+          {sourceStats.map((stat) => (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm" key={stat.source}>
+              <span className="text-slate-700">{stat.source}</span>
+              <span className="font-bold text-slate-950">{stat.quantity} ml</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function FluidScenarioLine({ title, detail, tone }: { title: string; detail: string; tone: StatusTone }) {
+  return (
+    <div className={cn("flex items-center justify-between gap-3 rounded-md border px-3 py-2", metricToneClass(tone))}>
+      <span className="text-sm font-bold text-slate-950">{title}</span>
+      <Badge tone={tone}>{detail}</Badge>
+    </div>
   );
 }
 
@@ -608,7 +758,7 @@ function QuickFluidEntryDialog({
           <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-sky-700 p-4 text-white">
             <div>
               <Dialog.Title className="text-lg font-bold">Add Intake / Output</Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-sky-50">{patientLabel} | component, quantity, time, source, and comment.</Dialog.Description>
+              <Dialog.Description className="mt-1 text-sm text-sky-50">{patientLabel} | source, component, quantity, time, and comment.</Dialog.Description>
             </div>
             <Dialog.Close asChild>
               <button className="rounded-md p-2 text-sky-50 transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/50" type="button" aria-label="Close quick add">
@@ -627,6 +777,9 @@ function QuickFluidEntryDialog({
 
 function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoDraft; onChange: (draft: IoDraft) => void; onKindChange: (kind: IcuIntakeOutput["kind"]) => void; onSave: () => void }) {
   const categories = draft.kind === "Intake" ? intakeCategories : outputCategories;
+  const updateCategory = (category: string) => {
+    onChange({ ...draft, ...getIoDraftDefaults(draft.kind, category) });
+  };
 
   return (
     <div className="space-y-4">
@@ -642,8 +795,8 @@ function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoD
         </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <FieldBlock label="Category">
-          <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.category} onChange={(event) => onChange({ ...draft, category: event.target.value })}>
+        <FieldBlock label={draft.kind === "Intake" ? "Intake source" : "Output source"}>
+          <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.category} onChange={(event) => updateCategory(event.target.value)}>
             {categories.map((category) => <option key={category}>{category}</option>)}
           </select>
         </FieldBlock>
@@ -659,11 +812,6 @@ function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoD
         <FieldBlock label="Date">
           <Input type="date" value={draft.date} onChange={(event) => onChange({ ...draft, date: event.target.value })} />
         </FieldBlock>
-        <FieldBlock label="Source">
-          <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.source} onChange={(event) => onChange({ ...draft, source: event.target.value as IcuIntakeOutput["source"] })}>
-            {draftSourceOptions.map((source) => <option key={source}>{source}</option>)}
-          </select>
-        </FieldBlock>
         <FieldBlock label="Route">
           <Input value={draft.route} onChange={(event) => onChange({ ...draft, route: event.target.value })} />
         </FieldBlock>
@@ -678,6 +826,86 @@ function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoD
       </div>
     </div>
   );
+}
+
+function normalizeIoCategory(row: IcuIntakeOutput): IcuIntakeOutput {
+  const category = normalizeIoCategoryName(row.kind, row.category, row.component, row.outputType, row.intakeType);
+  return {
+    ...row,
+    category,
+    intakeType: row.kind === "Intake" ? category : row.intakeType,
+    outputType: row.kind === "Output" ? category : row.outputType,
+  };
+}
+
+function getIoDraftDefaults(kind: IcuIntakeOutput["kind"], category = kind === "Intake" ? "IV Fluids" : "Urine"): Pick<IoDraft, "category" | "component" | "route" | "source"> {
+  const source = getCaptureSourceForIoCategory(kind, category);
+  const defaults: Record<string, { component: string; route: string }> = {
+    "Oral Intake": { component: "Water / diet intake", route: "Oral" },
+    "Enteral Feed / Tube Feed": { component: "Enteral feed", route: "NG / feeding tube" },
+    "IV Fluids": { component: "Normal saline", route: "IV" },
+    "IV Medication Dilution": { component: "Medication diluent", route: "IV" },
+    "Continuous Infusions": { component: "Infusion carrier volume", route: "Infusion" },
+    "Blood & Blood Products": { component: "Blood product unit", route: "Blood transfusion" },
+    "Parenteral Nutrition / TPN": { component: "TPN bag", route: "Central line" },
+    "Electrolyte Replacement": { component: "Electrolyte infusion", route: "IV" },
+    "Irrigation Input": { component: "Irrigation fluid", route: "Irrigation" },
+    "Other Intake": { component: "Other intake", route: "As documented" },
+    Urine: { component: "Foley catheter", route: "Urinary catheter" },
+    Fecal: { component: "Stool", route: "Stool chart" },
+    Vomitus: { component: "Vomitus", route: "Oral" },
+    "NG Aspirate": { component: "NG aspirate", route: "NG tube" },
+    "Ryle's Tube Aspirate": { component: "Ryle's tube aspirate", route: "Ryle's tube" },
+    "Gastric Drainage": { component: "Gastric drainage", route: "Gastric tube" },
+    "Gastrostomy Output": { component: "Gastrostomy output", route: "Gastrostomy" },
+    "Abdominal Drain": { component: "Abdominal drain", route: "Surgical drain" },
+    "Chest Drain": { component: "Chest drain", route: "Chest drain" },
+    "Blood Loss": { component: "Estimated blood loss", route: "Procedure estimate" },
+  };
+  return { category, component: defaults[category]?.component ?? category, route: defaults[category]?.route ?? category, source };
+}
+
+function getCaptureSourceForIoCategory(kind: IcuIntakeOutput["kind"], category: string): IcuIntakeOutput["source"] {
+  if (kind === "Intake") {
+    if (category === "Blood & Blood Products") return "Blood administration";
+    if (category === "IV Medication Dilution" || category === "Electrolyte Replacement") return "Medication administration";
+    if (category === "IV Fluids" || category === "Continuous Infusions") return "Infusion pump";
+    return "Manual entry";
+  }
+  if (category === "Urine") return "Urine assessment";
+  if (category === "Fecal") return "Stool assessment";
+  if (category === "Vomitus") return "Emesis assessment";
+  if (["NG Aspirate", "Ryle's Tube Aspirate", "Gastric Drainage", "Gastrostomy Output", "Abdominal Drain", "Chest Drain"].includes(category)) return "Drain assessment";
+  return "Manual entry";
+}
+
+function normalizeIoCategoryName(kind: IcuIntakeOutput["kind"], category: string, component: string, outputType: string, intakeType: string) {
+  const text = `${category} ${component} ${outputType} ${intakeType}`.toLowerCase();
+
+  if (kind === "Intake") {
+    if (text.includes("blood") || text.includes("prbc") || text.includes("ffp") || text.includes("platelet")) return "Blood & Blood Products";
+    if (text.includes("medication") || text.includes("medicine") || text.includes("diluent") || text.includes("antibiotic")) return "IV Medication Dilution";
+    if (text.includes("infusion") || text.includes("vasopressor") || text.includes("noradrenaline")) return "Continuous Infusions";
+    if (text.includes("ng") || text.includes("tube") || text.includes("enteral") || text.includes("feed")) return "Enteral Feed / Tube Feed";
+    if (text.includes("tpn") || text.includes("parenteral")) return "Parenteral Nutrition / TPN";
+    if (text.includes("electrolyte") || text.includes("potassium") || text.includes("magnesium")) return "Electrolyte Replacement";
+    if (text.includes("irrigation") || text.includes("wash")) return "Irrigation Input";
+    if (text.includes("iv") || text.includes("fluid") || text.includes("saline") || text.includes("ringer") || text.includes("dextrose") || text.includes("crystalloid")) return "IV Fluids";
+    if (text.includes("oral") || text.includes("p.o") || text.includes("supplement") || text.includes("water") || text.includes("juice") || text.includes("ice")) return "Oral Intake";
+    return "Other Intake";
+  }
+
+  if (text.includes("urine") || text.includes("foley") || text.includes("catheter") || text.includes("urinal")) return "Urine";
+  if (text.includes("stool") || text.includes("fecal")) return "Fecal";
+  if (text.includes("vomit") || text.includes("emesis")) return "Vomitus";
+  if (text.includes("ryle")) return "Ryle's Tube Aspirate";
+  if (text.includes("ng aspirate")) return "NG Aspirate";
+  if (text.includes("gastric")) return "Gastric Drainage";
+  if (text.includes("gastrostomy")) return "Gastrostomy Output";
+  if (text.includes("chest drain")) return "Chest Drain";
+  if (text.includes("drain")) return "Abdominal Drain";
+  if (text.includes("blood loss") || text.includes("blood")) return "Blood Loss";
+  return category;
 }
 
 function RunningTotalPanel({ rows, alerts, activeCell }: { rows: IcuIntakeOutput[]; alerts: Array<{ title: string; detail: string; tone: StatusTone }>; activeCell: ActiveCell }) {
@@ -836,8 +1064,8 @@ function buildGraphSeries(rows: IcuIntakeOutput[], buckets: Bucket[]) {
 }
 
 function buildFluidAlerts(rows: IcuIntakeOutput[], balance: number): Array<{ title: string; detail: string; tone: StatusTone }> {
-  const lowUrine = rows.filter((row) => row.category === "Urine output" && row.quantityMl < 30);
-  const drainTotal = rows.filter((row) => row.category === "Drain output").reduce((sum, row) => sum + row.quantityMl, 0);
+  const lowUrine = rows.filter((row) => row.category === "Urine" && row.quantityMl < 30);
+  const drainTotal = rows.filter((row) => ["Abdominal Drain", "Chest Drain", "Gastric Drainage", "Gastrostomy Output"].includes(row.category)).reduce((sum, row) => sum + row.quantityMl, 0);
   const pending = rows.filter((row) => row.status === "Pending review");
   const alerts: Array<{ title: string; detail: string; tone: StatusTone }> = [];
 
@@ -857,8 +1085,8 @@ function buildFluidAlerts(rows: IcuIntakeOutput[], balance: number): Array<{ tit
   return alerts;
 }
 
-function buildSourceStats(rows: IcuIntakeOutput[]) {
-  const stats = draftSourceOptions
+function buildSourceStats(rows: IcuIntakeOutput[]): Array<{ source: string; quantity: number }> {
+  const stats = captureSourceOptions
     .map((source) => ({
       source,
       quantity: rows.filter((row) => row.source === source).reduce((sum, row) => sum + row.quantityMl, 0),

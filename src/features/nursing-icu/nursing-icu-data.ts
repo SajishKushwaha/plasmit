@@ -192,7 +192,7 @@ export const icuPatients: IcuPatient[] = [
     lastVitalsTime: "10 min ago",
     pendingTasks: 7,
     alerts: ["SpO2 low", "Medication overdue", "Critical lab pending"],
-    unit: "Medical ICU",
+    unit: "Pediatric ICU",
     admissionTime: "Today 08:10",
   },
   {
@@ -214,7 +214,7 @@ export const icuPatients: IcuPatient[] = [
     lastVitalsTime: "5 min ago",
     pendingTasks: 5,
     alerts: ["Ventilator check due", "ABG result due"],
-    unit: "Cardiac ICU",
+    unit: "Cardiothoracic ICU",
     admissionTime: "Today 06:45",
   },
   {
@@ -258,7 +258,7 @@ export const icuPatients: IcuPatient[] = [
     lastVitalsTime: "40 min ago",
     pendingTasks: 2,
     alerts: ["Transfer clearance pending"],
-    unit: "Medical ICU",
+    unit: "General ICU",
     admissionTime: "Yesterday 14:00",
   },
 ];

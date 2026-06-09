@@ -46,8 +46,12 @@ export function AppSidebar({
       return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-"));
     }
 
-    if (role === "Nurse ICU" || role === "Nurse ICU 2") {
+    if (role === "Nurse ICU") {
       return roleItems.filter((item) => item.id === "nursing-icu");
+    }
+
+    if (role === "Nurse ICU 2") {
+      return roleItems.filter((item) => item.id === "icu-command-center" || item.id === "nursing-icu");
     }
 
     if (role === "Doctor IPD") {

@@ -39,7 +39,9 @@ type ReviewGraphMetricId =
   | "pulseRhythm"
   | "temperature"
   | "consciousnessSedation"
-  | "painScore";
+  | "painScore"
+  | "fluidIntake"
+  | "urineOutput";
 
 type ReviewGraphMetric = {
   id: ReviewGraphMetricId;
@@ -50,6 +52,7 @@ type ReviewGraphMetric = {
   normalText: string;
   extractor: (observation: RapidObservationSet) => number | null;
   display: (observation: RapidObservationSet) => string;
+  riskExtractor?: (observation: RapidObservationSet) => AdultObservationRiskLevel;
 };
 
 type ReviewGraphPoint = {
@@ -63,7 +66,36 @@ type ReviewGraphPoint = {
   risk: AdultObservationRiskLevel;
 };
 
+type CombinedReviewGraphPoint = {
+  date: string;
+  time: string;
+  xLabel: string;
+  displays: Partial<Record<ReviewGraphMetricId, string>>;
+  risks: Partial<Record<ReviewGraphMetricId, AdultObservationRiskLevel>>;
+} & Partial<Record<ReviewGraphMetricId, number | null>>;
+
+type AllVitalsGraphSection = {
+  title: string;
+  description: string;
+  metrics: ReviewGraphMetricId[];
+};
+
 const reviewGraphLineColor = "#2563eb";
+const allVitalsGraphView = "All vitals graph";
+const combinedGraphColors = [
+  "#2563eb",
+  "#16a34a",
+  "#f97316",
+  "#7c3aed",
+  "#dc2626",
+  "#0891b2",
+  "#be123c",
+  "#9333ea",
+  "#4f46e5",
+  "#ca8a04",
+  "#0f766e",
+  "#db2777",
+];
 
 const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
@@ -189,6 +221,58 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
     extractor: (observation) => parseObservationNumber(observation.painScore),
     display: (observation) => observation.painScore,
   },
+  {
+    id: "fluidIntake",
+    vitalType: "intervention",
+    label: "Fluid Intake",
+    shortLabel: "Intake",
+    unit: "ml/hr",
+    normalText: "Sample hourly intake for graph review",
+    extractor: rapidReviewFluidIntakeValue,
+    display: (observation) => {
+      const intake = rapidReviewFluidIntakeValue(observation);
+      return intake === null ? "--" : `${intake} ml/hr`;
+    },
+  },
+  {
+    id: "urineOutput",
+    vitalType: "intervention",
+    label: "Urine Output",
+    shortLabel: "Urine",
+    unit: "ml/hr",
+    normalText: "Normal >= 40 ml/hr, low < 30 ml/hr",
+    extractor: (observation) => parseObservationNumber(observation.urineOutput),
+    display: (observation) => observation.urineOutput,
+    riskExtractor: (observation) => urineOutputRiskLevel(observation.urineOutput),
+  },
+];
+
+const allVitalsGraphSections: AllVitalsGraphSection[] = [
+  {
+    title: "Respiration",
+    description: "Respiratory rate, oxygen saturation, oxygen flow, and FiO2 trend.",
+    metrics: ["respiratoryRate", "oxygenSaturation", "oxygenFlowRate", "fio2"],
+  },
+  {
+    title: "CVS",
+    description: "Pulse, monitor heart rate, systolic blood pressure, pulse deficit, and rhythm risk.",
+    metrics: ["pulseRate", "monitorHeartRate", "bloodPressure", "pulseDeficit", "pulseRhythm"],
+  },
+  {
+    title: "Infection",
+    description: "Temperature trend with risk markers.",
+    metrics: ["temperature"],
+  },
+  {
+    title: "Neuro / Pain",
+    description: "GCS and pain-score trend for deterioration review.",
+    metrics: ["consciousnessSedation", "painScore"],
+  },
+  {
+    title: "Intake / Output",
+    description: "Hourly intake and urine output trend from rapid review observations.",
+    metrics: ["fluidIntake", "urineOutput"],
+  },
 ];
 
 export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient[] }) {
@@ -220,8 +304,12 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
       return searchText.toLowerCase().includes(search.toLowerCase());
     });
   }, [patients, search]);
+  const isAllVitalsGraph = viewMode === allVitalsGraphView;
   const graphData = buildReviewGraphData(filteredObservations, metric);
   const summary = buildReviewGraphSummary(filteredObservations, metric);
+  const combinedGraphData = buildCombinedReviewGraphData(filteredObservations);
+  const combinedSummary = buildCombinedReviewGraphSummary(filteredObservations);
+  const activeSummary = isAllVitalsGraph ? combinedSummary : summary;
   const filterSummary = `${dateFilterSummary(dateMode, singleDate, dateFrom, dateTo, latestDataDate)} | ${timeFilterSummary(timeMode, timeFrom, timeTo)}`;
 
   function updateDateMode(value: string) {
@@ -244,7 +332,7 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
         <CardHeader>
           <div>
             <CardTitle>Review Graph</CardTitle>
-            <CardDescription>Select one patient, click any vital, and review that patient&apos;s 24-hour graph and table separately.</CardDescription>
+            <CardDescription>Select one patient and review focused vital trends or the complete combined clinical trend.</CardDescription>
           </div>
           <Badge tone="info">Patient-wise</Badge>
         </CardHeader>
@@ -280,7 +368,7 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
               label="View"
               value={viewMode}
               onChange={setViewMode}
-              options={["Graph + table", "Graph only", "Table only"]}
+              options={["Graph + table", "Graph only", "Table only", allVitalsGraphView]}
             />
           </div>
 
@@ -325,7 +413,11 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
               <button
                 className={cn(
                   "rounded-md border p-3 text-left transition hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-ring/20",
-                  item.id === metric.id ? "border-primary bg-primary/10" : "border-border bg-background",
+                  isAllVitalsGraph
+                    ? "border-primary/40 bg-primary/5"
+                    : item.id === metric.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-background",
                 )}
                 key={item.id}
                 onClick={() => setMetricId(item.id)}
@@ -345,17 +437,19 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <GraphStatCard label="Selected vital" value={metric.shortLabel} context={metric.unit} tone="info" icon={BarChart3} />
-        <GraphStatCard label="Total entries" value={summary.totalEntries} context={filterSummary} tone="success" icon={Table2} />
-        <GraphStatCard label="High/Critical" value={summary.highRiskCount + summary.criticalCount} context={`${summary.criticalCount} critical`} tone={summary.criticalCount ? "critical" : summary.highRiskCount ? "danger" : "success"} icon={HeartPulse} />
+        <GraphStatCard label="Selected vital" value={isAllVitalsGraph ? "All graphs" : metric.shortLabel} context={isAllVitalsGraph ? `${allVitalsGraphSections.length} panels` : metric.unit} tone="info" icon={BarChart3} />
+        <GraphStatCard label="Total entries" value={activeSummary.totalEntries} context={filterSummary} tone="success" icon={Table2} />
+        <GraphStatCard label="High/Critical" value={activeSummary.highRiskCount + activeSummary.criticalCount} context={`${activeSummary.criticalCount} critical`} tone={activeSummary.criticalCount ? "critical" : activeSummary.highRiskCount ? "danger" : "success"} icon={HeartPulse} />
         <GraphStatCard label="Patient" value={selectedPatient?.patientName ?? "-"} context={selectedPatient ? `${selectedPatient.bed}, ${selectedPatient.ward}` : "Focused"} tone="info" icon={UsersRound} />
       </div>
 
-      {viewMode !== "Table only" && selectedPatient ? (
+      {isAllVitalsGraph && selectedPatient ? (
+        <AllVitalsGraphDashboard patient={selectedPatient} data={combinedGraphData} dateSummary={filterSummary} />
+      ) : viewMode !== "Table only" && selectedPatient ? (
         <ReviewGraphPanel patient={selectedPatient} data={graphData} metric={metric} dateSummary={filterSummary} />
       ) : null}
 
-      {viewMode !== "Graph only" && selectedPatient ? (
+      {!isAllVitalsGraph && viewMode !== "Graph only" && selectedPatient ? (
         <ReviewGraphTable patient={selectedPatient} observations={filteredObservations} metric={metric} dateSummary={filterSummary} />
       ) : null}
     </div>
@@ -683,8 +777,7 @@ function ReviewGraphTable({
             <tbody>
               {observations.length ? observations.map((observation) => {
                 const value = metric.display(observation);
-                const numericValue = metric.extractor(observation);
-                const risk = getRiskLevel(metric.vitalType, metric.vitalType === "pulseRhythm" ? value : numericValue ?? value);
+                const risk = metricRiskLevel(metric, observation);
                 return (
                   <tr className="border-b border-border last:border-0" key={observation.id}>
                     <td className="sticky left-0 z-10 whitespace-nowrap border-r border-border bg-background px-3 py-2 font-medium">{formatDateLabel(observationDateValue(observation))}</td>
@@ -719,6 +812,272 @@ function ReviewGraphTable({
   );
 }
 
+function AllVitalsGraphDashboard({
+  patient,
+  data,
+  dateSummary,
+}: {
+  patient: RapidReviewPatient;
+  data: CombinedReviewGraphPoint[];
+  dateSummary: string;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border border-border bg-surface-muted px-4 py-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">All Vitals Graph</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {patient.patientName} - {patient.uhid} - {patient.bed}. {dateSummary}. Each section uses a normalized 0-100 trend scale so different vitals can be compared together.
+            </p>
+          </div>
+          <StatusPill tone="info">{reviewGraphMetrics.length} vitals</StatusPill>
+        </div>
+      </div>
+
+      {allVitalsGraphSections.map((section) => (
+        <AllVitalsGraphSectionCard data={data} key={section.title} section={section} />
+      ))}
+    </div>
+  );
+}
+
+function AllVitalsGraphSectionCard({
+  section,
+  data,
+}: {
+  section: AllVitalsGraphSection;
+  data: CombinedReviewGraphPoint[];
+}) {
+  if (section.metrics.includes("urineOutput")) {
+    return <AllVitalsFluidBalanceSectionCard data={data} section={section} />;
+  }
+
+  const sectionMetrics = section.metrics
+    .map((metricId) => reviewGraphMetrics.find((metric) => metric.id === metricId))
+    .filter((metric): metric is ReviewGraphMetric => Boolean(metric));
+
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
+          <h3 className="text-2xl font-semibold text-foreground">{section.title}</h3>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p>
+          <div className="mt-5">
+            <p className="text-sm font-semibold text-foreground">Legend</p>
+            <div className="mt-3 space-y-3">
+              {sectionMetrics.map((metric) => (
+                <div className="flex items-start gap-3 text-sm" key={metric.id}>
+                  <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-white shadow-sm" style={{ backgroundColor: reviewMetricColor(metric.id) }} />
+                  <span className="min-w-0">
+                    <span className="block font-medium text-foreground">{metric.shortLabel}</span>
+                    <span className="block text-xs leading-4 text-muted-foreground">{metric.label} {metric.unit ? `(${metric.unit})` : ""}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="min-w-0 p-4">
+          {data.length ? (
+            <div className="h-[310px]">
+              <ResponsiveContainer height="100%" width="100%">
+                <LineChart data={data} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="xLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} width={48} />
+                  <Tooltip content={<CombinedReviewGraphTooltip />} />
+                  <Legend />
+                  {sectionMetrics.map((metric) => (
+                    <Line
+                      activeDot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} active metric={metric} />}
+                      connectNulls
+                      dataKey={metric.id}
+                      dot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} metric={metric} />}
+                      key={metric.id}
+                      name={metric.shortLabel}
+                      stroke={reviewMetricColor(metric.id)}
+                      strokeWidth={metric.id === "bloodPressure" || metric.id === "oxygenSaturation" ? 2.4 : 2}
+                      type="monotone"
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AllVitalsFluidBalanceSectionCard({
+  section,
+  data,
+}: {
+  section: AllVitalsGraphSection;
+  data: CombinedReviewGraphPoint[];
+}) {
+  const intakeMetric = reviewGraphMetrics.find((item) => item.id === "fluidIntake");
+  const outputMetric = reviewGraphMetrics.find((item) => item.id === "urineOutput");
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
+          <h3 className="text-2xl font-semibold text-foreground">{section.title}</h3>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p>
+          <div className="mt-5">
+            <p className="text-sm font-semibold text-foreground">Legend</p>
+            <div className="mt-3 space-y-3">
+              <div className="flex items-start gap-3 text-sm">
+                <span className="mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-white bg-sky-500 shadow-sm" />
+                <span className="min-w-0">
+                  <span className="block font-medium text-foreground">{intakeMetric?.shortLabel ?? "Intake"}</span>
+                  <span className="block text-xs leading-4 text-muted-foreground">Fluid intake above baseline ({intakeMetric?.unit ?? "ml/hr"})</span>
+                </span>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <span className="mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-white bg-emerald-500 shadow-sm" />
+                <span className="min-w-0">
+                  <span className="block font-medium text-foreground">{outputMetric?.shortLabel ?? "Output"}</span>
+                  <span className="block text-xs leading-4 text-muted-foreground">Urine output below baseline ({outputMetric?.unit ?? "ml/hr"})</span>
+                </span>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <span className="mt-2 h-0 w-8 shrink-0 border-t border-dashed border-slate-400" />
+                <span className="min-w-0">
+                  <span className="block font-medium text-foreground">Baseline</span>
+                  <span className="block text-xs leading-4 text-muted-foreground">Zero reference line</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="min-w-0 p-4">
+          {data.length ? (
+            <RapidReviewIntakeOutputGraph data={data} />
+          ) : (
+            <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RapidReviewIntakeOutputGraph({ data }: { data: CombinedReviewGraphPoint[] }) {
+  const width = Math.max(640, data.length * 56);
+  const height = 260;
+  const pad = 34;
+  const labelSpace = 24;
+  const baseline = Math.round((height - labelSpace) / 2);
+  const plotWidth = width - pad * 2;
+  const intakePlotHeight = baseline - pad - 10;
+  const outputPlotHeight = height - labelSpace - baseline - 10;
+  const intakeValues = data.map((point) => parseObservationNumber(String(point.displays.fluidIntake ?? "")) ?? 0);
+  const outputValues = data.map((point) => parseObservationNumber(String(point.displays.urineOutput ?? "")) ?? 0);
+  const maxVolume = Math.max(40, ...intakeValues, ...outputValues);
+
+  return (
+    <div className="overflow-x-auto rounded-md border border-border bg-background p-3">
+      <svg className="block" height={height} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
+        <line stroke="#cbd5e1" strokeDasharray="4 4" x1={pad} x2={width - pad} y1={baseline} y2={baseline} />
+        {data.map((point, index) => {
+          const x = pad + (data.length <= 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth);
+          const intake = intakeValues[index] ?? 0;
+          const output = outputValues[index] ?? 0;
+          const intakeHeight = intake > 0 ? Math.max(4, (intake / maxVolume) * intakePlotHeight) : 0;
+          const outputHeight = output > 0 ? Math.max(4, (output / maxVolume) * outputPlotHeight) : 0;
+          const risk = point.risks.urineOutput ?? "empty";
+          const palette = adultObservationRiskPalette[risk];
+          return (
+            <g key={`${point.date}-${point.time}-${index}`}>
+              <rect fill="#0ea5e9" height={intakeHeight} rx="4" width="16" x={x - 20} y={baseline - intakeHeight} />
+              <rect fill="#10b981" height={outputHeight} rx="4" width="16" x={x + 4} y={baseline} />
+              <circle cx={x} cy={baseline + outputHeight + 7} fill={palette.background} r="4" stroke={palette.text} strokeWidth="1.5" />
+              <text fill="#475569" fontSize="10" textAnchor="middle" x={x} y={height - 8}>{point.time}</text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+type CombinedReviewGraphTooltipEntry = {
+  color?: string;
+  dataKey?: string | number;
+  name?: string;
+  payload?: CombinedReviewGraphPoint;
+  value?: number | null;
+};
+
+function CombinedReviewGraphTooltip({ active, payload }: { active?: boolean; payload?: CombinedReviewGraphTooltipEntry[] }) {
+  if (!active) return null;
+  const point = payload?.[0]?.payload;
+  if (!point) return null;
+  const visibleEntries = (payload ?? []).filter((entry) => typeof entry.value === "number");
+
+  return (
+    <div className="max-h-[360px] min-w-[260px] overflow-auto rounded-md border border-border bg-background p-3 text-xs shadow-lg">
+      <div className="font-semibold text-foreground">{formatDateLabel(point.date)} - {point.time}</div>
+      <div className="mt-2 space-y-1">
+        {visibleEntries.map((entry) => {
+          const metricId = String(entry.dataKey) as ReviewGraphMetricId;
+          const metric = reviewGraphMetrics.find((item) => item.id === metricId);
+          if (!metric) return null;
+          const risk = point.risks[metric.id] ?? "empty";
+          const palette = adultObservationRiskPalette[risk];
+          return (
+            <div className="flex items-center justify-between gap-4" key={metric.id}>
+              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                {metric.shortLabel}
+              </span>
+              <span className="font-semibold text-foreground">{point.displays[metric.id] ?? "--"}</span>
+              <span className="rounded-full border px-2 py-0.5 font-medium" style={{ backgroundColor: palette.background, borderColor: palette.border, color: palette.text }}>
+                {palette.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+type CombinedReviewGraphDotProps = {
+  active?: boolean;
+  cx?: number;
+  cy?: number;
+  metric: ReviewGraphMetric;
+  payload?: CombinedReviewGraphPoint;
+  stroke?: string;
+  value?: number | null;
+};
+
+function CombinedReviewGraphDot({ active, cx, cy, metric, payload, stroke, value }: CombinedReviewGraphDotProps) {
+  const metricValue = typeof value === "number" ? value : payload?.[metric.id];
+  if (typeof cx !== "number" || typeof cy !== "number" || typeof metricValue !== "number") return null;
+
+  const risk = payload?.risks[metric.id] ?? "empty";
+  const palette = adultObservationRiskPalette[risk];
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      fill={stroke ?? palette.text}
+      r={active ? 5 : 3.2}
+      stroke={palette.text}
+      strokeWidth={active ? 2.4 : 1.8}
+    />
+  );
+}
+
 function GraphStatCard({
   label,
   value,
@@ -750,6 +1109,39 @@ function GraphStatCard({
   );
 }
 
+function reviewMetricColor(metricId: ReviewGraphMetricId) {
+  const index = reviewGraphMetrics.findIndex((metric) => metric.id === metricId);
+  return combinedGraphColors[Math.max(0, index) % combinedGraphColors.length];
+}
+
+function metricRiskLevel(metric: ReviewGraphMetric, observation: RapidObservationSet) {
+  if (metric.riskExtractor) return metric.riskExtractor(observation);
+  const value = metric.extractor(observation);
+  const displayValue = metric.display(observation);
+  return getRiskLevel(metric.vitalType, metric.vitalType === "pulseRhythm" ? displayValue : value ?? displayValue);
+}
+
+function urineOutputRiskLevel(value: string | number | null | undefined): AdultObservationRiskLevel {
+  const numericValue = typeof value === "number" ? value : parseObservationNumber(String(value ?? ""));
+  if (numericValue === null) return "empty";
+  if (numericValue < 15) return "critical";
+  if (numericValue < 30) return "highRisk";
+  if (numericValue < 40) return "warning";
+  return "normal";
+}
+
+function rapidReviewFluidIntakeValue(observation: RapidObservationSet) {
+  const urine = parseObservationNumber(observation.urineOutput);
+  if (urine === null) return null;
+  const oxygenFlow = oxygenFlowValue(observation.oxygenFlow) ?? 0;
+  const painScore = parseObservationNumber(observation.painScore) ?? 0;
+  const minutes = observationTimeMinutes(observation) ?? 0;
+  const hourFactor = (Math.floor(minutes / 60) % 4) * 8;
+  const riskLoad = observation.responseLevel === "MER Call" ? 48 : observation.responseLevel === "MDT Review" ? 34 : observation.responseLevel === "RN Review" ? 20 : 8;
+  const renalGuard = urine < 30 ? 12 : urine < 40 ? 22 : 34;
+  return Math.round(Math.min(160, Math.max(35, renalGuard + riskLoad + hourFactor + oxygenFlow * 4 + painScore * 2)));
+}
+
 function buildReviewGraphData(observations: RapidObservationSet[], metric: ReviewGraphMetric): ReviewGraphPoint[] {
   return observations.map((observation) => {
     const value = metric.extractor(observation);
@@ -764,7 +1156,7 @@ function buildReviewGraphData(observations: RapidObservationSet[], metric: Revie
       value,
       displayValue,
       fio2: fio2Value(observation),
-      risk: getRiskLevel(metric.vitalType, metric.vitalType === "pulseRhythm" ? displayValue : value ?? displayValue),
+      risk: metricRiskLevel(metric, observation),
     };
   });
 }
@@ -772,11 +1164,50 @@ function buildReviewGraphData(observations: RapidObservationSet[], metric: Revie
 function buildReviewGraphSummary(observations: RapidObservationSet[], metric: ReviewGraphMetric) {
   return observations.reduce(
     (summary, observation) => {
-      const value = metric.extractor(observation);
-      const risk = getRiskLevel(metric.vitalType, metric.vitalType === "pulseRhythm" ? metric.display(observation) : value ?? metric.display(observation));
+      const risk = metricRiskLevel(metric, observation);
       summary.totalEntries += 1;
       if (risk === "critical") summary.criticalCount += 1;
       if (risk === "highRisk") summary.highRiskCount += 1;
+      return summary;
+    },
+    { criticalCount: 0, highRiskCount: 0, totalEntries: 0 },
+  );
+}
+
+function buildCombinedReviewGraphData(observations: RapidObservationSet[]): CombinedReviewGraphPoint[] {
+  return observations.map((observation) => {
+    const date = observationDateValue(observation);
+    const time = observationTimeLabel(observation);
+    const point: CombinedReviewGraphPoint = {
+      date,
+      time,
+      xLabel: `${formatDateShortLabel(date)} ${time}`,
+      displays: {},
+      risks: {},
+    };
+
+    reviewGraphMetrics.forEach((metric) => {
+      const rawValue = metric.extractor(observation);
+      const displayValue = metric.display(observation);
+      const risk = metricRiskLevel(metric, observation);
+      point[metric.id] = normalizeReviewGraphValue(metric.id, rawValue);
+      point.displays[metric.id] = displayValue;
+      point.risks[metric.id] = risk;
+    });
+
+    return point;
+  });
+}
+
+function buildCombinedReviewGraphSummary(observations: RapidObservationSet[]) {
+  return observations.reduce(
+    (summary, observation) => {
+      summary.totalEntries += 1;
+      reviewGraphMetrics.forEach((metric) => {
+        const risk = metricRiskLevel(metric, observation);
+        if (risk === "critical") summary.criticalCount += 1;
+        if (risk === "highRisk") summary.highRiskCount += 1;
+      });
       return summary;
     },
     { criticalCount: 0, highRiskCount: 0, totalEntries: 0 },
@@ -942,6 +1373,29 @@ function oxygenFlowValue(value: string) {
   const lower = value.toLowerCase();
   if (lower === "air" || lower.includes("room air")) return 0;
   return parseObservationNumber(value);
+}
+
+function normalizeReviewGraphValue(metricId: ReviewGraphMetricId, value: number | null) {
+  if (value === null) return null;
+  if (metricId === "respiratoryRate") return scaleToPercent(value, 8, 40);
+  if (metricId === "oxygenSaturation") return scaleToPercent(value, 80, 100);
+  if (metricId === "oxygenFlowRate") return scaleToPercent(value, 0, 15);
+  if (metricId === "fio2") return scaleToPercent(value, 21, 100);
+  if (metricId === "bloodPressure") return scaleToPercent(value, 70, 220);
+  if (metricId === "pulseRate" || metricId === "monitorHeartRate") return scaleToPercent(value, 40, 180);
+  if (metricId === "pulseDeficit") return scaleToPercent(value, 0, 60);
+  if (metricId === "pulseRhythm") return scaleToPercent(value, 0, 4);
+  if (metricId === "temperature") return scaleToPercent(value, 34, 42);
+  if (metricId === "consciousnessSedation") return scaleToPercent(value, 0, 4);
+  if (metricId === "painScore") return scaleToPercent(value, 0, 10);
+  if (metricId === "fluidIntake") return scaleToPercent(value, 0, 180);
+  if (metricId === "urineOutput") return scaleToPercent(value, 0, 100);
+  return value;
+}
+
+function scaleToPercent(value: number, min: number, max: number) {
+  if (max <= min) return value;
+  return Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
 }
 
 function fio2Value(observation: RapidObservationSet) {

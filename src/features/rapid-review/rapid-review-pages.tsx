@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/shell/page-header";
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
@@ -384,7 +385,7 @@ export function RapidReviewPage() {
     setSelectedPatientId(patient.id);
     setActiveTab("doctor");
     toast.success(`Observation added for ${patient.patientName}`);
-  }, []);
+  }, [setSelectedPatientId]);
 
   const handleUpdateNurseObservation = React.useCallback((patient: RapidReviewPatient, original: RapidObservationSet, updated: RapidObservationSet, reason: string, performedBy: string) => {
     setEditedObservations((current) => ({ ...current, [original.id]: updated }));
@@ -397,7 +398,7 @@ export function RapidReviewPage() {
     }), ...current]);
     setSelectedPatientId(patient.id);
     toast.success(`Observation edited for ${patient.patientName}`);
-  }, []);
+  }, [setSelectedPatientId]);
 
   const handleVoidNurseObservation = React.useCallback((patient: RapidReviewPatient, observation: RapidObservationSet, voidEntry: NurseObservationVoid) => {
     setVoidedObservations((current) => ({ ...current, [observation.id]: voidEntry }));
@@ -409,13 +410,13 @@ export function RapidReviewPage() {
     }), ...current]);
     setSelectedPatientId(patient.id);
     toast.success(`Observation voided for ${patient.patientName}`);
-  }, []);
+  }, [setSelectedPatientId]);
 
   const handleOpenDoctorReview = React.useCallback((patient: RapidReviewPatient) => {
     setSelectedPatientId(patient.id);
     setActiveTab("doctor");
     toast.info(`${patient.patientName} loaded in Doctor Review`);
-  }, []);
+  }, [setSelectedPatientId]);
 
   const handleSaveObservationReview = React.useCallback((observation: RapidObservationSet, update: ObservationReviewUpdate) => {
     setObservationReviews((current) => ({ ...current, [observation.id]: update }));
@@ -549,24 +550,31 @@ export function RapidReviewPage() {
 
   return (
     <>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button variant="outline" onClick={() => toast.success("Rapid review queue refreshed")}>
-          <RefreshCcw className="h-4 w-4" />
-          Refresh
-        </Button>
-        <Button variant="outline" onClick={() => window.print()}>
-          <Printer className="h-4 w-4" />
-          Print
-        </Button>
-        <Button variant="outline" onClick={() => setActiveTab("entry")} disabled={readOnly}>
-          <Plus className="h-4 w-4" />
-          Add observation
-        </Button>
-        <Button onClick={() => rows[0] && handleOpenDoctorReview(rows[0])} disabled={!rows.length}>
-          <Stethoscope className="h-4 w-4" />
-          Start review
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Adult Observation Chart"
+        title="Doctor Rapid Review"
+        description="Quick review workspace for abnormal observations, escalation criteria, and audit-ready clinical response."
+        actions={
+          <>
+            <Button variant="outline" onClick={() => toast.success("Rapid review queue refreshed")}>
+              <RefreshCcw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button variant="outline" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+            <Button variant="outline" onClick={() => setActiveTab("entry")} disabled={readOnly}>
+              <Plus className="h-4 w-4" />
+              Add observation
+            </Button>
+            <Button onClick={() => rows[0] && handleOpenDoctorReview(rows[0])} disabled={!rows.length}>
+              <Stethoscope className="h-4 w-4" />
+              Start review
+            </Button>
+          </>
+        }
+      />
 
       <SummaryGrid>
         <StatCard label="MER calls" value={merCount} change="Immediate" context="Purple zone" tone="critical" icon={ShieldAlert} />

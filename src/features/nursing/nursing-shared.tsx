@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, ClipboardList, LayoutDashboard, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
+import { ClipboardCheck, ClipboardList, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/shell/page-header";
 import { cn } from "@/lib/utils";
 import type { Role, StatusTone } from "@/types";
 
@@ -44,59 +42,17 @@ export function ProtectedNursing({ children }: { children: (state: { role: Role;
 }
 
 export function NursingShell({
-  title,
-  description,
   children,
-  actions,
-  showSectionNav = true,
 }: {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
   showSectionNav?: boolean;
 }) {
-  const pathname = usePathname();
-
-  const buttonLinks = [
-    { href: "/nurse", label: "Dashboard", active: pathname === "/nurse", icon: LayoutDashboard },
-    { href: "/worklist", label: "Worklist", active: pathname === "/worklist", icon: ClipboardList },
-    { href: "/nurse/assessments", label: "Assessment", active: pathname === "/nurse/assessments", icon: ClipboardCheck },
-    {
-      href: "/nurse/assessments/configuration",
-      label: "Assessment configuration",
-      active: pathname === "/nurse/assessments/configuration",
-      icon: Settings,
-    },
-    { href: "/nurse/care-plans", label: "Care plan", active: pathname === "/nurse/care-plans", icon: UserRoundCheck },
-  ];
-
-  const defaultActions = (
-    <>
-      {buttonLinks.map((button) => (
-        <Button key={button.href} size="sm" variant={button.active ? "default" : "outline"} asChild>
-          <Link href={button.href}>
-            <button.icon className="h-4 w-4" />
-            {button.label}
-          </Link>
-        </Button>
-      ))}
-    </>
-  );
-
   return (
     <ProtectedNursing>
-      {() => (
-        <>
-          <PageHeader
-            title={title}
-            description={description}
-            eyebrow="Nurse module"
-            actions={showSectionNav ? (actions ? <>{defaultActions}{actions}</> : defaultActions) : actions}
-          />
-          <div className="space-y-4">{children}</div>
-        </>
-      )}
+      {() => <div className="space-y-4">{children}</div>}
     </ProtectedNursing>
   );
 }

@@ -11,10 +11,7 @@ export function NursingDashboardPage() {
   const openInterventions = carePlans.flatMap((plan) => plan.problems).flatMap((problem) => problem.goals).flatMap((goal) => goal.interventions).filter((item) => !item.completed).length;
 
   return (
-    <NursingShell
-      title="Nurse"
-      description="Nursing module workspace for assessments, care plan documentation, progress notes, overview, and master configurations."
-    >
+    <NursingShell>
       <NursingPatientStrip />
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Metric icon={<ClipboardCheck className="h-5 w-5" />} label="Assessment groups" value={assessmentGroups.length} status="Active" />

@@ -18,19 +18,16 @@ import {
   ListChecks,
   Pill,
   Plus,
-  Printer,
   RefreshCcw,
   Search,
   ShieldAlert,
   Stethoscope,
-  Syringe,
   TestTube2,
   UserRound,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/shell/page-header";
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,62 +122,6 @@ type NursingIcuPageId =
   | "reports";
 
 type PatientAction = "View" | "Monitor" | "Medication" | "Notes" | "Transfer" | "Discharge";
-
-const pageMeta: Record<NursingIcuPageId, { title: string; description: string; icon: typeof HeartPulse }> = {
-  dashboard: { title: "Command Center", description: "Live critical-care operations overview.", icon: HeartPulse },
-  "executive-dashboard": { title: "Executive Dashboard", description: "ICU occupancy, utilization, performance, compliance, response time, and operational health.", icon: BarChart3 },
-  "notifications-tasks": { title: "Notifications & Tasks", description: "Command-level overdue tasks, critical notifications, doctor instructions, nursing work, and device alerts.", icon: ListChecks },
-  "patient-search": { title: "Patient Search", description: "Search ICU patients by MRN, bed, doctor, risk, status, ventilator state, and alerts.", icon: Search },
-  "patient-timeline": { title: "Patient Timeline", description: "Chronological ICU journey across admission, vitals, medication, diagnostics, alerts, rounds, handover, and discharge.", icon: Clock3 },
-  "smart-bed-view": { title: "Smart Bed View", description: "Patient-level ICU cockpit with vitals, device status, medication, alerts, tasks, notes, and intake/output.", icon: BedDouble },
-  "icu-operations": { title: "ICU Operations", description: "Operational control for occupancy, bed status, nurse coverage, pending admissions, transfers, and bottlenecks.", icon: Activity },
-  "diagnostics-hub": { title: "Diagnostics Hub", description: "Combined lab, radiology, pharmacy, critical values, pending reports, and doctor review status.", icon: TestTube2 },
-  "operational-analytics": { title: "Operational Analytics", description: "Bed utilization, ICU demand, length of stay, alert response, medication compliance, and nurse workload.", icon: BarChart3 },
-  "escalation-center": { title: "Escalation Center", description: "Central escalation queue for critical alerts, overdue tasks, delayed orders, device failures, and owner handoff.", icon: ShieldAlert },
-  "patient-overview": { title: "Patient Overview", description: "Single-patient ICU snapshot covering demographics, diagnosis, latest vitals, active devices, medication, alerts, and tasks.", icon: UserRound },
-  "progress-notes": { title: "Progress Notes", description: "Structured ICU progress notes for doctor, nursing, pharmacy, allied health, events, and procedure follow-up.", icon: FileText },
-  "orders-care-plans": { title: "Orders & Care Plans", description: "Medication orders, nursing care plans, monitoring instructions, procedure orders, and acknowledgement tracking.", icon: ClipboardCheck },
-  "family-communication": { title: "Family Communication", description: "Family updates, consent status, counseling notes, visitor coordination, and communication history.", icon: UserRound },
-  "remote-command-center": { title: "Remote Command Center", description: "Remote intensivist overview for ICU patients, escalations, consult readiness, and video/rounding queues.", icon: Stethoscope },
-  "remote-consultations": { title: "Remote Consultations", description: "Tele-ICU consultation queue with specialty, patient context, documents, status, and follow-up actions.", icon: Stethoscope },
-  "escalated-cases": { title: "Escalated Cases", description: "High-priority cases escalated to remote intensivist, duty doctor, head nurse, or biomedical team.", icon: AlertTriangle },
-  "edge-device-management": { title: "Edge Device Management", description: "ICU monitor, ventilator, infusion pump, gateway, and edge device operational inventory.", icon: Activity },
-  "device-mapping": { title: "Device Mapping", description: "Bed-to-device mapping for monitors, ventilators, pumps, gateways, patient assignment, and ownership.", icon: BedDouble },
-  "connectivity-dashboard": { title: "Connectivity Dashboard", description: "Gateway, monitor, ventilator, pump, and network connectivity status with downtime and owner queue.", icon: Activity },
-  "signal-health": { title: "Signal Health", description: "Signal quality, last-data time, packet delay, missing vitals, and biomedical troubleshooting status.", icon: Activity },
-  "patient-risk-center": { title: "Patient Risk Center", description: "Patient risk score board across vitals, medication, diagnostics, device status, tasks, and escalation readiness.", icon: ShieldAlert },
-  "early-warning-scores": { title: "Early Warning Scores", description: "Patient-wise early warning score trends, thresholds, observation frequency, and escalation triggers.", icon: HeartPulse },
-  "clinical-analytics": { title: "Clinical Analytics", description: "Clinical quality indicators, infection trends, medication compliance, ventilator bundle, and ICU outcome measures.", icon: BarChart3 },
-  "pilot-outcome": { title: "Pilot Outcome Dashboard", description: "Pilot KPIs, response time, workflow adoption, alert closure, documentation improvement, and outcome tracking.", icon: BarChart3 },
-  "adoption-analytics": { title: "Adoption Analytics", description: "Module usage, role usage, screen adoption, task completion, and workflow adherence analytics.", icon: BarChart3 },
-  "device-analytics": { title: "Device Analytics", description: "Device utilization, device-to-bed usage, downtime, issue frequency, and biomedical performance analytics.", icon: Activity },
-  "users-roles": { title: "Users & Roles", description: "ICU command role matrix for doctors, nurses, administrators, remote intensivists, biomedical, and quality teams.", icon: UserRound },
-  configuration: { title: "ICU Configuration", description: "ICU unit setup, beds, alert thresholds, escalation rules, medication timing rules, and device configuration.", icon: ShieldAlert },
-  "patient-board": { title: "ICU Patient Board", description: "Bed-wise patient board for monitoring, medication, notes, transfer, and discharge actions.", icon: BedDouble },
-  "arrival-bed-allocation": { title: "Patient Arrival & Bed Allocation", description: "Unit nurse workflow for ICU arrival, bed allocation, nurse assignment, doctor assignment, and initial condition capture.", icon: Plus },
-  "shift-handover": { title: "Shift Handover", description: "Outgoing and incoming nurse handover with checklist, pending tasks, IV fluids, transfusion, alerts, and acknowledgement.", icon: ClipboardCheck },
-  tasks: { title: "Nurse Task List", description: "Task board for medication, vitals, IV checks, transfusion monitoring, sample collection, hygiene, and documentation.", icon: ListChecks },
-  "monitoring-chart": { title: "ICU Monitoring Chart", description: "24-hour ICU chart with vitals, GCS, oxygen support, ventilator status, urine output, medications, notes, and audit cues.", icon: Activity },
-  vitals: { title: "Nurse Entry", description: "Capture vitals, oxygen support, GCS, pain score, blood sugar, weight, notes, trends, and abnormal highlights.", icon: HeartPulse },
-  "nurse-review": { title: "Nurse Review", description: "Review nurse-entered ICU vitals, apply date/time filters, and view, edit, or delete observation records.", icon: ClipboardCheck },
-  "intake-output": { title: "Intake / Output Chart", description: "Shift-wise and 24-hour fluid balance across oral, IV, blood products, tube feeds, urine, drain, vomit, and losses.", icon: Droplets },
-  "medication-administration": { title: "Medication Administration", description: "eMAR for due, administered, held, skipped, late, and high-risk double verification medication workflows.", icon: Pill },
-  "iv-fluids": { title: "IV Fluid & Infusion Management", description: "Infusion pump, fluid rate, volume, remaining balance, pause/resume/stop, and completion alerts.", icon: Syringe },
-  "blood-transfusion": { title: "Blood Transfusion", description: "Blood unit issue, crossmatch, start/end, pre/during/post vitals, reaction monitoring, and acknowledgements.", icon: Droplets },
-  "doctor-rounds": { title: "Doctor Rounds", description: "Admitting doctor rounds, result review, care plan, discharge, transfer, surgery, and continue-ICU decisions.", icon: Stethoscope },
-  "doctor-instructions": { title: "Doctor Instructions", description: "Instructions from admitting, consulting, and duty doctors assigned to nurses with due time and completion tracking.", icon: FileText },
-  "lab-results": { title: "Lab Orders & Results", description: "ICU lab order status, sample status, result availability, critical result alerts, doctor review, and nurse follow-up.", icon: TestTube2 },
-  "radiology-reports": { title: "Radiology Orders & Reports", description: "ICU radiology order status, modality, report availability, doctor review, and nursing follow-up.", icon: Activity },
-  "pharmacy-requests": { title: "Pharmacy Requests", description: "Medicine requests, dispense status, pending medicines, stock shortage, receive, and return workflow.", icon: Pill },
-  "head-nurse-console": { title: "Head Nurse Console", description: "Head nurse supervision for all ICU patients, ward nurse activities, workload, reassignment, escalation, and documentation completeness.", icon: UserRound },
-  "ward-nurse-activities": { title: "Ward Nurse Shift Activities", description: "Assigned patient checklist, vitals, medication, intake/output, IV, blood, notes, and handover activities.", icon: ClipboardCheck },
-  "duty-doctor-monitoring": { title: "Duty Doctor Monitoring", description: "Duty doctor view for critical alerts, latest vitals, nurse escalation response, urgent orders, and abnormal lab review.", icon: Stethoscope },
-  alerts: { title: "ICU Alerts", description: "Critical vitals, lab, medication, IV, blood transfusion, ventilator, urine output, review, task, transfer, and documentation alerts.", icon: AlertTriangle },
-  "transfer-discharge": { title: "Transfer / Discharge / Death Workflow", description: "Transfer to ward/surgery, ICU discharge, death declaration, clearances, destination, and summary generation.", icon: ShieldAlert },
-  "nursing-notes": { title: "Nursing Notes", description: "Structured notes for shift, critical events, medication, transfusion, intake/output, doctor instruction follow-up, and observations.", icon: FileText },
-  "audit-logs": { title: "Audit & Activity Logs", description: "Audit trail for vitals, medication, handover, task completion, instruction acknowledgement, transfer, IP, and old/new values.", icon: ShieldAlert },
-  reports: { title: "Reports", description: "ICU occupancy, nurse workload, medication compliance, missed/late medication, abnormal vitals, transfusion, I/O, handover, and discharge reports.", icon: BarChart3 },
-};
 
 const nursingIcuTabGroups: Array<{
   title: string;
@@ -312,16 +253,10 @@ const nursingIcuTabGroups: Array<{
 ];
 
 export function NursingIcuModulePage({ page }: { page: NursingIcuPageId }) {
-  const meta = pageMeta[page];
   const streamlinedPage = page === "dashboard" || page === "doctor-rounds" || page === "intake-output" || page === "head-nurse-console" || page === "ward-nurse-activities";
   const [unit, setUnit] = React.useState("All ICU units");
   const [status, setStatus] = React.useState("All status");
   const [search, setSearch] = React.useState("");
-  const [quickAddOpen, setQuickAddOpen] = React.useState(false);
-
-  function recordAction(message: string) {
-    toast.success(message);
-  }
 
   const filteredPatients = React.useMemo(() => {
     return icuPatients.filter((patient) => {
@@ -334,21 +269,6 @@ export function NursingIcuModulePage({ page }: { page: NursingIcuPageId }) {
 
   return (
     <div className="space-y-4 pb-8">
-      <PageHeader
-        eyebrow="Critical Care"
-        title={meta.title}
-        description={meta.description}
-        actions={(
-          <>
-            <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button>
-            <Button variant="outline" onClick={() => recordAction("Critical care data refreshed") }><RefreshCcw className="h-4 w-4" />Refresh</Button>
-            <Button onClick={() => {
-              setQuickAddOpen(true);
-            }}><Plus className="h-4 w-4" />Add record</Button>
-          </>
-        )}
-      />
-
       <NursingIcuTabs activePage={page} />
 
       {!streamlinedPage ? <FilterPanel search={search} setSearch={setSearch} status={status} setStatus={setStatus} unit={unit} setUnit={setUnit} /> : null}
@@ -406,8 +326,6 @@ export function NursingIcuModulePage({ page }: { page: NursingIcuPageId }) {
       {page === "nursing-notes" ? <NursingNotes /> : null}
       {page === "audit-logs" ? <AuditLogs /> : null}
       {page === "reports" ? <WorkflowReportsWorkspace /> : null}
-
-      <QuickAddDialog open={quickAddOpen} onOpenChange={setQuickAddOpen} pageTitle={meta.title} onSaved={(message) => recordAction(message)} />
     </div>
   );
 }
@@ -7636,61 +7554,6 @@ function GenericTable({ title, rows }: { title: string; rows: Record<string, unk
         }}
       />
     </>
-  );
-}
-
-function QuickAddDialog({
-  open,
-  onOpenChange,
-  pageTitle,
-  onSaved,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  pageTitle: string;
-  onSaved: (message: string) => void;
-}) {
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(620px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
-          <DialogHeader title={`Add ${pageTitle} Record`} description="Create a nursing workflow record." />
-          <div className="grid gap-3 overflow-y-auto p-4 sm:grid-cols-2">
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Record type</span>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue="Nurse task">
-                {["Nurse task", "Vitals entry", "Medication note", "Doctor instruction", "Transfer clearance", "Nursing note"].map((item) => <option key={item}>{item}</option>)}
-              </select>
-            </label>
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Patient / bed</span>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20">
-                {icuPatients.map((patient) => <option key={patient.id}>{patient.bedNo} - {patient.patientName}</option>)}
-              </select>
-            </label>
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Priority</span>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue="High">
-                {["Critical", "High", "Medium", "Routine"].map((item) => <option key={item}>{item}</option>)}
-              </select>
-            </label>
-            <label className="space-y-1 text-sm sm:col-span-2">
-              <span className="font-medium text-foreground">Remarks</span>
-              <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue="Record created during ICU nursing workflow." />
-            </label>
-          </div>
-          <DialogFooter
-            onCancel={() => onOpenChange(false)}
-            primaryLabel="Save record"
-            onPrimary={() => {
-              onSaved(`${pageTitle} record added`);
-              onOpenChange(false);
-            }}
-          />
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
   );
 }
 

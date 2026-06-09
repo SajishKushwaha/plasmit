@@ -56,17 +56,48 @@ export function AppSidebar({
     }
 
     if (role === "Doctor IPD") {
-      const clinicalOrder = new Map([
+      const workItemIds = new Set([
+        "admission",
+        "clinical-examination",
+        "rapid-review",
+        "icu-command-center",
+        "intake-output",
+        "poct-add",
+        "poct-results",
+      ]);
+      const groupOrder = new Map([
+        ["Main", 0],
+        ["Doctor", 1],
+        ["Work", 2],
+        ["Clinical", 3],
+        ["Diagnostics", 4],
+        ["Radiology", 5],
+        ["Platform", 6],
+      ]);
+      const itemOrder = new Map([
+        ["admission", 0],
+        ["clinical-examination", 1],
+        ["rapid-review", 2],
+        ["icu-command-center", 3],
+        ["intake-output", 4],
+        ["poct-add", 5],
+        ["poct-results", 6],
         ["doctor-patients", 0],
         ["ipd", 1],
         ["doctor-live-monitoring", 2],
         ["doctor-ipd-results", 3],
+        ["doctor-lab", 4],
+        ["doctor-radiology", 5],
+        ["doctor-emergency", 6],
       ]);
 
-      return [...roleItems].sort((a, b) => {
-        if (a.group !== "Clinical" || b.group !== "Clinical") return 0;
-        return (clinicalOrder.get(a.id) ?? 100) - (clinicalOrder.get(b.id) ?? 100);
-      });
+      return roleItems
+        .map((item) => (workItemIds.has(item.id) ? { ...item, group: "Work" } : item))
+        .sort((a, b) => {
+          const groupDifference = (groupOrder.get(a.group) ?? 100) - (groupOrder.get(b.group) ?? 100);
+          if (groupDifference !== 0) return groupDifference;
+          return (itemOrder.get(a.id) ?? 100) - (itemOrder.get(b.id) ?? 100);
+        });
     }
 
     return roleItems;

@@ -610,24 +610,18 @@ export function IntakeOutputPage() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="IPD Nursing"
-        title="Intake-Output Chart"
-        description="Fluid, blood, urine, stool, emesis, drain, and manual intake-output tracking from the workbook requirements."
-        actions={
-          <>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="h-4 w-4" />
+      
+          <div className="mb-4 mt-3 text-end">
+            <Button className="mr-3 " variant="outline" onClick={() => window.print()}>
+              <Printer className="h-4 w-4 " />
               Print
             </Button>
             <Button onClick={() => openEntryPopup()}>
               <Plus className="h-4 w-4" />
               Add I/O
             </Button>
-          </>
-        }
-      />
-
+          </div>
+        
       <div className="space-y-4 py-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Intake" value={intakeTotal} change="ml" context="Selected day total" tone="success" icon={Droplets} />

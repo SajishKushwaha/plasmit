@@ -142,7 +142,7 @@ function OrderPatientSearchHeader() {
   };
 
   return (
-    <Card className="sticky top-16 z-30 overflow-visible border-border bg-white shadow-soft">
+    <Card className="sticky top-8 bottom-8 z-30 overflow-visible border-border bg-white shadow-soft">
       <CardContent className="relative space-y-3 p-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
@@ -208,30 +208,19 @@ export function DoctorOrdersPage() {
   const defaultTab = "blood";
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow=" Doctor Workspace"
-        title="Order Management"
-        description="Comprehensive portal for all clinical orders and investigations."
-        className="static mx-0 border-b bg-transparent px-0 py-2"
-        // actions={
-        //   <Button>
-        //     <Plus className="h-4 w-4" />
-        //     Quick Order
-        //   </Button>
-        // }
-      />
+    <div className="space-y-9">
+      
       <OrderPatientSearchHeader />
 
       <Tabs defaultValue={defaultTab} className="w-full">
         <div className="space-y-4">
           <div className="space-y-3">
-            <div>
+            {/* <div>
               <h2 className="text-sm font-semibold text-foreground">Clinical Orders</h2>
               <p className="mt-1 text-xs text-muted-foreground">
                 Select an order type to enter or review request details.
               </p>
-            </div>
+            </div> */}
             <TabsList className="w-full gap-2 overflow-x-auto">
               {tabs.map((tab) => (
                 <TabsTrigger

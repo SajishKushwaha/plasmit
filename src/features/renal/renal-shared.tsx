@@ -71,16 +71,16 @@ export function RenalRoleBanner({ role }: { role: Role }) {
   if (role === "Nurse") {
     return <AlertBanner icon={Droplets} tone="info" title="Nursing renal chart">Intake, output, drains, and shift notes are enabled for this role.</AlertBanner>;
   }
-  if (role === "Doctor" || role === "Doctor IPD") {
-    return <AlertBanner icon={ShieldAlert} tone="warning" title="Doctor review">Trends, alerts, renal orders, and sign-off actions are enabled for this role.</AlertBanner>;
-  }
+  // if (role === "Doctor" || role === "Doctor IPD") {
+  //   return <AlertBanner icon={ShieldAlert} tone="warning" title="Doctor review">Trends, alerts, renal orders, and sign-off actions are enabled for this role.</AlertBanner>;
+  // }
   if (role === "Lab Technician") {
     return <AlertBanner icon={AlertTriangle} tone="info" title="Renal investigations">Renal lab update actions are enabled; clinical I/O entry remains protected.</AlertBanner>;
   }
   if (role === "Billing Executive" || role === "Management") {
     return <AlertBanner icon={LockKeyhole} tone="muted" title="Read-only renal view">Patient renal data is visible for review, while clinical edits are disabled.</AlertBanner>;
   }
-  return <AlertBanner icon={ShieldAlert} tone="info" title="Renal module access">Clinical, audit, and configuration actions follow the selected static role.</AlertBanner>;
+  // return <AlertBanner icon={ShieldAlert} tone="info" title="Renal module access">Clinical, audit, and configuration actions follow the selected static role.</AlertBanner>;
 }
 
 export function renalStatusTone(status: RenalStatus): StatusTone {

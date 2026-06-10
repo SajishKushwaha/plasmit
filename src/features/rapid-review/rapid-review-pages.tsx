@@ -550,12 +550,8 @@ export function RapidReviewPage() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="Adult Observation Chart"
-        title="Doctor Rapid Review"
-        description="Quick review workspace for abnormal observations, escalation criteria, and audit-ready clinical response."
-        actions={
-          <>
+    
+          <div className="text-end mb-3 mt-3">
             <Button variant="outline" onClick={() => toast.success("Rapid review queue refreshed")}>
               <RefreshCcw className="h-4 w-4" />
               Refresh
@@ -572,9 +568,8 @@ export function RapidReviewPage() {
               <Stethoscope className="h-4 w-4" />
               Start review
             </Button>
-          </>
-        }
-      />
+          </div>
+       
 
       <SummaryGrid>
         <StatCard label="MER calls" value={merCount} change="Immediate" context="Purple zone" tone="critical" icon={ShieldAlert} />

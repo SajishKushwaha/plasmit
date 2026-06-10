@@ -710,7 +710,11 @@ export function AddPoctPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Add POCT" description="Select POCT tests, enter results, and submit bedside observations." actions={<ActionButtons />} />
+      <div className="text-end mt-3 mb-3">
+  <ActionButtons />
+      </div>
+    
+      
       <datalist id="poct-staff-options">
         {poctUsers.map((user) => <option key={user} value={user} />)}
       </datalist>
@@ -890,7 +894,10 @@ export function ViewPoctResultPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="View POCT Result" description="Review each POCT test across date and time, with detailed result rows for audit follow-up." actions={<ActionButtons />} />
+      <div className="text-end mt-3 mb-3">
+ <ActionButtons />
+      </div>
+       
       <Card>
         <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_auto_auto]">
           <label className={fieldClass}>

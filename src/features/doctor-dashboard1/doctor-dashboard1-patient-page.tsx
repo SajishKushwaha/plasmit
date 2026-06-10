@@ -14,12 +14,15 @@ import {
 } from "@/features/doctor-dashboard1/doctor-dashboard1-page";
 import { IpdUnifiedModulePage } from "@/features/ipd/ipd-pages";
 import { LiveMonitoringPage } from "@/features/live-monitoring/live-monitoring-page";
+import { rapidReviewPatients } from "@/features/rapid-review/rapid-review-data";
+import { PatientVitalsGraph } from "@/features/rapid-review/rapid-review-graph";
 import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
 import { cn } from "@/lib/utils";
 
 export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }) {
   const [activeTab, setActiveTab] = React.useState("overview");
   const patient = orderedPatients.find((item) => String(item.id) === patientId);
+  const rapidReviewPatient = patient ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId) : undefined;
 
   if (!patient) {
     return (
@@ -58,6 +61,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
               <TabsTrigger value="live-monitoring">Live Monitoring</TabsTrigger>
               <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
               <TabsTrigger value="results">Results</TabsTrigger>
+              <TabsTrigger value="vitals-graph">Vitals Graph</TabsTrigger>
             </TabsList>
             <TabsContent value="overview">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -88,6 +92,15 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             </TabsContent>
             <TabsContent value="monitoring">
               <PatientMonitoring key={patient.id} patient={patient} />
+            </TabsContent>
+            <TabsContent value="vitals-graph">
+              {rapidReviewPatient ? (
+                <PatientVitalsGraph patient={rapidReviewPatient} />
+              ) : (
+                <div className="rounded-md border border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
+                  Vitals graph data is not available for this patient.
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

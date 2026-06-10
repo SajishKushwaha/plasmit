@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Activity, BarChart3, HeartPulse, RefreshCcw, Search, Table2, UsersRound } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, ChevronLeft, ChevronRight, Clock, HeartPulse, RefreshCcw, Search, Table2, UsersRound } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Badge } from "@/components/ui/badge";
@@ -276,10 +276,16 @@ const allVitalsGraphSections: AllVitalsGraphSection[] = [
   },
 ];
 
-export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient[] }) {
+const coreVitalsGraphSection: AllVitalsGraphSection = {
+  title: "Vitals Graph",
+  description: "Core respiratory, cardiovascular, and temperature trends in the selected date and time range.",
+  metrics: ["respiratoryRate", "oxygenSaturation", "pulseRate", "monitorHeartRate", "bloodPressure", "temperature"],
+};
+
+export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table" }: { patients: RapidReviewPatient[]; defaultViewMode?: string }) {
   const [metricId, setMetricId] = React.useState<ReviewGraphMetricId>("respiratoryRate");
   const [patientId, setPatientId] = React.useState(patients[0]?.id ?? "");
-  const [viewMode, setViewMode] = React.useState("Graph + table");
+  const [viewMode, setViewMode] = React.useState(defaultViewMode);
   const [search, setSearch] = React.useState("");
   const [dateMode, setDateMode] = React.useState("All dates");
   const [singleDate, setSingleDate] = React.useState("");
@@ -455,6 +461,10 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
       ) : null}
     </div>
   );
+}
+
+export function PatientVitalsGraph({ patient }: { patient: RapidReviewPatient }) {
+  return <VitalsGraphWorkspace data={buildCombinedReviewGraphData(patient.observationHistory)} showGraphTabs />;
 }
 
 function ReviewGraphDateFilter({
@@ -822,7 +832,7 @@ function AllVitalsGraphDashboard({
   data: CombinedReviewGraphPoint[];
   dateSummary: string;
 }) {
-  const [activeSection, setActiveSection] = React.useState(allVitalsGraphSections[0]?.title ?? "");
+  const [activeSection, setActiveSection] = React.useState(coreVitalsGraphSection.title);
 
   return (
     <div className="space-y-4">
@@ -840,18 +850,317 @@ function AllVitalsGraphDashboard({
 
       <Tabs className="space-y-4" onValueChange={setActiveSection} value={activeSection}>
         <TabsList aria-label="All vitals graph categories">
+          <TabsTrigger value={coreVitalsGraphSection.title}>{coreVitalsGraphSection.title}</TabsTrigger>
           {allVitalsGraphSections.map((section) => (
             <TabsTrigger key={section.title} value={section.title}>
               {section.title}
             </TabsTrigger>
           ))}
         </TabsList>
+        <TabsContent value={coreVitalsGraphSection.title}>
+          <VitalsGraphWorkspace data={data} />
+        </TabsContent>
         {allVitalsGraphSections.map((section) => (
           <TabsContent key={section.title} value={section.title}>
             <AllVitalsGraphSectionCard data={data} section={section} />
           </TabsContent>
         ))}
       </Tabs>
+    </div>
+  );
+}
+
+function VitalsGraphWorkspace({
+  data,
+  showGraphTabs = false,
+}: {
+  data: CombinedReviewGraphPoint[];
+  showGraphTabs?: boolean;
+}) {
+  const availableDates = Array.from(new Set(data.map((point) => point.date))).sort();
+  const [startDate, setStartDate] = React.useState("");
+  const [endDate, setEndDate] = React.useState("");
+  const [startTime, setStartTime] = React.useState("");
+  const [endTime, setEndTime] = React.useState("");
+  const [activeGraphSection, setActiveGraphSection] = React.useState(allVitalsGraphSections[0]?.title ?? "");
+  const filteredData = data.filter((point) => {
+    if (startDate && point.date < startDate) return false;
+    if (endDate && point.date > endDate) return false;
+    const minutes = timeToMinutes(point.time);
+    const from = timeToMinutes(startTime);
+    const to = timeToMinutes(endTime);
+    if (minutes !== null && from !== null && to !== null && !minutesWithinRange(minutes, from, to)) return false;
+    if (minutes !== null && from !== null && to === null && minutes < from) return false;
+    if (minutes !== null && from === null && to !== null && minutes > to) return false;
+    return true;
+  });
+  const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
+  const rangeSummary = `${startDate ? formatDateLabel(startDate) : "First record"} to ${endDate ? formatDateLabel(endDate) : "Latest record"} | ${startTime || "00:00"} to ${endTime || "23:59"}`;
+  const visibleData = invalidDateRange ? [] : filteredData;
+
+  function resetRange() {
+    setStartDate("");
+    setEndDate("");
+    setStartTime("");
+    setEndTime("");
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Vitals Graph Filter</CardTitle>
+            <CardDescription>Select start and end dates from the calendar, then narrow the graph by start and end time.</CardDescription>
+          </div>
+          <Button onClick={resetRange} variant="outline">
+            <RefreshCcw className="h-4 w-4" />
+            Reset
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DateRangeCalendar
+              endDate={endDate}
+              maxDate={availableDates.at(-1)}
+              minDate={availableDates[0]}
+              onChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+              }}
+              startDate={startDate}
+            />
+            <TimeRangePicker
+              endTime={endTime}
+              onChange={(start, end) => {
+                setStartTime(start);
+                setEndTime(end);
+              }}
+              startTime={startTime}
+            />
+          </div>
+          {invalidDateRange ? (
+            <div className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+              Start date cannot be after end date.
+            </div>
+          ) : (
+            <div className="text-xs font-medium text-muted-foreground">
+              {rangeSummary} | {filteredData.length} records
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      {showGraphTabs ? (
+        <Tabs className="space-y-4" onValueChange={setActiveGraphSection} value={activeGraphSection}>
+          <TabsList aria-label="Patient vitals graph categories">
+            {allVitalsGraphSections.map((section) => (
+              <TabsTrigger key={section.title} value={section.title}>
+                {section.title}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {allVitalsGraphSections.map((section) => (
+            <TabsContent key={section.title} value={section.title}>
+              <AllVitalsGraphSectionCard data={visibleData} section={section} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      ) : (
+        <AllVitalsGraphSectionCard data={visibleData} section={coreVitalsGraphSection} />
+      )}
+    </div>
+  );
+}
+
+function DateRangeCalendar({
+  startDate,
+  endDate,
+  minDate,
+  maxDate,
+  onChange,
+}: {
+  startDate: string;
+  endDate: string;
+  minDate?: string;
+  maxDate?: string;
+  onChange: (startDate: string, endDate: string) => void;
+}) {
+  const initialDate = endDate || startDate || maxDate || todayDateValue();
+  const initialParts = dateValueParts(initialDate);
+  const [open, setOpen] = React.useState(false);
+  const [visibleMonth, setVisibleMonth] = React.useState(initialParts.month);
+  const [visibleYear, setVisibleYear] = React.useState(initialParts.year);
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const firstDayOffset = new Date(visibleYear, visibleMonth, 1).getDay();
+  const totalDays = new Date(visibleYear, visibleMonth + 1, 0).getDate();
+  const displayValue = startDate
+    ? `${formatDateLabel(startDate)}${endDate ? ` - ${formatDateLabel(endDate)}` : " - Select end date"}`
+    : "Select start and end date";
+
+  React.useEffect(() => {
+    function closeOnOutsideClick(event: MouseEvent) {
+      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, []);
+
+  function moveMonth(direction: -1 | 1) {
+    const next = new Date(visibleYear, visibleMonth + direction, 1);
+    setVisibleMonth(next.getMonth());
+    setVisibleYear(next.getFullYear());
+  }
+
+  function selectDate(value: string) {
+    if (!startDate || endDate) {
+      onChange(value, "");
+      return;
+    }
+    if (value < startDate) {
+      onChange(value, startDate);
+    } else {
+      onChange(startDate, value);
+    }
+    setOpen(false);
+  }
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <label className="space-y-1 text-sm">
+        <span className="font-medium text-foreground">Date range</span>
+        <button
+          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-left text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+          onClick={() => setOpen((current) => !current)}
+          type="button"
+        >
+          <span className={cn(!startDate && "text-muted-foreground")}>{displayValue}</span>
+          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </label>
+
+      {open ? (
+        <div className="absolute left-0 top-full z-50 mt-2 w-[min(100%,360px)] rounded-lg border border-border bg-surface p-3 shadow-soft">
+          <div className="flex items-center justify-between gap-2">
+            <Button aria-label="Previous month" onClick={() => moveMonth(-1)} size="icon" type="button" variant="ghost">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-sm font-semibold text-foreground">{monthNames[visibleMonth]} {visibleYear}</div>
+            <Button aria-label="Next month" onClick={() => moveMonth(1)} size="icon" type="button" variant="ghost">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="mt-2 grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => <span key={day}>{day}</span>)}
+          </div>
+          <div className="mt-1 grid grid-cols-7 gap-1">
+            {Array.from({ length: firstDayOffset }).map((_, index) => <span key={`blank-${index}`} />)}
+            {Array.from({ length: totalDays }).map((_, index) => {
+              const day = index + 1;
+              const value = `${visibleYear}-${String(visibleMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const disabled = Boolean((minDate && value < minDate) || (maxDate && value > maxDate));
+              const boundary = value === startDate || value === endDate;
+              const inRange = Boolean(startDate && endDate && value > startDate && value < endDate);
+              return (
+                <button
+                  className={cn(
+                    "h-8 rounded-md text-xs font-medium transition",
+                    !disabled && !boundary && !inRange && "hover:bg-surface-muted",
+                    inRange && "bg-primary/10 text-primary",
+                    boundary && "bg-primary text-primary-foreground",
+                    disabled && "cursor-not-allowed text-muted-foreground/35",
+                  )}
+                  disabled={disabled}
+                  key={value}
+                  onClick={() => selectDate(value)}
+                  type="button"
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+            <span className="text-xs text-muted-foreground">{startDate && !endDate ? "Now select end date" : "Select start date, then end date"}</span>
+            <Button onClick={() => onChange("", "")} size="sm" type="button" variant="ghost">Clear</Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function dateValueParts(value: string) {
+  const date = new Date(`${value}T00:00:00`);
+  const fallback = Number.isNaN(date.getTime()) ? new Date() : date;
+  return { month: fallback.getMonth(), year: fallback.getFullYear() };
+}
+
+function TimeRangePicker({
+  startTime,
+  endTime,
+  onChange,
+}: {
+  startTime: string;
+  endTime: string;
+  onChange: (startTime: string, endTime: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null);
+  const displayValue = startTime || endTime
+    ? `${startTime || "00:00"} - ${endTime || "23:59"}`
+    : "Select start and end time";
+
+  React.useEffect(() => {
+    function closeOnOutsideClick(event: MouseEvent) {
+      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <label className="space-y-1 text-sm">
+        <span className="font-medium text-foreground">Time range</span>
+        <button
+          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-left text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+          onClick={() => setOpen((current) => !current)}
+          type="button"
+        >
+          <span className={cn(!startTime && !endTime && "text-muted-foreground")}>{displayValue}</span>
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </label>
+
+      {open ? (
+        <div className="absolute left-0 top-full z-50 mt-2 w-full min-w-[280px] rounded-lg border border-border bg-surface p-4 shadow-soft">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Start time</span>
+              <input
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                onChange={(event) => onChange(event.target.value, endTime)}
+                type="time"
+                value={startTime}
+              />
+            </label>
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">End time</span>
+              <input
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                onChange={(event) => onChange(startTime, event.target.value)}
+                type="time"
+                value={endTime}
+              />
+            </label>
+          </div>
+          <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+            <Button onClick={() => onChange("", "")} size="sm" type="button" variant="ghost">Clear</Button>
+            <Button onClick={() => setOpen(false)} size="sm" type="button">Done</Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

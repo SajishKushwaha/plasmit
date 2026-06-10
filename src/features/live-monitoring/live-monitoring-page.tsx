@@ -1,10 +1,5 @@
 "use client";
 
-import { RadioTower } from "lucide-react";
-
-import { PageHeader } from "@/components/shell/page-header";
-import { Badge } from "@/components/ui/badge";
-
 const liveMonitoringUrl = "https://icuvisualizer.up.railway.app/app";
 
 export function LiveMonitoringPage() {

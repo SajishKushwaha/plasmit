@@ -1,23 +1,28 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import {
   Activity,
   ClipboardList,
   FileText,
+  FileSpreadsheet,
   FlaskConical,
   MessageCircle,
   Pill,
+  Printer,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SearchInput } from "@/components/ui/search-input";
 import { cn } from "@/lib/utils";
 
 type VitalTone = "green" | "orange" | "red";
 type PatientTone = "blue" | "orange" | "red";
 
-type Dashboard1Patient = {
+export type Dashboard1Patient = {
   id: number;
   name: string;
   bed: string;
@@ -59,10 +64,12 @@ const patientToneOrder: Record<PatientTone, number> = {
   blue: 2,
 };
 
-const orderedPatients = [...patients].sort((a, b) => {
+export const orderedPatients = [...patients].sort((a, b) => {
   const toneRank = patientToneOrder[patientTone(a)] - patientToneOrder[patientTone(b)];
   return toneRank || a.id - b.id;
 });
+
+const patientsPerPage = 10;
 
 function row(
   id: number,
@@ -88,22 +95,85 @@ function row(
   };
 }
 
-function patientTone(patient: Dashboard1Patient): PatientTone {
+export function patientTone(patient: Dashboard1Patient): PatientTone {
   const tones = [patient.hr.tone, patient.spo2.tone, patient.abps.tone, patient.abpd.tone, patient.temperature.tone];
   if (tones.includes("red")) return "red";
   if (tones.includes("orange")) return "orange";
   return "blue";
 }
 
-function patientToneClass(tone: PatientTone) {
+export function patientToneClass(tone: PatientTone) {
   if (tone === "red") return "text-red-600";
   if (tone === "orange") return "text-orange-500";
   return "text-blue-700";
 }
 
+function csvCell(value: string | number) {
+  return `"${String(value).replaceAll('"', '""')}"`;
+}
+
 export function DoctorDashboard1Page() {
+  const [search, setSearch] = React.useState("");
+  const [page, setPage] = React.useState(1);
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredPatients = orderedPatients.filter((patient) =>
+    `${patient.name} ${patient.bed} ${patient.diagnosis}`.toLowerCase().includes(normalizedSearch),
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredPatients.length / patientsPerPage));
+  const visiblePatients = filteredPatients.slice((page - 1) * patientsPerPage, page * patientsPerPage);
+  const firstVisiblePatient = filteredPatients.length ? (page - 1) * patientsPerPage + 1 : 0;
+  const lastVisiblePatient = Math.min(page * patientsPerPage, filteredPatients.length);
+
+  function exportExcel() {
+    const headers = ["Patient", "Bed", "Diagnosis", "Priority", "HR (bpm)", "SpO2 (%)", "ABPS (mmHg)", "ABPD (mmHg)", "Temperature (C)"];
+    const rows = filteredPatients.map((patient) => [
+      patient.name,
+      patient.bed,
+      patient.diagnosis,
+      patientTone(patient),
+      patient.hr.value,
+      patient.spo2.value,
+      patient.abps.value,
+      patient.abpd.value,
+      patient.temperature.value,
+    ]);
+    const csv = [headers, ...rows].map((rowValues) => rowValues.map(csvCell).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "doctor-ipd-dashboard-patients.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-4 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SearchInput
+          aria-label="Search patients"
+          className="w-full sm:max-w-md"
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
+          placeholder="Search patient, bed, or diagnosis..."
+          value={search}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-1 text-xs font-semibold text-muted-foreground">
+            {filteredPatients.length} patient{filteredPatients.length === 1 ? "" : "s"} found
+          </div>
+          <Button disabled={!filteredPatients.length} onClick={exportExcel} size="sm" variant="outline">
+            <FileSpreadsheet className="h-4 w-4" />
+            Excel
+          </Button>
+          <Button onClick={() => window.print()} size="sm" variant="outline">
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
+        </div>
+      </div>
+
       <Card className="overflow-hidden rounded-md border-slate-200 shadow-sm">
         <CardContent className="p-0">
           <div className="max-w-full overflow-auto">
@@ -126,7 +196,7 @@ export function DoctorDashboard1Page() {
                 </tr>
               </thead>
               <tbody>
-                {orderedPatients.map((patient) => {
+                {visiblePatients.map((patient) => {
                   const tone = patientTone(patient);
 
                   return (
@@ -134,7 +204,7 @@ export function DoctorDashboard1Page() {
                     <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-3 py-2">
                       <Link
                         className="block rounded-md px-1 py-0.5 transition hover:bg-slate-100"
-                        href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}
+                        href={`/doctor-dashboard1/patients/${patient.id}`}
                       >
                         <div className={cn("font-bold", patientToneClass(tone))}>
                           {patient.name}
@@ -161,6 +231,13 @@ export function DoctorDashboard1Page() {
                   </tr>
                   );
                 })}
+                {!visiblePatients.length ? (
+                  <tr>
+                    <td className="px-4 py-12 text-center text-sm font-medium text-muted-foreground" colSpan={13}>
+                      No patient matched this search.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
@@ -175,6 +252,17 @@ export function DoctorDashboard1Page() {
           <Badge tone="success">Green: stable</Badge>
           <Badge tone="warning">Orange: warning</Badge>
           <Badge tone="danger">Red: urgent</Badge>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-muted-foreground">
+            Showing {firstVisiblePatient}-{lastVisiblePatient} of {filteredPatients.length} | Page {page} of {totalPages}
+          </span>
+          <Button disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} size="sm" variant="outline">
+            Previous
+          </Button>
+          <Button disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} size="sm" variant="outline">
+            Next
+          </Button>
         </div>
       </div>
     </div>

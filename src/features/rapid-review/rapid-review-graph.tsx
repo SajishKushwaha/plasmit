@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/status-pill";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NativeSelect } from "@/features/admin/admin-shared";
 import { cn } from "@/lib/utils";
 import type { StatusTone } from "@/types";
@@ -821,6 +822,8 @@ function AllVitalsGraphDashboard({
   data: CombinedReviewGraphPoint[];
   dateSummary: string;
 }) {
+  const [activeSection, setActiveSection] = React.useState(allVitalsGraphSections[0]?.title ?? "");
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border border-border bg-surface-muted px-4 py-3">
@@ -835,9 +838,20 @@ function AllVitalsGraphDashboard({
         </div>
       </div>
 
-      {allVitalsGraphSections.map((section) => (
-        <AllVitalsGraphSectionCard data={data} key={section.title} section={section} />
-      ))}
+      <Tabs className="space-y-4" onValueChange={setActiveSection} value={activeSection}>
+        <TabsList aria-label="All vitals graph categories">
+          {allVitalsGraphSections.map((section) => (
+            <TabsTrigger key={section.title} value={section.title}>
+              {section.title}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {allVitalsGraphSections.map((section) => (
+          <TabsContent key={section.title} value={section.title}>
+            <AllVitalsGraphSectionCard data={data} section={section} />
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 }

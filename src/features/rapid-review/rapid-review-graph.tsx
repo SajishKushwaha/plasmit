@@ -282,6 +282,8 @@ const coreVitalsGraphSection: AllVitalsGraphSection = {
   metrics: ["respiratoryRate", "oxygenSaturation", "pulseRate", "monitorHeartRate", "bloodPressure", "temperature"],
 };
 
+const patientVitalsTimeIntervals = ["All times", "Morning 06-13", "Afternoon 14-17", "Evening 18-21", "Night 22-05", "Business hours", "Custom time range"];
+
 export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table" }: { patients: RapidReviewPatient[]; defaultViewMode?: string }) {
   const [metricId, setMetricId] = React.useState<ReviewGraphMetricId>("respiratoryRate");
   const [patientId, setPatientId] = React.useState(patients[0]?.id ?? "");
@@ -832,7 +834,7 @@ function AllVitalsGraphDashboard({
   data: CombinedReviewGraphPoint[];
   dateSummary: string;
 }) {
-  const [activeSection, setActiveSection] = React.useState(coreVitalsGraphSection.title);
+  const [activeSection, setActiveSection] = React.useState(allVitalsGraphSections[0]?.title ?? "");
 
   return (
     <div className="space-y-4">
@@ -850,16 +852,12 @@ function AllVitalsGraphDashboard({
 
       <Tabs className="space-y-4" onValueChange={setActiveSection} value={activeSection}>
         <TabsList aria-label="All vitals graph categories">
-          <TabsTrigger value={coreVitalsGraphSection.title}>{coreVitalsGraphSection.title}</TabsTrigger>
           {allVitalsGraphSections.map((section) => (
             <TabsTrigger key={section.title} value={section.title}>
               {section.title}
             </TabsTrigger>
           ))}
         </TabsList>
-        <TabsContent value={coreVitalsGraphSection.title}>
-          <VitalsGraphWorkspace data={data} />
-        </TabsContent>
         {allVitalsGraphSections.map((section) => (
           <TabsContent key={section.title} value={section.title}>
             <AllVitalsGraphSectionCard data={data} section={section} />
@@ -882,20 +880,15 @@ function VitalsGraphWorkspace({
   const [endDate, setEndDate] = React.useState("");
   const [startTime, setStartTime] = React.useState("");
   const [endTime, setEndTime] = React.useState("");
-  const [activeGraphSection, setActiveGraphSection] = React.useState(allVitalsGraphSections[0]?.title ?? "");
+  const [timeInterval, setTimeInterval] = React.useState("All times");
+  const [activeGraphSection, setActiveGraphSection] = React.useState("All");
   const filteredData = data.filter((point) => {
     if (startDate && point.date < startDate) return false;
     if (endDate && point.date > endDate) return false;
-    const minutes = timeToMinutes(point.time);
-    const from = timeToMinutes(startTime);
-    const to = timeToMinutes(endTime);
-    if (minutes !== null && from !== null && to !== null && !minutesWithinRange(minutes, from, to)) return false;
-    if (minutes !== null && from !== null && to === null && minutes < from) return false;
-    if (minutes !== null && from === null && to !== null && minutes > to) return false;
-    return true;
+    return graphPointMatchesTimeInterval(point.time, timeInterval, startTime, endTime);
   });
   const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
-  const rangeSummary = `${startDate ? formatDateLabel(startDate) : "First record"} to ${endDate ? formatDateLabel(endDate) : "Latest record"} | ${startTime || "00:00"} to ${endTime || "23:59"}`;
+  const rangeSummary = `${startDate ? formatDateLabel(startDate) : "First record"} to ${endDate ? formatDateLabel(endDate) : "Latest record"} | ${timeFilterSummary(timeInterval, startTime, endTime)}`;
   const visibleData = invalidDateRange ? [] : filteredData;
 
   function resetRange() {
@@ -903,62 +896,85 @@ function VitalsGraphWorkspace({
     setEndDate("");
     setStartTime("");
     setEndTime("");
+    setTimeInterval("All times");
   }
 
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 py-3">
           <div>
             <CardTitle>Vitals Graph Filter</CardTitle>
-            <CardDescription>Select start and end dates from the calendar, then narrow the graph by start and end time.</CardDescription>
+            <CardDescription>{rangeSummary} | {filteredData.length} records</CardDescription>
           </div>
-          <Button onClick={resetRange} variant="outline">
+          <Button onClick={resetRange} size="sm" variant="outline">
             <RefreshCcw className="h-4 w-4" />
             Reset
           </Button>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-2">
-            <DateRangeCalendar
-              endDate={endDate}
-              maxDate={availableDates.at(-1)}
-              minDate={availableDates[0]}
-              onChange={(start, end) => {
-                setStartDate(start);
-                setEndDate(end);
-              }}
-              startDate={startDate}
-            />
-            <TimeRangePicker
-              endTime={endTime}
-              onChange={(start, end) => {
-                setStartTime(start);
-                setEndTime(end);
-              }}
-              startTime={startTime}
-            />
+        <CardContent className="p-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-full sm:w-[290px]">
+              <DateRangeCalendar
+                endDate={endDate}
+                maxDate={availableDates.at(-1)}
+                minDate={availableDates[0]}
+                onChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+                startDate={startDate}
+              />
+            </div>
+            <label className="w-full space-y-1 text-sm sm:w-[220px]">
+              <span className="font-medium text-foreground">Time interval</span>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                onChange={(event) => setTimeInterval(event.target.value)}
+                value={timeInterval}
+              >
+                {patientVitalsTimeIntervals.map((interval) => (
+                  <option key={interval} value={interval}>{interval}</option>
+                ))}
+              </select>
+            </label>
+            {timeInterval === "Custom time range" ? (
+              <div className="w-full sm:w-[260px]">
+                <TimeRangePicker
+                  endTime={endTime}
+                  onChange={(start, end) => {
+                    setStartTime(start);
+                    setEndTime(end);
+                  }}
+                  startTime={startTime}
+                />
+              </div>
+            ) : null}
           </div>
           {invalidDateRange ? (
-            <div className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+            <div className="mt-3 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
               Start date cannot be after end date.
             </div>
-          ) : (
-            <div className="text-xs font-medium text-muted-foreground">
-              {rangeSummary} | {filteredData.length} records
-            </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
       {showGraphTabs ? (
         <Tabs className="space-y-4" onValueChange={setActiveGraphSection} value={activeGraphSection}>
           <TabsList aria-label="Patient vitals graph categories">
+            <TabsTrigger value="All">All</TabsTrigger>
             {allVitalsGraphSections.map((section) => (
               <TabsTrigger key={section.title} value={section.title}>
                 {section.title}
               </TabsTrigger>
             ))}
           </TabsList>
+          <TabsContent value="All">
+            <div className="space-y-4">
+              {allVitalsGraphSections.map((section) => (
+                <AllVitalsGraphSectionCard data={visibleData} key={section.title} section={section} />
+              ))}
+            </div>
+          </TabsContent>
           {allVitalsGraphSections.map((section) => (
             <TabsContent key={section.title} value={section.title}>
               <AllVitalsGraphSectionCard data={visibleData} section={section} />
@@ -1030,7 +1046,7 @@ function DateRangeCalendar({
       <label className="space-y-1 text-sm">
         <span className="font-medium text-foreground">Date range</span>
         <button
-          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-left text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+          className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-left text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
           onClick={() => setOpen((current) => !current)}
           type="button"
         >
@@ -1124,7 +1140,7 @@ function TimeRangePicker({
       <label className="space-y-1 text-sm">
         <span className="font-medium text-foreground">Time range</span>
         <button
-          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-left text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+          className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-left text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
           onClick={() => setOpen((current) => !current)}
           type="button"
         >
@@ -1575,6 +1591,26 @@ function observationMatchesTimeFilter(observation: RapidObservationSet, mode: st
   if (mode === "Night 22-05") return minutesWithinRange(minutes, 22 * 60, 5 * 60 + 59);
   if (mode === "Business hours") return minutesWithinRange(minutes, 9 * 60, 17 * 60 + 59);
   if (mode === "Custom time range") {
+    const from = timeToMinutes(timeFrom);
+    const to = timeToMinutes(timeTo);
+    if (from === null && to === null) return true;
+    if (from !== null && to === null) return minutes >= from;
+    if (from === null && to !== null) return minutes <= to;
+    if (from === to) return true;
+    return minutesWithinRange(minutes, from ?? 0, to ?? 0);
+  }
+  return true;
+}
+
+function graphPointMatchesTimeInterval(time: string, interval: string, timeFrom: string, timeTo: string) {
+  const minutes = timeToMinutes(time);
+  if (minutes === null || interval === "All times") return true;
+  if (interval === "Morning 06-13") return minutesWithinRange(minutes, 6 * 60, 13 * 60 + 59);
+  if (interval === "Afternoon 14-17") return minutesWithinRange(minutes, 14 * 60, 17 * 60 + 59);
+  if (interval === "Evening 18-21") return minutesWithinRange(minutes, 18 * 60, 21 * 60 + 59);
+  if (interval === "Night 22-05") return minutesWithinRange(minutes, 22 * 60, 5 * 60 + 59);
+  if (interval === "Business hours") return minutesWithinRange(minutes, 9 * 60, 17 * 60 + 59);
+  if (interval === "Custom time range") {
     const from = timeToMinutes(timeFrom);
     const to = timeToMinutes(timeTo);
     if (from === null && to === null) return true;

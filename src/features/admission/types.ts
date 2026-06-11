@@ -48,6 +48,7 @@ export type AdmissionRequest = {
   patientId?: string;
   source: string;
   doctor: string;
+  doctorTeam?: string[];
   admittingTeam?: string;
   admissionCategory?: "Elective" | "Non Elective";
   type: string;

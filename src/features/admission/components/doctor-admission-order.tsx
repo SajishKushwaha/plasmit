@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ClipboardPlus, QrCode } from "lucide-react";
+import { ClipboardPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const electiveOptions = ["Daycare", "Plan", "Surgery", "Regular"];
 const nonElectiveOptions = ["IPD Admission", "OT Admission", "Transfer to Home", "Transfer to Ward", "Transfer to ICU"];
 const admittingTeams = ["Medical Team", "Surgical Team", "Critical Care Team", "Orthopedic Team", "Pediatric Team"];
+const doctorTeams = ["Dr. Sameer Mehta Team", "Dr. Kavita Rao Team", "Dr. Aman Verma Team", "Dr. Neha Malik Team", "Dr. Imran Shah Team", "Duty Doctor Team"];
 
 export function DoctorAdmissionOrder() {
   const { selectedPatient, activeRequest, state, actions } = useAdmissionStore();
@@ -46,12 +47,6 @@ export function DoctorAdmissionOrder() {
     setUhid(selectedPatient?.uhid ?? "Auto generated");
   }
 
-  function generateQrReference() {
-    const id = `${uhid || "AUTO"}-${Date.now().toString(36).toUpperCase()}`;
-    setQrReference(id);
-    toast.success("Admission QR reference generated.");
-  }
-
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -60,11 +55,13 @@ export function DoctorAdmissionOrder() {
       toast.error("Patient name required.");
       return;
     }
+    const doctorTeam = String(form.get("doctorTeam") ?? doctorTeams[0]);
     actions.submitDoctorOrder({
       patientName: name,
       uhid: String(form.get("uhid") ?? "") || "Auto generated",
       source: String(form.get("source") ?? "OPD"),
-      doctor: String(form.get("admittingTeam") ?? "Medical Team"),
+      doctor: doctorTeam,
+      doctorTeam: [doctorTeam],
       admittingTeam: String(form.get("admittingTeam") ?? "Medical Team"),
       admissionCategory,
       type: admissionSubtype,
@@ -90,12 +87,17 @@ export function DoctorAdmissionOrder() {
             </Field>
             <Field label="Source">
               <select className={controlClass} name="source" defaultValue={state.selectedScenario === "Emergency Unknown Patient" ? "Emergency" : "OPD"}>
-                {["OPD", "Emergency", "Referral", "Daycare", "Transfer"].map((option) => <option key={option}>{option}</option>)}
+                {["OPD", "Emergency", "IPD", "Daycare", "Transfer"].map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
             <Field label="Admitting Team">
               <select className={controlClass} name="admittingTeam" defaultValue="Medical Team">
                 {admittingTeams.map((option) => <option key={option}>{option}</option>)}
+              </select>
+            </Field>
+            <Field label="Doctor Team">
+              <select className={controlClass} name="doctorTeam" defaultValue={doctorTeams[0]}>
+                {doctorTeams.map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
             <Field label="Admission Type">
@@ -104,12 +106,12 @@ export function DoctorAdmissionOrder() {
                 name="admissionCategory"
                 value={admissionCategory}
                 onChange={(event) => {
-                  const nextCategory = event.target.value as "Elective" | "Non Elective";
-                  setAdmissionCategory(nextCategory);
+                  const nextCategory = event.target.value as "Elective" | "Non Elective"|"Daycare";
+                  // setAdmissionCategory(nextCategory);
                   setAdmissionSubtype(nextCategory === "Elective" ? electiveOptions[0] : nonElectiveOptions[0]);
                 }}
               >
-                {["Elective", "Non Elective"].map((option) => <option key={option}>{option}</option>)}
+                {["Elective", "Non Elective","Daycare"].map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
             <Field label={admissionCategory === "Elective" ? "Elective Type" : "Non Elective Type"}>
@@ -127,10 +129,10 @@ export function DoctorAdmissionOrder() {
                 {["Stable", "Critical"].map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
-            <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
+            {/* <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
               <span className="font-medium text-foreground">Allergy Note</span>
               <textarea className={`${controlClass} h-auto min-h-20 resize-y`} name="allergyNote" placeholder="Add allergy details, unknown allergy status, or safety alerts" />
-            </label>
+            </label> */}
             <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
               <span className="font-medium text-foreground">Instruction Note</span>
               <textarea className={`${controlClass} h-auto min-h-24 resize-y`} name="instructions" placeholder="Add admission instructions, precautions, or nursing notes" />

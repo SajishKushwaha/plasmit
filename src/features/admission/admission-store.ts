@@ -31,6 +31,7 @@ type DoctorOrderInput = {
   uhid: string;
   source: string;
   doctor: string;
+  doctorTeam: string[];
   admittingTeam: string;
   admissionCategory: AdmissionRequest["admissionCategory"];
   type: string;
@@ -205,6 +206,7 @@ export function useAdmissionStore() {
           patientId: patient?.id,
           source: input.source,
           doctor: input.doctor,
+          doctorTeam: input.doctorTeam,
           admittingTeam: input.admittingTeam,
           admissionCategory: input.admissionCategory,
           type: input.type,

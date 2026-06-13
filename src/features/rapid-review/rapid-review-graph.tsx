@@ -990,27 +990,23 @@ function VitalsGraphWorkspace({
       {showGraphTabs ? (
         <Tabs className="space-y-4" onValueChange={setActiveGraphSection} value={activeGraphSection}>
           <TabsList aria-label="Patient vitals graph categories">
+            <TabsTrigger value="All1">All1</TabsTrigger>
             <TabsTrigger value="All">All</TabsTrigger>
-            <TabsTrigger value="Vitals Graph 1">Vitals Graph 1</TabsTrigger>
             {allVitalsGraphSections.map((section) => (
               <TabsTrigger key={section.title} value={section.title}>
                 {section.title}
               </TabsTrigger>
             ))}
           </TabsList>
-          <TabsContent value="All">
-            <div className="space-y-4">
-              {allVitalsGraphSections.map((section) => (
-                <AllVitalsGraphSectionCard data={visibleData} key={section.title} section={section} />
-              ))}
-            </div>
+          <TabsContent value="All1">
+            <AllVitalsGraphSections data={visibleData} />
           </TabsContent>
-          <TabsContent value="Vitals Graph 1">
+          <TabsContent value="All">
             <VitalsGraphOneReference data={visibleData} />
           </TabsContent>
           {allVitalsGraphSections.map((section) => (
             <TabsContent key={section.title} value={section.title}>
-              <AllVitalsGraphSectionCard data={visibleData} section={section} />
+              <VitalsGraphOneReference data={visibleData} />
             </TabsContent>
           ))}
         </Tabs>
@@ -1032,9 +1028,13 @@ type VitalsGraphOnePoint = {
   respiratoryRate: number | null;
   oxygenSaturation: number | null;
   oxygenFlowRate: number | null;
+  fio2: number | null;
   temperature: number | null;
   consciousnessSedation: number | null;
   painScore: number | null;
+  bloodGlucose: number | null;
+  bloodGlucoseForeign: number | null;
+  fluidIntake: number | null;
   urineOutput: number | null;
   displays: CombinedReviewGraphPoint["displays"];
   risks: CombinedReviewGraphPoint["risks"];
@@ -1053,9 +1053,9 @@ function VitalsGraphOneReference({ data }: { data: CombinedReviewGraphPoint[] })
         <div className="border-b border-border bg-surface-muted px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-xs font-semibold uppercase text-muted-foreground">Multi-system trend</div>
+              <div className="text-xs font-semibold uppercase text-muted-foreground">All vitals graph</div>
               <h3 className="mt-1 text-lg font-semibold text-foreground">Vitals Graph 1</h3>
-              <p className="mt-1 text-sm text-muted-foreground">A synchronized overview of recorded bedside observations.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Same vital names and legends with the original Vitals Graph 1 chart design.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <StatusPill tone="info">{chartData.length} observations</StatusPill>
@@ -1067,13 +1067,13 @@ function VitalsGraphOneReference({ data }: { data: CombinedReviewGraphPoint[] })
         <div className="space-y-4 p-4">
           <VitalsGraphOneSection
             legends={[
-              ["Pulse", "/min", "#2563eb"],
-              ["Monitor HR", "bpm", "#0891b2"],
-              ["BP systolic", "mmHg", "#dc2626"],
-              ["BP diastolic", "mmHg", "#f97316"],
+              ["Pulse Rate", "/min", "#2563eb"],
+              ["Monitor Heart Rate", "bpm", "#0891b2"],
+              ["BP Systolic", "mmHg", "#dc2626"],
+              ["BP Diastolic", "mmHg", "#f97316"],
             ]}
-            subtitle="Pulse and blood pressure"
-            title="Cardiovascular"
+            subtitle="Pulse, monitor heart rate, systolic blood pressure, and diastolic blood pressure trends."
+            title="CVS"
           >
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
@@ -1081,76 +1081,118 @@ function VitalsGraphOneReference({ data }: { data: CombinedReviewGraphPoint[] })
                 <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
                 <YAxis domain={[30, 220]} tick={{ fontSize: 10 }} width={44} />
                 <Tooltip content={<VitalsGraphOneTooltip />} />
-                <Line connectNulls dataKey="pulseRate" dot={{ r: 2 }} name="Pulse" stroke="#2563eb" strokeWidth={2.2} type="monotone" />
-                <Line connectNulls dataKey="monitorHeartRate" dot={{ r: 2 }} name="Monitor HR" stroke="#0891b2" strokeDasharray="5 4" strokeWidth={2} type="monotone" />
-                <Line connectNulls dataKey="bloodPressure" dot={{ r: 2 }} name="BP systolic" stroke="#dc2626" strokeWidth={2.2} type="monotone" />
-                <Line connectNulls dataKey="bloodPressureDiastolic" dot={{ r: 2 }} name="BP diastolic" stroke="#f97316" strokeWidth={2} type="monotone" />
+                <Line connectNulls dataKey="pulseRate" dot={{ r: 2 }} name="Pulse Rate" stroke="#2563eb" strokeWidth={2.2} type="monotone" />
+                <Line connectNulls dataKey="monitorHeartRate" dot={{ r: 2 }} name="Monitor Heart Rate" stroke="#0891b2" strokeDasharray="5 4" strokeWidth={2} type="monotone" />
+                <Line connectNulls dataKey="bloodPressure" dot={{ r: 2 }} name="BP Systolic" stroke="#dc2626" strokeWidth={2.2} type="monotone" />
+                <Line connectNulls dataKey="bloodPressureDiastolic" dot={{ r: 2 }} name="BP Diastolic" stroke="#f97316" strokeWidth={2} type="monotone" />
               </LineChart>
             </ResponsiveContainer>
           </VitalsGraphOneSection>
 
           <VitalsGraphOneSection
             legends={[
-              ["Respiratory rate", "/min", "#7c3aed"],
-              ["SpO2", "%", "#16a34a"],
-              ["O2 flow", "L/min", "#0ea5e9"],
+              ["Respiratory Rate", "/min", "#7c3aed"],
+              ["O2 Saturation", "%", "#16a34a"],
+              ["O2 Flow Rate", "L/min", "#0ea5e9"],
+              ["FiO2", "%", "#be123c"],
             ]}
-            subtitle="Breathing and oxygen support"
-            title="Respiratory"
+            subtitle="Respiratory rate, oxygen saturation, oxygen flow, and FiO2 trend."
+            title="Respiration"
           >
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
                 <YAxis domain={[0, 45]} tick={{ fontSize: 10 }} width={44} yAxisId="rate" />
-                <YAxis domain={[80, 100]} orientation="right" tick={{ fontSize: 10 }} width={38} yAxisId="spo2" />
+                <YAxis domain={[0, 100]} orientation="right" tick={{ fontSize: 10 }} width={38} yAxisId="spo2" />
                 <Tooltip content={<VitalsGraphOneTooltip />} />
                 <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={95} y2={100} yAxisId="spo2" />
-                <Line connectNulls dataKey="respiratoryRate" dot={{ r: 2 }} name="Respiratory rate" stroke="#7c3aed" strokeWidth={2.2} type="monotone" yAxisId="rate" />
-                <Line connectNulls dataKey="oxygenFlowRate" dot={{ r: 2 }} name="O2 flow" stroke="#0ea5e9" strokeDasharray="5 4" strokeWidth={2} type="monotone" yAxisId="rate" />
-                <Line connectNulls dataKey="oxygenSaturation" dot={{ r: 2 }} name="SpO2" stroke="#16a34a" strokeWidth={2.4} type="monotone" yAxisId="spo2" />
+                <Line connectNulls dataKey="respiratoryRate" dot={{ r: 2 }} name="Respiratory Rate" stroke="#7c3aed" strokeWidth={2.2} type="monotone" yAxisId="rate" />
+                <Line connectNulls dataKey="oxygenFlowRate" dot={{ r: 2 }} name="O2 Flow Rate" stroke="#0ea5e9" strokeDasharray="5 4" strokeWidth={2} type="monotone" yAxisId="rate" />
+                <Line connectNulls dataKey="oxygenSaturation" dot={{ r: 2 }} name="O2 Saturation" stroke="#16a34a" strokeWidth={2.4} type="monotone" yAxisId="spo2" />
+                <Line connectNulls dataKey="fio2" dot={{ r: 2 }} name="FiO2" stroke="#be123c" strokeDasharray="3 4" strokeWidth={2} type="monotone" yAxisId="spo2" />
+              </LineChart>
+            </ResponsiveContainer>
+          </VitalsGraphOneSection>
+
+          <VitalsGraphOneSection
+            legends={[["Temperature", "deg C", "#dc2626"]]}
+            subtitle="Temperature trend with risk markers."
+            title="Infection"
+          >
+            <ResponsiveContainer height="100%" width="100%">
+              <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
+                <YAxis domain={[34, 42]} tick={{ fontSize: 10 }} width={44} />
+                <Tooltip content={<VitalsGraphOneTooltip />} />
+                <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={36.1} y2={37.5} />
+                <Line connectNulls dataKey="temperature" dot={{ r: 2 }} name="Temperature" stroke="#dc2626" strokeWidth={2.2} type="monotone" />
               </LineChart>
             </ResponsiveContainer>
           </VitalsGraphOneSection>
 
           <VitalsGraphOneSection
             legends={[
-              ["Temperature", "deg C", "#dc2626"],
-              ["GCS", "/15", "#2563eb"],
-              ["Pain", "/10", "#ca8a04"],
+              ["GCS Score", "score", "#2563eb"],
+              ["Pain Score", "/10", "#ca8a04"],
             ]}
-            subtitle="Temperature, consciousness, and pain"
-            title="Clinical Status"
-          >
-            <ResponsiveContainer height="100%" width="100%">
-              <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
-                <YAxis domain={[34, 42]} tick={{ fontSize: 10 }} width={44} yAxisId="temperature" />
-                <YAxis domain={[0, 15]} orientation="right" tick={{ fontSize: 10 }} ticks={[0, 3, 6, 9, 12, 15]} width={38} yAxisId="score" />
-                <Tooltip content={<VitalsGraphOneTooltip />} />
-                <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={36.1} y2={37.5} yAxisId="temperature" />
-                <Line connectNulls dataKey="temperature" dot={{ r: 2 }} name="Temperature" stroke="#dc2626" strokeWidth={2.2} type="monotone" yAxisId="temperature" />
-                <Line connectNulls dataKey="consciousnessSedation" dot={{ r: 2 }} name="GCS" stroke="#2563eb" strokeWidth={2.2} type="monotone" yAxisId="score" />
-                <Line connectNulls dataKey="painScore" dot={{ r: 2 }} name="Pain" stroke="#ca8a04" strokeDasharray="5 4" strokeWidth={2} type="monotone" yAxisId="score" />
-              </LineChart>
-            </ResponsiveContainer>
-          </VitalsGraphOneSection>
-
-          <VitalsGraphOneSection
-            legends={[["Urine output", "ml/hr", "#0f766e"]]}
-            subtitle="Recorded hourly output"
-            title="Renal Output"
+            subtitle="GCS plotted below 15 and pain score plotted below 10 with 3-point y-axis intervals."
+            title="Neuro / Pain"
           >
             <ResponsiveContainer height="100%" width="100%">
               <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
-                <YAxis domain={[0, 120]} tick={{ fontSize: 10 }} width={44} />
+                <YAxis domain={[0, 15]} tick={{ fontSize: 10 }} ticks={[0, 3, 6, 9, 12, 15]} width={44} />
+                <Tooltip content={<VitalsGraphOneTooltip />} />
+                <Line connectNulls dataKey="consciousnessSedation" dot={{ r: 2 }} name="GCS Score" stroke="#2563eb" strokeWidth={2.2} type="monotone" />
+                <Line connectNulls dataKey="painScore" dot={{ r: 2 }} name="Pain Score" stroke="#ca8a04" strokeDasharray="5 4" strokeWidth={2} type="monotone" />
+              </LineChart>
+            </ResponsiveContainer>
+          </VitalsGraphOneSection>
+
+          <VitalsGraphOneSection
+            legends={[
+              ["Blood Glucose", "mg/dL", "#db2777"],
+              ["Foreign Glucose", "mmol/L", "#8b5cf6"],
+            ]}
+            subtitle="Blood glucose trend with India and foreign reference legends."
+            title="Glucose"
+          >
+            <ResponsiveContainer height="100%" width="100%">
+              <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
+                <YAxis domain={[0, 300]} tick={{ fontSize: 10 }} width={44} yAxisId="india" />
+                <YAxis domain={[0, 18]} orientation="right" tick={{ fontSize: 10 }} width={38} yAxisId="foreign" />
+                <Tooltip content={<VitalsGraphOneTooltip />} />
+                <ReferenceArea fill="#10b981" fillOpacity={0.08} y1={70} y2={140} yAxisId="india" />
+                <ReferenceLine label={{ value: "India 70-140 mg/dL", fill: "#047857", fontSize: 10, position: "insideTopRight" }} stroke="#10b981" strokeDasharray="4 4" y={140} yAxisId="india" />
+                <Line connectNulls dataKey="bloodGlucose" dot={{ r: 2 }} name="Blood Glucose" stroke="#db2777" strokeWidth={2.4} type="monotone" yAxisId="india" />
+                <Line connectNulls dataKey="bloodGlucoseForeign" dot={{ r: 2 }} name="Foreign Glucose" stroke="#8b5cf6" strokeDasharray="5 4" strokeWidth={2} type="monotone" yAxisId="foreign" />
+              </LineChart>
+            </ResponsiveContainer>
+          </VitalsGraphOneSection>
+
+          <VitalsGraphOneSection
+            legends={[
+              ["Fluid Intake", "ml/hr", "#0ea5e9"],
+              ["Urine Output", "ml/hr", "#0f766e"],
+            ]}
+            subtitle="Hourly intake and urine output trend from rapid review observations."
+            title="Intake / Output"
+          >
+            <ResponsiveContainer height="100%" width="100%">
+              <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
+                <YAxis domain={[0, 180]} tick={{ fontSize: 10 }} width={44} />
                 <Tooltip content={<VitalsGraphOneTooltip />} />
                 <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={40} y2={120} />
                 <ReferenceLine label={{ value: "Review below 30", fill: "#b91c1c", fontSize: 10, position: "insideTopRight" }} stroke="#dc2626" strokeDasharray="4 4" y={30} />
-                <Line connectNulls dataKey="urineOutput" dot={{ r: 3 }} name="Urine output" stroke="#0f766e" strokeWidth={2.4} type="monotone" />
+                <Line connectNulls dataKey="fluidIntake" dot={{ r: 2 }} name="Fluid Intake" stroke="#0ea5e9" strokeDasharray="5 4" strokeWidth={2} type="monotone" />
+                <Line connectNulls dataKey="urineOutput" dot={{ r: 3 }} name="Urine Output" stroke="#0f766e" strokeWidth={2.4} type="monotone" />
               </LineChart>
             </ResponsiveContainer>
           </VitalsGraphOneSection>
@@ -1170,14 +1212,19 @@ function VitalsGraphOneReference({ data }: { data: CombinedReviewGraphPoint[] })
               </thead>
               <tbody>
                 {([
-                  ["Blood pressure", "bloodPressure"],
-                  ["Pulse rate", "pulseRate"],
-                  ["SpO2", "oxygenSaturation"],
-                  ["Respiratory rate", "respiratoryRate"],
+                  ["BP Systolic", "bloodPressure"],
+                  ["BP Diastolic", "bloodPressureDiastolic"],
+                  ["Pulse Rate", "pulseRate"],
+                  ["O2 Saturation", "oxygenSaturation"],
+                  ["O2 Flow Rate", "oxygenFlowRate"],
+                  ["FiO2", "fio2"],
+                  ["Respiratory Rate", "respiratoryRate"],
                   ["Temperature", "temperature"],
-                  ["GCS", "consciousnessSedation"],
-                  ["Pain score", "painScore"],
-                  ["Urine output", "urineOutput"],
+                  ["GCS Score", "consciousnessSedation"],
+                  ["Pain Score", "painScore"],
+                  ["Blood Glucose", "bloodGlucose"],
+                  ["Fluid Intake", "fluidIntake"],
+                  ["Urine Output", "urineOutput"],
                 ] as Array<[string, ReviewGraphMetricId]>).map(([label, metricId]) => (
                   <tr className="border-b border-border last:border-0" key={metricId}>
                     <td className="sticky left-0 z-10 border-r border-border bg-background px-3 py-2 font-semibold text-foreground">{label}</td>
@@ -1254,6 +1301,22 @@ function VitalsGraphOneTooltip({ active, payload }: { active?: boolean; payload?
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function AllVitalsGraphSections({
+  data,
+  graphOnly = false,
+}: {
+  data: CombinedReviewGraphPoint[];
+  graphOnly?: boolean;
+}) {
+  return (
+    <div className="space-y-4">
+      {allVitalsGraphSections.map((section) => (
+        <AllVitalsGraphSectionCard data={data} graphOnly={graphOnly} key={section.title} section={section} />
+      ))}
     </div>
   );
 }
@@ -1454,21 +1517,61 @@ function TimeRangePicker({
 function AllVitalsGraphSectionCard({
   section,
   data,
+  graphOnly = false,
 }: {
   section: AllVitalsGraphSection;
   data: CombinedReviewGraphPoint[];
+  graphOnly?: boolean;
 }) {
   if (section.metrics.includes("urineOutput")) {
-    return <AllVitalsFluidBalanceSectionCard data={data} section={section} />;
+    return <AllVitalsFluidBalanceSectionCard data={data} graphOnly={graphOnly} section={section} />;
   }
   if (section.metrics.includes("bloodGlucose")) {
-    return <AllVitalsGlucoseSectionCard data={data} section={section} />;
+    return <AllVitalsGlucoseSectionCard data={data} graphOnly={graphOnly} section={section} />;
   }
 
   const sectionMetrics = section.metrics
     .map((metricId) => reviewGraphMetrics.find((metric) => metric.id === metricId))
     .filter((metric): metric is ReviewGraphMetric => Boolean(metric));
   const yAxisConfig = combinedGraphYAxisConfig(section);
+  const graphContent = data.length ? (
+    <div className="h-[310px]">
+      <ResponsiveContainer height="100%" width="100%">
+        <LineChart data={data} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="xLabel" height={graphOnly ? 12 : undefined} tick={graphOnly ? false : { fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
+          <YAxis domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} tick={graphOnly ? false : { fontSize: 11 }} width={graphOnly ? 12 : 48} />
+          <Tooltip content={<CombinedReviewGraphTooltip />} />
+          {graphOnly ? null : <Legend />}
+          {sectionMetrics.map((metric) => (
+            <Line
+              activeDot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} active metric={metric} />}
+              connectNulls
+              dataKey={metric.id}
+              dot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} metric={metric} />}
+              key={metric.id}
+              name={metric.shortLabel}
+              stroke={reviewMetricColor(metric.id)}
+              strokeWidth={metric.id === "bloodPressure" || metric.id === "bloodPressureDiastolic" || metric.id === "oxygenSaturation" ? 2.4 : 2}
+              type="monotone"
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  ) : (
+    <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
+  );
+
+  if (graphOnly) {
+    return (
+      <Card className="overflow-hidden">
+        <CardContent className="p-4">
+          {graphContent}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden">
@@ -1493,34 +1596,7 @@ function AllVitalsGraphSectionCard({
         </div>
 
         <div className="min-w-0 p-4">
-          {data.length ? (
-            <div className="h-[310px]">
-              <ResponsiveContainer height="100%" width="100%">
-                <LineChart data={data} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="xLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
-                  <YAxis domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} tick={{ fontSize: 11 }} width={48} />
-                  <Tooltip content={<CombinedReviewGraphTooltip />} />
-                  <Legend />
-                  {sectionMetrics.map((metric) => (
-                    <Line
-                      activeDot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} active metric={metric} />}
-                      connectNulls
-                      dataKey={metric.id}
-                      dot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} metric={metric} />}
-                      key={metric.id}
-                      name={metric.shortLabel}
-                      stroke={reviewMetricColor(metric.id)}
-                      strokeWidth={metric.id === "bloodPressure" || metric.id === "bloodPressureDiastolic" || metric.id === "oxygenSaturation" ? 2.4 : 2}
-                      type="monotone"
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
-          )}
+          {graphContent}
         </div>
       </CardContent>
     </Card>
@@ -1530,9 +1606,11 @@ function AllVitalsGraphSectionCard({
 function AllVitalsGlucoseSectionCard({
   section,
   data,
+  graphOnly = false,
 }: {
   section: AllVitalsGraphSection;
   data: CombinedReviewGraphPoint[];
+  graphOnly?: boolean;
 }) {
   const glucoseMetric = reviewGraphMetrics.find((item) => item.id === "bloodGlucose");
   const glucoseStandards = [
@@ -1554,6 +1632,43 @@ function AllVitalsGlucoseSectionCard({
       },
     };
   });
+  const graphContent = data.length ? (
+    <div className="h-[310px]">
+      <ResponsiveContainer height="100%" width="100%">
+        <LineChart data={glucoseData} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <ReferenceArea fill={activeStandard.color} fillOpacity={0.1} ifOverflow="extendDomain" y1={activeStandard.min} y2={activeStandard.max} />
+          <ReferenceLine label={graphOnly ? undefined : { value: `${activeStandard.label} ${activeStandard.min}-${activeStandard.max} ${activeStandard.unit}`, fill: activeStandard.text, fontSize: 10, position: "insideTopRight" }} stroke={activeStandard.color} strokeDasharray="4 4" y={activeStandard.max} />
+          <XAxis dataKey="xLabel" height={graphOnly ? 12 : undefined} tick={graphOnly ? false : { fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
+          <YAxis domain={activeStandard.domain} ticks={activeStandard.ticks} tick={graphOnly ? false : { fontSize: 11 }} width={graphOnly ? 12 : 48} />
+          <Tooltip content={<CombinedReviewGraphTooltip />} />
+          {graphOnly ? null : <Legend />}
+          <Line
+            activeDot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} active metric={glucoseMetric ?? reviewGraphMetrics[0]} />}
+            connectNulls
+            dataKey="bloodGlucose"
+            dot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} metric={glucoseMetric ?? reviewGraphMetrics[0]} />}
+            name={glucoseMetric?.shortLabel ?? "Glucose"}
+            stroke={reviewMetricColor("bloodGlucose")}
+            strokeWidth={2.4}
+            type="monotone"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  ) : (
+    <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
+  );
+
+  if (graphOnly) {
+    return (
+      <Card className="overflow-hidden">
+        <CardContent className="p-4">
+          {graphContent}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden">
@@ -1596,33 +1711,7 @@ function AllVitalsGlucoseSectionCard({
         </div>
 
         <div className="min-w-0 p-4">
-          {data.length ? (
-            <div className="h-[310px]">
-              <ResponsiveContainer height="100%" width="100%">
-                <LineChart data={glucoseData} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <ReferenceArea fill={activeStandard.color} fillOpacity={0.1} ifOverflow="extendDomain" y1={activeStandard.min} y2={activeStandard.max} />
-                  <ReferenceLine label={{ value: `${activeStandard.label} ${activeStandard.min}-${activeStandard.max} ${activeStandard.unit}`, fill: activeStandard.text, fontSize: 10, position: "insideTopRight" }} stroke={activeStandard.color} strokeDasharray="4 4" y={activeStandard.max} />
-                  <XAxis dataKey="xLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
-                  <YAxis domain={activeStandard.domain} ticks={activeStandard.ticks} tick={{ fontSize: 11 }} width={48} />
-                  <Tooltip content={<CombinedReviewGraphTooltip />} />
-                  <Legend />
-                  <Line
-                    activeDot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} active metric={glucoseMetric ?? reviewGraphMetrics[0]} />}
-                    connectNulls
-                    dataKey="bloodGlucose"
-                    dot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} metric={glucoseMetric ?? reviewGraphMetrics[0]} />}
-                    name={glucoseMetric?.shortLabel ?? "Glucose"}
-                    stroke={reviewMetricColor("bloodGlucose")}
-                    strokeWidth={2.4}
-                    type="monotone"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
-          )}
+          {graphContent}
         </div>
       </CardContent>
     </Card>
@@ -1632,12 +1721,30 @@ function AllVitalsGlucoseSectionCard({
 function AllVitalsFluidBalanceSectionCard({
   section,
   data,
+  graphOnly = false,
 }: {
   section: AllVitalsGraphSection;
   data: CombinedReviewGraphPoint[];
+  graphOnly?: boolean;
 }) {
   const intakeMetric = reviewGraphMetrics.find((item) => item.id === "fluidIntake");
   const outputMetric = reviewGraphMetrics.find((item) => item.id === "urineOutput");
+  const graphContent = data.length ? (
+    <RapidReviewIntakeOutputGraph data={data} showLabels={!graphOnly} />
+  ) : (
+    <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
+  );
+
+  if (graphOnly) {
+    return (
+      <Card className="overflow-hidden">
+        <CardContent className="p-4">
+          {graphContent}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -1673,18 +1780,14 @@ function AllVitalsFluidBalanceSectionCard({
         </div>
 
         <div className="min-w-0 p-4">
-          {data.length ? (
-            <RapidReviewIntakeOutputGraph data={data} />
-          ) : (
-            <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
-          )}
+          {graphContent}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function RapidReviewIntakeOutputGraph({ data }: { data: CombinedReviewGraphPoint[] }) {
+function RapidReviewIntakeOutputGraph({ data, showLabels = true }: { data: CombinedReviewGraphPoint[]; showLabels?: boolean }) {
   const width = Math.max(640, data.length * 56);
   const height = 260;
   const pad = 34;
@@ -1714,7 +1817,7 @@ function RapidReviewIntakeOutputGraph({ data }: { data: CombinedReviewGraphPoint
               <rect fill="#0ea5e9" height={intakeHeight} rx="4" width="16" x={x - 20} y={baseline - intakeHeight} />
               <rect fill="#10b981" height={outputHeight} rx="4" width="16" x={x + 4} y={baseline} />
               <circle cx={x} cy={baseline + outputHeight + 7} fill={palette.background} r="4" stroke={palette.text} strokeWidth="1.5" />
-              <text fill="#475569" fontSize="10" textAnchor="middle" x={x} y={height - 8}>{point.time}</text>
+              {showLabels ? <text fill="#475569" fontSize="10" textAnchor="middle" x={x} y={height - 8}>{point.time}</text> : null}
             </g>
           );
         })}
@@ -1836,9 +1939,13 @@ function buildVitalsGraphOneData(data: CombinedReviewGraphPoint[]): VitalsGraphO
     respiratoryRate: parseObservationNumber(point.displays.respiratoryRate ?? ""),
     oxygenSaturation: parseObservationNumber(point.displays.oxygenSaturation ?? ""),
     oxygenFlowRate: oxygenFlowValue(point.displays.oxygenFlowRate ?? ""),
+    fio2: parseObservationNumber(point.displays.fio2 ?? ""),
     temperature: parseObservationNumber(point.displays.temperature ?? ""),
     consciousnessSedation: parseObservationNumber(point.displays.consciousnessSedation ?? ""),
     painScore: parseObservationNumber(point.displays.painScore ?? ""),
+    bloodGlucose: parseObservationNumber(point.displays.bloodGlucose ?? ""),
+    bloodGlucoseForeign: typeof point.bloodGlucose === "number" ? mgDlToMmolL(point.bloodGlucose) : null,
+    fluidIntake: parseObservationNumber(point.displays.fluidIntake ?? ""),
     urineOutput: parseObservationNumber(point.displays.urineOutput ?? ""),
     displays: point.displays,
     risks: point.risks,

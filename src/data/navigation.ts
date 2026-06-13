@@ -190,7 +190,7 @@ export const navigationItems: NavigationItem[] = [
     icon: HeartPulse,
     route: "/icu-command-center",
     group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse", "Nurse ICU", "Nurse ICU 2", "Lab Technician", "Radiologist", "Pharmacist", "Billing Executive", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU", "Nurse ICU 2", "Lab Technician", "Radiologist", "Pharmacist", "Billing Executive", "Management"],
     status: "ready",
     children: [
       { id: "icu-command-home", label: "Command Center", route: "/icu-command-center", status: "ready" },

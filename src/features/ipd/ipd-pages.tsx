@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Activity, Ambulance, BedDouble, ClipboardCheck, FileText, HeartPulse, Pill, Plus, Printer, ShieldAlert } from "lucide-react";
+import { Ambulance, BedDouble, ClipboardCheck, FileText, HeartPulse, Pill, Plus, Printer, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shell/page-header";
@@ -19,7 +19,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmDrawer, DetailRow, StickyActionBar } from "@/features/admin/admin-shared";
 import { PatientMini } from "@/features/appointments/appointment-shared";
-import { BedCard, InpatientSafetyPanel, IpdStatus, ProtectedIpd, TriageBadge } from "@/features/ipd/ipd-shared";
+import { BedCard, InpatientSafetyPanel, IpdStatus, ProtectedIpd, TriageBadge, type IpdPatientWorkspaceContext } from "@/features/ipd/ipd-shared";
 import { AbdominalDashboardPage, CvsDashboardPage, DrainsOverviewPage, IcuPatientSearchHeader, LinesDevicesOverviewPage } from "@/features/icu-monitoring/icu-monitoring-pages";
 import { NeuroOverviewPage } from "@/features/neuro-icu/neuro-icu-pages";
 import {
@@ -54,17 +54,28 @@ function getIpdUnifiedTab(value: string | null): IpdUnifiedTab {
   return ipdUnifiedTabs.includes(value as IpdUnifiedTab) ? (value as IpdUnifiedTab) : "ipd";
 }
 
-export function IpdUnifiedModulePage() {
+export function IpdUnifiedModulePage({
+  embedded = false,
+  patientContext,
+}: {
+  embedded?: boolean;
+  patientContext?: IpdPatientWorkspaceContext;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeTab = getIpdUnifiedTab(searchParams.get("tab"));
+  const [embeddedTab, setEmbeddedTab] = React.useState<IpdUnifiedTab>("ipd");
+  const activeTab = embedded ? embeddedTab : getIpdUnifiedTab(searchParams.get("tab"));
 
   function setActiveTab(value: string) {
+    if (embedded) {
+      setEmbeddedTab(getIpdUnifiedTab(value));
+      return;
+    }
     router.push(value === "ipd" ? "/ipd" : `/ipd?tab=${value}`, { scroll: false });
   }
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className={embedded ? "space-y-4 [&_[data-patient-workspace-header]]:hidden" : "space-y-4"}>
       <TabsList>
         <TabsTrigger value="ipd">IPD</TabsTrigger>
         <TabsTrigger value="cvs">CVS</TabsTrigger>
@@ -74,7 +85,7 @@ export function IpdUnifiedModulePage() {
         <TabsTrigger value="neuro-icu">Neuro ICU</TabsTrigger>
       </TabsList>
       <TabsContent value="ipd">
-        <IpdDashboardPage />
+        <IpdDashboardPage hidePatientHeader={embedded} patientContext={patientContext} />
       </TabsContent>
       <TabsContent value="cvs">
         <React.Suspense fallback={null}>
@@ -104,8 +115,8 @@ export function IpdUnifiedModulePage() {
   );
 }
 
-export function IpdDashboardPage() {
-  return <ProtectedIpd>{() => <><div className="flex justify-end gap-2"><Button variant="outline" asChild><Link href="/ipd/beds">Open bed map</Link></Button></div><SummaryGrid><StatCard label="Active admissions" value={mockAdmissions.length} change="Live" context="Static IPD census" tone="info" icon={BedDouble} /><StatCard label="Available beds" value={mockBeds.filter(b => b.status === "Available").length} change="Ready" context="Assignable" tone="success" icon={BedDouble} /><StatCard label="ICU patients" value={mockAdmissions.filter(a => a.status === "In ICU").length} change="Critical" context="High priority" tone="critical" icon={HeartPulse} /><StatCard label="Medication due" value={mockMedicationAdministration.filter(m => ["Due", "Delayed"].includes(m.status)).length} change="MAR" context="Nursing action" tone="danger" icon={Pill} /></SummaryGrid><div className="grid gap-4 xl:grid-cols-[1fr_360px]"><BedMap compact /><SidePanel title="Critical patient alerts" items={mockNursingTasks.filter(t => t.risk === "Critical").map(t => `${t.bedNo} • ${t.task} • ${t.status}`)} /><SidePanel title="Discharge queue" items={mockDischarges.map(d => `${d.status} • ${d.checklist} • ${d.billing}`)} /></div></>}</ProtectedIpd>;
+export function IpdDashboardPage({ hidePatientHeader = false, patientContext }: { hidePatientHeader?: boolean; patientContext?: IpdPatientWorkspaceContext }) {
+  return <ProtectedIpd hidePatientHeader={hidePatientHeader} patientContext={patientContext}>{() => <><div className="flex justify-end gap-2"><Button variant="outline" asChild><Link href="/ipd/beds">Open bed map</Link></Button></div><SummaryGrid><StatCard label="Active admissions" value={mockAdmissions.length} change="Live" context="Static IPD census" tone="info" icon={BedDouble} /><StatCard label="Available beds" value={mockBeds.filter(b => b.status === "Available").length} change="Ready" context="Assignable" tone="success" icon={BedDouble} /><StatCard label="ICU patients" value={mockAdmissions.filter(a => a.status === "In ICU").length} change="Critical" context="High priority" tone="critical" icon={HeartPulse} /><StatCard label="Medication due" value={mockMedicationAdministration.filter(m => ["Due", "Delayed"].includes(m.status)).length} change="MAR" context="Nursing action" tone="danger" icon={Pill} /></SummaryGrid><div className="grid gap-4 xl:grid-cols-[1fr_360px]"><BedMap compact /><SidePanel title="Critical patient alerts" items={mockNursingTasks.filter(t => t.risk === "Critical").map(t => `${t.bedNo} • ${t.task} • ${t.status}`)} /><SidePanel title="Discharge queue" items={mockDischarges.map(d => `${d.status} • ${d.checklist} • ${d.billing}`)} /></div></>}</ProtectedIpd>;
 }
 
 export function AdmissionsPage() {

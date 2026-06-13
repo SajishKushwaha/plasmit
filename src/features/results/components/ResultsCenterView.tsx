@@ -800,16 +800,16 @@ export function ResultsCenterView({
 
   return (
     <div className="space-y-5">
-      {notice ? (
+      {/* {notice ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-info/25 bg-info/10 px-4 py-3 text-sm text-info">
           <span>{notice}</span>
           <Button size="sm" variant="ghost" onClick={() => setNotice(null)}>
             Dismiss
           </Button>
         </div>
-      ) : null}
+      ) : null} */}
 
-      {downloadGroup ? (
+      {/* {downloadGroup ? (
         <ResultsGroupDownloadDialog
           onDownloaded={(format) => setNotice(`${downloadGroup.results.length} reports downloaded as ${format}.`)}
           onOpenChange={(open) => {
@@ -821,7 +821,7 @@ export function ResultsCenterView({
           results={downloadGroup.results}
           title={downloadGroup.title}
         />
-      ) : null}
+      ) : null} */}
 
       <CustomDateFilterDialog
         availableDates={availableResultDates}
@@ -848,7 +848,7 @@ export function ResultsCenterView({
         totalCount={dateWiseHistoryResults.length}
       />
 
-      <Card className="overflow-hidden border-primary/15">
+      {/* <Card className="overflow-hidden border-primary/15">
         <CardContent className="p-0">
           <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_420px]">
             <div className="space-y-4 p-5 md:p-6">
@@ -867,8 +867,8 @@ export function ResultsCenterView({
             </div>
           </div>
         </CardContent>
-      </Card>
-
+      </Card> */}
+{/* 
       {isUnifiedView ? (
         <UnifiedWorkspacePanel
           activeDepartment={department}
@@ -881,7 +881,7 @@ export function ResultsCenterView({
           quickQueue={quickQueue}
           status={status}
         />
-      ) : null}
+      ) : null} */}
 
       <Card className="overflow-visible">
         <CardContent className="space-y-4 p-4 md:p-5">

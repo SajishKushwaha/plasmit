@@ -299,7 +299,7 @@ function NeuroHeader({
   onTimeRangeChange: (value: string) => void;
 }) {
   return (
-    <Card className="overflow-hidden border-[#dbe4f0]">
+    <Card className="overflow-hidden border-[#dbe4f0]" data-patient-workspace-header>
       <CardContent className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_auto]">
         <div className="flex min-w-0 items-center gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#155eef] text-lg font-bold text-white">{patient.firstName[0]}{patient.lastName[0]}</div>

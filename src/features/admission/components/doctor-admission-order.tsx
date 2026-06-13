@@ -90,11 +90,11 @@ export function DoctorAdmissionOrder() {
                 {["OPD", "Emergency", "IPD", "Daycare", "Transfer"].map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
-            <Field label="Admitting Team">
+            {/* <Field label="Admitting Team">
               <select className={controlClass} name="admittingTeam" defaultValue="Medical Team">
                 {admittingTeams.map((option) => <option key={option}>{option}</option>)}
               </select>
-            </Field>
+            </Field> */}
             <Field label="Doctor Team">
               <select className={controlClass} name="doctorTeam" defaultValue={doctorTeams[0]}>
                 {doctorTeams.map((option) => <option key={option}>{option}</option>)}
@@ -114,11 +114,11 @@ export function DoctorAdmissionOrder() {
                 {["Elective", "Non Elective","Daycare"].map((option) => <option key={option}>{option}</option>)}
               </select>
             </Field>
-            <Field label={admissionCategory === "Elective" ? "Elective Type" : "Non Elective Type"}>
+            {/* <Field label={admissionCategory === "Elective" ? "Elective Type" : "Non Elective Type"}>
               <select className={controlClass} name="type" value={admissionSubtype} onChange={(event) => setAdmissionSubtype(event.target.value)}>
                 {(admissionCategory === "Elective" ? electiveOptions : nonElectiveOptions).map((option) => <option key={option}>{option}</option>)}
               </select>
-            </Field>
+            </Field> */}
             <Field label="Requested Ward">
               <select className={controlClass} name="ward" defaultValue="ICU">
                 {["ICU", "General Ward", "Private Ward", "Emergency", "Pediatric"].map((option) => <option key={option}>{option}</option>)}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Activity, AlertTriangle, ArrowLeft, Bell, CheckCircle2, ClipboardList, Clock3, Filter, Menu, MoreHorizontal, Pencil, Plus, Printer, RefreshCcw, Save, Search, Trash2, TrendingUp } from "lucide-react";
+import { Activity, AlertTriangle, ArrowLeft, Bell, CalendarClock, CheckCircle2, ClipboardList, Clock3, Filter, Menu, MoreHorizontal, Pencil, Plus, Printer, RefreshCcw, Save, Search, Trash2, TrendingUp } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 
@@ -280,7 +280,7 @@ function IcuPatientHeader({
   }, [pathname, router, searchParams]);
 
   return (
-    <Card className="overflow-visible border-border bg-white shadow-soft">
+    <Card className="overflow-visible border-border bg-white shadow-soft" data-patient-workspace-header>
       <CardContent className="relative space-y-3 p-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
@@ -583,10 +583,36 @@ function AbdominalMetricCard({ metric }: { metric: AbdominalMetric }) {
 
 function TimeRangePanel() {
   const [range, setRange] = React.useState("24 Hours");
+  const [startDateTime, setStartDateTime] = React.useState("");
+  const [endDateTime, setEndDateTime] = React.useState("");
+  const [dateRangeOpen, setDateRangeOpen] = React.useState(false);
+  const rangeRef = React.useRef<HTMLDivElement | null>(null);
+  const dateTimeSummary = startDateTime || endDateTime
+    ? `${formatDateTimeRangeValue(startDateTime, "Start")} - ${formatDateTimeRangeValue(endDateTime, "End")}`
+    : "Select start and end date-time";
+
+  React.useEffect(() => {
+    function closeOnOutsideClick(event: MouseEvent) {
+      if (!rangeRef.current?.contains(event.target as Node)) setDateRangeOpen(false);
+    }
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, []);
+
+  function applyRange() {
+    if (startDateTime && endDateTime && startDateTime > endDateTime) {
+      toast.error("End date-time must be after start date-time.");
+      return;
+    }
+    const appliedRange = startDateTime || endDateTime ? dateTimeSummary : range;
+    toast.success(`${appliedRange} abdominal filter applied`);
+    setDateRangeOpen(false);
+  }
+
   return (
     <Card className="sticky top-20 z-20">
-      <CardContent className="flex flex-col gap-3 p-3 xl:flex-row xl:items-center">
-        <label className="min-w-[220px] space-y-1 text-sm">
+      <CardContent className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-[220px_auto_minmax(280px,1fr)_auto] xl:items-center">
+        <label className="space-y-1 text-sm">
           <span className="sr-only">Select Parameter</span>
           <select className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20">
             <option>Select Parameter</option>
@@ -601,14 +627,59 @@ function TimeRangePanel() {
             <Button key={item} onClick={() => setRange(item)} size="sm" variant={range === item ? "default" : "outline"}>{item}</Button>
           ))}
         </div>
-        <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
-          <Input aria-label="Start date-time" placeholder="Start date-time" />
-          <Input aria-label="End date-time" placeholder="End date-time" />
+        <div className="relative min-w-0" ref={rangeRef}>
+          <button
+            className="flex h-10 w-full items-center justify-between gap-3 rounded-md border border-input bg-white px-3 text-left text-sm outline-none transition hover:border-primary/40 focus:ring-2 focus:ring-ring/20"
+            onClick={() => setDateRangeOpen((current) => !current)}
+            type="button"
+          >
+            <span className={cn("truncate", !startDateTime && !endDateTime ? "text-muted-foreground" : "font-medium text-foreground")}>{dateTimeSummary}</span>
+            <CalendarClock className="h-4 w-4 shrink-0 text-primary" />
+          </button>
+          {dateRangeOpen ? (
+            <div className="absolute right-0 top-full z-50 mt-2 w-full min-w-[300px] rounded-xl border border-border bg-white p-4 shadow-soft sm:min-w-[440px]">
+              <div className="mb-3">
+                <div className="text-sm font-semibold text-foreground">Date-time range</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">Select the start and end for the graph response.</div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="space-y-1 text-xs font-semibold text-muted-foreground">
+                  <span>Start date-time</span>
+                  <Input onChange={(event) => setStartDateTime(event.target.value)} type="datetime-local" value={startDateTime} />
+                </label>
+                <label className="space-y-1 text-xs font-semibold text-muted-foreground">
+                  <span>End date-time</span>
+                  <Input min={startDateTime || undefined} onChange={(event) => setEndDateTime(event.target.value)} type="datetime-local" value={endDateTime} />
+                </label>
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
+                <Button onClick={() => {
+                  setStartDateTime("");
+                  setEndDateTime("");
+                }} size="sm" type="button" variant="ghost">
+                  Clear
+                </Button>
+                <Button onClick={applyRange} size="sm" type="button">Use range</Button>
+              </div>
+            </div>
+          ) : null}
         </div>
-        <Button onClick={() => toast.success(`${range} abdominal filter applied`)}>Apply</Button>
+        <Button className="w-full xl:w-auto" onClick={applyRange}>Apply</Button>
       </CardContent>
     </Card>
   );
+}
+
+function formatDateTimeRangeValue(value: string, fallback: string) {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function AbdominalTrendCard({ config }: { config: (typeof abdominalChartConfigs)[number] }) {

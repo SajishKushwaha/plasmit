@@ -23,19 +23,37 @@ import type { AdmissionRecord, BedRecord, Role, StatusTone, TriagePriority } fro
 export const ipdAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"];
 export const ipdReadOnlyRoles: Role[] = ["Management", "Pharmacist"];
 
+export type IpdPatientWorkspaceContext = {
+  name: string;
+  id: string;
+  uhid: string;
+  ageSex: string;
+  wardBed: string;
+  consultant: string;
+  diagnosis: string;
+};
+
 export function useIpdAccess() {
   const { role } = useRole();
   return { role, allowed: ipdAccessRoles.includes(role), readOnly: ipdReadOnlyRoles.includes(role) };
 }
 
-export function ProtectedIpd({ children }: { children: (state: { role: Role; readOnly: boolean }) => React.ReactNode }) {
+export function ProtectedIpd({
+  children,
+  hidePatientHeader = false,
+  patientContext,
+}: {
+  children: (state: { role: Role; readOnly: boolean }) => React.ReactNode;
+  hidePatientHeader?: boolean;
+  patientContext?: IpdPatientWorkspaceContext;
+}) {
   const access = useIpdAccess();
   if (!access.allowed) {
     return <EmptyState icon={LockKeyhole} title="IPD/Emergency permission required" description="Your current static role cannot access Phase 6 inpatient or emergency workflows." />;
   }
   return (
     <div className="space-y-4">
-      <IpdPatientWorkspaceHeader />
+      {hidePatientHeader ? null : <IpdPatientWorkspaceHeader patientContext={patientContext} />}
       {children({ role: access.role, readOnly: access.readOnly })}
     </div>
   );
@@ -74,7 +92,7 @@ function patientSearchText(patient: (typeof mockPatients)[number]) {
   ].join(" ").toLowerCase();
 }
 
-function IpdPatientWorkspaceHeader() {
+function IpdPatientWorkspaceHeader({ patientContext }: { patientContext?: IpdPatientWorkspaceContext }) {
   const { role } = useRole();
   const rapidReviewAccess = rapidAllowedRoles.includes(role);
   const router = useRouter();
@@ -97,6 +115,14 @@ function IpdPatientWorkspaceHeader() {
     ["Consultant", admission?.consultant ?? visits[0]?.provider ?? "Duty consultant"],
     ["Allergy", allergyFlags.length ? allergyFlags.map((flag) => flag.replace(/^Allergy:\s*/i, "")).join(", ") : "No known allergy"],
   ];
+  const displayFields = patientContext
+    ? [
+        ["IPD/OPD No.", patientContext.id],
+        ["Ward/Bed", patientContext.wardBed],
+        ["Consultant", patientContext.consultant],
+        ["Diagnosis", patientContext.diagnosis],
+      ]
+    : fields;
   const filteredPatients = React.useMemo(() => {
     const query = patientSearch.trim().toLowerCase();
     if (!query) return [];
@@ -116,20 +142,20 @@ function IpdPatientWorkspaceHeader() {
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-lg font-bold text-foreground">{patientName(patient)}</h1>
-              <Badge tone="muted">{patient.id}</Badge>
-              {(nonAllergyFlags.length ? nonAllergyFlags : []).map((flag) => (
+              <h1 className="truncate text-lg font-bold text-foreground">{patientContext?.name ?? patientName(patient)}</h1>
+              <Badge tone="muted">{patientContext?.id ?? patient.id}</Badge>
+              {!patientContext && (nonAllergyFlags.length ? nonAllergyFlags : []).map((flag) => (
                 <Badge key={flag} tone="warning">{flag}</Badge>
               ))}
             </div>
             <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground">
-              <span>{patient.uhid}</span>
-              <span>{patient.age}/{patient.gender.charAt(0)}</span>
-              <span>{fields[1][1]}</span>
+              <span>{patientContext?.uhid ?? patient.uhid}</span>
+              <span>{patientContext?.ageSex ?? `${patient.age}/${patient.gender.charAt(0)}`}</span>
+              <span>{patientContext?.wardBed ?? fields[1][1]}</span>
             </div>
           </div>
           <div className="flex min-w-0 flex-1 flex-wrap justify-start gap-2 xl:justify-end">
-            <div className="relative min-w-64 flex-1 xl:max-w-72">
+            {!patientContext ? <div className="relative min-w-64 flex-1 xl:max-w-72">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 aria-label="Search IPD patient"
@@ -155,7 +181,7 @@ function IpdPatientWorkspaceHeader() {
                   )}
                 </div>
               ) : null}
-            </div>
+            </div> : null}
             {rapidReviewAccess ? (
               <Button size="sm" variant="outline" asChild>
                 <Link href="/rapid-review?tab=entry">
@@ -169,7 +195,7 @@ function IpdPatientWorkspaceHeader() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3 text-xs">
-          {fields.map(([label, value]) => (
+          {displayFields.map(([label, value]) => (
             <div className="rounded-md bg-surface-muted px-2.5 py-1.5" key={label}>
               <span className="font-semibold text-muted-foreground">{label}: </span>
               <span className="font-semibold text-foreground">{value}</span>

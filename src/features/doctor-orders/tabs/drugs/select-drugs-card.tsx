@@ -6,21 +6,25 @@ import { ChevronDown } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchInput } from "@/components/ui/search-input";
 
-import type { DrugOrder } from "./types";
+import type { DrugOrder, DrugScope } from "./types";
 
 export function SelectDrugsCard({
   orders,
   selectedOrders,
   selectedIds,
   search,
+  drugScope,
   onSearchChange,
+  onDrugScopeChange,
   onToggleDrug,
 }: {
   orders: DrugOrder[];
   selectedOrders: DrugOrder[];
   selectedIds: string[];
   search: string;
+  drugScope: DrugScope;
   onSearchChange: (value: string) => void;
+  onDrugScopeChange: (value: DrugScope) => void;
   onToggleDrug: (order: DrugOrder, checked: boolean) => void;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -56,6 +60,22 @@ export function SelectDrugsCard({
         {/* <Badge tone="info">{selectedIds.length} Selected</Badge> */}
       </CardHeader>
       <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 rounded-md bg-surface-muted p-1">
+          {(["All Drugs", "Available Drugs"] as DrugScope[]).map((scope) => (
+            <button
+              key={scope}
+              type="button"
+              className={[
+                "h-9 rounded px-2 text-xs font-semibold transition sm:text-sm",
+                drugScope === scope ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              ].join(" ")}
+              onClick={() => onDrugScopeChange(scope)}
+            >
+              {scope}
+            </button>
+          ))}
+        </div>
+
         <div ref={rootRef} className="relative">
           <div className="relative">
             <SearchInput
@@ -74,7 +94,7 @@ export function SelectDrugsCard({
                   inputRef.current?.blur();
                 }
               }}
-              placeholder={open ? "Search ordered drugs..." : "Select drugs..."}
+              placeholder={open ? "Search drug, generic, form, quantity..." : "Select drugs..."}
             />
             <button
               type="button"
@@ -123,8 +143,9 @@ export function SelectDrugsCard({
                           {order.name}
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {order.form}
+                          {order.genericName} / {order.form}
                         </div>
+                        <div className="mt-1 text-xs text-muted-foreground">Available: {order.availableQty}</div>
                       </div>
                     </label>
                   );

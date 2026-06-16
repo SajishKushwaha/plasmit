@@ -223,7 +223,7 @@ export function DoctorDashboard1Page() {
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.abpd} href="/ipd" /></td>
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.temperature} href="/ipd" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={FlaskConical} tone="dark" href="/results" label="Open results" /></td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={Pill} tone="dark" href="/doctor/orders" label="Open medication and intervention" /></td>
+                    <td className="px-3 py-2 text-center"><RoundAction icon={Pill} tone="dark" href="/doctor/orders?tab=drugs" label="Open medication and intervention" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={ClipboardList} tone="dark" href="/rapid-review" label="Open shift summary" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="/radiology" label="Open radiology" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={Activity} tone="red" href="/rapid-review" label="Open events" /></td>

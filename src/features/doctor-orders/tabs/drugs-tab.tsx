@@ -4,16 +4,15 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 
-import { FieldLabel } from "./drugs/field-controls";
 import { initialOrders } from "./drugs/data";
 import { OrderDetailsCard } from "./drugs/order-details-card";
 import { SelectDrugsCard } from "./drugs/select-drugs-card";
 import { SummaryCard } from "./drugs/summary-card";
-import type { DrugOrder, OrderDraft } from "./drugs/types";
-import { calculateAutoQty, makeDraft, remainingQty } from "./drugs/utils";
+import type { DrugOrder, DrugScope, OrderDraft } from "./drugs/types";
+import { calculateAutoQty, deriveCategory, isAutoQtyForm, isContinuousFluid, isFormADrug, isInjectionForm, isIvRoute, makeDraft, routeOptionsForForm } from "./drugs/utils";
+import { PatientSummaryBanner } from "./shared/patient-summary-banner";
 
 function SubmitOrderCard({ count, onSubmit }: { count: number; onSubmit: () => void }) {
   return (
@@ -31,57 +30,21 @@ function SubmitOrderCard({ count, onSubmit }: { count: number; onSubmit: () => v
   );
 }
 
-function DrugAdministrationView({ orders }: { orders: DrugOrder[] }) {
-  const activeOrders = orders.filter((order) => !order.isHistorical || order.modifiedFromId);
-  return (
-    <Card>
-      <CardHeader>
-        <div>
-          <CardTitle>Drug Administration</CardTitle>
-          <CardDescription>Modified orders continue here as the same administration workflow.</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {activeOrders.map((order) => (
-          <div key={order.id} className="grid gap-2 rounded-md border border-border bg-surface-muted p-3 text-sm md:grid-cols-[1fr_150px_150px_150px]">
-            <div className="min-w-0 space-y-1">
-              <div className="font-semibold text-foreground">{order.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {order.form} / {order.dosage || "-"} / {order.frequency || "-"} / {order.days || "-"} days
-              </div>
-              <div className="text-xs text-muted-foreground">Instructions: {order.instructions || "-"}</div>
-            </div>
-            <div>
-              <FieldLabel>Received</FieldLabel>
-              <div className="font-semibold">{order.receivedQty}</div>
-            </div>
-            <div>
-              <FieldLabel>Administered</FieldLabel>
-              <div className="font-semibold">{order.administeredQty}</div>
-            </div>
-            <div>
-              <FieldLabel>Remaining</FieldLabel>
-              <div className="font-semibold">{remainingQty(order)}</div>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
 export function DrugsTab() {
   const [orders] = React.useState<DrugOrder[]>(initialOrders);
   const [search, setSearch] = React.useState("");
   const [selectedDrugIds, setSelectedDrugIds] = React.useState<string[]>([]);
+  const [drugScope, setDrugScope] = React.useState<DrugScope>("All Drugs");
   const [drafts, setDrafts] = React.useState<Record<string, OrderDraft>>({});
   const [activeEditorId, setActiveEditorId] = React.useState<string | null>(null);
   const [flashIds, setFlashIds] = React.useState<Record<string, boolean>>({});
   const editorRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
-  const filteredOrders = orders.filter((order) =>
-    `${order.name} ${order.form}`.toLowerCase().includes(search.trim().toLowerCase()),
-  );
+  const filteredOrders = orders.filter((order) => {
+    const matchesScope = drugScope === "All Drugs" || order.availableQty > 0;
+    const matchesSearch = `${order.genericName} ${order.name} ${order.form} ${order.availableQty}`.toLowerCase().includes(search.trim().toLowerCase());
+    return matchesScope && matchesSearch;
+  });
   const selectableOrders = filteredOrders;
   const selectedOrders = selectedDrugIds.map((id) => orders.find((order) => order.id === id)).filter(Boolean) as DrugOrder[];
 
@@ -99,11 +62,53 @@ export function DrugsTab() {
       if (!currentDraft) return current;
 
       const nextDraft = { ...currentDraft, ...values };
-      if (values.category === "SOS") {
+      const formChanged = "form" in values;
+      const routeChanged = "route" in values;
+      const categoryChanged = "category" in values;
+
+      if (formChanged && isContinuousFluid(nextDraft.form)) {
+        nextDraft.route = "Intravenous (IV)";
+        nextDraft.continuous = true;
+        nextDraft.intermittent = false;
+      }
+      if (formChanged && isInjectionForm(nextDraft.form) && isIvRoute(nextDraft.route)) {
+        nextDraft.intermittent = true;
+        nextDraft.continuous = false;
+      }
+      if (formChanged && !isInjectionForm(nextDraft.form) && !isContinuousFluid(nextDraft.form)) {
+        nextDraft.bolus = false;
+        nextDraft.intermittent = false;
+        nextDraft.continuous = false;
+      }
+      if (formChanged && isFormADrug(nextDraft.form) && !nextDraft.sos && !nextDraft.stat) {
+        nextDraft.category = "";
+      }
+      if (routeChanged && isInjectionForm(nextDraft.form) && isIvRoute(nextDraft.route)) {
+        nextDraft.intermittent = true;
+        nextDraft.continuous = false;
+      }
+      if (routeChanged && !isIvRoute(nextDraft.route)) {
+        nextDraft.intermittent = false;
+        nextDraft.continuous = false;
+      }
+      if (values.intermittent) {
+        nextDraft.route = "Intravenous (IV)";
+        nextDraft.continuous = false;
+      }
+      if (values.continuous) {
+        nextDraft.route = "Intravenous (IV)";
+        nextDraft.intermittent = false;
+        nextDraft.days = "";
         nextDraft.frequency = "";
       }
-      if (values.category === "Continuous") {
-        nextDraft.frequency = "Continuous";
+      if (values.sos) {
+        nextDraft.frequency = nextDraft.frequency || "SOS";
+      }
+      if (values.stat || values.bolus) {
+        nextDraft.days = "";
+      }
+      if (nextDraft.continuous) {
+        nextDraft.frequency = "";
       }
       if (values.category === "Unscheduled") {
         nextDraft.frequency = "";
@@ -118,15 +123,39 @@ export function DrugsTab() {
       if (values.startDate && nextDraft.endDate && nextDraft.endDate < values.startDate) {
         nextDraft.endDate = "";
       }
+      if (!routeOptionsForForm(nextDraft.form, nextDraft.continuous, nextDraft.intermittent).includes(nextDraft.route)) {
+        nextDraft.route = routeOptionsForForm(nextDraft.form, nextDraft.continuous, nextDraft.intermittent)[0] ?? "";
+      }
+      if (!categoryChanged) {
+        nextDraft.category = deriveCategory(nextDraft);
+      }
 
-      const shouldAutoFill = "frequency" in values || "days" in values || "category" in values;
+      if (formChanged && !isAutoQtyForm(nextDraft.form)) {
+        nextDraft.orderedQty = "1";
+      }
+      const shouldAutoFill = isAutoQtyForm(nextDraft.form) && !("orderedQty" in values) && ("frequency" in values || "days" in values || "category" in values || "dosage" in values || "totalDose" in values || "bolusDose" in values || "rateDose" in values || "rateTimeUnit" in values || "totalDuration" in values || "totalDurationUnit" in values || "continuous" in values || "intermittent" in values || "sos" in values || "stat" in values || "bolus" in values);
       if (shouldAutoFill) {
-        const nextQty = calculateAutoQty(nextDraft.category, nextDraft.frequency, nextDraft.days);
+        const nextQty = calculateAutoQty({
+          form: nextDraft.form,
+          category: nextDraft.category,
+          frequency: nextDraft.frequency,
+          days: nextDraft.days,
+          dose: nextDraft.dosage,
+          totalDose: nextDraft.totalDose,
+          bolusDose: nextDraft.bolusDose,
+          rateDose: nextDraft.rateDose,
+          rateTimeUnit: nextDraft.rateTimeUnit,
+          totalDuration: nextDraft.totalDuration,
+          totalDurationUnit: nextDraft.totalDurationUnit,
+        });
         const nextQtyValue = nextQty > 0 ? String(nextQty) : "";
         if (nextQtyValue !== nextDraft.orderedQty) {
           nextDraft.orderedQty = nextQtyValue;
           flashTotalQty(id);
         }
+      }
+      if (!isAutoQtyForm(nextDraft.form) && !nextDraft.orderedQty) {
+        nextDraft.orderedQty = "1";
       }
 
       return { ...current, [id]: nextDraft };
@@ -159,51 +188,56 @@ export function DrugsTab() {
   };
 
   const submitOrders = () => {
+    const invalidTimeOrder = selectedOrders.find((order) => {
+      const draft = drafts[order.id];
+      return draft?.startDate && draft.endDate && draft.startTime && draft.endTime && `${draft.endDate}T${draft.endTime}` <= `${draft.startDate}T${draft.startTime}`;
+    });
+    const missingDiluentOrder = selectedOrders.find((order) => {
+      const draft = drafts[order.id];
+      return draft && isIvRoute(draft.route) && !draft.diluent;
+    });
+
+    if (invalidTimeOrder) {
+      toast.error("Start time must be before end time");
+      return;
+    }
+    if (missingDiluentOrder) {
+      toast.error("Diluent is required for IV route");
+      return;
+    }
+
     toast.success(`${selectedOrders.length} drug order${selectedOrders.length > 1 ? "s" : ""} submitted`);
   };
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="orders" className="space-y-4">
-        <TabsList className="w-full overflow-x-auto sm:w-fit">
-          <TabsTrigger value="orders" className="min-w-[96px]">
-            Drug Orders
-          </TabsTrigger>
-          <TabsTrigger value="administration" className="min-w-[168px]">
-            Drug Administration
-          </TabsTrigger>
-        </TabsList>
+      <PatientSummaryBanner />
 
-        <TabsContent value="orders">
-          <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-            <SelectDrugsCard
-              orders={selectableOrders}
-              selectedOrders={selectedOrders}
-              selectedIds={selectedDrugIds}
-              search={search}
-              onSearchChange={setSearch}
-              onToggleDrug={toggleDrug}
-            />
-            <OrderDetailsCard
-              orders={selectedOrders}
-              drafts={drafts}
-              flashIds={flashIds}
-              activeId={activeEditorId}
-              panelRef={(id, node) => {
-                editorRefs.current[id] = node;
-              }}
-              onActiveChange={setActiveEditorId}
-              onDraftChange={updateDraft}
-            />
-            <SubmitOrderCard count={selectedOrders.length} onSubmit={submitOrders} />
-            <SummaryCard orders={selectedOrders} drafts={drafts} onEdit={openSummaryEditor} onDelete={deleteSummaryOrder} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="administration">
-          <DrugAdministrationView orders={filteredOrders} />
-        </TabsContent>
-      </Tabs>
+      <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <SelectDrugsCard
+          orders={selectableOrders}
+          selectedOrders={selectedOrders}
+          selectedIds={selectedDrugIds}
+          search={search}
+          drugScope={drugScope}
+          onSearchChange={setSearch}
+          onDrugScopeChange={setDrugScope}
+          onToggleDrug={toggleDrug}
+        />
+        <OrderDetailsCard
+          orders={selectedOrders}
+          drafts={drafts}
+          flashIds={flashIds}
+          activeId={activeEditorId}
+          panelRef={(id, node) => {
+            editorRefs.current[id] = node;
+          }}
+          onActiveChange={setActiveEditorId}
+          onDraftChange={updateDraft}
+        />
+        <SubmitOrderCard count={selectedOrders.length} onSubmit={submitOrders} />
+        <SummaryCard orders={selectedOrders} drafts={drafts} onEdit={openSummaryEditor} onDelete={deleteSummaryOrder} />
+      </div>
     </div>
   );
 }

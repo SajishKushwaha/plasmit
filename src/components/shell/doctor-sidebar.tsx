@@ -49,6 +49,12 @@ const doctorNavItems = [
     route: "/clinical-examination",
   },
   {
+    id: "orders",
+    label: "Orders",
+    icon: Pill,
+    route: "/doctor/orders",
+  },
+  {
     id: "patients",
     label: "Patient Records",
     icon: Users,

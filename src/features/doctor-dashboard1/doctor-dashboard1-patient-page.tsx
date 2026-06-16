@@ -30,6 +30,10 @@ import { LiveMonitoringPage } from "@/features/live-monitoring/live-monitoring-p
 import { rapidReviewPatients, type RapidReviewPatient } from "@/features/rapid-review/rapid-review-data";
 import { PatientVitalsGraph } from "@/features/rapid-review/rapid-review-graph";
 import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
+import { DoctorOrdersPage } from "@/features/doctor-orders/doctor-orders";
+import { AddPoctPage } from "@/features/poct/poct-pages";
+import { IntakeOutputPage } from "@/features/intake-output/intake-output-page";
+
 import { cn } from "@/lib/utils";
 
 export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }) {
@@ -110,6 +114,9 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             <PatientTab icon={HeartPulse} label="Monitoring" value="monitoring" />
             <PatientTab icon={FlaskConical} label="Results" value="results" />
             <PatientTab icon={ChartNoAxesCombined} label="Vitals Graph" value="vitals-graph" />
+            <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
+            <PatientTab icon={ChartNoAxesCombined} label="Add POCT" value="AddPoct" />
+            <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
           </TabsList>
         </div>
         <TabsContent className="mt-0" value="overview">
@@ -136,6 +143,15 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
               Vitals graph data is not available for this patient.
             </div>
           )}
+        </TabsContent>
+         <TabsContent className="mt-0" value="AddPoct">
+          <AddPoctPage key={patient.id}  />
+        </TabsContent> 
+        <TabsContent className="mt-0" value="orders">
+          <DoctorOrdersPage key={patient.id} patient={patient} DoctorOrdersPage={DoctorOrdersPage} />
+        </TabsContent>
+        <TabsContent className="mt-0" value="Intake Output">
+          <IntakeOutputPage key={patient.id}  IntakeOutputPage={IntakeOutputPage} />
         </TabsContent>
       </Tabs>
     </div>

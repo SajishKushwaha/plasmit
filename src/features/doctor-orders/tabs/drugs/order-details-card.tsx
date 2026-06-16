@@ -2,12 +2,10 @@
 
 import { ChevronDown } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { DrugDraftFields } from "./field-controls";
 import type { DrugOrder, OrderDraft } from "./types";
-import { categoryTone } from "./utils";
 
 export function OrderDetailsCard({
   orders,
@@ -57,8 +55,12 @@ export function OrderDetailsCard({
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-foreground">{draft.name}</div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span>{draft.form || order.form}</span>
-                      {draft.category ? <Badge tone={categoryTone(draft.category)}>{draft.category}</Badge> : <Badge tone="muted">Category not selected</Badge>}
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span>{draft.genericName}</span>
+                        <span>{order.name}</span>
+                        <span>{draft.form || order.form}</span>
+                        <span>Available: {order.availableQty}</span>
+                      </div>
                     </div>
                   </div>
                   <ChevronDown className={["h-4 w-4 shrink-0 text-muted-foreground transition", open ? "rotate-180" : ""].join(" ")} />

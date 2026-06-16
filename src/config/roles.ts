@@ -48,6 +48,8 @@ export const doctorPermissions = [
   "VIEW_PATIENT_RECORDS",
   "VIEW_PATIENT_HISTORY",
   "WRITE_PRESCRIPTION",
+  "VIEW_DOCTOR_ORDERS",
+  "MANAGE_DOCTOR_ORDERS",
   "REQUEST_LAB_TEST",
   "CLINICAL_NOTES",
 
@@ -110,6 +112,7 @@ export const doctorAllowedModules = [
 
 export const doctorOpdAllowedModules = [
   "/doctor-dashboard",
+  "/doctor/orders",
   "/doctor",
   "/appointments",
   "/opd",
@@ -125,6 +128,7 @@ export const doctorOpdAllowedModules = [
 
 export const doctorIpdAllowedModules = [
   "/doctor-dashboard1",
+  "/doctor/orders",
   "/doctor",
   "/admission",
   "/patients",
@@ -154,6 +158,7 @@ export const doctorBlockedModules = [
   "/compliance",
   "/settings",
   "/insurance",
+  "/live-monitoring"
 ] as const;
 
 /**
@@ -176,6 +181,7 @@ export const roleModuleAccess: Record<Role, {
     features: [
       "VIEW_DOCTOR_DASHBOARD",
       "MANAGE_APPOINTMENTS",
+      "MANAGE_DOCTOR_ORDERS",
       "CLINICAL_NOTES",
       "PRESCRIPTIONS",
       "TELEMEDICINE",
@@ -188,6 +194,7 @@ export const roleModuleAccess: Record<Role, {
     features: [
       "VIEW_DOCTOR_DASHBOARD",
       "MANAGE_APPOINTMENTS",
+      "MANAGE_DOCTOR_ORDERS",
       "CLINICAL_NOTES",
       "PRESCRIPTIONS",
       "TELEMEDICINE",
@@ -199,6 +206,7 @@ export const roleModuleAccess: Record<Role, {
     blocked: [...doctorBlockedModules],
     features: [
       "VIEW_DOCTOR_DASHBOARD",
+      "MANAGE_DOCTOR_ORDERS",
       "CLINICAL_NOTES",
       "PRESCRIPTIONS",
       "EMERGENCY_ALERTS",

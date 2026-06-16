@@ -148,10 +148,10 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
           <AddPoctPage key={patient.id}  />
         </TabsContent> 
         <TabsContent className="mt-0" value="orders">
-          <DoctorOrdersPage key={patient.id} patient={patient} DoctorOrdersPage={DoctorOrdersPage} />
+          <DoctorOrdersPage key={patient.id} />
         </TabsContent>
         <TabsContent className="mt-0" value="Intake Output">
-          <IntakeOutputPage key={patient.id}  IntakeOutputPage={IntakeOutputPage} />
+          <IntakeOutputPage key={patient.id}  />
         </TabsContent>
       </Tabs>
     </div>

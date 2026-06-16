@@ -367,3 +367,91 @@ export const dashboardQuickActions = [
   { id: "monitor",   label: "Remote monitor",   icon: Activity,        route: "/remote-monitoring" },
   { id: "inventory", label: "Stock review",     icon: BriefcaseMedical,route: "/inventory" },
 ];
+
+export function getNavigationItemsForRole(role: Role): NavigationItem[] {
+  const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
+
+  if (role === "Super Admin") {
+    return roleItems.filter((item) => ["nursing", "radiology-mnt", "results", "surgery"].includes(item.id));
+  }
+
+  if (role === "Nurse") {
+    return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-") || item.id === "radiology-mnt" || item.id === "results");
+  }
+
+  if (role === "Nurse ICU") {
+    return roleItems.filter((item) => item.id === "nursing-icu");
+  }
+
+  if (role === "Nurse ICU 2") {
+    const nurseIcu2Modules = new Set(["icu-command-center", "nursing-icu", "worklist", "nursing", "radiology-mnt", "results", "surgery"]);
+    return roleItems.filter((item) => nurseIcu2Modules.has(item.id));
+  }
+
+  if (role === "Doctor IPD") {
+    const visibleItemIds = new Set([
+      "doctor-dashboard1",
+      "doctor-orders",
+      "admission",
+      "clinical-examination",
+      "rapid-review",
+      "intake-output",
+      "poct-add",
+      "poct-results",
+      "doctor-patients",
+      "ipd",
+      "doctor-live-monitoring",
+      "doctor-ipd-results",
+      "doctor-lab",
+      "doctor-radiology",
+      "doctor-emergency",
+      "doctor-messages",
+      "doctor-settings",
+    ]);
+    const workItemIds = new Set([
+      "admission",
+      "clinical-examination",
+      "rapid-review",
+      "intake-output",
+      "poct-add",
+      "poct-results",
+    ]);
+    const groupOrder = new Map([
+      ["Main", 0],
+      ["Doctor", 1],
+      ["Work", 2],
+      ["Clinical", 3],
+      ["Platform", 4],
+    ]);
+    const itemOrder = new Map([
+      ["doctor-dashboard1", 0],
+      ["doctor-orders", 0],
+      ["admission", 0],
+      ["clinical-examination", 1],
+      ["rapid-review", 2],
+      ["intake-output", 3],
+      ["poct-add", 4],
+      ["poct-results", 5],
+      ["doctor-patients", 0],
+      ["ipd", 1],
+      ["doctor-live-monitoring", 2],
+      ["doctor-ipd-results", 3],
+      ["doctor-lab", 4],
+      ["doctor-radiology", 5],
+      ["doctor-emergency", 6],
+      ["doctor-messages", 0],
+      ["doctor-settings", 1],
+    ]);
+
+    return roleItems
+      .filter((item) => visibleItemIds.has(item.id))
+      .map((item) => (workItemIds.has(item.id) ? { ...item, group: "Work" } : item))
+      .sort((a, b) => {
+        const groupDifference = (groupOrder.get(a.group) ?? 100) - (groupOrder.get(b.group) ?? 100);
+        if (groupDifference !== 0) return groupDifference;
+        return (itemOrder.get(a.id) ?? 100) - (itemOrder.get(b.id) ?? 100);
+      });
+  }
+
+  return roleItems;
+}

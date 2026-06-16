@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "@/components/providers/role-provider";
-import { navigationItems } from "@/data/navigation";
+import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 
 export function AppSidebar({
@@ -36,69 +36,7 @@ export function AppSidebar({
   }, []);
 
   const visibleItems = useMemo(() => {
-    const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
-
-    if (role === "Super Admin") {
-      return roleItems.filter((item) => ["nursing", "radiology-mnt", "results", "surgery"].includes(item.id));
-    }
-
-    if (role === "Nurse") {
-      return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-") || item.id === "radiology-mnt" || item.id === "results");
-    }
-
-    if (role === "Nurse ICU") {
-      return roleItems.filter((item) => item.id === "nursing-icu");
-    }
-
-    if (role === "Nurse ICU 2") {
-      const nurseIcu2Modules = new Set(["icu-command-center", "nursing-icu", "worklist", "nursing", "radiology-mnt", "results", "surgery"]);
-      return roleItems.filter((item) => nurseIcu2Modules.has(item.id));
-    }
-
-    if (role === "Doctor IPD") {
-      const workItemIds = new Set([
-        "admission",
-        "clinical-examination",
-        "rapid-review",
-        "intake-output",
-        "poct-add",
-        "poct-results",
-      ]);
-      const groupOrder = new Map([
-        ["Main", 0],
-        ["Doctor", 1],
-        ["Work", 2],
-        ["Clinical", 3],
-        ["Diagnostics", 4],
-        ["Radiology", 5],
-        ["Platform", 6],
-      ]);
-      const itemOrder = new Map([
-        ["admission", 0],
-        ["clinical-examination", 1],
-        ["rapid-review", 2],
-        ["intake-output", 3],
-        ["poct-add", 4],
-        ["poct-results", 5],
-        ["doctor-patients", 0],
-        ["ipd", 1],
-        ["doctor-live-monitoring", 2],
-        ["doctor-ipd-results", 3],
-        ["doctor-lab", 4],
-        ["doctor-radiology", 5],
-        ["doctor-emergency", 6],
-      ]);
-
-      return roleItems
-        .map((item) => (workItemIds.has(item.id) ? { ...item, group: "Work" } : item))
-        .sort((a, b) => {
-          const groupDifference = (groupOrder.get(a.group) ?? 100) - (groupOrder.get(b.group) ?? 100);
-          if (groupDifference !== 0) return groupDifference;
-          return (itemOrder.get(a.id) ?? 100) - (itemOrder.get(b.id) ?? 100);
-        });
-    }
-
-    return roleItems;
+    return getNavigationItemsForRole(role);
   }, [role]);
   const groups = useMemo(
     () => Array.from(new Set(visibleItems.map((item) => item.group))),

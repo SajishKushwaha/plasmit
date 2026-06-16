@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +10,7 @@ import { Check, ChevronDown, Menu, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/components/providers/role-provider";
-import { navigationItems } from "@/data/navigation";
+import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 
 export function MobileNavigation() {
@@ -19,17 +19,7 @@ export function MobileNavigation() {
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
   const { role, roles, setRole } = useRole();
-  const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
-  const visibleItems =
-    role === "Super Admin"
-      ? roleItems.filter((item) => ["nursing", "radiology-mnt", "results", "surgery"].includes(item.id))
-      : role === "Nurse"
-        ? roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-") || item.id === "radiology-mnt" || item.id === "results")
-      : role === "Nurse ICU"
-        ? roleItems.filter((item) => item.id === "nursing-icu")
-      : role === "Nurse ICU 2"
-        ? roleItems.filter((item) => ["icu-command-center", "nursing-icu", "worklist", "nursing", "radiology-mnt", "results", "surgery"].includes(item.id))
-      : roleItems;
+  const visibleItems = useMemo(() => getNavigationItemsForRole(role), [role]);
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
 
   return (

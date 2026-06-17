@@ -356,7 +356,7 @@ export function RadiologyAdminMisWorkspace() {
 }
 
 export const radiologyTabUseGuide = [
-  { page: "Dashboard", use: "Overall radiology command view and next actions." },
+  { page: "Dashboard", use: "Overall radiology view for queue, scans, reporting, and alerts." },
   { page: "Orders", use: "Order list, create order, and billing clearance." },
   { page: "Front Office", use: "Scheduling, queue, check-in, and preparation." },
   { page: "Scan Room", use: "Technician worklist and scan execution." },

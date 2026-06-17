@@ -3,7 +3,7 @@ import { ResultsCenterView } from "@/features/results/components/ResultsCenterVi
 export default function ResultsPage() {
   return (
     <ResultsCenterView
-      defaultDepartment="laboratory"
+      defaultDepartment="all"
       viewTitle="Results Center"
       viewDescription="Unified results inbox for Laboratory, Radiology, POCT, reports, images, and critical alerts."
     />

@@ -1,23 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import Link from "next/link";
 import {
+  Activity,
   AlertTriangle,
+  ArrowRight,
   BarChart3,
+  CalendarClock,
   CheckCircle2,
+  ClipboardList,
   Clock,
   CreditCard,
   Eye,
   FileCheck2,
-  FilePlus2,
+  FileText,
   MonitorUp,
   Play,
   Printer,
-  RotateCcw,
   Send,
   Truck,
   UserCheck,
+  Users,
   XCircle,
 } from "lucide-react";
 
@@ -28,8 +32,11 @@ import { OrderTimeline } from "@/features/radiology/components/OrderTimeline";
 import { PatientQueueTable } from "@/features/radiology/components/PatientQueueTable";
 import { PatientSummaryCard } from "@/features/radiology/components/PatientSummaryCard";
 import { PreparationChecklistCard } from "@/features/radiology/components/PreparationChecklistCard";
+import {
+  RadiologyDashboardFilters,
+  type RadiologyDashboardSearchRecord,
+} from "@/features/radiology/components/RadiologyDashboardFilters";
 import { RadiologyFilterBar } from "@/features/radiology/components/RadiologyFilterBar";
-import { RadiologyNewOrderDialog } from "@/features/radiology/components/RadiologyNewOrderDialog";
 import { RadiologyStatsCard } from "@/features/radiology/components/RadiologyStatsCard";
 import { RadiologyStatusBadge } from "@/features/radiology/components/RadiologyStatusBadge";
 import { ReportPreview } from "@/features/radiology/components/ReportPreview";
@@ -84,11 +91,19 @@ function minutesBetween(start: string | undefined, end: string | undefined) {
 }
 
 function dateKey(value: Date) {
-  return value.toISOString().slice(0, 10);
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function valueDateKey(value: string) {
+  const datePrefix = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  return datePrefix ?? dateKey(new Date(value));
 }
 
 function matchesDateRange(value: string | undefined, dateRange: string) {
-  if (!value || dateRange === "ALL" || dateRange === "CUSTOM") {
+  if (!value || dateRange === "ALL") {
     return true;
   }
 
@@ -98,7 +113,11 @@ function matchesDateRange(value: string | undefined, dateRange: string) {
   }
 
   const today = new Date();
-  const targetKey = dateKey(target);
+  const targetKey = valueDateKey(value);
+
+  if (dateRange.startsWith("CUSTOM:")) {
+    return targetKey === dateRange.slice(7);
+  }
 
   if (dateRange === "TODAY") {
     return targetKey === dateKey(today);
@@ -108,12 +127,6 @@ function matchesDateRange(value: string | undefined, dateRange: string) {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
     return targetKey === dateKey(tomorrow);
-  }
-
-  if (dateRange === "THIS_WEEK") {
-    const weekFromNow = new Date(today);
-    weekFromNow.setDate(today.getDate() + 7);
-    return target >= new Date(dateKey(today)) && target <= weekFromNow;
   }
 
   return true;
@@ -225,6 +238,73 @@ function WorkflowEmptyState({ title, description }: { title: string; description
   );
 }
 
+function DashboardMetricLink({
+  actionLabel,
+  detail,
+  href,
+  icon,
+  label,
+  value,
+}: {
+  actionLabel: string;
+  detail: string;
+  href: string;
+  icon: ReactNode;
+  label: string;
+  value: number;
+}) {
+  return (
+    <Link
+      className="group grid min-h-32 grid-rows-[auto_1fr_auto] rounded-lg border border-border bg-surface p-4 shadow-sm transition hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      href={href}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-sm font-semibold text-muted-foreground">{label}</span>
+        <span className="rounded-md border border-border bg-surface-muted p-2 text-primary">{icon}</span>
+      </div>
+      <div className="mt-2">
+        <p className="text-3xl font-semibold text-foreground">{value}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
+      </div>
+      <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+        {actionLabel}
+        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+      </span>
+    </Link>
+  );
+}
+
+function DashboardWorkflowLink({
+  count,
+  description,
+  href,
+  icon,
+  title,
+}: {
+  count: number;
+  description: string;
+  href: string;
+  icon: ReactNode;
+  title: string;
+}) {
+  return (
+    <Link
+      className="group flex min-h-24 items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-primary/40 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      href={href}
+    >
+      <span className="rounded-md bg-surface-muted p-2.5 text-primary">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center justify-between gap-3">
+          <span className="font-semibold text-foreground">{title}</span>
+          <span className="text-lg font-semibold text-foreground">{count}</span>
+        </span>
+        <span className="mt-1 block text-sm text-muted-foreground">{description}</span>
+      </span>
+      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+    </Link>
+  );
+}
+
 type RadiologyWorkspaceActions = ReturnType<typeof useRadiologyWorkspace>["actions"];
 
 function WorkflowActionButtons({
@@ -324,80 +404,178 @@ function WorkflowActionButtons({
 export function RadiologyDashboardView() {
   const workspace = useRadiologyWorkspace();
   const [filters, setFilters] = useState(defaultRadiologyFilters);
+  const dashboardSearchRecords: RadiologyDashboardSearchRecord[] = workspace.orders.flatMap((order) => {
+    const patient = radiologyPatients.find((item) => item.id === order.patientId);
+    const test = radiologyTests.find((item) => item.id === order.testIds[0]);
+
+    if (!patient) {
+      return [];
+    }
+
+    return [
+      {
+        age: patient.age,
+        consultant: patient.consultant,
+        department: patient.department,
+        gender: patient.gender,
+        id: order.id,
+        location: patient.location,
+        modalityId: order.modalityId,
+        mrn: patient.mrn,
+        orderNo: order.orderNo,
+        patientName: patient.name,
+        status: order.status,
+        testName: test?.name ?? order.testIds.join(", "),
+      },
+    ];
+  });
   const filteredOrders = filterOrders(workspace.orders, filters);
   const filteredAlerts = filterAlerts(workspace.criticalAlerts, workspace.orders, filters);
+  const openOrders = filteredOrders.filter((order) => !["REPORT_DELIVERED", "CANCELLED"].includes(order.status));
+  const queueOrders = filteredOrders
+    .filter((order) => ["SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING", "READY_FOR_SCAN"].includes(order.status))
+    .slice(0, 6);
   const pendingReports = filteredOrders.filter((order) => ["IMAGE_SENT_TO_PACS", "REPORT_PENDING", "REPORT_DRAFTED"].includes(order.status)).length;
   const activeScans = filteredOrders.filter((order) => ["READY_FOR_SCAN", "SCAN_IN_PROGRESS"].includes(order.status)).length;
   const openAlerts = filteredAlerts.filter((alert) => alert.status === "Open").length;
-  const actionableOrders = filteredOrders.filter((order) => !["REPORT_DELIVERED", "CANCELLED"].includes(order.status)).slice(0, 5);
+  const frontOfficeCount = filteredOrders.filter((order) =>
+    ["ORDER_CREATED", "PAYMENT_PENDING", "PAYMENT_DONE", "SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING"].includes(order.status),
+  ).length;
+  const scanRoomCount = filteredOrders.filter((order) => ["READY_FOR_SCAN", "SCAN_IN_PROGRESS", "SCAN_COMPLETED"].includes(order.status)).length;
+  const pacsReportingCount = filteredOrders.filter((order) =>
+    ["IMAGE_SENT_TO_PACS", "REPORT_PENDING", "REPORT_DRAFTED"].includes(order.status),
+  ).length;
+  const deliveryCount = filteredOrders.filter((order) => ["REPORT_VERIFIED", "REPORT_RELEASED"].includes(order.status)).length + openAlerts;
+  const dashboardAlerts = [...filteredAlerts]
+    .sort((first, second) => Number(first.status !== "Open") - Number(second.status !== "Open"))
+    .slice(0, 3);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap justify-end gap-2">
-        <RadiologyNewOrderDialog
-          trigger={
-            <Button size="sm" type="button">
-              <FilePlus2 className="h-4 w-4" />
-              New Order
-            </Button>
-          }
-        />
-        <Button asChild size="sm" variant="outline">
-          <Link href="/radiology/order-list">Open Orders</Link>
-        </Button>
-        <Button asChild size="sm" variant="outline">
-          <Link href="/radiology/analytics">Analytics</Link>
-        </Button>
-        <Button onClick={workspace.actions.resetWorkspace} size="sm" variant="outline">
-          <RotateCcw className="h-4 w-4" />
-          Reset demo data
-        </Button>
-      </div>
-      <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
+    <div className="space-y-6">
+      <RadiologyDashboardFilters
+        availableDates={workspace.orders.map((order) => order.scheduledAt ?? order.createdAt)}
+        modalities={radiologyModalities}
+        onChange={setFilters}
+        searchRecords={dashboardSearchRecords}
+      />
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <RadiologyStatsCard subtext="Filtered workspace view" title="Orders" value={filteredOrders.length} />
-        <RadiologyStatsCard subtext="Ready or in scan room" title="Active Scans" value={activeScans} />
-        <RadiologyStatsCard subtext="Awaiting radiologist action" title="Pending Reports" value={pendingReports} />
-        <RadiologyStatsCard subtext="Need acknowledgement" title="Open Alerts" value={openAlerts} />
+        <DashboardMetricLink
+          actionLabel="Review orders"
+          detail="Orders still moving through the workflow"
+          href="/radiology/order-list"
+          icon={<ClipboardList className="h-5 w-5" />}
+          label="Open Orders"
+          value={openOrders.length}
+        />
+        <DashboardMetricLink
+          actionLabel="Open front office"
+          detail="Scheduled, arrived, or preparing for scan"
+          href="/radiology/front-office"
+          icon={<Users className="h-5 w-5" />}
+          label="Patient Queue"
+          value={queueOrders.length}
+        />
+        <DashboardMetricLink
+          actionLabel="Open scan room"
+          detail="Ready for scan or currently in progress"
+          href="/radiology/scan-room"
+          icon={<Activity className="h-5 w-5" />}
+          label="Active Scans"
+          value={activeScans}
+        />
+        <DashboardMetricLink
+          actionLabel="Open reporting"
+          detail="Studies awaiting a radiologist decision"
+          href="/radiology/reporting"
+          icon={<FileText className="h-5 w-5" />}
+          label="Pending Reports"
+          value={pendingReports}
+        />
       </section>
-      <section className="rounded-lg border border-border bg-surface p-4 shadow-sm">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Live Next Actions</h2>
-            <p className="text-sm text-muted-foreground">Continue the workflow directly from the dashboard.</p>
+
+      <section>
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-foreground">Workflow Overview</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Open the workspace that needs attention without searching through menus.</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <DashboardWorkflowLink
+            count={frontOfficeCount}
+            description="Billing, scheduling, check-in, and preparation"
+            href="/radiology/front-office"
+            icon={<CalendarClock className="h-5 w-5" />}
+            title="Front Office"
+          />
+          <DashboardWorkflowLink
+            count={scanRoomCount}
+            description="Technician worklist and scan execution"
+            href="/radiology/scan-room"
+            icon={<Activity className="h-5 w-5" />}
+            title="Scan Room"
+          />
+          <DashboardWorkflowLink
+            count={pacsReportingCount}
+            description="PACS readiness and reporting workload"
+            href="/radiology/pacs-studies"
+            icon={<MonitorUp className="h-5 w-5" />}
+            title="PACS & Reporting"
+          />
+          <DashboardWorkflowLink
+            count={deliveryCount}
+            description="Released reports and critical communication"
+            href="/radiology/delivery-alerts"
+            icon={<Truck className="h-5 w-5" />}
+            title="Delivery & Alerts"
+          />
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
+        <div className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Patient Queue</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Patients scheduled, arrived, preparing, or ready for scan.</p>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/radiology/front-office">
+                View queue
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/radiology/order-list">View full worklist</Link>
-          </Button>
+          <PatientQueueTable orders={queueOrders} patients={radiologyPatients} tests={radiologyTests} />
         </div>
-        <div className="space-y-3">
-          {actionableOrders.length === 0 ? (
-            <WorkflowEmptyState title="No pending action" description="Filtered orders are completed or cancelled." />
-          ) : (
-            actionableOrders.map((order) => (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-muted p-3" key={order.id}>
-                <div>
-                  <p className="font-semibold text-foreground">{order.orderNo} - {patientName(order.patientId)}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <RadiologyStatusBadge compact status={order.status} />
-                    <ModalityBadge modalityId={order.modalityId} />
-                  </div>
-                </div>
-                <WorkflowActionButtons actions={workspace.actions} order={order} />
+
+        <div className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold text-foreground">Critical Alerts</h2>
+                {openAlerts > 0 ? (
+                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">{openAlerts} open</span>
+                ) : null}
               </div>
-            ))
-          )}
-        </div>
-      </section>
-      <section className="grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">
-        <PatientQueueTable orders={filteredOrders.slice(0, 6)} patients={radiologyPatients} tests={radiologyTests} />
-        <div className="space-y-3">
-          {filteredAlerts.length === 0 ? <WorkflowEmptyState title="No critical alerts" description="Critical report alerts will appear here." /> : null}
-          {filteredAlerts.slice(0, 3).map((alert) => {
-            const patient = radiologyPatients.find((item) => item.id === alert.patientId);
-            const order = workspace.orders.find((item) => item.id === alert.orderId);
-            return patient && order ? <CriticalAlertCard alert={alert} key={alert.id} order={order} patient={patient} /> : null;
-          })}
+              <p className="mt-1 text-sm text-muted-foreground">Findings that need prompt acknowledgement.</p>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/radiology/delivery-alerts">
+                Manage alerts
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {dashboardAlerts.length === 0 ? (
+              <WorkflowEmptyState title="No critical alerts" description="Critical findings will appear here when they need attention." />
+            ) : null}
+            {dashboardAlerts.map((alert) => {
+              const patient = radiologyPatients.find((item) => item.id === alert.patientId);
+              const order = workspace.orders.find((item) => item.id === alert.orderId);
+              return patient && order ? <CriticalAlertCard alert={alert} key={alert.id} order={order} patient={patient} /> : null;
+            })}
+          </div>
         </div>
       </section>
     </div>

@@ -18,22 +18,18 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   CheckCircle2,
   ClipboardCheck,
-  Clock3,
   ChevronsLeft,
   ChevronsRight,
   Download,
   Eye,
   FlaskConical,
-  FileCheck2,
   FileText,
   Layers3,
   Image as ImageIcon,
   MoreVertical,
   Printer,
-  RefreshCcw,
   Search,
   ScanSearch,
   ShieldCheck,
@@ -58,11 +54,6 @@ type AvailabilityFilter = "all" | "reports" | "images";
 type PreviewMode = "summary" | "report" | "image" | "audit";
 type QuickQueue = "pending" | "emergency" | null;
 type HistoryQuickView = "today" | "yesterday" | null;
-type FilterOption = {
-  value: string;
-  label: string;
-  meta?: string;
-};
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
@@ -175,57 +166,10 @@ function getLaboratoryActionLabel(status: ResultStatus) {
   return "Workflow Complete";
 }
 
-function getViewCopy(initialDepartment: DepartmentFilter, criticalOnly: boolean) {
-  if (criticalOnly) {
-    return {
-      badge: "Critical workflow",
-      title: "Critical Results",
-      description: "Results that need immediate clinical notification, acknowledgement, and audit tracking.",
-      helper: "Acknowledge only after the responsible clinical team has been informed.",
-    };
-  }
-
-  if (initialDepartment === "laboratory") {
-    return {
-      badge: "Laboratory workflow",
-      title: "Laboratory Results",
-      description: "Specimen status, analyzer progress, result values, verification state, and report release in one view.",
-      helper: "Use status chips to move between sample collection, processing, verification, and completed reports.",
-    };
-  }
-
-  if (initialDepartment === "radiology") {
-    return {
-      badge: "Radiology workflow",
-      title: "Radiology Results",
-      description: "Radiology result list with PACS image availability, report readiness, and accession tracking.",
-      helper: "Open Image for studies received in PACS and Report for verified radiology reports.",
-    };
-  }
-
-  if (initialDepartment === "poct") {
-    return {
-      badge: "POCT workflow",
-      title: "POCT Results",
-      description: "Point-of-care results with rapid turnaround visibility and critical device alerts.",
-      helper: "Use this view for bedside, nursing station, and emergency rapid test results.",
-    };
-  }
-
-  return {
-    badge: "Unified workspace",
-    title: "Results Center",
-    description: "One results inbox for Laboratory, Radiology, POCT, reports, images, and critical alerts.",
-    helper: "Select any record to preview values, report, image status, audit trail, and actions.",
-  };
-}
-
 export function ResultsCenterView({
   initialDepartment = "all",
   defaultDepartment = initialDepartment,
   criticalOnly = false,
-  viewTitle,
-  viewDescription,
 }: {
   initialDepartment?: DepartmentFilter;
   defaultDepartment?: DepartmentFilter;
@@ -243,7 +187,6 @@ export function ResultsCenterView({
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(resultRecords[0]?.id ?? "");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("summary");
-  const [openFilter, setOpenFilter] = useState<string | null>(null);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ResultStatus>>({});
   const [reportReadyIds, setReportReadyIds] = useState<string[]>([]);
   const [acknowledgedIds, setAcknowledgedIds] = useState<string[]>([]);
@@ -253,13 +196,11 @@ export function ResultsCenterView({
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [historyQuickView, setHistoryQuickView] = useState<HistoryQuickView>(null);
   const [isCustomDateDialogOpen, setIsCustomDateDialogOpen] = useState(false);
-  const [customDateDialogVersion, setCustomDateDialogVersion] = useState(0);
   const [isDateWiseHistoryOpen, setIsDateWiseHistoryOpen] = useState(false);
   const [dateWiseHistoryDate, setDateWiseHistoryDate] = useState("");
   const [historyPagination, setHistoryPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 4 });
   const [dateWisePagination, setDateWisePagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 5 });
 
-  const viewCopy = getViewCopy(initialDepartment, criticalOnly);
   const isLaboratoryView = initialDepartment === "laboratory";
   const isUnifiedView = initialDepartment === "all" && !criticalOnly;
 
@@ -483,16 +424,6 @@ export function ResultsCenterView({
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const stats = useMemo(
-    () => ({
-      total: scopedRecords.length,
-      pending: scopedRecords.filter((result) => result.status === "Sample Collected" || result.status === "Processing" || result.status === "Verification Pending").length,
-      completed: scopedRecords.filter((result) => result.status === "Completed").length,
-      critical: scopedRecords.filter((result) => result.status === "Critical").length,
-    }),
-    [scopedRecords],
-  );
-
   const statusCounts = useMemo(() => {
     return resultStatuses.reduce<Record<string, number>>((counts, item) => {
       counts[item] = item === "all" ? scopedRecords.length : scopedRecords.filter((result) => result.status === item).length;
@@ -506,31 +437,6 @@ export function ResultsCenterView({
       return counts;
     }, {});
   }, [scopedRecords]);
-
-  const departmentOptions: FilterOption[] = resultDepartments.map((item) => ({
-    value: item.id,
-    label: item.label,
-    meta: `${departmentCounts[item.id] ?? 0}`,
-  }));
-
-  const statusOptions: FilterOption[] = resultStatuses.map((item) => ({
-    value: item,
-    label: item === "all" ? "All statuses" : item,
-    meta: `${statusCounts[item] ?? 0}`,
-  }));
-
-  const dateOptions: FilterOption[] = [
-    { value: "all", label: "All dates", meta: "Full history" },
-    { value: "today", label: "Today", meta: latestResultDateKey ? formatDateKeyLabel(latestResultDateKey) : "Latest date" },
-    { value: "yesterday", label: "Yesterday", meta: previousResultDateKey ? formatDateKeyLabel(previousResultDateKey) : "Previous date" },
-    { value: "custom", label: "Custom date", meta: isValidDateKey(customResultDate) ? formatDateKeyLabel(customResultDate) : "Choose date" },
-  ];
-
-  const availabilityOptions: FilterOption[] = [
-    { value: "all", label: "All availability", meta: "Any result" },
-    { value: "reports", label: "Reports available", meta: "Ready reports" },
-    { value: "images", label: "Images available", meta: "PACS images" },
-  ];
 
   const unifiedCounts = useMemo(
     () => ({
@@ -552,16 +458,6 @@ export function ResultsCenterView({
 
   const generatedReportRecords = useMemo(() => scopedRecords.filter((result) => result.reportAvailable), [scopedRecords]);
 
-  const nextWorkItems = useMemo(() => {
-    return [...recordsWithState]
-      .sort((first, second) => {
-        const firstPriority = first.status === "Critical" ? 0 : first.priority === "Emergency" ? 1 : first.status === "Verification Pending" ? 2 : 3;
-        const secondPriority = second.status === "Critical" ? 0 : second.priority === "Emergency" ? 1 : second.status === "Verification Pending" ? 2 : 3;
-        return firstPriority - secondPriority;
-      })
-      .slice(0, 4);
-  }, [recordsWithState]);
-
   function changeDepartment(nextDepartment: DepartmentFilter) {
     if (isDepartmentLocked) {
       return;
@@ -570,7 +466,6 @@ export function ResultsCenterView({
     setDepartment(nextDepartment);
     setQuickQueue(null);
     setPreviewMode("summary");
-    setOpenFilter(null);
   }
 
   function changeStatus(nextStatus: StatusFilter) {
@@ -581,7 +476,6 @@ export function ResultsCenterView({
     setStatus(nextStatus);
     setQuickQueue(null);
     setPreviewMode("summary");
-    setOpenFilter(null);
   }
 
   function openReportGroupDownload(results: ResultRecord[], label: string) {
@@ -602,7 +496,6 @@ export function ResultsCenterView({
     setQuickQueue(null);
     setQuery("");
     setPreviewMode("report");
-    setOpenFilter(null);
     setNotice("Generated reports view applied.");
   }
 
@@ -621,7 +514,6 @@ export function ResultsCenterView({
     setDateFilter("custom");
     setCustomResultDate(nextDate);
     setQuickQueue(null);
-    setOpenFilter(null);
     setIsCustomDateDialogOpen(false);
   }
 
@@ -629,14 +521,7 @@ export function ResultsCenterView({
     setDateFilter("all");
     setCustomResultDate("");
     setQuickQueue(null);
-    setOpenFilter(null);
     setIsCustomDateDialogOpen(false);
-  }
-
-  function openCustomDateDialog() {
-    setOpenFilter(null);
-    setCustomDateDialogVersion((current) => current + 1);
-    setIsCustomDateDialogOpen(true);
   }
 
   function openDateWiseHistory() {
@@ -653,11 +538,12 @@ export function ResultsCenterView({
     setQuickQueue(null);
     setQuery("");
     setPreviewMode("summary");
-    setOpenFilter(null);
     setNotice("Filters reset.");
   }
 
   function applyUnifiedPreset(preset: "all" | ResultDepartment | "critical" | "reports" | "images" | "today" | "pending" | "verification" | "emergency") {
+    setNotice(null);
+
     if (preset === "critical") {
       setDepartment("all");
       setStatus("Critical");
@@ -665,7 +551,6 @@ export function ResultsCenterView({
       setCustomResultDate("");
       setAvailability("all");
       setQuickQueue(null);
-      setNotice("Critical results filter applied.");
     } else if (preset === "reports") {
       setDepartment("all");
       setStatus("all");
@@ -673,7 +558,6 @@ export function ResultsCenterView({
       setCustomResultDate("");
       setAvailability("reports");
       setQuickQueue(null);
-      setNotice("Reports ready filter applied.");
     } else if (preset === "images") {
       setDepartment("all");
       setStatus("all");
@@ -681,7 +565,6 @@ export function ResultsCenterView({
       setCustomResultDate("");
       setAvailability("images");
       setQuickQueue(null);
-      setNotice("Images ready filter applied.");
     } else if (preset === "today") {
       setDepartment("all");
       setStatus("all");
@@ -689,7 +572,6 @@ export function ResultsCenterView({
       setCustomResultDate("");
       setAvailability("all");
       setQuickQueue(null);
-      setNotice("Today's results filter applied.");
     } else if (preset === "pending") {
       setDepartment("all");
       setStatus("all");
@@ -697,7 +579,6 @@ export function ResultsCenterView({
       setCustomResultDate("");
       setAvailability("all");
       setQuickQueue("pending");
-      setNotice("In-progress result queue applied.");
     } else if (preset === "verification") {
       setDepartment("all");
       setStatus("Verification Pending");
@@ -705,7 +586,6 @@ export function ResultsCenterView({
       setCustomResultDate("");
       setAvailability("all");
       setQuickQueue(null);
-      setNotice("Verification pending filter applied.");
     } else if (preset === "emergency") {
       setDepartment("all");
       setStatus("all");
@@ -714,7 +594,6 @@ export function ResultsCenterView({
       setAvailability("all");
       setQuickQueue("emergency");
       setQuery("");
-      setNotice("Emergency priority filter applied.");
     } else {
       setDepartment(preset);
       setStatus("all");
@@ -722,7 +601,6 @@ export function ResultsCenterView({
       setCustomResultDate("");
       setAvailability("all");
       setQuickQueue(null);
-      setNotice(preset === "all" ? "All results view applied." : `${getDepartmentLabel(preset)} filter applied.`);
       setQuery("");
     }
 
@@ -730,21 +608,6 @@ export function ResultsCenterView({
       setQuery("");
     }
     setPreviewMode("summary");
-    setOpenFilter(null);
-  }
-
-  function openUnifiedWorkItem(result: ResultRecord) {
-    setSelectedId(result.id);
-    setDepartment(result.status === "Critical" ? "all" : result.department);
-    setStatus(result.status === "Critical" ? "Critical" : "all");
-    setDateFilter("all");
-    setCustomResultDate("");
-    setAvailability("all");
-    setQuickQueue(null);
-    setQuery("");
-    setPreviewMode(result.reportAvailable ? "report" : "summary");
-    setOpenFilter(null);
-    setNotice(`${result.patientName} opened from unified work queue.`);
   }
 
   function selectResult(result: ResultRecord) {
@@ -800,16 +663,16 @@ export function ResultsCenterView({
 
   return (
     <div className="space-y-5">
-      {/* {notice ? (
+      {notice ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-info/25 bg-info/10 px-4 py-3 text-sm text-info">
           <span>{notice}</span>
           <Button size="sm" variant="ghost" onClick={() => setNotice(null)}>
             Dismiss
           </Button>
         </div>
-      ) : null} */}
+      ) : null}
 
-      {/* {downloadGroup ? (
+      {downloadGroup ? (
         <ResultsGroupDownloadDialog
           onDownloaded={(format) => setNotice(`${downloadGroup.results.length} reports downloaded as ${format}.`)}
           onOpenChange={(open) => {
@@ -821,11 +684,10 @@ export function ResultsCenterView({
           results={downloadGroup.results}
           title={downloadGroup.title}
         />
-      ) : null} */}
+      ) : null}
 
       <CustomDateFilterDialog
         availableDates={availableResultDates}
-        key={customDateDialogVersion}
         onApply={applyCustomResultDate}
         onClear={clearCustomResultDate}
         onOpenChange={setIsCustomDateDialogOpen}
@@ -848,40 +710,15 @@ export function ResultsCenterView({
         totalCount={dateWiseHistoryResults.length}
       />
 
-      {/* <Card className="overflow-hidden border-primary/15">
-        <CardContent className="p-0">
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="space-y-4 p-5 md:p-6">
-              <Badge tone={criticalOnly ? "critical" : "info"}>{viewCopy.badge}</Badge>
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">{viewTitle ?? viewCopy.title}</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{viewDescription ?? viewCopy.description}</p>
-              </div>
-              <div className="rounded-lg border border-border bg-background px-4 py-3 text-sm text-muted-foreground">{viewCopy.helper}</div>
-            </div>
-            <div className="grid grid-cols-2 border-t border-border bg-surface-muted lg:border-l lg:border-t-0">
-              <CompactMetric label="Visible scope" value={stats.total} />
-              <CompactMetric label="Pending" value={stats.pending} />
-              <CompactMetric label="Completed" value={stats.completed} />
-              <CompactMetric label="Critical" value={stats.critical} critical={stats.critical > 0} />
-            </div>
-          </div>
-        </CardContent>
-      </Card> */}
-{/* 
       {isUnifiedView ? (
         <UnifiedWorkspacePanel
           activeDepartment={department}
           availability={availability}
           counts={unifiedCounts}
-          dateFilter={dateFilter}
-          nextWorkItems={nextWorkItems}
-          onOpenWorkItem={openUnifiedWorkItem}
           onPreset={applyUnifiedPreset}
-          quickQueue={quickQueue}
           status={status}
         />
-      ) : null} */}
+      ) : null}
 
       <Card className="overflow-visible">
         <CardContent className="space-y-4 p-4 md:p-5">
@@ -890,70 +727,11 @@ export function ResultsCenterView({
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="h-10 rounded-lg pl-10 text-sm"
-                placeholder="Search by patient, MRN, order, doctor"
+                placeholder="Search by UHID, MRN, patient"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
-            <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 xl:w-auto xl:grid-cols-none xl:flex xl:flex-nowrap">
-              <FilterSelect
-                className="xl:w-40"
-                id="department"
-                label="Department"
-                value={department}
-                disabled={isDepartmentLocked}
-                options={departmentOptions}
-                openFilter={openFilter}
-                setOpenFilter={setOpenFilter}
-                onChange={(value) => changeDepartment(value as DepartmentFilter)}
-              />
-              <FilterSelect
-                className="xl:w-40"
-                id="status"
-                label="Status"
-                value={status}
-                disabled={criticalOnly}
-                options={statusOptions}
-                openFilter={openFilter}
-                setOpenFilter={setOpenFilter}
-                onChange={(value) => changeStatus(value as StatusFilter)}
-              />
-              <DateRangeFilterSelect
-                className="xl:w-40"
-                id="date"
-                label="Date range"
-                value={dateFilter}
-                customDate={customResultDate}
-                options={dateOptions}
-                openFilter={openFilter}
-                setOpenFilter={setOpenFilter}
-                onOpenCustomDate={openCustomDateDialog}
-                onChange={(value, nextCustomDate) => {
-                  setDateFilter(value);
-                  setCustomResultDate(nextCustomDate ?? "");
-                  setQuickQueue(null);
-                  setOpenFilter(null);
-                }}
-              />
-              <FilterSelect
-                className="xl:w-40"
-                id="availability"
-                label="Availability"
-                value={availability}
-                options={availabilityOptions}
-                openFilter={openFilter}
-                setOpenFilter={setOpenFilter}
-                onChange={(value) => {
-                  setAvailability(value as AvailabilityFilter);
-                  setQuickQueue(null);
-                  setOpenFilter(null);
-                }}
-              />
-            </div>
-            <Button className="h-10 w-full rounded-lg px-4 sm:w-auto" variant="outline" onClick={clearFilters}>
-              <RefreshCcw className="h-4 w-4" />
-              Reset
-            </Button>
           </div>
 
           {!isDepartmentLocked ? (
@@ -1225,187 +1003,11 @@ function ResultHistoryDropdown({
   );
 }
 
-function FilterSelect({
-  id,
-  label,
-  value,
-  options,
-  disabled,
-  openFilter,
-  setOpenFilter,
-  onChange,
-  className,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  options: FilterOption[];
-  disabled?: boolean;
-  openFilter: string | null;
-  setOpenFilter: (id: string | null) => void;
-  onChange: (value: string) => void;
-  className?: string;
-}) {
-  const selected = options.find((option) => option.value === value) ?? options[0];
-  const isOpen = openFilter === id;
-
-  return (
-    <div className={cn("relative min-w-0", className)}>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpenFilter(isOpen ? null : id)}
-        className={cn(
-          "flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left shadow-sm outline-none transition hover:bg-surface-muted focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-muted-foreground",
-          isOpen && "border-ring ring-2 ring-ring/20",
-        )}
-      >
-        <span className="min-w-0">
-          <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
-          <span className="block truncate text-xs font-semibold text-foreground">{selected?.label}</span>
-        </span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
-      </button>
-      {isOpen ? (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
-          {options.map((option) => (
-            <button
-              type="button"
-              key={option.value}
-              onClick={() => onChange(option.value)}
-              className={cn(
-                "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm transition hover:bg-surface-muted",
-                option.value === value && "bg-primary/10 text-primary",
-              )}
-            >
-              <span className="min-w-0">
-                <span className="block truncate font-medium">{option.label}</span>
-                {option.meta ? <span className="block text-xs text-muted-foreground">{option.meta}</span> : null}
-              </span>
-              {option.value === value ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function DateRangeFilterSelect({
-  className,
-  customDate,
-  id,
-  label,
-  onChange,
-  onOpenCustomDate,
-  openFilter,
-  options,
-  setOpenFilter,
-  value,
-}: {
-  className?: string;
-  customDate: string;
-  id: string;
-  label: string;
-  onChange: (value: DateFilter, customDate?: string) => void;
-  onOpenCustomDate: () => void;
-  openFilter: string | null;
-  options: FilterOption[];
-  setOpenFilter: (id: string | null) => void;
-  value: DateFilter;
-}) {
-  const selected = options.find((option) => option.value === value) ?? options[0];
-  const normalOptions = options.filter((option) => option.value !== "custom");
-  const isOpen = openFilter === id;
-  const selectedLabel = value === "custom" && isValidDateKey(customDate) ? formatDateKeyLabel(customDate) : selected?.label;
-
-  return (
-    <div className={cn("relative min-w-0", className)}>
-      <button
-        type="button"
-        onClick={() => setOpenFilter(isOpen ? null : id)}
-        className={cn(
-          "flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left shadow-sm outline-none transition hover:bg-surface-muted focus:ring-2 focus:ring-ring/20",
-          isOpen && "border-ring ring-2 ring-ring/20",
-        )}
-      >
-        <span className="min-w-0">
-          <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
-          <span className="block truncate text-xs font-semibold text-foreground">{selectedLabel}</span>
-        </span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
-      </button>
-
-      {isOpen ? (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
-          {normalOptions.map((option) => (
-            <button
-              type="button"
-              key={option.value}
-              onClick={() => onChange(option.value as DateFilter, "")}
-              className={cn(
-                "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm transition hover:bg-surface-muted",
-                option.value === value && "bg-primary/10 text-primary",
-              )}
-            >
-              <span className="min-w-0">
-                <span className="block truncate font-medium">{option.label}</span>
-                {option.meta ? <span className="block text-xs text-muted-foreground">{option.meta}</span> : null}
-              </span>
-              {option.value === value ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : null}
-            </button>
-          ))}
-
-          <div className={cn("flex items-center gap-2 border-t border-border p-2", value === "custom" && "bg-primary/10")}>
-            <button
-              className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-md px-2 py-2 text-left text-sm transition hover:bg-surface-muted"
-              onClick={() => {
-                if (customDate) {
-                  onChange("custom", customDate);
-                } else {
-                  onOpenCustomDate();
-                }
-              }}
-              type="button"
-            >
-              <span className="min-w-0">
-                <span className="block truncate font-medium text-foreground">Custom date</span>
-              </span>
-              {value === "custom" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" /> : null}
-            </button>
-            <button
-              aria-label="Open custom date calendar"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={onOpenCustomDate}
-              type="button"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function CompactMetric({ label, value, critical = false }: { label: string; value: number; critical?: boolean }) {
-  return (
-    <div className={cn("border-b border-r border-border p-5 last:border-r-0 lg:border-b-0", critical && "bg-critical/10")}>
-      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={cn("mt-2 text-3xl font-semibold text-foreground", critical && "text-critical")}>{value}</div>
-    </div>
-  );
-}
-
 function UnifiedWorkspacePanel({
   activeDepartment,
   availability,
   counts,
-  dateFilter,
-  nextWorkItems,
-  onOpenWorkItem,
   onPreset,
-  quickQueue,
   status,
 }: {
   activeDepartment: DepartmentFilter;
@@ -1424,76 +1026,9 @@ function UnifiedWorkspacePanel({
     verification: number;
     emergency: number;
   };
-  dateFilter: DateFilter;
-  nextWorkItems: ResultRecord[];
-  onOpenWorkItem: (result: ResultRecord) => void;
   onPreset: (preset: "all" | ResultDepartment | "critical" | "reports" | "images" | "today" | "pending" | "verification" | "emergency") => void;
-  quickQueue: QuickQueue;
   status: StatusFilter;
 }) {
-  const quickFilters = [
-    {
-      id: "today" as const,
-      label: "Today's Queue",
-      description: "Orders received today",
-      count: counts.today,
-      active: dateFilter === "today",
-      icon: <CalendarDays className="h-4 w-4" />,
-      tone: "info" as const,
-      meta: "Day view",
-    },
-    {
-      id: "pending" as const,
-      label: "Processing",
-      description: "Analyzer or scan progress",
-      count: counts.processing,
-      active: quickQueue === "pending",
-      icon: <Clock3 className="h-4 w-4" />,
-      tone: "warning" as const,
-      meta: "Work in progress",
-    },
-    {
-      id: "verification" as const,
-      label: "Verification",
-      description: "Needs clinical sign-off",
-      count: counts.verification,
-      active: status === "Verification Pending",
-      icon: <ShieldCheck className="h-4 w-4" />,
-      tone: "warning" as const,
-      meta: "Awaiting approval",
-    },
-    {
-      id: "reports" as const,
-      label: "Reports Ready",
-      description: "Ready to view or print",
-      count: counts.reports,
-      active: availability === "reports",
-      icon: <FileCheck2 className="h-4 w-4" />,
-      tone: "success" as const,
-      meta: "Deliverable",
-    },
-    {
-      id: "images" as const,
-      label: "Images Ready",
-      description: "PACS image studies",
-      count: counts.images,
-      active: availability === "images",
-      icon: <ImageIcon className="h-4 w-4" />,
-      tone: "info" as const,
-      meta: "PACS ready",
-    },
-    {
-      id: "emergency" as const,
-      label: "Emergency",
-      description: "Emergency or critical",
-      count: counts.emergency,
-      active: quickQueue === "emergency" || status === "Critical",
-      icon: <AlertTriangle className="h-4 w-4" />,
-      tone: "critical" as const,
-      meta: "High priority",
-    },
-  ];
-
   return (
     <Card className="overflow-hidden">
       <CardHeader className="px-5 py-4">
@@ -1504,7 +1039,7 @@ function UnifiedWorkspacePanel({
         <Badge tone="info">Command view</Badge>
       </CardHeader>
       <CardContent className="space-y-4 p-4 md:p-5">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <WorkspaceTile
             active={activeDepartment === "all" && status === "all" && availability === "all"}
             icon={<Layers3 className="h-4 w-4" />}
@@ -1537,75 +1072,6 @@ function UnifiedWorkspacePanel({
             description="Rapid results"
             onClick={() => onPreset("poct")}
           />
-          <WorkspaceTile
-            active={status === "Critical"}
-            critical
-            icon={<AlertTriangle className="h-4 w-4" />}
-            label="Critical"
-            value={counts.critical}
-            description="Needs action"
-            onClick={() => onPreset("critical")}
-          />
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="rounded-lg border border-border bg-background p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-foreground">Quick filters</div>
-                <div className="text-xs text-muted-foreground">Smart queues that update the table and preview workflow.</div>
-              </div>
-              <Button size="sm" variant="outline" onClick={() => onPreset("all")}>
-                Clear
-              </Button>
-            </div>
-            <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
-              {quickFilters.map((filter) => (
-                <QuickFilterCard
-                  active={filter.active}
-                  count={filter.count}
-                  description={filter.description}
-                  icon={filter.icon}
-                  key={filter.id}
-                  label={filter.label}
-                  meta={filter.meta}
-                  onClick={() => onPreset(filter.id)}
-                  tone={filter.tone}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-background p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-foreground">Next work</div>
-                <div className="text-xs text-muted-foreground">Priority records across departments.</div>
-              </div>
-              <Badge tone={counts.critical > 0 ? "critical" : "success"}>{counts.critical} critical</Badge>
-            </div>
-            <div className="space-y-2">
-              {nextWorkItems.map((item) => (
-                <button
-                  className="grid w-full grid-cols-[1fr_auto] gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-left transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  key={`next-${item.id}`}
-                  onClick={() => onOpenWorkItem(item)}
-                  type="button"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-foreground">{item.patientName}</span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {item.testName} | {formatDateTime(item.orderedAt)}
-                    </span>
-                  </span>
-                  <span className="flex flex-col items-end gap-1">
-                    <Badge tone={statusTone[item.status]}>{item.status}</Badge>
-                    <Badge tone={priorityTone[item.priority]}>{item.priority}</Badge>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -1614,7 +1080,6 @@ function UnifiedWorkspacePanel({
 
 function WorkspaceTile({
   active,
-  critical,
   description,
   icon,
   label,
@@ -1622,7 +1087,6 @@ function WorkspaceTile({
   value,
 }: {
   active?: boolean;
-  critical?: boolean;
   description: string;
   icon: ReactNode;
   label: string;
@@ -1636,62 +1100,16 @@ function WorkspaceTile({
       className={cn(
         "rounded-lg border bg-background p-3 text-left transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active ? "border-primary bg-primary/5 ring-1 ring-inset ring-primary/25" : "border-border",
-        critical && active && "border-critical bg-critical/10 ring-critical/25",
       )}
     >
       <span className="flex items-center justify-between gap-3">
-        <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-md border", critical ? "border-critical/30 bg-critical/10 text-critical" : "border-info/30 bg-info/10 text-info")}>
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-info/30 bg-info/10 text-info">
           {icon}
         </span>
-        <span className={cn("text-2xl font-semibold text-foreground", critical && "text-critical")}>{value}</span>
+        <span className="text-2xl font-semibold text-foreground">{value}</span>
       </span>
       <span className="mt-3 block text-sm font-semibold text-foreground">{label}</span>
       <span className="mt-1 block text-xs text-muted-foreground">{description}</span>
-    </button>
-  );
-}
-
-function QuickFilterCard({
-  active,
-  count,
-  description,
-  icon,
-  label,
-  meta,
-  onClick,
-  tone,
-}: {
-  active: boolean;
-  count: number;
-  description: string;
-  icon: ReactNode;
-  label: string;
-  meta: string;
-  onClick: () => void;
-  tone: "success" | "warning" | "info" | "critical";
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-lg border bg-surface p-3 text-left transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active ? "border-primary bg-primary/5 ring-1 ring-inset ring-primary/25" : "border-border",
-      )}
-    >
-      <span className="flex items-start justify-between gap-3">
-        <span className="min-w-0">
-          <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-md border", tone === "critical" ? "border-critical/30 bg-critical/10 text-critical" : tone === "success" ? "border-success/30 bg-success/10 text-success" : tone === "warning" ? "border-warning/30 bg-warning/10 text-warning" : "border-info/30 bg-info/10 text-info")}>
-              {icon}
-            </span>
-            <span className="truncate">{label}</span>
-          </span>
-          <span className="mt-2 block text-xs text-muted-foreground">{description}</span>
-          <Badge className="mt-2" tone={tone}>{meta}</Badge>
-        </span>
-        <span className={cn("text-2xl font-semibold text-foreground", tone === "critical" && "text-critical")}>{count}</span>
-      </span>
     </button>
   );
 }
@@ -1722,6 +1140,77 @@ function FilterChip({
   );
 }
 
+function StatusActionChip({
+  active,
+  count,
+  disabled,
+  label,
+  onDownload,
+  onView,
+}: {
+  active: boolean;
+  count: number;
+  disabled?: boolean;
+  label: string;
+  onDownload: () => void;
+  onView: () => void;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex overflow-hidden rounded-md border text-xs font-medium transition",
+        active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground",
+        disabled && "opacity-45",
+      )}
+    >
+      <button
+        className="inline-flex items-center px-3 py-1.5 transition hover:bg-current/5 disabled:cursor-not-allowed"
+        disabled={disabled}
+        onClick={onView}
+        type="button"
+      >
+        {label}
+        <span className="ml-1 rounded-full bg-current/10 px-1.5 py-0.5 text-[10px]">{count}</span>
+      </button>
+
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button
+            aria-label={`${label} actions`}
+            className="inline-flex w-8 items-center justify-center border-l border-current/10 transition hover:bg-current/10 disabled:cursor-not-allowed"
+            disabled={disabled}
+            type="button"
+          >
+            <MoreVertical className="h-3.5 w-3.5" />
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            align="end"
+            className="z-[80] min-w-44 overflow-hidden rounded-lg border border-border bg-surface p-1 shadow-xl"
+            sideOffset={6}
+          >
+            <DropdownMenu.Item
+              className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none hover:bg-surface-muted focus:bg-surface-muted"
+              onSelect={onView}
+            >
+              <Eye className="h-4 w-4 text-muted-foreground" />
+              View Reports
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none hover:bg-surface-muted focus:bg-surface-muted"
+              onSelect={onDownload}
+            >
+              <Download className="h-4 w-4 text-muted-foreground" />
+              Download Reports
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+    </span>
+  );
+}
+
 function ResultQueueRow({
   acknowledged,
   isLaboratoryView,
@@ -1737,16 +1226,19 @@ function ResultQueueRow({
 }) {
   return (
     <button
+      aria-current={selected ? "true" : undefined}
       className={cn(
-        "grid w-full gap-3 border-b border-border px-4 py-4 text-left transition last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid-cols-[1.25fr_0.9fr_0.82fr_0.75fr_0.95fr] lg:items-center",
-        selected && "bg-primary/5 ring-1 ring-inset ring-primary/25",
+        "relative grid w-full gap-3 overflow-hidden border-b border-border bg-background px-4 py-4 text-left transition last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid-cols-[1.25fr_0.9fr_0.82fr_0.75fr_0.95fr] lg:items-center",
+        selected && "bg-primary/5 shadow-sm ring-1 ring-inset ring-primary/25",
       )}
       onClick={onSelect}
       type="button"
     >
+      {selected ? <span className="absolute inset-y-0 left-0 w-1 bg-primary" /> : null}
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-base font-semibold text-foreground">{result.patientName}</span>
+          {selected ? <Badge tone="info">Selected</Badge> : null}
           {acknowledged ? <Badge tone="success">Acknowledged</Badge> : null}
         </div>
         <div className="mt-1 truncate text-sm text-muted-foreground">
@@ -1758,10 +1250,12 @@ function ResultQueueRow({
         <div className="font-medium capitalize text-foreground">{isLaboratoryView ? result.specimen ?? "Lab specimen" : result.department}</div>
         <div className="mt-1 truncate text-xs">{isLaboratoryView ? result.location : formatDateTime(result.orderedAt)}</div>
       </div>
-      <div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">Status</span>
         <Badge tone={statusTone[result.status]}>{result.status}</Badge>
       </div>
-      <div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">Priority</span>
         <Badge tone={priorityTone[result.priority]}>{result.priority}</Badge>
       </div>
       <div className="flex justify-start gap-2 lg:justify-end">
@@ -2353,77 +1847,6 @@ function DateWiseHistoryDialog({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
-  );
-}
-
-function StatusActionChip({
-  active,
-  count,
-  disabled,
-  label,
-  onDownload,
-  onView,
-}: {
-  active: boolean;
-  count: number;
-  disabled?: boolean;
-  label: string;
-  onDownload: () => void;
-  onView: () => void;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex overflow-hidden rounded-md border text-xs font-medium transition",
-        active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground",
-        disabled && "opacity-45",
-      )}
-    >
-      <button
-        className="inline-flex items-center px-3 py-1.5 transition hover:bg-current/5 disabled:cursor-not-allowed"
-        disabled={disabled}
-        onClick={onView}
-        type="button"
-      >
-        {label}
-        <span className="ml-1 rounded-full bg-current/10 px-1.5 py-0.5 text-[10px]">{count}</span>
-      </button>
-
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button
-            aria-label={`${label} actions`}
-            className="inline-flex w-8 items-center justify-center border-l border-current/10 transition hover:bg-current/10 disabled:cursor-not-allowed"
-            disabled={disabled}
-            type="button"
-          >
-            <MoreVertical className="h-3.5 w-3.5" />
-          </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            align="end"
-            className="z-[80] min-w-44 overflow-hidden rounded-lg border border-border bg-surface p-1 shadow-xl"
-            sideOffset={6}
-          >
-            <DropdownMenu.Item
-              className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none hover:bg-surface-muted focus:bg-surface-muted"
-              onSelect={onView}
-            >
-              <Eye className="h-4 w-4 text-muted-foreground" />
-              View Reports
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none hover:bg-surface-muted focus:bg-surface-muted"
-              onSelect={onDownload}
-            >
-              <Download className="h-4 w-4 text-muted-foreground" />
-              Download Reports
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
-    </span>
   );
 }
 

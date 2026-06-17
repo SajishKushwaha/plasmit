@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { RotateCcw, Search } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import type { Modality, RadiologyStatus } from "@/features/radiology/types";
 import { radiologyStatusLabels, radiologyStatusOrder } from "@/features/radiology/utils/status";
 
@@ -17,13 +19,15 @@ interface RadiologyFilterBarProps {
   onChange?: (values: FilterValues) => void;
 }
 
+const defaultFilterValues: FilterValues = {
+  search: "",
+  modalityId: "ALL",
+  status: "ALL",
+  dateRange: "ALL",
+};
+
 export function RadiologyFilterBar({ modalities, onChange }: RadiologyFilterBarProps) {
-  const [values, setValues] = useState<FilterValues>({
-    search: "",
-    modalityId: "ALL",
-    status: "ALL",
-    dateRange: "ALL",
-  });
+  const [values, setValues] = useState<FilterValues>(defaultFilterValues);
 
   function updateValues(nextValues: Partial<FilterValues>) {
     const mergedValues = { ...values, ...nextValues };
@@ -31,17 +35,28 @@ export function RadiologyFilterBar({ modalities, onChange }: RadiologyFilterBarP
     onChange?.(mergedValues);
   }
 
+  function resetFilters() {
+    const resetValues = { ...defaultFilterValues };
+    setValues(resetValues);
+    onChange?.(resetValues);
+  }
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <input
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-100"
-          onChange={(event) => updateValues({ search: event.target.value })}
-          placeholder="Search MRN, order, patient, indication"
-          value={values.search}
-        />
+    <div className="rounded-lg border border-border bg-surface p-3 shadow-sm">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_repeat(3,minmax(150px,1fr))_auto]">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            aria-label="Search radiology orders"
+            className="h-10 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
+            onChange={(event) => updateValues({ search: event.target.value })}
+            placeholder="Search patient, MRN, order, or doctor"
+            value={values.search}
+          />
+        </div>
         <select
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-100"
+          aria-label="Filter by modality"
+          className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
           onChange={(event) => updateValues({ modalityId: event.target.value })}
           value={values.modalityId}
         >
@@ -53,7 +68,8 @@ export function RadiologyFilterBar({ modalities, onChange }: RadiologyFilterBarP
           ))}
         </select>
         <select
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-100"
+          aria-label="Filter by status"
+          className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
           onChange={(event) => updateValues({ status: event.target.value as RadiologyStatus | "ALL" })}
           value={values.status}
         >
@@ -65,7 +81,8 @@ export function RadiologyFilterBar({ modalities, onChange }: RadiologyFilterBarP
           ))}
         </select>
         <select
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-100"
+          aria-label="Filter by date"
+          className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
           onChange={(event) => updateValues({ dateRange: event.target.value })}
           value={values.dateRange}
         >
@@ -73,8 +90,11 @@ export function RadiologyFilterBar({ modalities, onChange }: RadiologyFilterBarP
           <option value="TODAY">Today</option>
           <option value="TOMORROW">Tomorrow</option>
           <option value="THIS_WEEK">This week</option>
-          <option value="CUSTOM">Custom range</option>
         </select>
+        <Button className="h-10" onClick={resetFilters} type="button" variant="outline">
+          <RotateCcw className="h-4 w-4" />
+          Reset
+        </Button>
       </div>
     </div>
   );

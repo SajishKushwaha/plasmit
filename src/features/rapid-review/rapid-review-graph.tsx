@@ -479,6 +479,10 @@ export function PatientVitalsGraph({ patient }: { patient: RapidReviewPatient })
   return <VitalsGraphWorkspace data={buildCombinedReviewGraphData(patient.observationHistory)} showGraphTabs />;
 }
 
+export function PatientVitalsAllGraphOnly({ patient }: { patient: RapidReviewPatient }) {
+  return <VitalsGraphOneReference data={buildCombinedReviewGraphData(patient.observationHistory)} graphOnly />;
+}
+
 function ReviewGraphDateFilter({
   dateMode,
   onDateMode,
@@ -1048,7 +1052,7 @@ type VitalsGraphOneLegend = {
   onClick?: () => void;
 };
 
-function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGraphPoint[]; onlySection?: string }) {
+function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { data: CombinedReviewGraphPoint[]; graphOnly?: boolean; onlySection?: string }) {
   const [activeGlucoseGraph, setActiveGlucoseGraph] = React.useState<"india" | "foreign">("india");
   const chartData = buildVitalsGraphOneData(data);
   const activeGlucoseConfig = activeGlucoseGraph === "india"
@@ -1085,9 +1089,9 @@ function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGr
     return <EmptyState icon={BarChart3} title="Vitals Graph 1 unavailable" description="No observation data matched the selected date and time filter." />;
   }
 
-  return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
+  const content = (
+    <>
+      {!graphOnly ? (
         <div className="border-b border-border bg-surface-muted px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1101,10 +1105,12 @@ function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGr
             </div>
           </div>
         </div>
+      ) : null}
 
-        <div className="space-y-4 p-4">
+        <div className={cn("space-y-4", graphOnly ? "p-0" : "p-4")}>
           {(!onlySection || onlySection === "CVS") && (
             <VitalsGraphOneSection
+              graphOnly={graphOnly}
               legends={[
                 vitalsGraphOneLegend("pulseRate"),
                 vitalsGraphOneLegend("monitorHeartRate"),
@@ -1131,6 +1137,7 @@ function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGr
 
           {(!onlySection || onlySection === "Respiration") && (
             <VitalsGraphOneSection
+              graphOnly={graphOnly}
               legends={[
                 vitalsGraphOneLegend("respiratoryRate"),
                 vitalsGraphOneLegend("oxygenSaturation"),
@@ -1159,6 +1166,7 @@ function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGr
 
           {(!onlySection || onlySection === "Infection") && (
             <VitalsGraphOneSection
+              graphOnly={graphOnly}
               legends={[vitalsGraphOneLegend("temperature")]}
               subtitle="Temperature trend with risk markers."
               title="Infection"
@@ -1178,6 +1186,7 @@ function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGr
 
           {(!onlySection || onlySection === "Neuro / Pain") && (
             <VitalsGraphOneSection
+              graphOnly={graphOnly}
               legends={[
                 vitalsGraphOneLegend("consciousnessSedation"),
                 vitalsGraphOneLegend("painScore"),
@@ -1200,6 +1209,7 @@ function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGr
 
           {(!onlySection || onlySection === "Glucose") && (
             <VitalsGraphOneSection
+              graphOnly={graphOnly}
               legends={[
                 vitalsGraphOneLegend("bloodGlucose", "Blood glucose trend (mg/dL)"),
                 { active: activeGlucoseGraph === "india", color: "#10b981", description: "Target band 70-140 mg/dL", label: "India graph", onClick: () => setActiveGlucoseGraph("india") },
@@ -1224,6 +1234,7 @@ function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGr
 
           {(!onlySection || onlySection === "Intake / Output") && (
             <VitalsGraphOneSection
+              graphOnly={graphOnly}
               legends={[
                 vitalsGraphOneLegend("fluidIntake"),
                 vitalsGraphOneLegend("urineOutput"),
@@ -1247,64 +1258,82 @@ function VitalsGraphOneReference({ data, onlySection }: { data: CombinedReviewGr
           )}
 
         </div>
-      </CardContent>
+    </>
+  );
+
+  if (graphOnly) {
+    return <div className="space-y-4">{content}</div>;
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">{content}</CardContent>
     </Card>
   );
 }
 
 function VitalsGraphOneSection({
+  graphOnly = false,
   title,
   subtitle,
   legends,
   children,
 }: {
+  graphOnly?: boolean;
   title: string;
   subtitle: string;
   legends: VitalsGraphOneLegend[];
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid overflow-hidden rounded-md border border-border lg:grid-cols-[190px_minmax(0,1fr)]">
-      <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
-        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
-        <p className="mt-1 text-xs leading-4 text-muted-foreground">{subtitle}</p>
-        <div className="mt-4 space-y-2.5">
-          {legends.map((legend) => {
-            const content = (
-              <>
-              <span className="mt-0.5 h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: legend.color }} />
-              <span className="min-w-0">
-                <span className="block font-semibold text-foreground">{legend.label}</span>
-                <span className="block text-muted-foreground">{legend.description}</span>
-              </span>
-              </>
-            );
-
-            if (legend.onClick) {
-              return (
-                <button
-                  className={cn(
-                    "flex w-full items-start gap-2.5 rounded-lg border p-2 text-left text-xs transition focus:outline-none focus:ring-2 focus:ring-ring/20",
-                    legend.active ? "border-primary bg-background shadow-sm" : "border-transparent hover:border-border hover:bg-background/70",
-                  )}
-                  key={legend.label}
-                  onClick={legend.onClick}
-                  type="button"
-                >
-                  {content}
-                </button>
-              );
-            }
-
-            return (
-              <div className="flex items-start gap-2.5 text-xs" key={legend.label}>
-                {content}
-              </div>
-            );
-          })}
+    <div className={cn("grid overflow-hidden rounded-md border border-border", !graphOnly && "lg:grid-cols-[190px_minmax(0,1fr)]")}>
+      {graphOnly ? (
+        <div className="border-b border-border bg-surface-muted px-3 py-2">
+          <h4 className="text-sm font-semibold text-foreground">{title}</h4>
         </div>
-      </div>
-      <div className="h-[250px] min-w-0 p-3">
+      ) : null}
+      {!graphOnly ? (
+        <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
+          <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+          <p className="mt-1 text-xs leading-4 text-muted-foreground">{subtitle}</p>
+          <div className="mt-4 space-y-2.5">
+            {legends.map((legend) => {
+              const content = (
+                <>
+                <span className="mt-0.5 h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: legend.color }} />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-foreground">{legend.label}</span>
+                  <span className="block text-muted-foreground">{legend.description}</span>
+                </span>
+                </>
+              );
+
+              if (legend.onClick) {
+                return (
+                  <button
+                    className={cn(
+                      "flex w-full items-start gap-2.5 rounded-lg border p-2 text-left text-xs transition focus:outline-none focus:ring-2 focus:ring-ring/20",
+                      legend.active ? "border-primary bg-background shadow-sm" : "border-transparent hover:border-border hover:bg-background/70",
+                    )}
+                    key={legend.label}
+                    onClick={legend.onClick}
+                    type="button"
+                  >
+                    {content}
+                  </button>
+                );
+              }
+
+              return (
+                <div className="flex items-start gap-2.5 text-xs" key={legend.label}>
+                  {content}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+      <div className={cn("min-w-0 p-3", graphOnly ? "h-[220px]" : "h-[250px]")}>
         {children}
       </div>
     </div>

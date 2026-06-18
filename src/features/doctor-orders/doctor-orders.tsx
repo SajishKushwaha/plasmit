@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { ClipboardCheck, Droplet, FileSearch, FlaskConical, Layers, Microscope, Pill, Stethoscope, UserPlus } from "lucide-react";
 
-import { PageHeader } from "@/components/shell/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { BloodRequestTab } from "./tabs/blood-request-tab";
@@ -122,29 +121,10 @@ export function DoctorOrdersPage({
         ? defaultTabProp
         : "blood";
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow=" Doctor Workspace"
-        title="Order Management"
-        description={patientContext ? `Clinical orders and investigations for ${patientContext.name}.` : "Comprehensive portal for all clinical orders and investigations."}
-        className="static mx-0 border-b bg-transparent px-0 py-2"
-        // actions={
-        //   <Button>
-        //     <Plus className="h-4 w-4" />
-        //     Quick Order
-        //   </Button>
-        // }
-      />
-
+    <div className="space-y-4">
       <Tabs defaultValue={defaultTab} className="w-full">
         <div className="space-y-4">
           <div className="space-y-3">
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">Clinical Orders</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Select an order type to enter or review request details.
-              </p>
-            </div>
             <TabsList className="w-full gap-2 overflow-x-auto">
               {tabs.map((tab) => (
                 <TabsTrigger

@@ -8,7 +8,7 @@ import {
   FileText,
   FileSpreadsheet,
   FlaskConical,
-  MessageCircle,
+  ListTree,
   Pill,
   Printer,
 } from "lucide-react";
@@ -118,6 +118,7 @@ export function DoctorDashboard1Page() {
   const [page, setPage] = React.useState(1);
   const [shiftSummaryPatient, setShiftSummaryPatient] = React.useState<Dashboard1Patient | null>(null);
   const [collaboratePatient, setCollaboratePatient] = React.useState<Dashboard1Patient | null>(null);
+  const [eventPatient, setEventPatient] = React.useState<Dashboard1Patient | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredPatients = orderedPatients.filter((patient) =>
     `${patient.name} ${patient.bed} ${patient.diagnosis}`.toLowerCase().includes(normalizedSearch),
@@ -195,7 +196,7 @@ export function DoctorDashboard1Page() {
                   <HeaderCell>Nurse Timeline</HeaderCell>
                   <HeaderCell>Radiology</HeaderCell>
                   <HeaderCell>Events</HeaderCell>
-                  <HeaderCell>Collaborate</HeaderCell>
+                  <HeaderCell>Timeline</HeaderCell>
                 </tr>
               </thead>
               <tbody>
@@ -231,9 +232,11 @@ export function DoctorDashboard1Page() {
                       <RoundActionButton icon={ClipboardList} tone="dark" label="Open nurse timeline" onClick={() => setShiftSummaryPatient(patient)} />
                     </td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="/radiology" label="Open radiology" /></td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={Activity} tone="red" href="/rapid-review" label="Open events" /></td>
                     <td className="px-3 py-2 text-center">
-                      <RoundActionButton icon={MessageCircle} tone="dark" label="Open timeline" onClick={() => setCollaboratePatient(patient)} />
+                      <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <RoundActionButton icon={ListTree} tone="dark" label="Open timeline" onClick={() => setCollaboratePatient(patient)} />
                     </td>
                   </tr>
                   );
@@ -292,6 +295,16 @@ export function DoctorDashboard1Page() {
       >
         {collaboratePatient ? <DashboardCollaborateTimeline patient={collaboratePatient} /> : null}
       </CenterModal>
+
+      <CenterModal
+        className="w-[min(94vw,640px)]"
+        description={eventPatient ? `${eventPatient.bed} | ${eventPatient.diagnosis}` : undefined}
+        onOpenChange={(open) => !open && setEventPatient(null)}
+        open={Boolean(eventPatient)}
+        title="Events"
+      >
+        {eventPatient ? <DashboardEventsPopup patient={eventPatient} /> : null}
+      </CenterModal>
     </div>
   );
 }
@@ -332,16 +345,33 @@ function RoundAction({ icon: Icon, tone, href, label }: { icon: React.ElementTyp
   );
 }
 
-function RoundActionButton({ icon: Icon, tone, label, onClick }: { icon: React.ElementType; tone: "dark" | "red"; label: string; onClick: () => void }) {
+function RoundActionButton({
+  icon: Icon,
+  tone,
+  label,
+  onClick,
+  dataTestId,
+}: {
+  icon: React.ElementType;
+  tone: "dark" | "red";
+  label: string;
+  onClick: () => void;
+  dataTestId?: string;
+}) {
   return (
     <button
       aria-label={label}
+      data-testid={dataTestId}
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-full text-white shadow-[0_4px_9px_rgba(15,23,42,0.20)] transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40",
+        "relative z-20 inline-flex h-9 w-9 cursor-pointer select-none items-center justify-center rounded-full text-white shadow-[0_4px_9px_rgba(15,23,42,0.20)] transition hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400/40",
         tone === "dark" && "bg-[#4a4a4a]",
         tone === "red" && "bg-[#ff443e]",
       )}
-      onClick={onClick}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
       type="button"
     >
       <Icon className="h-4 w-4" />
@@ -427,7 +457,7 @@ function DashboardCollaborateTimeline({ patient }: { patient: Dashboard1Patient 
       {timeline.map((item) => (
         <div className="relative" key={item.id}>
           <div className="absolute -left-[31px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#2d8ac8] text-white shadow-sm">
-            <MessageCircle className="h-3.5 w-3.5" />
+            <ListTree className="h-3.5 w-3.5" />
           </div>
           <div className="mb-2 inline-flex rounded bg-[#2d8ac8] px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
             {item.timestamp}
@@ -478,4 +508,177 @@ function buildCollaborateTimeline(patient: Dashboard1Patient) {
       createdBy: "Dietician Admin",
     },
   ];
+}
+
+function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
+  const events = buildPatientEvents(patient);
+  const [selectedEventIndex, setSelectedEventIndex] = React.useState(0);
+  const [topTab, setTopTab] = React.useState<"active" | "collaboration">("active");
+  const [detailTab, setDetailTab] = React.useState<"repeat" | "details">("repeat");
+  const [actionStatus, setActionStatus] = React.useState("Ready for event review");
+  const selectedEvent = events[selectedEventIndex] ?? events[0];
+
+  return (
+    <div className="overflow-hidden rounded-md border border-border bg-white shadow-sm">
+      <div className="bg-[#2f66aa] px-4 py-3 text-base font-semibold text-white">{patient.name}</div>
+
+      <div className="flex items-center border-b border-border bg-white text-sm font-semibold text-muted-foreground">
+        <button
+          className="flex h-12 w-12 cursor-pointer items-center justify-center border-r border-border text-xl text-muted-foreground transition hover:bg-slate-100 hover:text-foreground"
+          type="button"
+          aria-label="Previous patient"
+          onClick={() => setActionStatus("Previous patient navigation selected")}
+        >
+          ‹
+        </button>
+        <button
+          className={cn(
+            "h-12 flex-1 cursor-pointer border-b-2 transition hover:bg-slate-50",
+            topTab === "active" ? "border-[#446fd7] text-foreground" : "border-transparent text-muted-foreground",
+          )}
+          type="button"
+          onClick={() => setTopTab("active")}
+        >
+          Active Patient
+        </button>
+        <button
+          className={cn(
+            "h-12 flex-1 cursor-pointer border-b-2 transition hover:bg-slate-50",
+            topTab === "collaboration" ? "border-[#446fd7] text-foreground" : "border-transparent text-muted-foreground",
+          )}
+          type="button"
+          onClick={() => setTopTab("collaboration")}
+        >
+          Collaboration
+        </button>
+        <button
+          className="flex h-12 w-12 cursor-pointer items-center justify-center border-l border-border text-xl text-foreground transition hover:bg-slate-100"
+          type="button"
+          aria-label="Next patient"
+          onClick={() => setActionStatus("Next patient navigation selected")}
+        >
+          ›
+        </button>
+      </div>
+
+      <div className="max-h-[68dvh] overflow-y-auto p-4">
+        <div className="overflow-hidden rounded-sm border border-[#d7e4fb]">
+          <table className="w-full text-center text-sm">
+            <thead>
+              <tr className="bg-[#2f73cf] text-white">
+                <th className="px-3 py-3 font-semibold">Priority</th>
+                <th className="px-3 py-3 font-semibold">Event Name</th>
+                <th className="px-3 py-3 font-semibold">Value</th>
+                <th className="px-3 py-3 font-semibold">Event Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((event, index) => (
+                <tr
+                  className="cursor-pointer border-t border-[#d7e4fb] transition"
+                  key={event.name}
+                  onClick={() => {
+                    setSelectedEventIndex(index);
+                    setActionStatus(`${event.name} selected`);
+                  }}
+                >
+                  <td className={cn("px-3 py-3", selectedEventIndex === index && "bg-[#6aa3f4]")}>
+                    <PriorityMeter level={event.priority} />
+                  </td>
+                  <td className={cn("px-3 py-3 font-medium", selectedEventIndex === index && "bg-[#6aa3f4] text-white")}>{event.name}</td>
+                  <td className={cn("px-3 py-3 font-semibold", selectedEventIndex === index && "bg-[#6aa3f4] text-white")}>{event.value}</td>
+                  <td className={cn("whitespace-nowrap px-3 py-3", selectedEventIndex === index && "bg-[#6aa3f4] text-white")}>{event.time}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 border-b border-border text-center text-sm font-semibold text-muted-foreground">
+          <button
+            className={cn(
+              "cursor-pointer border-b-2 px-4 py-3 transition hover:bg-slate-50",
+              detailTab === "repeat" ? "border-[#446fd7] text-foreground" : "border-transparent text-muted-foreground",
+            )}
+            type="button"
+            onClick={() => setDetailTab("repeat")}
+          >
+            Repeat Bleed
+          </button>
+          <button
+            className={cn(
+              "cursor-pointer border-b-2 px-4 py-3 transition hover:bg-slate-50",
+              detailTab === "details" ? "border-[#446fd7] text-foreground" : "border-transparent text-muted-foreground",
+            )}
+            type="button"
+            onClick={() => setDetailTab("details")}
+          >
+            Details
+          </button>
+        </div>
+
+        <div className="mt-3 space-y-2">
+          <div className="min-h-24 rounded-sm bg-[#f3f3f3] p-3 text-sm font-medium text-foreground">
+            {topTab === "active" && detailTab === "repeat"
+              ? `${selectedEvent.name}: Coffee ground colour amount about 100 ml. Blood in the vomiting.`
+              : topTab === "active"
+                ? `${selectedEvent.name} details: value ${selectedEvent.value}, priority ${selectedEvent.priority}, recorded at ${selectedEvent.time}.`
+                : `Collaboration note: care team notified for ${selectedEvent.name}. Nurse and doctor acknowledgement pending.`}
+          </div>
+          <div className="min-h-20 rounded-sm bg-[#f3f3f3] p-3 text-sm font-medium text-foreground">
+            Comments: Blood pressure going down. Current BP {patient.abps.value}/{patient.abpd.value}, HR {patient.hr.value}.
+          </div>
+          <div className="rounded-sm border border-[#d7e4fb] bg-[#f8fbff] p-2 text-xs font-semibold text-[#2f66aa]">
+            {actionStatus}
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap justify-center gap-4">
+          <Button className="min-w-24 bg-[#2f73cf] hover:bg-[#255ca8]" type="button" onClick={() => setActionStatus(`Actions opened for ${selectedEvent.name}`)}>Actions</Button>
+          <Button className="min-w-24 bg-[#2f73cf] hover:bg-[#255ca8]" type="button" onClick={() => setActionStatus(`${selectedEvent.name} validated`)}>Validate</Button>
+          <Button className="min-w-24 bg-[#2f73cf] hover:bg-[#255ca8]" type="button" onClick={() => setActionStatus(`${selectedEvent.name} saved`)}>Save</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PriorityMeter({ level }: { level: "high" | "medium" | "low" }) {
+  return (
+    <div className="mx-auto h-4 w-24 rounded-full bg-slate-200 shadow-inner">
+      <div
+        className={cn(
+          "h-full rounded-full bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500",
+          level === "high" && "w-20",
+          level === "medium" && "w-14",
+          level === "low" && "w-5",
+        )}
+      />
+    </div>
+  );
+}
+
+function buildPatientEvents(patient: Dashboard1Patient) {
+  const highRisk = patientTone(patient) === "red";
+
+  return [
+    {
+      name: patient.diagnosis.toLowerCase().includes("bleeding") ? "Bleeding" : "Clinical Alert",
+      value: highRisk ? 1 : 0,
+      time: "18/06/2026 20:03",
+      priority: highRisk ? "high" : "medium",
+    },
+    {
+      name: "Care Plan",
+      value: 4,
+      time: "18/06/2026 18:23",
+      priority: "medium",
+    },
+    {
+      name: "Microbiology",
+      value: patient.temperature.tone === "red" ? 3 : 2,
+      time: "18/06/2026 13:12",
+      priority: patient.temperature.tone === "red" ? "high" : "low",
+    },
+  ] satisfies Array<{ name: string; value: number; time: string; priority: "high" | "medium" | "low" }>;
 }

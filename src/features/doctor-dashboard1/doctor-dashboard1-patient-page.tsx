@@ -29,7 +29,7 @@ import {
 import { IpdUnifiedModulePage } from "@/features/ipd/ipd-pages";
 import { LiveMonitoringPage } from "@/features/live-monitoring/live-monitoring-page";
 import { rapidReviewPatients, type RapidReviewPatient } from "@/features/rapid-review/rapid-review-data";
-import { PatientVitalsGraph } from "@/features/rapid-review/rapid-review-graph";
+import { PatientVitalsAllGraphOnly, PatientVitalsGraph } from "@/features/rapid-review/rapid-review-graph";
 import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
 import { DoctorOrdersPage } from "@/features/doctor-orders/doctor-orders";
 import { AddPoctPage } from "@/features/poct/poct-pages";
@@ -73,36 +73,32 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
 
   return (
     <div className="space-y-4 py-4">
-      <Card className="overflow-hidden rounded-2xl border-primary/15 shadow-[0_18px_50px_rgba(43,54,116,0.10)]">
+      <Card className="overflow-hidden rounded-xl border-primary/15 shadow-[0_10px_28px_rgba(43,54,116,0.08)]">
         <CardContent className="p-0">
-          <div className="relative overflow-hidden bg-gradient-to-br from-white via-[#f8f9ff] to-[#edf3ff] p-5 md:p-6">
-            <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 left-1/3 h-40 w-80 rounded-full bg-info/10 blur-3xl" />
-            <div className="relative flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex min-w-0 items-start gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[#5b8def] text-xl font-bold text-white shadow-lg shadow-primary/20">
-                  {initials || <UserRound className="h-6 w-6" />}
+          <div className="relative overflow-hidden bg-gradient-to-br from-white via-[#fafbff] to-[#f0f5ff] px-3.5 py-2 md:px-4">
+            <div className="pointer-events-none absolute -right-20 -top-24 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
+            <div className="relative flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-[#5b8def] text-sm font-bold text-white shadow-md shadow-primary/15">
+                  {initials || <UserRound className="h-5 w-5" />}
                 </div>
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="truncate text-2xl font-bold tracking-tight text-foreground md:text-3xl">{patient.name}</h1>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <h1 className="truncate text-lg font-bold tracking-tight text-foreground md:text-xl">{patient.name}</h1>
                     <Badge tone={tone === "red" ? "critical" : tone === "orange" ? "warning" : "info"}>
                       {tone === "red" ? "Urgent monitoring" : tone === "orange" ? "Clinical watch" : "Stable"}
                     </Badge>
                     <Badge tone="success"><Activity className="mr-1 h-3 w-3" />Live</Badge>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
                     <PatientContextChip label="UHID" value={rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`} />
                     <PatientContextChip label="Age/Sex" value={rapidReviewPatient?.ageGender ?? "Not available"} />
                     <PatientContextChip icon={BedDouble} label="Ward/Bed" value={rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed} />
                     <PatientContextChip icon={Stethoscope} label="Consultant" value={rapidReviewPatient?.consultant ?? "Duty consultant"} />
                   </div>
-                  <div className="mt-3 text-sm font-medium text-muted-foreground">
-                    <span className="font-semibold text-foreground">Diagnosis:</span> {patient.diagnosis}
-                  </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
                 <Button asChild size="sm">
                   <Link href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}><Activity className="h-4 w-4" />Rapid Review</Link>
                 </Button>
@@ -223,7 +219,7 @@ function PatientContextChip({
   value: string;
 }) {
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/80 bg-white/80 px-2.5 py-1.5 font-medium text-muted-foreground shadow-sm backdrop-blur">
+    <div className="inline-flex items-center gap-1 rounded-md border border-white/80 bg-white/85 px-1.5 py-0.5 font-medium text-muted-foreground shadow-sm backdrop-blur">
       {Icon ? <Icon className="h-3.5 w-3.5 text-primary" /> : null}
       <span>{label}:</span>
       <span className="font-semibold text-foreground">{value}</span>
@@ -233,44 +229,58 @@ function PatientContextChip({
 
 function PatientOverview({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <Card className="overflow-hidden border-border/80">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-muted/50 px-4 py-3">
-          <div>
-            <div className="text-sm font-semibold text-foreground">Clinical Snapshot</div>
-            <div className="mt-0.5 text-xs text-muted-foreground">Latest recorded bedside observations</div>
-          </div>
-          <Badge tone="info">Updated now</Badge>
-        </div>
-        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
-          <PatientMetric label="HR" value={`${patient.hr.value} bpm`} tone={patient.hr.tone} />
-          <PatientMetric label="SpO2" value={`${patient.spo2.value}%`} tone={patient.spo2.tone} />
-          <PatientMetric label="ABPS" value={`${patient.abps.value} mmHg`} tone={patient.abps.tone} />
-          <PatientMetric label="ABPD" value={`${patient.abpd.value} mmHg`} tone={patient.abpd.tone} />
-          <PatientMetric label="Temperature" value={`${patient.temperature.value} °C`} tone={patient.temperature.tone} />
-        </CardContent>
-      </Card>
-
-      <Card className="border-primary/15 bg-gradient-to-br from-white to-[#f6f8ff]">
-        <CardContent className="space-y-3 p-4">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary/10 p-2 text-primary"><ClipboardCheck className="h-4 w-4" /></div>
+    <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <Card className="overflow-hidden border-border/80">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-muted/50 px-4 py-3">
             <div>
-              <div className="text-sm font-semibold text-foreground">Care Summary</div>
-              <div className="text-xs text-muted-foreground">Current clinical context</div>
+              <div className="text-sm font-semibold text-foreground">Clinical Snapshot</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">Latest recorded bedside observations</div>
             </div>
+            <Badge tone="info">Updated now</Badge>
           </div>
-          <CareRow label="Response" value={rapidReviewPatient?.responseLevel ?? "Routine"} />
-          <CareRow label="Consultant" value={rapidReviewPatient?.consultant ?? "Duty consultant"} />
-          <CareRow label="Review due" value={rapidReviewPatient?.reviewDue ?? "As scheduled"} />
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Button asChild size="sm">
-              <Link href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}>Rapid Review</Link>
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/clinical-examination">Clinical Exam</Link>
-            </Button>
-          </div>
+          <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
+            <PatientMetric label="HR" value={`${patient.hr.value} bpm`} tone={patient.hr.tone} />
+            <PatientMetric label="SpO2" value={`${patient.spo2.value}%`} tone={patient.spo2.tone} />
+            <PatientMetric label="ABPS" value={`${patient.abps.value} mmHg`} tone={patient.abps.tone} />
+            <PatientMetric label="ABPD" value={`${patient.abpd.value} mmHg`} tone={patient.abpd.tone} />
+            <PatientMetric label="Temperature" value={`${patient.temperature.value} °C`} tone={patient.temperature.tone} />
+          </CardContent>
+        </Card>
+
+        <Card className="border-primary/15 bg-gradient-to-br from-white to-[#f6f8ff]">
+          <CardContent className="space-y-3 p-4">
+            <div className="flex items-center gap-2">
+              <div className="rounded-lg bg-primary/10 p-2 text-primary"><ClipboardCheck className="h-4 w-4" /></div>
+              <div>
+                <div className="text-sm font-semibold text-foreground">Care Summary</div>
+                <div className="text-xs text-muted-foreground">Current clinical context</div>
+              </div>
+            </div>
+            <CareRow label="Response" value={rapidReviewPatient?.responseLevel ?? "Routine"} />
+            <CareRow label="Consultant" value={rapidReviewPatient?.consultant ?? "Duty consultant"} />
+            <CareRow label="Review due" value={rapidReviewPatient?.reviewDue ?? "As scheduled"} />
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <Button asChild size="sm">
+                <Link href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}>Rapid Review</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/clinical-examination">Clinical Exam</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="overflow-hidden border-border/80">
+        <CardContent className="p-4">
+          {rapidReviewPatient ? (
+            <PatientVitalsAllGraphOnly patient={rapidReviewPatient} />
+          ) : (
+            <div className="rounded-xl border border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
+              Vitals graph data is not available for this patient.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

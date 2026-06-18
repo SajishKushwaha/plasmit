@@ -212,6 +212,7 @@ export function ResultsCenterView({
 
   const isLaboratoryView = initialDepartment === "laboratory";
   const isUnifiedView = initialDepartment === "all" && !criticalOnly;
+  const isPatientResultsView = Boolean(patientContext);
   const patientScopedRecords = useMemo(() => {
     if (!patientContext?.mrn && !patientContext?.name) {
       return resultRecords;
@@ -738,7 +739,7 @@ export function ResultsCenterView({
         totalCount={dateWiseHistoryResults.length}
       />
 
-      {isUnifiedView ? (
+      {isUnifiedView && !isPatientResultsView ? (
         <UnifiedWorkspacePanel
           activeDepartment={department}
           availability={availability}
@@ -748,26 +749,24 @@ export function ResultsCenterView({
         />
       ) : null}
 
-      <Card className="overflow-visible">
-        <CardContent className="space-y-4 p-4 md:p-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="relative min-w-[260px] flex-1">
+      <Card className="overflow-visible border-primary/10 bg-white shadow-sm">
+        <CardContent className="space-y-3 p-3 md:p-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_auto] lg:items-end">
+            <label className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="h-10 rounded-lg pl-10 text-sm"
-                placeholder="Search by UHID, MRN, patient"
+                placeholder={isPatientResultsView ? "Search test, order, department" : "Search by UHID, MRN, patient"}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
-          </div>
 
-          <div className="flex flex-wrap items-end gap-3">
-            {!isDepartmentLocked ? (
-              <label className="min-w-[220px] flex-1 space-y-1 text-sm sm:flex-none">
-                <span className="font-medium text-foreground">Results</span>
+            <div className="flex flex-wrap items-end gap-2">
+              {!isDepartmentLocked ? (
                 <select
-                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20"
+                  aria-label="Results"
+                  className="h-10 min-w-[190px] rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20"
                   onChange={(event) => changeDepartment(event.target.value as DepartmentFilter)}
                   value={department}
                 >
@@ -777,12 +776,10 @@ export function ResultsCenterView({
                     </option>
                   ))}
                 </select>
-              </label>
-            ) : null}
-            <label className="min-w-[240px] flex-1 space-y-1 text-sm sm:flex-none">
-              <span className="font-medium text-foreground">Status</span>
+              ) : null}
               <select
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Status"
+                className="h-10 min-w-[210px] rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={criticalOnly}
                 onChange={(event) => changeStatus(event.target.value as StatusFilter)}
                 value={status}
@@ -793,21 +790,167 @@ export function ResultsCenterView({
                   </option>
                 ))}
               </select>
-            </label>
-            <StatusActionChip
-              active={availability === "reports"}
-              count={generatedReportRecords.length}
-              label="Generated Reports"
-              onDownload={() => openReportGroupDownload(generatedReportRecords, "Generated Reports")}
-              onView={viewGeneratedReports}
-            />
+              <StatusActionChip
+                active={availability === "reports"}
+                count={generatedReportRecords.length}
+                label="Generated Reports"
+                onDownload={() => openReportGroupDownload(generatedReportRecords, "Generated Reports")}
+                onView={viewGeneratedReports}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(420px,0.9fr)]">
-        <Card className="min-w-0">
-          <CardHeader className="px-5 py-4">
+      {isPatientResultsView ? (
+        <Card className="min-w-0 overflow-hidden border-primary/10 bg-white shadow-sm">
+          <CardHeader className="border-b border-border bg-white px-4 py-3">
+            <div>
+              <CardTitle className="text-base">Patient Results</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {shouldSplitResultHistory
+                  ? `${sameDateResults.length} current records | ${historyResults.length} older tests`
+                  : `${filteredResults.length} records match the current filters`}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {shouldSplitResultHistory && historyResults.length > 0 ? (
+                <ResultHistoryDropdown
+                  onDateWise={openDateWiseHistory}
+                  onToday={() => openQuickHistory("today")}
+                  onYesterday={() => openQuickHistory("yesterday")}
+                  todayCount={todayHistoryResults.length}
+                  totalCount={historyResults.length}
+                  yesterdayCount={yesterdayHistoryResults.length}
+                />
+              ) : null}
+              <Badge tone={criticalOnly ? "critical" : "info"}>{criticalOnly ? "Critical only" : "Live results"}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 p-4">
+            {filteredResults.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border bg-background px-4 py-10 text-center">
+                <div className="text-sm font-semibold text-foreground">No results found</div>
+                <p className="mt-1 text-xs text-muted-foreground">Change filters or search with a different MRN, test, location, or order number.</p>
+                <Button className="mt-4" variant="outline" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              </div>
+            ) : (
+              <>
+                {Object.entries(visibleGroupedResults).map(([date, records]) => (
+                  <section className="space-y-3" key={date}>
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {date}
+                    </div>
+                    <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+                      <div className="hidden grid-cols-[1.35fr_0.8fr_0.72fr_0.72fr_0.78fr] gap-3 border-b border-border bg-[#f7f8fc] px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
+                        <span>Test</span>
+                        <span>Department</span>
+                        <span>Status</span>
+                        <span>Priority</span>
+                        <span className="text-right">Action</span>
+                      </div>
+                      {records.map((result) => (
+                        <PatientResultSingleRow
+                          acknowledged={acknowledgedIds.includes(result.id)}
+                          key={result.id}
+                          onSelect={() => selectResult(result)}
+                          result={result}
+                          selected={selectedResult?.id === result.id}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+
+                {selectedResult ? (
+                  <section className="overflow-hidden rounded-xl border border-primary/15 bg-white shadow-sm">
+                    <div className="flex flex-col gap-3 border-b border-border bg-[#fbfcff] px-4 py-3 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0">
+                        <div className="truncate text-base font-semibold text-foreground">{selectedResult.testName}</div>
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          {selectedResult.id} | {formatDateTime(selectedResult.orderedAt)}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge tone={statusTone[selectedResult.status]}>{selectedResult.status}</Badge>
+                        <Badge tone={priorityTone[selectedResult.priority]}>{selectedResult.priority}</Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-4 p-4">
+                      <div className="grid grid-cols-4 gap-2 rounded-lg bg-surface-muted p-1">
+                        <PreviewTab active={previewMode === "summary"} onClick={() => setPreviewMode("summary")}>
+                          Summary
+                        </PreviewTab>
+                        <PreviewTab active={previewMode === "report"} onClick={() => setPreviewMode("report")}>
+                          Report
+                        </PreviewTab>
+                        <PreviewTab active={previewMode === "image"} onClick={() => setPreviewMode("image")}>
+                          Image
+                        </PreviewTab>
+                        <PreviewTab active={previewMode === "audit"} onClick={() => setPreviewMode("audit")}>
+                          Audit
+                        </PreviewTab>
+                      </div>
+
+                      {previewMode === "summary" ? <SummaryPanel result={selectedResult} /> : null}
+                      {previewMode === "report" ? <ReportPanel result={selectedResult} /> : null}
+                      {previewMode === "image" ? <ImagePanel result={selectedResult} /> : null}
+                      {previewMode === "audit" ? <AuditPanel acknowledged={acknowledgedIds.includes(selectedResult.id)} ackNote={ackNote} result={selectedResult} /> : null}
+
+                      {selectedResult.department === "laboratory" ? (
+                        <LaboratoryWorkflowActions result={selectedResult} onAdvance={() => advanceLaboratoryWorkflow(selectedResult)} onRelease={() => releaseLaboratoryReport(selectedResult)} />
+                      ) : null}
+
+                      <div className="grid gap-2 sm:grid-cols-4">
+                        <Button onClick={() => setPreviewMode("report")}>
+                          <FileText className="h-4 w-4" />
+                          Report
+                        </Button>
+                        <Button variant="outline" onClick={() => setPreviewMode("image")}>
+                          <ImageIcon className="h-4 w-4" />
+                          Image
+                        </Button>
+                        <Button variant="outline" onClick={() => printResult(selectedResult)}>
+                          <Printer className="h-4 w-4" />
+                          Print
+                        </Button>
+                        <ResultDownloadDialog
+                          onDownloaded={(format) => setNotice(`${selectedResult.id} downloaded as ${format}.`)}
+                          result={selectedResult}
+                          trigger={
+                            <Button disabled={!selectedResult.reportAvailable} title={selectedResult.reportAvailable ? "Download report" : "Report is not ready"} type="button" variant="outline">
+                              <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          }
+                        />
+                      </div>
+                    </div>
+                  </section>
+                ) : null}
+
+                {shouldSplitResultHistory && historyResults.length > 0 && isHistoryPanelOpen ? (
+                  <TestHistoryPanel
+                    description={historyPanelCopy.description}
+                    historyTable={historyTable}
+                    onClose={() => setIsHistoryPanelOpen(false)}
+                    onSelect={selectResult}
+                    selectedId={selectedResult?.id}
+                    title={historyPanelCopy.title}
+                    totalCount={historyPanelResults.length}
+                  />
+                ) : null}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(390px,0.48fr)]">
+        <Card className="min-w-0 overflow-hidden border-primary/10 shadow-sm">
+          <CardHeader className="border-b border-border bg-white px-4 py-3">
             <div>
               <CardTitle className="text-base">{isDepartmentLocked ? getDepartmentLabel(initialDepartment) : getDepartmentLabel(department)}</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -830,7 +973,7 @@ export function ResultsCenterView({
               <Badge tone={criticalOnly ? "critical" : "info"}>{criticalOnly ? "Critical only" : "Live results"}</Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 p-4 md:p-5">
+          <CardContent className="space-y-4 p-4">
             {filteredResults.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border bg-background px-4 py-10 text-center">
                 <div className="text-sm font-semibold text-foreground">No results found</div>
@@ -847,8 +990,8 @@ export function ResultsCenterView({
                       <CalendarDays className="h-3.5 w-3.5" />
                       {date}
                     </div>
-                    <div className="overflow-hidden rounded-xl border border-border">
-                      <div className="hidden grid-cols-[1.25fr_0.9fr_0.82fr_0.75fr_0.95fr] gap-3 border-b border-border bg-surface-muted px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
+                    <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+                      <div className="hidden grid-cols-[1.25fr_0.9fr_0.82fr_0.75fr_0.95fr] gap-3 border-b border-border bg-[#f7f8fc] px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
                         <span>Patient and test</span>
                         <span>{isLaboratoryView ? "Specimen" : "Department"}</span>
                         <span>Status</span>
@@ -886,8 +1029,8 @@ export function ResultsCenterView({
         </Card>
 
         {selectedResult ? (
-          <Card className="min-w-0 xl:self-start">
-            <CardHeader className="px-5 py-4">
+          <Card className="min-w-0 overflow-hidden border-primary/10 shadow-sm xl:sticky xl:top-24 xl:self-start">
+            <CardHeader className="border-b border-border bg-white px-4 py-3">
               <div className="min-w-0">
                 <CardTitle className="truncate text-base">{selectedResult.patientName}</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -896,7 +1039,7 @@ export function ResultsCenterView({
               </div>
               <Badge tone={statusTone[selectedResult.status]}>{selectedResult.status}</Badge>
             </CardHeader>
-            <CardContent className="space-y-4 p-4 md:p-5">
+            <CardContent className="space-y-4 p-4">
               <div className="grid grid-cols-4 gap-2 rounded-lg bg-surface-muted p-1">
                 <PreviewTab active={previewMode === "summary"} onClick={() => setPreviewMode("summary")}>
                   Summary
@@ -975,6 +1118,7 @@ export function ResultsCenterView({
           </Card>
         ) : null}
       </div>
+      )}
     </div>
   );
 }
@@ -1072,8 +1216,8 @@ function UnifiedWorkspacePanel({
   status: StatusFilter;
 }) {
   return (
-    <Card className="overflow-hidden">
-      {/* <CardHeader className="px-5 py-4">
+    <Card className="overflow-hidden border-primary/10 shadow-sm">
+      <CardHeader className="px-5 py-4">
         <div>
           <CardTitle className="text-base">Unified Workspace</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">One operating console for lab results, radiology images, POCT values, and critical alerts.</p>
@@ -1115,7 +1259,7 @@ function UnifiedWorkspacePanel({
             onClick={() => onPreset("poct")}
           />
         </div>
-      </CardContent> */}
+      </CardContent>
     </Card>
   );
 }
@@ -1224,6 +1368,61 @@ function StatusActionChip({
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
     </span>
+  );
+}
+
+function PatientResultSingleRow({
+  acknowledged,
+  onSelect,
+  result,
+  selected,
+}: {
+  acknowledged: boolean;
+  onSelect: () => void;
+  result: ResultRecord;
+  selected: boolean;
+}) {
+  return (
+    <button
+      aria-current={selected ? "true" : undefined}
+      className={cn(
+        "relative grid w-full gap-3 overflow-hidden border-b border-border bg-background px-4 py-4 text-left transition last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid-cols-[1.35fr_0.8fr_0.72fr_0.72fr_0.78fr] lg:items-center",
+        selected && "bg-primary/5 shadow-sm ring-1 ring-inset ring-primary/25",
+      )}
+      onClick={onSelect}
+      type="button"
+    >
+      {selected ? <span className="absolute inset-y-0 left-0 w-1 bg-primary" /> : null}
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-base font-semibold text-foreground">{result.testName}</span>
+          {selected ? <Badge tone="info">Selected</Badge> : null}
+          {acknowledged ? <Badge tone="success">Acknowledged</Badge> : null}
+        </div>
+        <div className="mt-1 truncate text-sm text-muted-foreground">
+          {result.id} | {formatDateTime(result.orderedAt)}
+        </div>
+      </div>
+      <div className="min-w-0 text-sm">
+        <div className="font-medium capitalize text-foreground">{result.department}</div>
+        <div className="mt-1 truncate text-xs text-muted-foreground">{result.location}</div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">Status</span>
+        <Badge tone={statusTone[result.status]}>{result.status}</Badge>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">Priority</span>
+        <Badge tone={priorityTone[result.priority]}>{result.priority}</Badge>
+      </div>
+      <div className="flex justify-start gap-2 lg:justify-end">
+        <AvailabilityIcon active={result.reportAvailable} label="Report" icon="report" />
+        <AvailabilityIcon active={result.imageAvailable} label="Image" icon="image" />
+        <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium text-muted-foreground">
+          View
+        </span>
+      </div>
+    </button>
   );
 }
 

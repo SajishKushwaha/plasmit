@@ -54,6 +54,13 @@ type AvailabilityFilter = "all" | "reports" | "images";
 type PreviewMode = "summary" | "report" | "image" | "audit";
 type QuickQueue = "pending" | "emergency" | null;
 type HistoryQuickView = "today" | "yesterday" | null;
+export type ResultsPatientContext = {
+  ageSex?: string;
+  name?: string;
+  mrn?: string;
+  uhid?: string;
+  wardBed?: string;
+};
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
@@ -170,10 +177,12 @@ export function ResultsCenterView({
   initialDepartment = "all",
   defaultDepartment = initialDepartment,
   criticalOnly = false,
+  patientContext,
 }: {
   initialDepartment?: DepartmentFilter;
   defaultDepartment?: DepartmentFilter;
   criticalOnly?: boolean;
+  patientContext?: ResultsPatientContext;
   viewTitle?: string;
   viewDescription?: string;
 }) {
@@ -203,10 +212,29 @@ export function ResultsCenterView({
 
   const isLaboratoryView = initialDepartment === "laboratory";
   const isUnifiedView = initialDepartment === "all" && !criticalOnly;
+  const patientScopedRecords = useMemo(() => {
+    if (!patientContext?.mrn && !patientContext?.name) {
+      return resultRecords;
+    }
+
+    const normalizedName = patientContext.name?.trim().toLowerCase();
+    return resultRecords
+      .filter((result) => {
+        const matchesMrn = patientContext.mrn ? result.mrn === patientContext.mrn : false;
+        const matchesName = normalizedName ? result.patientName.toLowerCase() === normalizedName : false;
+        return matchesMrn || matchesName;
+      })
+      .map((result) => ({
+        ...result,
+        ageSex: patientContext.ageSex ?? result.ageSex,
+        mrn: patientContext.uhid ?? result.mrn,
+        patientName: patientContext.name ?? result.patientName,
+      }));
+  }, [patientContext?.ageSex, patientContext?.mrn, patientContext?.name, patientContext?.uhid]);
 
   const recordsWithState = useMemo(
     () =>
-      resultRecords.map((result) => {
+      patientScopedRecords.map((result) => {
         const statusValue = statusOverrides[result.id] ?? result.status;
         const reportAvailable = result.reportAvailable || reportReadyIds.includes(result.id) || (result.department === "laboratory" && statusValue === "Completed");
 
@@ -216,7 +244,7 @@ export function ResultsCenterView({
           reportAvailable,
         };
       }),
-    [reportReadyIds, statusOverrides],
+    [patientScopedRecords, reportReadyIds, statusOverrides],
   );
 
   const scopedRecords = useMemo(() => {
@@ -734,24 +762,38 @@ export function ResultsCenterView({
             </label>
           </div>
 
-          {!isDepartmentLocked ? (
-            <div className="flex flex-wrap gap-2">
-              {resultDepartments.map((item) => (
-                <FilterChip active={department === item.id} key={item.id} onClick={() => changeDepartment(item.id)}>
-                  {item.label}
-                  <span className="ml-1 rounded-full bg-current/10 px-1.5 py-0.5 text-[10px]">{departmentCounts[item.id] ?? 0}</span>
-                </FilterChip>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-2">
-            {resultStatuses.map((item) => (
-              <FilterChip active={status === item} disabled={criticalOnly && item !== "Critical"} key={item} onClick={() => changeStatus(item)}>
-                {getStatusLabel(item)}
-                <span className="ml-1 rounded-full bg-current/10 px-1.5 py-0.5 text-[10px]">{statusCounts[item] ?? 0}</span>
-              </FilterChip>
-            ))}
+          <div className="flex flex-wrap items-end gap-3">
+            {!isDepartmentLocked ? (
+              <label className="min-w-[220px] flex-1 space-y-1 text-sm sm:flex-none">
+                <span className="font-medium text-foreground">Results</span>
+                <select
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20"
+                  onChange={(event) => changeDepartment(event.target.value as DepartmentFilter)}
+                  value={department}
+                >
+                  {resultDepartments.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label} {departmentCounts[item.id] ?? 0}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            <label className="min-w-[240px] flex-1 space-y-1 text-sm sm:flex-none">
+              <span className="font-medium text-foreground">Status</span>
+              <select
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={criticalOnly}
+                onChange={(event) => changeStatus(event.target.value as StatusFilter)}
+                value={status}
+              >
+                {resultStatuses.map((item) => (
+                  <option disabled={criticalOnly && item !== "Critical"} key={item} value={item}>
+                    {getStatusLabel(item)} {statusCounts[item] ?? 0}
+                  </option>
+                ))}
+              </select>
+            </label>
             <StatusActionChip
               active={availability === "reports"}
               count={generatedReportRecords.length}
@@ -1031,7 +1073,7 @@ function UnifiedWorkspacePanel({
 }) {
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="px-5 py-4">
+      {/* <CardHeader className="px-5 py-4">
         <div>
           <CardTitle className="text-base">Unified Workspace</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">One operating console for lab results, radiology images, POCT values, and critical alerts.</p>
@@ -1073,7 +1115,7 @@ function UnifiedWorkspacePanel({
             onClick={() => onPreset("poct")}
           />
         </div>
-      </CardContent>
+      </CardContent> */}
     </Card>
   );
 }
@@ -1110,32 +1152,6 @@ function WorkspaceTile({
       </span>
       <span className="mt-3 block text-sm font-semibold text-foreground">{label}</span>
       <span className="mt-1 block text-xs text-muted-foreground">{description}</span>
-    </button>
-  );
-}
-
-function FilterChip({
-  active,
-  disabled,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-45",
-        active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground hover:bg-surface-muted",
-      )}
-    >
-      {children}
     </button>
   );
 }

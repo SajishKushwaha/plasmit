@@ -56,37 +56,42 @@ function getIpdUnifiedTab(value: string | null): IpdUnifiedTab {
 
 export function IpdUnifiedModulePage({
   embedded = false,
+  hideIpdTab = false,
   patientContext,
 }: {
   embedded?: boolean;
+  hideIpdTab?: boolean;
   patientContext?: IpdPatientWorkspaceContext;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [embeddedTab, setEmbeddedTab] = React.useState<IpdUnifiedTab>("ipd");
+  const [embeddedTab, setEmbeddedTab] = React.useState<IpdUnifiedTab>(hideIpdTab ? "cvs" : "ipd");
   const activeTab = embedded ? embeddedTab : getIpdUnifiedTab(searchParams.get("tab"));
 
   function setActiveTab(value: string) {
+    const nextTab = getIpdUnifiedTab(value);
     if (embedded) {
-      setEmbeddedTab(getIpdUnifiedTab(value));
+      setEmbeddedTab(hideIpdTab && nextTab === "ipd" ? "cvs" : nextTab);
       return;
     }
-    router.push(value === "ipd" ? "/ipd" : `/ipd?tab=${value}`, { scroll: false });
+    router.push(nextTab === "ipd" ? "/ipd" : `/ipd?tab=${nextTab}`, { scroll: false });
   }
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className={embedded ? "space-y-4 [&_[data-patient-workspace-header]]:hidden" : "space-y-4"}>
       <TabsList>
-        <TabsTrigger value="ipd">IPD</TabsTrigger>
+        {!hideIpdTab ? <TabsTrigger value="ipd">IPD</TabsTrigger> : null}
         <TabsTrigger value="cvs">CVS</TabsTrigger>
         <TabsTrigger value="abdominal">Abdominal</TabsTrigger>
         <TabsTrigger value="drains">Drains & Tubes</TabsTrigger>
         <TabsTrigger value="lines-devices">Lines & Devices</TabsTrigger>
         <TabsTrigger value="neuro-icu">Neuro ICU</TabsTrigger>
       </TabsList>
-      <TabsContent value="ipd">
-        <IpdDashboardPage hidePatientHeader={embedded} patientContext={patientContext} />
-      </TabsContent>
+      {!hideIpdTab ? (
+        <TabsContent value="ipd">
+          <IpdDashboardPage hidePatientHeader={embedded} patientContext={patientContext} />
+        </TabsContent>
+      ) : null}
       <TabsContent value="cvs">
         <React.Suspense fallback={null}>
           <CvsDashboardPage />

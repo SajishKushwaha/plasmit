@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Activity,
   ArrowLeft,
@@ -37,9 +38,17 @@ import { IntakeOutputPage } from "@/features/intake-output/intake-output-page";
 import { cn } from "@/lib/utils";
 
 export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }) {
-  const [activeTab, setActiveTab] = React.useState("overview");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = React.useState(requestedTab === "shift-summary" ? "shift-summary" : "overview");
   const patient = orderedPatients.find((item) => String(item.id) === patientId);
   const rapidReviewPatient = patient ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId) : undefined;
+
+  React.useEffect(() => {
+    if (requestedTab === "shift-summary") {
+      setActiveTab("shift-summary");
+    }
+  }, [requestedTab]);
 
   if (!patient) {
     return (
@@ -108,12 +117,12 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
 
       <Tabs className="space-y-4" onValueChange={setActiveTab} value={activeTab}>
         <div className="sticky top-16 z-30 rounded-xl border border-border bg-white/95 p-1.5 shadow-sm backdrop-blur">
-          <TabsList className="w-full rounded-lg bg-surface-muted/70 p-1 pb-1">
+          <TabsList className="grid w-full grid-cols-2 rounded-lg bg-surface-muted/70 p-1 pb-1 sm:grid-cols-4 xl:grid-cols-8">
             <PatientTab icon={LayoutDashboard} label="Overview" value="overview" />
             <PatientTab icon={Radio} label="Live Monitoring" value="live-monitoring" />
-            <PatientTab icon={HeartPulse} label="Monitoring" value="monitoring" />
             <PatientTab icon={FlaskConical} label="Results" value="results" />
-            <PatientTab icon={ChartNoAxesCombined} label="Vitals Graph" value="vitals-graph" />
+            <PatientTab icon={HeartPulse} label="Vitals" value="vitals" />
+            <PatientTab icon={ClipboardCheck} label="Nurse Timeline" value="shift-summary" />
             <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
             <PatientTab icon={ChartNoAxesCombined} label="Add POCT" value="AddPoct" />
             <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
@@ -127,28 +136,41 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
         </TabsContent>
         <TabsContent className="mt-0" value="results">
           <ResultsCenterView
-            defaultDepartment="laboratory"
+            defaultDepartment="all"
+            patientContext={{
+              ageSex: rapidReviewPatient?.ageGender,
+              mrn: getResultPatientMrn(patient.id),
+              name: patient.name,
+              uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
+              wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+            }}
             viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
             viewTitle="Results Center"
           />
         </TabsContent>
-        <TabsContent className="mt-0" value="monitoring">
-          <PatientMonitoring key={patient.id} patient={patient} rapidReviewPatient={rapidReviewPatient} />
+        <TabsContent className="mt-0" value="vitals">
+          <PatientVitalsTabs patient={patient} rapidReviewPatient={rapidReviewPatient} />
         </TabsContent>
-        <TabsContent className="mt-0" value="vitals-graph">
-          {rapidReviewPatient ? (
-            <PatientVitalsGraph patient={rapidReviewPatient} />
-          ) : (
-            <div className="rounded-xl border border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
-              Vitals graph data is not available for this patient.
-            </div>
-          )}
+        <TabsContent className="mt-0" value="shift-summary">
+          <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />
         </TabsContent>
          <TabsContent className="mt-0" value="AddPoct">
           <AddPoctPage key={patient.id}  />
         </TabsContent> 
         <TabsContent className="mt-0" value="orders">
-          <DoctorOrdersPage key={patient.id} />
+          <DoctorOrdersPage
+            defaultTab="radiology"
+            key={patient.id}
+            patientContext={{
+              ageSex: rapidReviewPatient?.ageGender,
+              diagnosis: patient.diagnosis,
+              id: `doctor-ipd-${patient.id}`,
+              name: patient.name,
+              radiologyPatientId: getRadiologyPatientId(patient.id),
+              uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
+              wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+            }}
+          />
         </TabsContent>
         <TabsContent className="mt-0" value="Intake Output">
           <IntakeOutputPage key={patient.id}  />
@@ -160,11 +182,35 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
 
 function PatientTab({ icon: Icon, label, value }: { icon: typeof Activity; label: string; value: string }) {
   return (
-    <TabsTrigger className="h-10 flex-1 gap-2 rounded-lg px-4 text-sm data-[state=active]:text-primary" value={value}>
-      <Icon className="h-4 w-4" />
-      {label}
+    <TabsTrigger className="h-10 min-w-0 rounded-lg px-2 text-sm data-[state=active]:text-primary" value={value}>
+      <span className="inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap">
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{label}</span>
+      </span>
     </TabsTrigger>
   );
+}
+
+function getRadiologyPatientId(patientId: number) {
+  const mappedId = 1000 + (((patientId - 1) % 6) + 1);
+  return `pat-${mappedId}`;
+}
+
+function getResultPatientMrn(patientId: number) {
+  const resultMrns = [
+    "MRN-240118",
+    "MRN-240119",
+    "MRN-240121",
+    "MRN-240124",
+    "MRN-240126",
+    "MRN-240127",
+    "MRN-240130",
+    "MRN-240133",
+    "MRN-240135",
+    "MRN-240136",
+  ];
+
+  return resultMrns[(patientId - 1) % resultMrns.length];
 }
 
 function PatientContextChip({
@@ -240,6 +286,140 @@ function CareRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function NurseShiftSummaryTimeline({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
+  const notes = buildNurseShiftNotes(patient, rapidReviewPatient);
+
+  return (
+    <Card className="overflow-hidden border-border/80">
+      <div className="flex flex-col gap-3 border-b border-border bg-white px-4 py-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="text-base font-semibold text-foreground">Nurse Timeline</div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Shift timeline for {patient.name} | {rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`} | {rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed}
+          </div>
+        </div>
+        <Button size="sm" type="button">
+          <ClipboardCheck className="h-4 w-4" />
+          Add Nurse Note
+        </Button>
+      </div>
+
+      <CardContent className="max-h-[68dvh] overflow-y-auto p-4 pr-3">
+        <div className="relative space-y-6 pl-7 pr-2">
+          <div className="absolute bottom-3 left-[18px] top-3 w-px bg-border" />
+          {notes.map((note) => (
+            <div className="relative" key={note.id}>
+              <div className="absolute -left-[31px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#2d8ac8] text-white shadow-sm">
+                <ClipboardCheck className="h-3.5 w-3.5" />
+              </div>
+              <div className="mb-2 inline-flex rounded bg-[#2d8ac8] px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+                {note.timestamp}
+              </div>
+              <div className="rounded-md border border-border bg-[#f7f7f7] shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+                  <div className="font-semibold text-[#3ba3d8]">{patient.name} ({note.bedCode})</div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{note.status}</span>
+                    <span>Created By: {note.createdBy}</span>
+                  </div>
+                </div>
+                <div className="space-y-3 px-3 py-3 text-sm">
+                  <div>
+                    <div className="text-xs font-bold text-foreground">Note</div>
+                    <p className="mt-1 text-muted-foreground">{note.note}</p>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-foreground">Comment</div>
+                    <p className="mt-1 text-muted-foreground">{note.comment}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function buildNurseShiftNotes(patient: Dashboard1Patient, rapidReviewPatient?: RapidReviewPatient) {
+  const nurse = patientTone(patient) === "red" ? "Nurse Jason Abbott" : patientTone(patient) === "orange" ? "Nurse Priya Menon" : "Nurse Super Admin";
+  const vitalsSummary = `HR ${patient.hr.value} bpm, SpO2 ${patient.spo2.value}%, BP ${patient.abps.value}/${patient.abpd.value}, Temp ${patient.temperature.value} C.`;
+  const bedCode = rapidReviewPatient?.uhid?.replace("UHID-", "") ?? String(9000 + patient.id);
+
+  return [
+    {
+      id: "note-1",
+      timestamp: "17/06/2026 06:45 PM",
+      bedCode,
+      status: "Signed",
+      note: `Evening shift received. ${patient.diagnosis}. ${vitalsSummary}`,
+      comment: "Continue ordered monitoring, maintain aspiration precautions, and inform doctor if vitals worsen.",
+      createdBy: nurse,
+    },
+    {
+      id: "note-2",
+      timestamp: "17/06/2026 02:15 PM",
+      bedCode,
+      status: "Reviewed",
+      note: "Medication round completed. Patient tolerated oral intake and routine care.",
+      comment: "Follow diet plan and repeat vitals as scheduled for the next nursing round.",
+      createdBy: "Nurse Super Admin",
+    },
+    {
+      id: "note-3",
+      timestamp: "17/06/2026 09:30 AM",
+      bedCode,
+      status: "Signed",
+      note: "Morning assessment documented. Bedside safety checks completed.",
+      comment: "Doctor instruction acknowledged. Keep patient under observation and update shift handover.",
+      createdBy: "Nurse Priya Menon",
+    },
+    {
+      id: "note-4",
+      timestamp: "16/06/2026 08:10 PM",
+      bedCode,
+      status: "Signed",
+      note: "Previous nurse timeline added with intake, comfort, medication, and family update.",
+      comment: "No new adverse event reported during the previous shift.",
+      createdBy: "Nurse Super Admin",
+    },
+  ];
+}
+
+function PatientVitalsTabs({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
+  return (
+    <Tabs className="space-y-4" defaultValue="chart">
+      <div className="rounded-xl border border-border bg-white p-1.5 shadow-sm">
+        <TabsList className="grid w-full grid-cols-2 rounded-lg bg-surface-muted/70 p-1 md:w-[360px]">
+          <TabsTrigger className="h-10 gap-2 rounded-lg text-sm data-[state=active]:text-primary" value="chart">
+            <ClipboardCheck className="h-4 w-4" />
+            Chart
+          </TabsTrigger>
+          <TabsTrigger className="h-10 gap-2 rounded-lg text-sm data-[state=active]:text-primary" value="graph">
+            <ChartNoAxesCombined className="h-4 w-4" />
+            Graph
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent className="mt-0" value="chart">
+        <PatientMonitoring key={`monitoring-${patient.id}`} patient={patient} rapidReviewPatient={rapidReviewPatient} />
+      </TabsContent>
+
+      <TabsContent className="mt-0" value="graph">
+        {rapidReviewPatient ? (
+          <PatientVitalsGraph patient={rapidReviewPatient} />
+        ) : (
+          <div className="rounded-xl border border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
+            Vitals graph data is not available for this patient.
+          </div>
+        )}
+      </TabsContent>
+    </Tabs>
+  );
+}
+
 function PatientMonitoring({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
   return (
     <div className="space-y-4">
@@ -250,9 +430,6 @@ function PatientMonitoring({ patient, rapidReviewPatient }: { patient: Dashboard
             <div className="mt-0.5 text-xs text-muted-foreground">Latest bedside monitoring snapshot</div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm">
-              <Link href="/ipd">Open Full Monitoring</Link>
-            </Button>
             <Button asChild size="sm" variant="outline">
               <Link href="/live-monitoring">Open Live Monitoring</Link>
             </Button>
@@ -270,6 +447,7 @@ function PatientMonitoring({ patient, rapidReviewPatient }: { patient: Dashboard
         <React.Suspense fallback={<div className="py-8 text-center text-sm text-muted-foreground">Loading monitoring...</div>}>
           <IpdUnifiedModulePage
             embedded
+            hideIpdTab
             patientContext={{
               ageSex: rapidReviewPatient?.ageGender ?? "Age / sex not available",
               consultant: rapidReviewPatient?.consultant ?? "Duty consultant",

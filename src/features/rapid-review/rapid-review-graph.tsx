@@ -292,7 +292,7 @@ const coreVitalsGraphSection: AllVitalsGraphSection = {
 };
 
 const rollingVitalsTimeIntervals = ["Last 3 hours", "Last 6 hours", "Last 12 hours", "Last 24 hours", "Last 48 hours"];
-const patientVitalsTimeIntervals = ["All times", ...rollingVitalsTimeIntervals, "Morning 06-13", "Afternoon 14-17", "Evening 18-21", "Night 22-05", "Business hours", "Custom time range"];
+const patientVitalsTimeIntervals = ["All times", ...rollingVitalsTimeIntervals];
 
 export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table" }: { patients: RapidReviewPatient[]; defaultViewMode?: string }) {
   const [metricId, setMetricId] = React.useState<ReviewGraphMetricId>("respiratoryRate");
@@ -965,7 +965,7 @@ function VitalsGraphWorkspace({
             ) : null}
           </div>
           <div className="mt-3 border-t border-border pt-3">
-            <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Date-wise time interval</div>
+            {/* <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Date-wise time interval</div>
             <div className="flex flex-wrap gap-2">
               {rollingVitalsTimeIntervals.map((interval) => (
                 <Button
@@ -978,7 +978,7 @@ function VitalsGraphWorkspace({
                   {interval.replace("Last ", "")}
                 </Button>
               ))}
-            </div>
+            </div> */}
           </div>
           {invalidDateRange ? (
             <div className="mt-3 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">

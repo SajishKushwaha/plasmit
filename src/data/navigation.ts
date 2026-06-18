@@ -80,7 +80,7 @@ export const navigationItems: NavigationItem[] = [
   { id: "doctor-rx",           label: "Prescriptions",        icon: Pill,              route: "/prescriptions",        group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   // { id: "doctor-live-monitoring", label: "Live Monitoring",   icon: RadioTower,        route: "/live-monitoring",       group: "Clinical", allowedRoles: ["Doctor IPD"], status: "ready" },
   { id: "doctor-ipd-results",  label: "Result",               icon: FileText,          route: "/results",              group: "Clinical", allowedRoles: [], status: "ready" },
-  { id: "doctor-lab",          label: "Lab Reports",          icon: FlaskConical,      route: "/laboratory",           group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
+  { id: "doctor-lab",          label: "Laboratory",           icon: FlaskConical,      route: "/laboratory",           group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
   { id: "doctor-radiology",    label: "Radiology",            icon: ScanSearch,        route: "/radiology",            group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
   { id: "doctor-emergency",    label: "Emergency Alerts",     icon: ShieldAlert,       route: "/emergency",            group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   { id: "doctor-tele",         label: "Telemedicine",         icon: Video,             route: "/telemedicine",         group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
@@ -403,6 +403,7 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
       "doctor-live-monitoring",
       "results",
       "radiology-mnt",
+      "doctor-lab",
       "doctor-emergency",
       "doctor-messages",
       "doctor-settings",
@@ -438,6 +439,7 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
       ["doctor-live-monitoring", 2],
       ["results", 3],
       ["radiology-mnt", 4],
+      ["doctor-lab", 5],
       ["doctor-emergency", 6],
       ["doctor-messages", 0],
       ["doctor-settings", 1],
@@ -445,7 +447,11 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
 
     return roleItems
       .filter((item) => visibleItemIds.has(item.id))
-      .map((item) => (workItemIds.has(item.id) ? { ...item, group: "Work" } : item))
+      .map((item) => {
+        if (workItemIds.has(item.id)) return { ...item, group: "Work" };
+        if (item.id === "doctor-lab") return { ...item, group: "Radiology" };
+        return item;
+      })
       .sort((a, b) => {
         const groupDifference = (groupOrder.get(a.group) ?? 100) - (groupOrder.get(b.group) ?? 100);
         if (groupDifference !== 0) return groupDifference;

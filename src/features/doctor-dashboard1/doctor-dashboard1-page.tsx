@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CenterModal } from "@/components/ui/center-modal";
 import { SearchInput } from "@/components/ui/search-input";
 import { cn } from "@/lib/utils";
 
@@ -115,6 +116,8 @@ function csvCell(value: string | number) {
 export function DoctorDashboard1Page() {
   const [search, setSearch] = React.useState("");
   const [page, setPage] = React.useState(1);
+  const [shiftSummaryPatient, setShiftSummaryPatient] = React.useState<Dashboard1Patient | null>(null);
+  const [collaboratePatient, setCollaboratePatient] = React.useState<Dashboard1Patient | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredPatients = orderedPatients.filter((patient) =>
     `${patient.name} ${patient.bed} ${patient.diagnosis}`.toLowerCase().includes(normalizedSearch),
@@ -189,7 +192,7 @@ export function DoctorDashboard1Page() {
                   <HeaderCell>Temperature<br />(°C)</HeaderCell>
                   <HeaderCell>Lab Results</HeaderCell>
                   <HeaderCell>Medication &<br />Intervention</HeaderCell>
-                  <HeaderCell>Shift Summary</HeaderCell>
+                  <HeaderCell>Nurse Timeline</HeaderCell>
                   <HeaderCell>Radiology</HeaderCell>
                   <HeaderCell>Events</HeaderCell>
                   <HeaderCell>Collaborate</HeaderCell>
@@ -224,10 +227,14 @@ export function DoctorDashboard1Page() {
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.temperature} href="/ipd" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={FlaskConical} tone="dark" href="/results" label="Open results" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={Pill} tone="dark" href="/doctor/orders?tab=drugs" label="Open medication and intervention" /></td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={ClipboardList} tone="dark" href="/rapid-review" label="Open shift summary" /></td>
+                    <td className="px-3 py-2 text-center">
+                      <RoundActionButton icon={ClipboardList} tone="dark" label="Open nurse timeline" onClick={() => setShiftSummaryPatient(patient)} />
+                    </td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="/radiology" label="Open radiology" /></td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={Activity} tone="red" href="/rapid-review" label="Open events" /></td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={MessageCircle} tone="dark" href="/rapid-review" label="Open collaborate" /></td>
+                    <td className="px-3 py-2 text-center">
+                      <RoundActionButton icon={MessageCircle} tone="dark" label="Open timeline" onClick={() => setCollaboratePatient(patient)} />
+                    </td>
                   </tr>
                   );
                 })}
@@ -265,6 +272,26 @@ export function DoctorDashboard1Page() {
           </Button>
         </div>
       </div>
+
+      <CenterModal
+        className="w-[min(94vw,1040px)]"
+        description={shiftSummaryPatient ? `${shiftSummaryPatient.name} | ${shiftSummaryPatient.bed} | ${shiftSummaryPatient.diagnosis}` : undefined}
+        onOpenChange={(open) => !open && setShiftSummaryPatient(null)}
+        open={Boolean(shiftSummaryPatient)}
+        title="Nurse Timeline"
+      >
+        {shiftSummaryPatient ? <DashboardShiftSummaryTimeline patient={shiftSummaryPatient} /> : null}
+      </CenterModal>
+
+      <CenterModal
+        className="w-[min(94vw,1040px)]"
+        description={collaboratePatient ? `${collaboratePatient.name} | ${collaboratePatient.bed} | ${collaboratePatient.diagnosis}` : undefined}
+        onOpenChange={(open) => !open && setCollaboratePatient(null)}
+        open={Boolean(collaboratePatient)}
+        title="Timeline"
+      >
+        {collaboratePatient ? <DashboardCollaborateTimeline patient={collaboratePatient} /> : null}
+      </CenterModal>
     </div>
   );
 }
@@ -303,4 +330,152 @@ function RoundAction({ icon: Icon, tone, href, label }: { icon: React.ElementTyp
       <Icon className="h-4 w-4" />
     </Link>
   );
+}
+
+function RoundActionButton({ icon: Icon, tone, label, onClick }: { icon: React.ElementType; tone: "dark" | "red"; label: string; onClick: () => void }) {
+  return (
+    <button
+      aria-label={label}
+      className={cn(
+        "inline-flex h-8 w-8 items-center justify-center rounded-full text-white shadow-[0_4px_9px_rgba(15,23,42,0.20)] transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40",
+        tone === "dark" && "bg-[#4a4a4a]",
+        tone === "red" && "bg-[#ff443e]",
+      )}
+      onClick={onClick}
+      type="button"
+    >
+      <Icon className="h-4 w-4" />
+    </button>
+  );
+}
+
+function DashboardShiftSummaryTimeline({ patient }: { patient: Dashboard1Patient }) {
+  const notes = buildDashboardShiftNotes(patient);
+
+  return (
+    <div className="relative max-h-[70dvh] space-y-6 overflow-y-auto pl-7 pr-2">
+      <div className="absolute bottom-3 left-[18px] top-3 w-px bg-border" />
+      {notes.map((note) => (
+        <div className="relative" key={note.id}>
+          <div className="absolute -left-[31px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#2d8ac8] text-white shadow-sm">
+            <ClipboardList className="h-3.5 w-3.5" />
+          </div>
+          <div className="mb-2 inline-flex rounded bg-[#2d8ac8] px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+            {note.timestamp}
+          </div>
+          <div className="rounded-md border border-border bg-[#f7f7f7] shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+              <div className="font-semibold text-[#3ba3d8]">{patient.name} ({note.bedCode})</div>
+              <div className="text-xs text-muted-foreground">Created By: {note.createdBy}</div>
+            </div>
+            <div className="space-y-3 px-3 py-3 text-sm">
+              <div>
+                <div className="text-xs font-bold text-foreground">Note</div>
+                <p className="mt-1 text-muted-foreground">{note.note}</p>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-foreground">Comment</div>
+                <p className="mt-1 text-muted-foreground">{note.comment}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function buildDashboardShiftNotes(patient: Dashboard1Patient) {
+  const nurse = patientTone(patient) === "red" ? "Nurse Jason Abbott" : patientTone(patient) === "orange" ? "Nurse Priya Menon" : "Nurse Super Admin";
+  const bedCode = String(9000 + patient.id);
+  const vitalsSummary = `HR ${patient.hr.value} bpm, SpO2 ${patient.spo2.value}%, BP ${patient.abps.value}/${patient.abpd.value}, Temp ${patient.temperature.value} C.`;
+
+  return [
+    {
+      id: "shift-1",
+      timestamp: "17/06/2026 06:45 PM",
+      bedCode,
+      createdBy: nurse,
+      note: `Evening nurse note recorded. ${patient.diagnosis}. ${vitalsSummary}`,
+      comment: "Continue monitoring and follow doctor instruction. Escalate if vitals cross warning range.",
+    },
+    {
+      id: "shift-2",
+      timestamp: "17/06/2026 02:15 PM",
+      bedCode,
+      createdBy: "Nurse Super Admin",
+      note: "Medication round completed. Patient tolerated care and routine nursing activities.",
+      comment: "Repeat vitals in next round and update handover before shift close.",
+    },
+    {
+      id: "shift-3",
+      timestamp: "17/06/2026 09:30 AM",
+      bedCode,
+      createdBy: "Nurse Priya Menon",
+      note: "Morning assessment completed. Bedside safety, intake, comfort, and lines checked.",
+      comment: "No new adverse event reported. Continue planned nursing care.",
+    },
+  ];
+}
+
+function DashboardCollaborateTimeline({ patient }: { patient: Dashboard1Patient }) {
+  const timeline = buildCollaborateTimeline(patient);
+
+  return (
+    <div className="relative max-h-[70dvh] space-y-6 overflow-y-auto pl-7 pr-2">
+      <div className="absolute bottom-3 left-[18px] top-3 w-px bg-border" />
+      {timeline.map((item) => (
+        <div className="relative" key={item.id}>
+          <div className="absolute -left-[31px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#2d8ac8] text-white shadow-sm">
+            <MessageCircle className="h-3.5 w-3.5" />
+          </div>
+          <div className="mb-2 inline-flex rounded bg-[#2d8ac8] px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+            {item.timestamp}
+          </div>
+          <div className="rounded-md border border-border bg-[#f7f7f7] shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+              <div className="font-semibold text-[#3ba3d8]">{item.title}</div>
+              <div className="text-xs text-muted-foreground">Created By: {item.createdBy}</div>
+            </div>
+            <p className="px-3 py-3 text-sm text-muted-foreground">{item.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function buildCollaborateTimeline(patient: Dashboard1Patient) {
+  const doctor = patientTone(patient) === "red" ? "Dr. Amandeep Singh" : patientTone(patient) === "orange" ? "Dr. Meera Rao" : "Dr. Super Admin";
+
+  return [
+    {
+      id: "timeline-1",
+      timestamp: "17/06/2026 06:43 PM",
+      title: "Take medicine after meal everyday",
+      description: `${patient.name}: medicine and clinical instruction shared with nursing team for ${patient.diagnosis}.`,
+      createdBy: doctor,
+    },
+    {
+      id: "timeline-2",
+      timestamp: "17/06/2026 02:36 PM",
+      title: "Documentation",
+      description: "Clinical notes, bedside status, and communication update added for doctor IPD review.",
+      createdBy: "Nurse Priya Menon",
+    },
+    {
+      id: "timeline-3",
+      timestamp: "17/06/2026 12:51 PM",
+      title: "Follow Doctor Instruction",
+      description: "Care team acknowledged the latest instruction and will update the next response in timeline.",
+      createdBy: "Nurse Super Admin",
+    },
+    {
+      id: "timeline-4",
+      timestamp: "17/06/2026 09:20 AM",
+      title: "Follow diet as planned for you.",
+      description: "Diet plan and routine monitoring message shared with the ward team.",
+      createdBy: "Dietician Admin",
+    },
+  ];
 }

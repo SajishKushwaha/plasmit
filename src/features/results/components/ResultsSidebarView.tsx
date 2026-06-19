@@ -20,6 +20,7 @@ import {
   ChevronRight,
   CheckCircle2,
   ClipboardCheck,
+  Clock3,
   ChevronsLeft,
   ChevronsRight,
   Download,
@@ -28,10 +29,12 @@ import {
   FileText,
   Layers3,
   Image as ImageIcon,
+  LayoutGrid,
   MoreVertical,
   Printer,
   Search,
   ScanSearch,
+  Settings,
   ShieldCheck,
   X,
   Zap,
@@ -44,7 +47,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ResultDownloadDialog } from "@/features/results/components/ResultDownloadDialog";
 import { ResultsGroupDownloadDialog } from "@/features/results/components/ResultsGroupDownloadDialog";
-import { resultDepartments, resultRecords, resultStatuses } from "@/features/results/data/mockResults";
+import { resultDepartments, resultRecords, resultStatuses } from "@/features/results/data/mockSidebarResults";
 import type { ResultDepartment, ResultRecord, ResultStatus } from "@/features/results/types";
 
 type DepartmentFilter = ResultDepartment | "all";
@@ -141,6 +144,40 @@ function getStatusLabel(status: StatusFilter) {
   return status === "all" ? "All statuses" : status;
 }
 
+function getPatientInitials(patientName: string) {
+  return patientName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function getStatusIcon(status: StatusFilter) {
+  if (status === "all") {
+    return <LayoutGrid className="h-4 w-4 text-primary" />;
+  }
+
+  if (status === "Sample Collected") {
+    return <FlaskConical className="h-4 w-4 text-slate-500" />;
+  }
+
+  if (status === "Processing") {
+    return <Settings className="h-4 w-4 text-slate-500" />;
+  }
+
+  if (status === "Verification Pending") {
+    return <Clock3 className="h-4 w-4 text-slate-500" />;
+  }
+
+  if (status === "Completed") {
+    return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
+  }
+
+  return <ShieldCheck className="h-4 w-4 text-rose-500" />;
+}
+
 function getNextLaboratoryStatus(status: ResultStatus) {
   if (status === "Sample Collected") {
     return "Processing";
@@ -173,7 +210,7 @@ function getLaboratoryActionLabel(status: ResultStatus) {
   return "Workflow Complete";
 }
 
-export function ResultsCenterView({
+export function ResultsSidebarView({
   initialDepartment = "all",
   defaultDepartment = initialDepartment,
   criticalOnly = false,
@@ -194,15 +231,16 @@ export function ResultsCenterView({
   const [availability, setAvailability] = useState<AvailabilityFilter>("all");
   const [quickQueue, setQuickQueue] = useState<QuickQueue>(null);
   const [query, setQuery] = useState("");
+  const [isCommandSearchFocused, setIsCommandSearchFocused] = useState(false);
   const [selectedId, setSelectedId] = useState(resultRecords[0]?.id ?? "");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("summary");
+  const [isResultDetailsOpen, setIsResultDetailsOpen] = useState(false);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ResultStatus>>({});
   const [reportReadyIds, setReportReadyIds] = useState<string[]>([]);
   const [acknowledgedIds, setAcknowledgedIds] = useState<string[]>([]);
   const [ackNote, setAckNote] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [downloadGroup, setDownloadGroup] = useState<{ title: string; results: ResultRecord[] } | null>(null);
-  const [reportDialogResult, setReportDialogResult] = useState<ResultRecord | null>(null);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [historyQuickView, setHistoryQuickView] = useState<HistoryQuickView>(null);
   const [isCustomDateDialogOpen, setIsCustomDateDialogOpen] = useState(false);
@@ -213,13 +251,13 @@ export function ResultsCenterView({
 
   const isLaboratoryView = initialDepartment === "laboratory";
   const isUnifiedView = initialDepartment === "all" && !criticalOnly;
-  const isPatientResultsView = Boolean(patientContext);
   const patientScopedRecords = useMemo(() => {
     if (!patientContext?.mrn && !patientContext?.name) {
       return resultRecords;
     }
 
     const normalizedName = patientContext.name?.trim().toLowerCase();
+
     return resultRecords
       .filter((result) => {
         const matchesMrn = patientContext.mrn ? result.mrn === patientContext.mrn : false;
@@ -461,12 +499,7 @@ export function ResultsCenterView({
     }, {});
   }, [scopedRecords]);
 
-  const departmentCounts = useMemo(() => {
-    return resultDepartments.reduce<Record<string, number>>((counts, item) => {
-      counts[item.id] = item.id === "all" ? scopedRecords.length : scopedRecords.filter((result) => result.department === item.id).length;
-      return counts;
-    }, {});
-  }, [scopedRecords]);
+  const visibleStatusFilters = useMemo(() => resultStatuses.filter((item) => item !== "Critical"), []);
 
   const unifiedCounts = useMemo(
     () => ({
@@ -488,15 +521,41 @@ export function ResultsCenterView({
 
   const generatedReportRecords = useMemo(() => scopedRecords.filter((result) => result.reportAvailable), [scopedRecords]);
 
-  function changeDepartment(nextDepartment: DepartmentFilter) {
-    if (isDepartmentLocked) {
-      return;
+  const commandSearchSuggestions = useMemo(() => {
+    const search = query.trim().toLowerCase();
+
+    if (!search || !/[a-z]/i.test(search)) {
+      return [];
     }
 
-    setDepartment(nextDepartment);
-    setQuickQueue(null);
-    setPreviewMode("summary");
-  }
+    const seenPatients = new Set<string>();
+
+    return recordsWithState
+      .filter((result) => result.patientName.toLowerCase().includes(search))
+      .sort((first, second) => {
+        const firstStarts = first.patientName.toLowerCase().startsWith(search);
+        const secondStarts = second.patientName.toLowerCase().startsWith(search);
+
+        if (firstStarts !== secondStarts) {
+          return firstStarts ? -1 : 1;
+        }
+
+        return first.patientName.localeCompare(second.patientName);
+      })
+      .filter((result) => {
+        const key = result.patientName.toLowerCase();
+
+        if (seenPatients.has(key)) {
+          return false;
+        }
+
+        seenPatients.add(key);
+        return true;
+      })
+      .slice(0, 6);
+  }, [query, recordsWithState]);
+
+  const showCommandSearchSuggestions = isCommandSearchFocused && commandSearchSuggestions.length > 0;
 
   function changeStatus(nextStatus: StatusFilter) {
     if (criticalOnly && nextStatus !== "Critical") {
@@ -506,6 +565,12 @@ export function ResultsCenterView({
     setStatus(nextStatus);
     setQuickQueue(null);
     setPreviewMode("summary");
+  }
+
+  function selectCommandSearchSuggestion(result: ResultRecord) {
+    setQuery(result.patientName);
+    selectResult(result);
+    setIsCommandSearchFocused(false);
   }
 
   function openReportGroupDownload(results: ResultRecord[], label: string) {
@@ -643,12 +708,7 @@ export function ResultsCenterView({
   function selectResult(result: ResultRecord) {
     setSelectedId(result.id);
     setPreviewMode("summary");
-  }
-
-  function openResultReport(result: ResultRecord) {
-    setSelectedId(result.id);
-    setPreviewMode("report");
-    setReportDialogResult(result);
+    setIsResultDetailsOpen(true);
   }
 
   function printResult(result: ResultRecord) {
@@ -697,6 +757,62 @@ export function ResultsCenterView({
     setNotice(`${result.id} report marked ready for release.`);
   }
 
+  const resultSearchControl = (
+    <label className="relative block min-w-[260px] flex-1">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        className="h-10 rounded-lg border-border bg-surface pl-9 text-sm shadow-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+        placeholder="Search by UHID, MRN, patient"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+    </label>
+  );
+
+  const commandSearchControl = (
+    <div className="relative block min-w-[260px] flex-1">
+      <label className="relative block">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary/70" />
+        <Input
+          className="h-10 rounded-xl border-border/80 bg-background pl-10 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_1px_2px_rgba(15,23,42,0.04)] transition placeholder:text-muted-foreground/75 focus:border-primary/35 focus:ring-4 focus:ring-primary/10"
+          onBlur={() => setIsCommandSearchFocused(false)}
+          onChange={(event) => setQuery(event.target.value)}
+          onFocus={() => setIsCommandSearchFocused(true)}
+          placeholder="Search by UHID, MRN, patient"
+          value={query}
+        />
+      </label>
+
+      {showCommandSearchSuggestions ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[70] overflow-hidden rounded-2xl border border-border/80 bg-background shadow-[0_18px_45px_rgba(79,70,229,0.16)]">
+          <div className="border-b border-border/70 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Patient suggestions</div>
+          <div className="max-h-72 overflow-y-auto p-1.5">
+            {commandSearchSuggestions.map((result) => (
+              <button
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                key={`command-search-${result.id}`}
+                onClick={() => selectCommandSearchSuggestion(result)}
+                onMouseDown={(event) => event.preventDefault()}
+                type="button"
+              >
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
+                  {getPatientInitials(result.patientName)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-foreground">{result.patientName}</span>
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                    {result.mrn} | {result.testName}
+                  </span>
+                </span>
+                <Badge tone={statusTone[result.status]}>{result.status}</Badge>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+
   return (
     <div className="space-y-5">
       {notice ? (
@@ -737,7 +853,7 @@ export function ResultsCenterView({
         onDateChange={changeDateWiseHistoryDate}
         onOpenChange={setIsDateWiseHistoryOpen}
         onSelect={(result) => {
-          openResultReport(result);
+          selectResult(result);
           setIsDateWiseHistoryOpen(false);
         }}
         open={isDateWiseHistoryOpen}
@@ -746,18 +862,7 @@ export function ResultsCenterView({
         totalCount={dateWiseHistoryResults.length}
       />
 
-      <ResultReportDialog
-        onOpenChange={(open) => {
-          if (!open) {
-            setReportDialogResult(null);
-          }
-        }}
-        onPrint={printResult}
-        open={Boolean(reportDialogResult)}
-        result={reportDialogResult}
-      />
-
-      {isUnifiedView && !isPatientResultsView ? (
+      {isUnifiedView ? (
         <UnifiedWorkspacePanel
           activeDepartment={department}
           availability={availability}
@@ -767,136 +872,61 @@ export function ResultsCenterView({
         />
       ) : null}
 
-      <Card className="overflow-visible border-primary/10 bg-white shadow-sm">
-        <CardContent className="space-y-2 p-2.5 md:p-3">
-          <div className="grid gap-2 lg:grid-cols-[minmax(280px,1fr)_auto] lg:items-end">
-            <label className="relative min-w-0">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="h-9 rounded-lg pl-10 text-sm"
-                placeholder={isPatientResultsView ? "Search test, order, department" : "Search by UHID, MRN, patient"}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
-
-            <div className={cn("flex items-end gap-2", isPatientResultsView ? "flex-nowrap" : "flex-wrap")}>
-              {!isDepartmentLocked && !isPatientResultsView ? (
-                <select
-                  aria-label="Results"
-                  className="h-10 min-w-[190px] rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20"
-                  onChange={(event) => changeDepartment(event.target.value as DepartmentFilter)}
-                  value={department}
-                >
-                  {resultDepartments.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.label} {departmentCounts[item.id] ?? 0}
-                    </option>
-                  ))}
-                </select>
-              ) : null}
-              <select
-                aria-label="Status"
-                className={cn(
-                  "h-9 rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60",
-                  isPatientResultsView ? "min-w-0 flex-1" : "min-w-[210px]",
-                )}
-                disabled={criticalOnly}
-                onChange={(event) => changeStatus(event.target.value as StatusFilter)}
-                value={status}
-              >
-                {resultStatuses.map((item) => (
-                  <option disabled={criticalOnly && item !== "Critical"} key={item} value={item}>
-                    {getStatusLabel(item)} {statusCounts[item] ?? 0}
-                  </option>
-                ))}
-              </select>
-              <StatusActionChip
-                active={availability === "reports"}
-                count={generatedReportRecords.length}
-                label="Generated Reports"
-                onDownload={() => openReportGroupDownload(generatedReportRecords, "Generated Reports")}
-                onView={viewGeneratedReports}
-              />
-            </div>
+      {isUnifiedView ? (
+        <div className="rounded-2xl border border-border/75 bg-background/90 p-2 shadow-[0_10px_26px_rgba(79,70,229,0.08)]">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <div className="min-w-0 flex-1">{commandSearchControl}</div>
+            <span className="inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#5f6ff5] via-[#4f6df5] to-[#4038f2] px-5 text-xs font-bold uppercase tracking-wide text-white shadow-[0_8px_20px_rgba(79,70,229,0.28)] lg:w-auto">
+              <Zap className="h-3.5 w-3.5" />
+              Quick Search
+            </span>
           </div>
-          {isPatientResultsView && !isDepartmentLocked ? (
-            <PatientResultDepartmentTabs
-              counts={departmentCounts}
-              department={department}
-              onChange={changeDepartment}
+        </div>
+      ) : null}
+
+      <Card className="overflow-visible rounded-2xl border-[#e6e8f7] bg-white shadow-[0_12px_30px_rgba(79,70,229,0.08)]">
+        <CardContent className="space-y-2 p-2">
+          {!isUnifiedView ? <div className="flex flex-wrap items-center gap-3">{resultSearchControl}</div> : null}
+
+          <div className="grid items-center gap-1.5 lg:grid-cols-[1.02fr_1.2fr_0.94fr_1.36fr_0.9fr_1.4fr]">
+            {visibleStatusFilters.map((item) => (
+              <FilterChip active={status === item} disabled={criticalOnly} key={item} onClick={() => changeStatus(item)}>
+                {getStatusIcon(item)}
+                <span className="min-w-0 truncate">{getStatusLabel(item)}</span>
+                <span className="ml-auto rounded-md bg-current/10 px-1.5 py-0.5 text-[11px] font-bold leading-none text-current">{statusCounts[item] ?? 0}</span>
+              </FilterChip>
+            ))}
+            <StatusActionChip
+              active={availability === "reports"}
+              count={generatedReportRecords.length}
+              label="Generated Reports"
+              onDownload={() => openReportGroupDownload(generatedReportRecords, "Generated Reports")}
+              onView={viewGeneratedReports}
             />
-          ) : null}
+          </div>
         </CardContent>
       </Card>
 
-      {isPatientResultsView ? (
-        <Card className="min-w-0 overflow-hidden border-primary/10 bg-white shadow-sm">
-          {shouldSplitResultHistory && historyResults.length > 0 ? (
-            <CardHeader className="border-b border-border bg-white px-4 py-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <ResultHistoryDropdown
-                  onDateWise={openDateWiseHistory}
-                  onToday={() => openQuickHistory("today")}
-                  onYesterday={() => openQuickHistory("yesterday")}
-                  todayCount={todayHistoryResults.length}
-                  totalCount={historyResults.length}
-                  yesterdayCount={yesterdayHistoryResults.length}
-                />
-              </div>
-            </CardHeader>
-          ) : null}
-          <CardContent className="space-y-3 p-3">
-            {filteredResults.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border bg-background px-4 py-10 text-center">
-                <div className="text-sm font-semibold text-foreground">No results found</div>
-                <p className="mt-1 text-xs text-muted-foreground">Change filters or search with a different MRN, test, location, or order number.</p>
-                <Button className="mt-4" variant="outline" onClick={clearFilters}>
-                  Clear filters
-                </Button>
-              </div>
-            ) : (
-              <>
-                {Object.entries(visibleGroupedResults).map(([date, records]) => (
-                  <section key={date}>
-                    <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-                      <div className="hidden grid-cols-[1.4fr_0.9fr_0.7fr] gap-3 border-b border-border bg-[#f7f8fc] px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
-                        <span>Test</span>
-                        <span>Department</span>
-                        <span className="text-right">Action</span>
-                      </div>
-                      {records.map((result) => (
-                        <PatientResultSingleRow
-                          acknowledged={acknowledgedIds.includes(result.id)}
-                          key={result.id}
-                          onSelect={() => openResultReport(result)}
-                          result={result}
-                          selected={selectedResult?.id === result.id}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                ))}
+      <ResultDetailsDialog
+        ackNote={ackNote}
+        acknowledged={selectedResult ? acknowledgedIds.includes(selectedResult.id) : false}
+        onAckNoteChange={setAckNote}
+        onAcknowledge={acknowledgeCritical}
+        onAdvanceLaboratory={advanceLaboratoryWorkflow}
+        onNotifyCritical={notifyCriticalTeam}
+        onOpenChange={setIsResultDetailsOpen}
+        onPrint={printResult}
+        onReleaseLaboratory={releaseLaboratoryReport}
+        onSetNotice={setNotice}
+        onSetPreviewMode={setPreviewMode}
+        open={Boolean(selectedResult && isResultDetailsOpen)}
+        previewMode={previewMode}
+        result={selectedResult}
+      />
 
-                {shouldSplitResultHistory && historyResults.length > 0 && isHistoryPanelOpen ? (
-                  <TestHistoryPanel
-                    description={historyPanelCopy.description}
-                    historyTable={historyTable}
-                    onClose={() => setIsHistoryPanelOpen(false)}
-                    onSelect={selectResult}
-                    selectedId={selectedResult?.id}
-                    title={historyPanelCopy.title}
-                    totalCount={historyPanelResults.length}
-                  />
-                ) : null}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(390px,0.48fr)]">
-        <Card className="min-w-0 overflow-hidden border-primary/10 shadow-sm">
-          <CardHeader className="border-b border-border bg-white px-4 py-3">
+      <div className="grid min-w-0 gap-5">
+        <Card className="min-w-0">
+          <CardHeader className="px-5 py-4">
             <div>
               <CardTitle className="text-base">{isDepartmentLocked ? getDepartmentLabel(initialDepartment) : getDepartmentLabel(department)}</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -919,7 +949,7 @@ export function ResultsCenterView({
               <Badge tone={criticalOnly ? "critical" : "info"}>{criticalOnly ? "Critical only" : "Live results"}</Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 p-4">
+          <CardContent className="space-y-4 p-4 md:p-5">
             {filteredResults.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border bg-background px-4 py-10 text-center">
                 <div className="text-sm font-semibold text-foreground">No results found</div>
@@ -936,8 +966,8 @@ export function ResultsCenterView({
                       <CalendarDays className="h-3.5 w-3.5" />
                       {date}
                     </div>
-                    <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-                      <div className="hidden grid-cols-[1.25fr_0.9fr_0.82fr_0.75fr_0.95fr] gap-3 border-b border-border bg-[#f7f8fc] px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
+                    <div className="overflow-hidden rounded-xl border border-border">
+                      <div className="hidden grid-cols-[1.25fr_0.9fr_0.82fr_0.75fr_0.95fr] gap-3 border-b border-border bg-surface-muted px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
                         <span>Patient and test</span>
                         <span>{isLaboratoryView ? "Specimen" : "Department"}</span>
                         <span>Status</span>
@@ -949,7 +979,7 @@ export function ResultsCenterView({
                           acknowledged={acknowledgedIds.includes(result.id)}
                           isLaboratoryView={isLaboratoryView}
                           key={result.id}
-                          onSelect={() => openResultReport(result)}
+                          onSelect={() => selectResult(result)}
                           result={result}
                           selected={selectedResult?.id === result.id}
                         />
@@ -974,97 +1004,7 @@ export function ResultsCenterView({
           </CardContent>
         </Card>
 
-        {selectedResult ? (
-          <Card className="min-w-0 overflow-hidden border-primary/10 shadow-sm xl:sticky xl:top-24 xl:self-start">
-            <CardHeader className="border-b border-border bg-white px-4 py-3">
-              <div className="min-w-0">
-                <CardTitle className="truncate text-base">{selectedResult.patientName}</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {selectedResult.mrn} | {selectedResult.ageSex} | {selectedResult.visitType}
-                </p>
-              </div>
-              <Badge tone={statusTone[selectedResult.status]}>{selectedResult.status}</Badge>
-            </CardHeader>
-            <CardContent className="space-y-4 p-4">
-              <div className="grid grid-cols-4 gap-2 rounded-lg bg-surface-muted p-1">
-                <PreviewTab active={previewMode === "summary"} onClick={() => setPreviewMode("summary")}>
-                  Summary
-                </PreviewTab>
-                <PreviewTab active={previewMode === "report"} onClick={() => setPreviewMode("report")}>
-                  Report
-                </PreviewTab>
-                <PreviewTab active={previewMode === "image"} onClick={() => setPreviewMode("image")}>
-                  Image
-                </PreviewTab>
-                <PreviewTab active={previewMode === "audit"} onClick={() => setPreviewMode("audit")}>
-                  Audit
-                </PreviewTab>
-              </div>
-
-              {previewMode === "summary" ? <SummaryPanel result={selectedResult} /> : null}
-              {previewMode === "report" ? <ReportPanel result={selectedResult} /> : null}
-              {previewMode === "image" ? <ImagePanel result={selectedResult} /> : null}
-              {previewMode === "audit" ? <AuditPanel acknowledged={acknowledgedIds.includes(selectedResult.id)} ackNote={ackNote} result={selectedResult} /> : null}
-
-              {selectedResult.department === "laboratory" ? (
-                <LaboratoryWorkflowActions result={selectedResult} onAdvance={() => advanceLaboratoryWorkflow(selectedResult)} onRelease={() => releaseLaboratoryReport(selectedResult)} />
-              ) : null}
-
-              {selectedResult.status === "Critical" ? (
-                <div className="space-y-3 rounded-lg border border-critical/30 bg-critical/10 p-3 text-critical">
-                  <div className="flex items-center gap-2 text-sm font-semibold">
-                    <AlertTriangle className="h-4 w-4" />
-                    Critical result action required
-                  </div>
-                  <p className="text-xs">Notify the clinical team and record acknowledgement before closing this alert.</p>
-                  <textarea
-                    className="min-h-20 w-full resize-none rounded-md border border-critical/30 bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-critical/20"
-                    placeholder="Acknowledgement note"
-                    value={ackNote}
-                    onChange={(event) => setAckNote(event.target.value)}
-                  />
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Button variant="outline" onClick={() => notifyCriticalTeam(selectedResult)}>
-                      <Bell className="h-4 w-4" />
-                      Notify Team
-                    </Button>
-                    <Button onClick={() => acknowledgeCritical(selectedResult)} disabled={acknowledgedIds.includes(selectedResult.id)}>
-                      <ShieldCheck className="h-4 w-4" />
-                      {acknowledgedIds.includes(selectedResult.id) ? "Acknowledged" : "Acknowledge"}
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Button onClick={() => setPreviewMode("report")}>
-                  <FileText className="h-4 w-4" />
-                  View Report
-                </Button>
-                <Button variant="outline" onClick={() => setPreviewMode("image")}>
-                  <ImageIcon className="h-4 w-4" />
-                  View Image
-                </Button>
-                <Button variant="outline" onClick={() => printResult(selectedResult)}>
-                  <Printer className="h-4 w-4" />
-                  Print
-                </Button>
-                <ResultDownloadDialog
-                  onDownloaded={(format) => setNotice(`${selectedResult.id} downloaded as ${format}.`)}
-                  result={selectedResult}
-                  trigger={
-                    <Button disabled={!selectedResult.reportAvailable} title={selectedResult.reportAvailable ? "Download report" : "Report is not ready"} type="button" variant="outline">
-                      <Download className="h-4 w-4" />
-                      Download
-                    </Button>
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
       </div>
-      )}
     </div>
   );
 }
@@ -1162,7 +1102,7 @@ function UnifiedWorkspacePanel({
   status: StatusFilter;
 }) {
   return (
-    <Card className="overflow-hidden border-primary/10 shadow-sm">
+    <Card className="overflow-hidden">
       <CardHeader className="px-5 py-4">
         <div>
           <CardTitle className="text-base">Unified Workspace</CardTitle>
@@ -1246,6 +1186,32 @@ function WorkspaceTile({
   );
 }
 
+function FilterChip({
+  active,
+  disabled,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "relative inline-flex h-10 w-full min-w-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-transparent bg-[#fbfbff] px-2.5 text-xs font-semibold text-[#4c5062] shadow-[0_6px_16px_rgba(40,45,90,0.045)] transition hover:bg-white hover:shadow-[0_8px_18px_rgba(79,70,229,0.075)] disabled:cursor-not-allowed disabled:opacity-45",
+        active && "bg-white text-primary shadow-[0_8px_18px_rgba(79,70,229,0.10)] after:absolute after:inset-x-0 after:-bottom-[8px] after:h-[2px] after:rounded-full after:bg-primary",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 function StatusActionChip({
   active,
   count,
@@ -1264,26 +1230,27 @@ function StatusActionChip({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 overflow-hidden rounded-md border text-xs font-medium transition",
-        active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground",
+        "relative inline-flex h-10 w-full min-w-0 overflow-visible rounded-xl border border-transparent bg-[#fbfbff] text-xs font-semibold text-[#4c5062] shadow-[0_6px_16px_rgba(40,45,90,0.045)] transition hover:bg-white hover:shadow-[0_8px_18px_rgba(79,70,229,0.075)]",
+        active && "bg-white text-primary shadow-[0_8px_18px_rgba(79,70,229,0.10)] after:absolute after:inset-x-0 after:-bottom-[8px] after:h-[2px] after:rounded-full after:bg-primary",
         disabled && "opacity-45",
       )}
     >
       <button
-        className="inline-flex h-9 items-center whitespace-nowrap px-3 py-1.5 transition hover:bg-current/5 disabled:cursor-not-allowed"
+        className="inline-flex min-w-0 flex-1 items-center gap-1.5 px-2.5 transition hover:bg-current/5 disabled:cursor-not-allowed"
         disabled={disabled}
         onClick={onView}
         type="button"
       >
-        {label}
-        <span className="ml-1 rounded-full bg-current/10 px-1.5 py-0.5 text-[10px]">{count}</span>
+        <FileText className="h-4 w-4 shrink-0 text-slate-500" />
+        <span className="min-w-0 truncate">{label}</span>
+        <span className="ml-auto rounded-md bg-current/10 px-1.5 py-0.5 text-[11px] font-bold leading-none text-current">{count}</span>
       </button>
 
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button
             aria-label={`${label} actions`}
-            className="inline-flex w-8 items-center justify-center border-l border-current/10 transition hover:bg-current/10 disabled:cursor-not-allowed"
+            className="inline-flex w-7 items-center justify-center text-muted-foreground transition hover:bg-surface-muted hover:text-foreground disabled:cursor-not-allowed"
             disabled={disabled}
             type="button"
           >
@@ -1317,104 +1284,144 @@ function StatusActionChip({
   );
 }
 
-function PatientResultDepartmentTabs({
-  counts,
-  department,
-  onChange,
-}: {
-  counts: Record<string, number>;
-  department: DepartmentFilter;
-  onChange: (department: DepartmentFilter) => void;
-}) {
-  const icons: Record<DepartmentFilter, ReactNode> = {
-    all: <Layers3 className="h-4 w-4" />,
-    laboratory: <FlaskConical className="h-4 w-4" />,
-    radiology: <ScanSearch className="h-4 w-4" />,
-    poct: <Zap className="h-4 w-4" />,
-  };
-
-  return (
-    <div aria-label="Patient result departments" className="flex flex-nowrap gap-2 overflow-x-auto pb-1" role="tablist">
-      {resultDepartments.map((item) => {
-        const active = department === item.id;
-
-        return (
-          <button
-            aria-selected={active}
-            className={cn(
-              "flex h-11 min-w-[180px] flex-1 shrink-0 items-center justify-between gap-3 rounded-lg border px-3 text-left text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-ring/20",
-              active
-                ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                : "border-border bg-surface-muted text-foreground hover:border-primary/40 hover:bg-primary-soft hover:text-primary",
-            )}
-            key={item.id}
-            onClick={() => onChange(item.id)}
-            role="tab"
-            type="button"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              {icons[item.id]}
-              <span className="truncate">{item.label}</span>
-            </span>
-            <span
-              className={cn(
-                "inline-flex h-6 min-w-7 items-center justify-center rounded-full px-2 text-xs font-bold",
-                active ? "bg-white/20 text-primary-foreground" : "bg-white text-muted-foreground",
-              )}
-            >
-              {counts[item.id] ?? 0}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function PatientResultSingleRow({
+function ResultDetailsDialog({
+  ackNote,
   acknowledged,
-  onSelect,
+  onAckNoteChange,
+  onAcknowledge,
+  onAdvanceLaboratory,
+  onNotifyCritical,
+  onOpenChange,
+  onPrint,
+  onReleaseLaboratory,
+  onSetNotice,
+  onSetPreviewMode,
+  open,
+  previewMode,
   result,
-  selected,
 }: {
+  ackNote: string;
   acknowledged: boolean;
-  onSelect: () => void;
-  result: ResultRecord;
-  selected: boolean;
+  onAckNoteChange: (value: string) => void;
+  onAcknowledge: (result: ResultRecord) => void;
+  onAdvanceLaboratory: (result: ResultRecord) => void;
+  onNotifyCritical: (result: ResultRecord) => void;
+  onOpenChange: (open: boolean) => void;
+  onPrint: (result: ResultRecord) => void;
+  onReleaseLaboratory: (result: ResultRecord) => void;
+  onSetNotice: (notice: string | null) => void;
+  onSetPreviewMode: (mode: PreviewMode) => void;
+  open: boolean;
+  previewMode: PreviewMode;
+  result: ResultRecord | null;
 }) {
+  if (!result) {
+    return null;
+  }
+
   return (
-    <button
-      aria-current={selected ? "true" : undefined}
-      className={cn(
-        "relative grid w-full gap-3 overflow-hidden border-b border-border bg-background px-4 py-4 text-left transition last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid-cols-[1.4fr_0.9fr_0.7fr] lg:items-center",
-        selected && "bg-primary/5 shadow-sm ring-1 ring-inset ring-primary/25",
-      )}
-      onClick={onSelect}
-      type="button"
-    >
-      {selected ? <span className="absolute inset-y-0 left-0 w-1 bg-primary" /> : null}
-      <div className="min-w-0">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-base font-semibold text-foreground">{result.testName}</span>
-          {selected ? <Badge tone="info">Selected</Badge> : null}
-          {acknowledged ? <Badge tone="success">Acknowledged</Badge> : null}
-        </div>
-        <div className="mt-1 truncate text-sm text-muted-foreground">
-          {result.id} | {formatDateTime(result.orderedAt)}
-        </div>
-      </div>
-      <div className="min-w-0 text-sm">
-        <div className="font-medium capitalize text-foreground">{result.department}</div>
-        <div className="mt-1 truncate text-xs text-muted-foreground">{result.location}</div>
-      </div>
-      <div className="flex justify-start gap-2 lg:justify-end">
-        <AvailabilityIcon active={result.reportAvailable} label="Report" icon="report" />
-        <AvailabilityIcon active={result.imageAvailable} label="Image" icon="image" />
-        <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium text-muted-foreground">
-          View
-        </span>
-      </div>
-    </button>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/45 backdrop-blur-[2px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] flex max-h-[90vh] w-[min(94vw,980px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl outline-none">
+          <div className="flex items-start justify-between gap-4 border-b border-border bg-background px-5 py-4">
+            <div className="min-w-0">
+              <Dialog.Title className="truncate text-lg font-semibold text-foreground">{result.patientName}</Dialog.Title>
+              <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+                {result.mrn} | {result.ageSex} | {result.visitType} | {result.testName}
+              </Dialog.Description>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Badge tone={statusTone[result.status]}>{result.status}</Badge>
+              <Dialog.Close asChild>
+                <Button aria-label="Close result details" size="icon" type="button" variant="ghost">
+                  <X className="h-4 w-4" />
+                </Button>
+              </Dialog.Close>
+            </div>
+          </div>
+
+          <div className="space-y-4 overflow-y-auto p-4 md:p-5">
+            <div className="grid grid-cols-4 gap-2 rounded-lg bg-surface-muted p-1">
+              <PreviewTab active={previewMode === "summary"} onClick={() => onSetPreviewMode("summary")}>
+                Summary
+              </PreviewTab>
+              <PreviewTab active={previewMode === "report"} onClick={() => onSetPreviewMode("report")}>
+                Report
+              </PreviewTab>
+              <PreviewTab active={previewMode === "image"} onClick={() => onSetPreviewMode("image")}>
+                Image
+              </PreviewTab>
+              <PreviewTab active={previewMode === "audit"} onClick={() => onSetPreviewMode("audit")}>
+                Audit
+              </PreviewTab>
+            </div>
+
+            {previewMode === "summary" ? <SummaryPanel result={result} /> : null}
+            {previewMode === "report" ? <ReportPanel result={result} /> : null}
+            {previewMode === "image" ? <ImagePanel result={result} /> : null}
+            {previewMode === "audit" ? <AuditPanel acknowledged={acknowledged} ackNote={ackNote} result={result} /> : null}
+
+            {result.department === "laboratory" ? (
+              <LaboratoryWorkflowActions result={result} onAdvance={() => onAdvanceLaboratory(result)} onRelease={() => onReleaseLaboratory(result)} />
+            ) : null}
+
+            {result.status === "Critical" ? (
+              <div className="space-y-3 rounded-lg border border-critical/30 bg-critical/10 p-3 text-critical">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <AlertTriangle className="h-4 w-4" />
+                  Critical result action required
+                </div>
+                <p className="text-xs">Notify the clinical team and record acknowledgement before closing this alert.</p>
+                <textarea
+                  className="min-h-20 w-full resize-none rounded-md border border-critical/30 bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-critical/20"
+                  onChange={(event) => onAckNoteChange(event.target.value)}
+                  placeholder="Acknowledgement note"
+                  value={ackNote}
+                />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button variant="outline" onClick={() => onNotifyCritical(result)}>
+                    <Bell className="h-4 w-4" />
+                    Notify Team
+                  </Button>
+                  <Button onClick={() => onAcknowledge(result)} disabled={acknowledged}>
+                    <ShieldCheck className="h-4 w-4" />
+                    {acknowledged ? "Acknowledged" : "Acknowledge"}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="border-t border-border bg-surface-muted px-4 py-3">
+            <div className="grid gap-2 sm:grid-cols-4">
+              <Button onClick={() => onSetPreviewMode("report")}>
+                <FileText className="h-4 w-4" />
+                View Report
+              </Button>
+              <Button variant="outline" onClick={() => onSetPreviewMode("image")}>
+                <ImageIcon className="h-4 w-4" />
+                View Image
+              </Button>
+              <Button variant="outline" onClick={() => onPrint(result)}>
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+              <ResultDownloadDialog
+                onDownloaded={(format) => onSetNotice(`${result.id} downloaded as ${format}.`)}
+                result={result}
+                trigger={
+                  <Button disabled={!result.reportAvailable} title={result.reportAvailable ? "Download report" : "Report is not ready"} type="button" variant="outline">
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -1631,189 +1638,6 @@ function TestHistoryPanel({
         </div>
       </div>
     </section>
-  );
-}
-
-function getReportTitle(result: ResultRecord) {
-  if (result.department === "laboratory") {
-    return "Laboratory Report";
-  }
-
-  if (result.department === "radiology") {
-    return "Radiology Report";
-  }
-
-  return "POCT Report";
-}
-
-function getValueFlagTone(flag?: ResultRecord["values"][number]["flag"]): "success" | "warning" | "critical" | "muted" {
-  if (flag === "Critical") {
-    return "critical";
-  }
-
-  if (flag === "High" || flag === "Low") {
-    return "warning";
-  }
-
-  if (flag === "Normal") {
-    return "success";
-  }
-
-  return "muted";
-}
-
-function ReportInfoCell({ label, value }: { label: string; value?: ReactNode }) {
-  return (
-    <div className="min-w-0 border-b border-border/70 px-3 py-2">
-      <div className="text-[11px] font-semibold uppercase text-muted-foreground">{label}</div>
-      <div className="mt-1 truncate text-sm font-semibold text-foreground">{value || "-"}</div>
-    </div>
-  );
-}
-
-function ResultReportDialog({
-  onOpenChange,
-  onPrint,
-  open,
-  result,
-}: {
-  onOpenChange: (open: boolean) => void;
-  onPrint: (result: ResultRecord) => void;
-  open: boolean;
-  result: ResultRecord | null;
-}) {
-  if (!result) {
-    return null;
-  }
-
-  const reportTitle = getReportTitle(result);
-  const completedAt = result.completedAt ? formatDateTime(result.completedAt) : "-";
-  const collectedAt = result.collectedAt ? formatDateTime(result.collectedAt) : "-";
-
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/45 backdrop-blur-[2px]" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] flex max-h-[90dvh] w-[min(96vw,980px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl outline-none">
-          <div className="flex items-start justify-between gap-3 border-b border-border bg-white px-4 py-3">
-            <div className="min-w-0">
-              <Dialog.Title className="truncate text-base font-semibold text-foreground">{reportTitle}</Dialog.Title>
-              <Dialog.Description className="mt-1 truncate text-sm text-muted-foreground">
-                {result.id} | {result.testName} | {result.patientName}
-              </Dialog.Description>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button onClick={() => onPrint(result)} size="sm" type="button" variant="outline">
-                <Printer className="h-4 w-4" />
-                Print
-              </Button>
-              <Dialog.Close asChild>
-                <Button aria-label="Close report" size="icon" type="button" variant="ghost">
-                  <X className="h-4 w-4" />
-                </Button>
-              </Dialog.Close>
-            </div>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto bg-[#eef1f6] p-3 md:p-5">
-            <div className="mx-auto max-w-[820px] overflow-hidden rounded-lg border border-border bg-white text-slate-950 shadow-sm">
-              <div className="border-b-4 border-primary px-5 py-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="text-2xl font-bold text-primary">PLASMIT</div>
-                    <div className="mt-0.5 text-xs font-semibold uppercase text-slate-500">Healthcare IT Vector</div>
-                    <div className="mt-3 text-sm font-semibold text-slate-700">Plasmit Hospital Diagnostic Services</div>
-                    <div className="text-xs text-slate-500">ICU / OPD / Emergency laboratory report preview</div>
-                  </div>
-                  <div className="text-left sm:text-right">
-                    <div className="text-lg font-bold uppercase text-slate-900">{reportTitle}</div>
-                    <div className="mt-2 flex flex-wrap gap-2 sm:justify-end">
-                      <Badge tone={statusTone[result.status]}>{result.status}</Badge>
-                      <Badge tone={priorityTone[result.priority]}>{result.priority}</Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid border-b border-border bg-slate-50 sm:grid-cols-2 lg:grid-cols-4">
-                <ReportInfoCell label="Patient Name" value={result.patientName} />
-                <ReportInfoCell label="UHID / MRN" value={result.mrn} />
-                <ReportInfoCell label="Age / Sex" value={result.ageSex} />
-                <ReportInfoCell label="Visit Type" value={result.visitType} />
-                <ReportInfoCell label="Ref. Doctor" value={result.orderingDoctor} />
-                <ReportInfoCell label="Location" value={result.location} />
-                <ReportInfoCell label="Order Date" value={formatDateTime(result.orderedAt)} />
-                <ReportInfoCell label="Report Date" value={completedAt} />
-              </div>
-
-              <div className="grid border-b border-border bg-white sm:grid-cols-3">
-                <ReportInfoCell label="Test Name" value={result.testName} />
-                <ReportInfoCell label={result.department === "laboratory" ? "Specimen" : "Accession No."} value={result.specimen ?? result.accessionNo ?? "-"} />
-                <ReportInfoCell label="Collected At" value={collectedAt} />
-              </div>
-
-              <div className="px-5 py-5">
-                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="text-sm font-bold uppercase text-slate-900">{result.testName}</div>
-                    <div className="mt-1 text-xs text-slate-500">Result values are shown with unit, biological reference interval, and flag.</div>
-                  </div>
-                  <Badge tone={result.reportAvailable ? "success" : "warning"}>{result.reportAvailable ? "Report Ready" : "Report Pending"}</Badge>
-                </div>
-
-                <div className="overflow-hidden rounded-md border border-slate-200">
-                  <div className="hidden grid-cols-[1.3fr_0.75fr_0.65fr_1fr_0.7fr] bg-slate-900 px-3 py-2 text-xs font-semibold uppercase text-white md:grid">
-                    <span>Investigation</span>
-                    <span>Result</span>
-                    <span>Unit</span>
-                    <span>Reference Range</span>
-                    <span>Status</span>
-                  </div>
-                  <div className="divide-y divide-slate-200">
-                    {result.values.map((item) => (
-                      <div className="grid gap-2 px-3 py-3 text-sm md:grid-cols-[1.3fr_0.75fr_0.65fr_1fr_0.7fr] md:items-center" key={`${result.id}-${item.name}`}>
-                        <div>
-                          <div className="font-semibold text-slate-900">{item.name}</div>
-                          <div className="mt-0.5 text-xs text-slate-500 md:hidden">
-                            {item.unit ?? "-"} | Ref: {item.range ?? "-"}
-                          </div>
-                        </div>
-                        <div className="font-bold text-slate-950">{item.value}</div>
-                        <div className="hidden text-slate-600 md:block">{item.unit ?? "-"}</div>
-                        <div className="hidden text-slate-600 md:block">{item.range ?? "-"}</div>
-                        <div>
-                          <Badge tone={getValueFlagTone(item.flag)}>{item.flag ?? "Recorded"}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-                  <div className="text-xs font-bold uppercase text-slate-500">Clinical Summary</div>
-                  <p className="mt-1 text-sm font-medium leading-6 text-slate-800">{result.resultSummary}</p>
-                </div>
-              </div>
-
-              <div className="grid border-t border-border bg-slate-50 px-5 py-4 text-xs text-slate-600 sm:grid-cols-3">
-                <div>
-                  <div className="font-bold uppercase text-slate-500">Collected</div>
-                  <div className="mt-1">{collectedAt}</div>
-                </div>
-                <div>
-                  <div className="font-bold uppercase text-slate-500">Verified By</div>
-                  <div className="mt-1">{result.timeline.at(-1)?.by ?? result.orderingDoctor}</div>
-                </div>
-                <div>
-                  <div className="font-bold uppercase text-slate-500">Generated</div>
-                  <div className="mt-1">{completedAt}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
   );
 }
 

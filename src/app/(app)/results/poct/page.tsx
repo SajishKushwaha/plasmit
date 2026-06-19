@@ -1,8 +1,8 @@
-import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
+import { ResultsSidebarView } from "@/features/results/components/ResultsSidebarView";
 
 export default function PoctResultsPage() {
   return (
-    <ResultsCenterView
+    <ResultsSidebarView
       initialDepartment="poct"
       viewTitle="POCT Results"
       viewDescription="Rapid bedside and emergency point-of-care results with critical alert handling."

@@ -1,8 +1,8 @@
-import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
+import { ResultsSidebarView } from "@/features/results/components/ResultsSidebarView";
 
 export default function CriticalResultsPage() {
   return (
-    <ResultsCenterView
+    <ResultsSidebarView
       criticalOnly
       viewTitle="Critical Results"
       viewDescription="Critical laboratory and POCT results that require notification, acknowledgement, and audit tracking."

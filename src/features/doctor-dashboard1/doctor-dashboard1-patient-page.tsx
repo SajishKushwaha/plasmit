@@ -12,7 +12,6 @@ import {
   HeartPulse,
   LayoutDashboard,
   Radio,
-  UserRound,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -39,8 +38,20 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = React.useState(requestedTab === "shift-summary" ? "shift-summary" : "overview");
+  const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
   const patient = orderedPatients.find((item) => String(item.id) === patientId);
   const rapidReviewPatient = patient ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId) : undefined;
+
+  React.useEffect(() => {
+    const updatePatientHeader = () => {
+      setIsPatientHeaderCompact(window.scrollY > 8);
+    };
+
+    updatePatientHeader();
+    window.addEventListener("scroll", updatePatientHeader, { passive: true });
+
+    return () => window.removeEventListener("scroll", updatePatientHeader);
+  }, []);
 
   React.useEffect(() => {
     if (requestedTab === "shift-summary") {
@@ -62,19 +73,17 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
   }
 
   const tone = patientTone(patient);
-  const initials = patient.name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
     <div className="space-y-4 py-4">
       <Tabs className="space-y-3 pt-[118px]" onValueChange={setActiveTab} value={activeTab}>
-        <div className="fixed left-0 right-0 top-16 z-30 space-y-1.5 bg-background/95 px-4 pb-1.5 pt-1.5 backdrop-blur md:px-6 lg:left-[264px]">
+        <div
+          className={cn(
+            "fixed left-0 right-0 space-y-1.5 bg-background/95 px-4 pb-1.5 pt-1.5 backdrop-blur transition-[top,box-shadow] duration-200 md:px-6 lg:left-[264px]",
+            isPatientHeaderCompact ? "top-0 z-50 shadow-sm" : "top-16 z-30"
+          )}
+        >
           <PatientDetailTopStrip
-            initials={initials}
+            isCompact={isPatientHeaderCompact}
             patient={patient}
             rapidReviewPatient={rapidReviewPatient}
             tone={tone}
@@ -93,7 +102,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             </TabsList>
           </div>
         </div>
-        <div className="h-[calc(100dvh-202px)] overflow-y-auto overscroll-contain pb-6 pr-1">
+        <div className="pb-6">
           <TabsContent className="mt-0" value="overview">
             <PatientOverview patient={patient} rapidReviewPatient={rapidReviewPatient} />
           </TabsContent>
@@ -159,33 +168,38 @@ function PatientTab({ icon: Icon, label, value }: { icon: typeof Activity; label
 }
 
 function PatientDetailTopStrip({
-  initials,
+  isCompact,
   patient,
   rapidReviewPatient,
   tone,
 }: {
-  initials: string;
+  isCompact: boolean;
   patient: Dashboard1Patient;
   rapidReviewPatient?: RapidReviewPatient;
   tone: ReturnType<typeof patientTone>;
 }) {
+  const age = rapidReviewPatient?.ageGender?.split("/")[0]?.trim() ? `${rapidReviewPatient.ageGender.split("/")[0].trim()} year(s)` : "25 year(s)";
   const details = [
     { label: "MR", value: "94346597930" },
     { label: "DOB", value: "30-12-1995" },
-    { label: "", value: rapidReviewPatient?.ageGender?.split("/")[0]?.trim() ? `${rapidReviewPatient.ageGender.split("/")[0].trim()} year(s)` : "25 year(s)" },
+    { label: "", value: age },
     { label: "", value: "75 kg" },
+    { label: "Bed", value: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed },
     { label: "Blood Group", value: "AB" },
     { label: "Rh", value: "+ve" },
   ];
 
   return (
-    <div className="overflow-x-auto overflow-y-hidden rounded-xl border border-[#7367f0]/40 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)]" style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}>
-      <div className="flex min-h-11 min-w-max items-center justify-between gap-8 px-3 py-2">
-        <div className="flex min-w-max flex-1 items-center gap-7">
+    <div
+      className={cn(
+        "overflow-x-auto overflow-y-hidden rounded-xl border border-[#7367f0]/40 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)] transition-all duration-200",
+        isCompact && "rounded-lg shadow-[0_6px_16px_rgba(115,103,240,0.2)]"
+      )}
+      style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}
+    >
+      <div className={cn("flex min-w-max items-center justify-between gap-8 px-3 transition-all duration-200", isCompact ? "min-h-9 py-1" : "min-h-11 py-2")}>
+        <div className={cn("flex min-w-max flex-1 items-center transition-all duration-200", isCompact ? "gap-4" : "gap-7")}>
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/18 text-xs font-bold shadow-sm">
-              {initials || <UserRound className="h-4 w-4" />}
-            </div>
             <span className="truncate text-sm font-bold">{patient.name}</span>
             <Badge tone={tone === "red" ? "critical" : tone === "orange" ? "warning" : "success"}>
               {tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Stable"}
@@ -197,12 +211,9 @@ function PatientDetailTopStrip({
               <span>{item.value}</span>
             </div>
           ))}
-          <div className="whitespace-nowrap text-sm font-bold text-orange-300">Allergies: Meropenem</div>
+          <div className={cn("whitespace-nowrap text-sm font-bold text-orange-300", !isCompact && "ml-0")}>Allergies: Meropenem</div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button asChild className="h-8 border-white/30 bg-white/15 px-3 text-xs text-white hover:bg-white/25" size="sm">
-            <Link href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}><Activity className="h-4 w-4" />Rapid Review</Link>
-          </Button>
           <Button asChild className="h-8 border-white/30 bg-white px-3 text-xs text-[#1d4f8d] hover:bg-white/90" size="sm" variant="outline">
             <Link href="/doctor-dashboard1"><ArrowLeft className="h-4 w-4" />Dashboard1</Link>
           </Button>

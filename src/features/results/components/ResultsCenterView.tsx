@@ -852,11 +852,9 @@ export function ResultsCenterView({
                       {date}
                     </div>
                     <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-                      <div className="hidden grid-cols-[1.35fr_0.8fr_0.72fr_0.72fr_0.78fr] gap-3 border-b border-border bg-[#f7f8fc] px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
+                      <div className="hidden grid-cols-[1.4fr_0.9fr_0.7fr] gap-3 border-b border-border bg-[#f7f8fc] px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
                         <span>Test</span>
                         <span>Department</span>
-                        <span>Status</span>
-                        <span>Priority</span>
                         <span className="text-right">Action</span>
                       </div>
                       {records.map((result) => (
@@ -1447,7 +1445,7 @@ function PatientResultSingleRow({
     <button
       aria-current={selected ? "true" : undefined}
       className={cn(
-        "relative grid w-full gap-3 overflow-hidden border-b border-border bg-background px-4 py-4 text-left transition last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid-cols-[1.35fr_0.8fr_0.72fr_0.72fr_0.78fr] lg:items-center",
+        "relative grid w-full gap-3 overflow-hidden border-b border-border bg-background px-4 py-4 text-left transition last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid-cols-[1.4fr_0.9fr_0.7fr] lg:items-center",
         selected && "bg-primary/5 shadow-sm ring-1 ring-inset ring-primary/25",
       )}
       onClick={onSelect}
@@ -1467,14 +1465,6 @@ function PatientResultSingleRow({
       <div className="min-w-0 text-sm">
         <div className="font-medium capitalize text-foreground">{result.department}</div>
         <div className="mt-1 truncate text-xs text-muted-foreground">{result.location}</div>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">Status</span>
-        <Badge tone={statusTone[result.status]}>{result.status}</Badge>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">Priority</span>
-        <Badge tone={priorityTone[result.priority]}>{result.priority}</Badge>
       </div>
       <div className="flex justify-start gap-2 lg:justify-end">
         <AvailabilityIcon active={result.reportAvailable} label="Report" icon="report" />

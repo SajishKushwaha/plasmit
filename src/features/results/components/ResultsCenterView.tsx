@@ -202,6 +202,7 @@ export function ResultsCenterView({
   const [ackNote, setAckNote] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [downloadGroup, setDownloadGroup] = useState<{ title: string; results: ResultRecord[] } | null>(null);
+  const [reportDialogResult, setReportDialogResult] = useState<ResultRecord | null>(null);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [historyQuickView, setHistoryQuickView] = useState<HistoryQuickView>(null);
   const [isCustomDateDialogOpen, setIsCustomDateDialogOpen] = useState(false);
@@ -644,6 +645,12 @@ export function ResultsCenterView({
     setPreviewMode("summary");
   }
 
+  function openResultReport(result: ResultRecord) {
+    setSelectedId(result.id);
+    setPreviewMode("report");
+    setReportDialogResult(result);
+  }
+
   function printResult(result: ResultRecord) {
     setNotice(`Print preview opened for ${result.id}.`);
     window.print();
@@ -730,13 +737,24 @@ export function ResultsCenterView({
         onDateChange={changeDateWiseHistoryDate}
         onOpenChange={setIsDateWiseHistoryOpen}
         onSelect={(result) => {
-          selectResult(result);
+          openResultReport(result);
           setIsDateWiseHistoryOpen(false);
         }}
         open={isDateWiseHistoryOpen}
         selectedId={selectedResult?.id}
         table={dateWiseHistoryTable}
         totalCount={dateWiseHistoryResults.length}
+      />
+
+      <ResultReportDialog
+        onOpenChange={(open) => {
+          if (!open) {
+            setReportDialogResult(null);
+          }
+        }}
+        onPrint={printResult}
+        open={Boolean(reportDialogResult)}
+        result={reportDialogResult}
       />
 
       {isUnifiedView && !isPatientResultsView ? (
@@ -750,19 +768,19 @@ export function ResultsCenterView({
       ) : null}
 
       <Card className="overflow-visible border-primary/10 bg-white shadow-sm">
-        <CardContent className="space-y-3 p-3 md:p-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_auto] lg:items-end">
+        <CardContent className="space-y-2 p-2.5 md:p-3">
+          <div className="grid gap-2 lg:grid-cols-[minmax(280px,1fr)_auto] lg:items-end">
             <label className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                className="h-10 rounded-lg pl-10 text-sm"
+                className="h-9 rounded-lg pl-10 text-sm"
                 placeholder={isPatientResultsView ? "Search test, order, department" : "Search by UHID, MRN, patient"}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
 
-            <div className="flex flex-wrap items-end gap-2">
+            <div className={cn("flex items-end gap-2", isPatientResultsView ? "flex-nowrap" : "flex-wrap")}>
               {!isDepartmentLocked && !isPatientResultsView ? (
                 <select
                   aria-label="Results"
@@ -779,7 +797,10 @@ export function ResultsCenterView({
               ) : null}
               <select
                 aria-label="Status"
-                className="h-10 min-w-[210px] rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className={cn(
+                  "h-9 rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60",
+                  isPatientResultsView ? "min-w-0 flex-1" : "min-w-[210px]",
+                )}
                 disabled={criticalOnly}
                 onChange={(event) => changeStatus(event.target.value as StatusFilter)}
                 value={status}
@@ -811,17 +832,9 @@ export function ResultsCenterView({
 
       {isPatientResultsView ? (
         <Card className="min-w-0 overflow-hidden border-primary/10 bg-white shadow-sm">
-          <CardHeader className="border-b border-border bg-white px-4 py-3">
-            <div>
-              <CardTitle className="text-base">Patient Results</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {shouldSplitResultHistory
-                  ? `${sameDateResults.length} current records | ${historyResults.length} older tests`
-                  : `${filteredResults.length} records match the current filters`}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {shouldSplitResultHistory && historyResults.length > 0 ? (
+          {shouldSplitResultHistory && historyResults.length > 0 ? (
+            <CardHeader className="border-b border-border bg-white px-4 py-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <ResultHistoryDropdown
                   onDateWise={openDateWiseHistory}
                   onToday={() => openQuickHistory("today")}
@@ -830,11 +843,10 @@ export function ResultsCenterView({
                   totalCount={historyResults.length}
                   yesterdayCount={yesterdayHistoryResults.length}
                 />
-              ) : null}
-              <Badge tone={criticalOnly ? "critical" : "info"}>{criticalOnly ? "Critical only" : "Live results"}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 p-4">
+              </div>
+            </CardHeader>
+          ) : null}
+          <CardContent className="space-y-3 p-3">
             {filteredResults.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border bg-background px-4 py-10 text-center">
                 <div className="text-sm font-semibold text-foreground">No results found</div>
@@ -846,11 +858,7 @@ export function ResultsCenterView({
             ) : (
               <>
                 {Object.entries(visibleGroupedResults).map(([date, records]) => (
-                  <section className="space-y-3" key={date}>
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {date}
-                    </div>
+                  <section key={date}>
                     <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
                       <div className="hidden grid-cols-[1.4fr_0.9fr_0.7fr] gap-3 border-b border-border bg-[#f7f8fc] px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid">
                         <span>Test</span>
@@ -861,7 +869,7 @@ export function ResultsCenterView({
                         <PatientResultSingleRow
                           acknowledged={acknowledgedIds.includes(result.id)}
                           key={result.id}
-                          onSelect={() => selectResult(result)}
+                          onSelect={() => openResultReport(result)}
                           result={result}
                           selected={selectedResult?.id === result.id}
                         />
@@ -869,73 +877,6 @@ export function ResultsCenterView({
                     </div>
                   </section>
                 ))}
-
-                {selectedResult ? (
-                  <section className="overflow-hidden rounded-xl border border-primary/15 bg-white shadow-sm">
-                    <div className="flex flex-col gap-3 border-b border-border bg-[#fbfcff] px-4 py-3 md:flex-row md:items-center md:justify-between">
-                      <div className="min-w-0">
-                        <div className="truncate text-base font-semibold text-foreground">{selectedResult.testName}</div>
-                        <div className="mt-1 text-sm text-muted-foreground">
-                          {selectedResult.id} | {formatDateTime(selectedResult.orderedAt)}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge tone={statusTone[selectedResult.status]}>{selectedResult.status}</Badge>
-                        <Badge tone={priorityTone[selectedResult.priority]}>{selectedResult.priority}</Badge>
-                      </div>
-                    </div>
-                    <div className="space-y-4 p-4">
-                      <div className="grid grid-cols-4 gap-2 rounded-lg bg-surface-muted p-1">
-                        <PreviewTab active={previewMode === "summary"} onClick={() => setPreviewMode("summary")}>
-                          Summary
-                        </PreviewTab>
-                        <PreviewTab active={previewMode === "report"} onClick={() => setPreviewMode("report")}>
-                          Report
-                        </PreviewTab>
-                        <PreviewTab active={previewMode === "image"} onClick={() => setPreviewMode("image")}>
-                          Image
-                        </PreviewTab>
-                        <PreviewTab active={previewMode === "audit"} onClick={() => setPreviewMode("audit")}>
-                          Audit
-                        </PreviewTab>
-                      </div>
-
-                      {previewMode === "summary" ? <SummaryPanel result={selectedResult} /> : null}
-                      {previewMode === "report" ? <ReportPanel result={selectedResult} /> : null}
-                      {previewMode === "image" ? <ImagePanel result={selectedResult} /> : null}
-                      {previewMode === "audit" ? <AuditPanel acknowledged={acknowledgedIds.includes(selectedResult.id)} ackNote={ackNote} result={selectedResult} /> : null}
-
-                      {selectedResult.department === "laboratory" ? (
-                        <LaboratoryWorkflowActions result={selectedResult} onAdvance={() => advanceLaboratoryWorkflow(selectedResult)} onRelease={() => releaseLaboratoryReport(selectedResult)} />
-                      ) : null}
-
-                      <div className="grid gap-2 sm:grid-cols-4">
-                        <Button onClick={() => setPreviewMode("report")}>
-                          <FileText className="h-4 w-4" />
-                          Report
-                        </Button>
-                        <Button variant="outline" onClick={() => setPreviewMode("image")}>
-                          <ImageIcon className="h-4 w-4" />
-                          Image
-                        </Button>
-                        <Button variant="outline" onClick={() => printResult(selectedResult)}>
-                          <Printer className="h-4 w-4" />
-                          Print
-                        </Button>
-                        <ResultDownloadDialog
-                          onDownloaded={(format) => setNotice(`${selectedResult.id} downloaded as ${format}.`)}
-                          result={selectedResult}
-                          trigger={
-                            <Button disabled={!selectedResult.reportAvailable} title={selectedResult.reportAvailable ? "Download report" : "Report is not ready"} type="button" variant="outline">
-                              <Download className="h-4 w-4" />
-                              Download
-                            </Button>
-                          }
-                        />
-                      </div>
-                    </div>
-                  </section>
-                ) : null}
 
                 {shouldSplitResultHistory && historyResults.length > 0 && isHistoryPanelOpen ? (
                   <TestHistoryPanel
@@ -1008,7 +949,7 @@ export function ResultsCenterView({
                           acknowledged={acknowledgedIds.includes(result.id)}
                           isLaboratoryView={isLaboratoryView}
                           key={result.id}
-                          onSelect={() => selectResult(result)}
+                          onSelect={() => openResultReport(result)}
                           result={result}
                           selected={selectedResult?.id === result.id}
                         />
@@ -1323,13 +1264,13 @@ function StatusActionChip({
   return (
     <span
       className={cn(
-        "inline-flex overflow-hidden rounded-md border text-xs font-medium transition",
+        "inline-flex shrink-0 overflow-hidden rounded-md border text-xs font-medium transition",
         active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground",
         disabled && "opacity-45",
       )}
     >
       <button
-        className="inline-flex items-center px-3 py-1.5 transition hover:bg-current/5 disabled:cursor-not-allowed"
+        className="inline-flex h-9 items-center whitespace-nowrap px-3 py-1.5 transition hover:bg-current/5 disabled:cursor-not-allowed"
         disabled={disabled}
         onClick={onView}
         type="button"
@@ -1393,7 +1334,7 @@ function PatientResultDepartmentTabs({
   };
 
   return (
-    <div aria-label="Patient result departments" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" role="tablist">
+    <div aria-label="Patient result departments" className="flex flex-nowrap gap-2 overflow-x-auto pb-1" role="tablist">
       {resultDepartments.map((item) => {
         const active = department === item.id;
 
@@ -1401,7 +1342,7 @@ function PatientResultDepartmentTabs({
           <button
             aria-selected={active}
             className={cn(
-              "flex h-11 items-center justify-between gap-3 rounded-lg border px-3 text-left text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-ring/20",
+              "flex h-11 min-w-[180px] flex-1 shrink-0 items-center justify-between gap-3 rounded-lg border px-3 text-left text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-ring/20",
               active
                 ? "border-primary bg-primary text-primary-foreground shadow-sm"
                 : "border-border bg-surface-muted text-foreground hover:border-primary/40 hover:bg-primary-soft hover:text-primary",
@@ -1690,6 +1631,189 @@ function TestHistoryPanel({
         </div>
       </div>
     </section>
+  );
+}
+
+function getReportTitle(result: ResultRecord) {
+  if (result.department === "laboratory") {
+    return "Laboratory Report";
+  }
+
+  if (result.department === "radiology") {
+    return "Radiology Report";
+  }
+
+  return "POCT Report";
+}
+
+function getValueFlagTone(flag?: ResultRecord["values"][number]["flag"]): "success" | "warning" | "critical" | "muted" {
+  if (flag === "Critical") {
+    return "critical";
+  }
+
+  if (flag === "High" || flag === "Low") {
+    return "warning";
+  }
+
+  if (flag === "Normal") {
+    return "success";
+  }
+
+  return "muted";
+}
+
+function ReportInfoCell({ label, value }: { label: string; value?: ReactNode }) {
+  return (
+    <div className="min-w-0 border-b border-border/70 px-3 py-2">
+      <div className="text-[11px] font-semibold uppercase text-muted-foreground">{label}</div>
+      <div className="mt-1 truncate text-sm font-semibold text-foreground">{value || "-"}</div>
+    </div>
+  );
+}
+
+function ResultReportDialog({
+  onOpenChange,
+  onPrint,
+  open,
+  result,
+}: {
+  onOpenChange: (open: boolean) => void;
+  onPrint: (result: ResultRecord) => void;
+  open: boolean;
+  result: ResultRecord | null;
+}) {
+  if (!result) {
+    return null;
+  }
+
+  const reportTitle = getReportTitle(result);
+  const completedAt = result.completedAt ? formatDateTime(result.completedAt) : "-";
+  const collectedAt = result.collectedAt ? formatDateTime(result.collectedAt) : "-";
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/45 backdrop-blur-[2px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] flex max-h-[90dvh] w-[min(96vw,980px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl outline-none">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-white px-4 py-3">
+            <div className="min-w-0">
+              <Dialog.Title className="truncate text-base font-semibold text-foreground">{reportTitle}</Dialog.Title>
+              <Dialog.Description className="mt-1 truncate text-sm text-muted-foreground">
+                {result.id} | {result.testName} | {result.patientName}
+              </Dialog.Description>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button onClick={() => onPrint(result)} size="sm" type="button" variant="outline">
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+              <Dialog.Close asChild>
+                <Button aria-label="Close report" size="icon" type="button" variant="ghost">
+                  <X className="h-4 w-4" />
+                </Button>
+              </Dialog.Close>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[#eef1f6] p-3 md:p-5">
+            <div className="mx-auto max-w-[820px] overflow-hidden rounded-lg border border-border bg-white text-slate-950 shadow-sm">
+              <div className="border-b-4 border-primary px-5 py-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="text-2xl font-bold text-primary">PLASMIT</div>
+                    <div className="mt-0.5 text-xs font-semibold uppercase text-slate-500">Healthcare IT Vector</div>
+                    <div className="mt-3 text-sm font-semibold text-slate-700">Plasmit Hospital Diagnostic Services</div>
+                    <div className="text-xs text-slate-500">ICU / OPD / Emergency laboratory report preview</div>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <div className="text-lg font-bold uppercase text-slate-900">{reportTitle}</div>
+                    <div className="mt-2 flex flex-wrap gap-2 sm:justify-end">
+                      <Badge tone={statusTone[result.status]}>{result.status}</Badge>
+                      <Badge tone={priorityTone[result.priority]}>{result.priority}</Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid border-b border-border bg-slate-50 sm:grid-cols-2 lg:grid-cols-4">
+                <ReportInfoCell label="Patient Name" value={result.patientName} />
+                <ReportInfoCell label="UHID / MRN" value={result.mrn} />
+                <ReportInfoCell label="Age / Sex" value={result.ageSex} />
+                <ReportInfoCell label="Visit Type" value={result.visitType} />
+                <ReportInfoCell label="Ref. Doctor" value={result.orderingDoctor} />
+                <ReportInfoCell label="Location" value={result.location} />
+                <ReportInfoCell label="Order Date" value={formatDateTime(result.orderedAt)} />
+                <ReportInfoCell label="Report Date" value={completedAt} />
+              </div>
+
+              <div className="grid border-b border-border bg-white sm:grid-cols-3">
+                <ReportInfoCell label="Test Name" value={result.testName} />
+                <ReportInfoCell label={result.department === "laboratory" ? "Specimen" : "Accession No."} value={result.specimen ?? result.accessionNo ?? "-"} />
+                <ReportInfoCell label="Collected At" value={collectedAt} />
+              </div>
+
+              <div className="px-5 py-5">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-sm font-bold uppercase text-slate-900">{result.testName}</div>
+                    <div className="mt-1 text-xs text-slate-500">Result values are shown with unit, biological reference interval, and flag.</div>
+                  </div>
+                  <Badge tone={result.reportAvailable ? "success" : "warning"}>{result.reportAvailable ? "Report Ready" : "Report Pending"}</Badge>
+                </div>
+
+                <div className="overflow-hidden rounded-md border border-slate-200">
+                  <div className="hidden grid-cols-[1.3fr_0.75fr_0.65fr_1fr_0.7fr] bg-slate-900 px-3 py-2 text-xs font-semibold uppercase text-white md:grid">
+                    <span>Investigation</span>
+                    <span>Result</span>
+                    <span>Unit</span>
+                    <span>Reference Range</span>
+                    <span>Status</span>
+                  </div>
+                  <div className="divide-y divide-slate-200">
+                    {result.values.map((item) => (
+                      <div className="grid gap-2 px-3 py-3 text-sm md:grid-cols-[1.3fr_0.75fr_0.65fr_1fr_0.7fr] md:items-center" key={`${result.id}-${item.name}`}>
+                        <div>
+                          <div className="font-semibold text-slate-900">{item.name}</div>
+                          <div className="mt-0.5 text-xs text-slate-500 md:hidden">
+                            {item.unit ?? "-"} | Ref: {item.range ?? "-"}
+                          </div>
+                        </div>
+                        <div className="font-bold text-slate-950">{item.value}</div>
+                        <div className="hidden text-slate-600 md:block">{item.unit ?? "-"}</div>
+                        <div className="hidden text-slate-600 md:block">{item.range ?? "-"}</div>
+                        <div>
+                          <Badge tone={getValueFlagTone(item.flag)}>{item.flag ?? "Recorded"}</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs font-bold uppercase text-slate-500">Clinical Summary</div>
+                  <p className="mt-1 text-sm font-medium leading-6 text-slate-800">{result.resultSummary}</p>
+                </div>
+              </div>
+
+              <div className="grid border-t border-border bg-slate-50 px-5 py-4 text-xs text-slate-600 sm:grid-cols-3">
+                <div>
+                  <div className="font-bold uppercase text-slate-500">Collected</div>
+                  <div className="mt-1">{collectedAt}</div>
+                </div>
+                <div>
+                  <div className="font-bold uppercase text-slate-500">Verified By</div>
+                  <div className="mt-1">{result.timeline.at(-1)?.by ?? result.orderingDoctor}</div>
+                </div>
+                <div>
+                  <div className="font-bold uppercase text-slate-500">Generated</div>
+                  <div className="mt-1">{completedAt}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 

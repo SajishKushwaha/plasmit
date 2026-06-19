@@ -6,14 +6,12 @@ import { useSearchParams } from "next/navigation";
 import {
   Activity,
   ArrowLeft,
-  BedDouble,
   ChartNoAxesCombined,
   ClipboardCheck,
   FlaskConical,
   HeartPulse,
   LayoutDashboard,
   Radio,
-  Stethoscope,
   UserRound,
 } from "lucide-react";
 
@@ -73,104 +71,77 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
 
   return (
     <div className="space-y-4 py-4">
-      <Card className="overflow-hidden rounded-xl border-primary/15 shadow-[0_10px_28px_rgba(43,54,116,0.08)]">
-        <CardContent className="p-0">
-          <div className="relative overflow-hidden bg-gradient-to-br from-white via-[#fafbff] to-[#f0f5ff] px-3.5 py-2 md:px-4">
-            <div className="pointer-events-none absolute -right-20 -top-24 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
-            <div className="relative flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-[#5b8def] text-sm font-bold text-white shadow-md shadow-primary/15">
-                  {initials || <UserRound className="h-5 w-5" />}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <h1 className="truncate text-lg font-bold tracking-tight text-foreground md:text-xl">{patient.name}</h1>
-                    <Badge tone={tone === "red" ? "critical" : tone === "orange" ? "warning" : "info"}>
-                      {tone === "red" ? "Urgent monitoring" : tone === "orange" ? "Clinical watch" : "Stable"}
-                    </Badge>
-                    <Badge tone="success"><Activity className="mr-1 h-3 w-3" />Live</Badge>
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
-                    <PatientContextChip label="UHID" value={rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`} />
-                    <PatientContextChip label="Age/Sex" value={rapidReviewPatient?.ageGender ?? "Not available"} />
-                    <PatientContextChip icon={BedDouble} label="Ward/Bed" value={rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed} />
-                    <PatientContextChip icon={Stethoscope} label="Consultant" value={rapidReviewPatient?.consultant ?? "Duty consultant"} />
-                  </div>
-                </div>
-              </div>
-              <div className="flex shrink-0 flex-wrap gap-2">
-                <Button asChild size="sm">
-                  <Link href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}><Activity className="h-4 w-4" />Rapid Review</Link>
-                </Button>
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/doctor-dashboard1"><ArrowLeft className="h-4 w-4" />Dashboard1</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs className="space-y-3 pt-[118px]" onValueChange={setActiveTab} value={activeTab}>
+        <div className="fixed left-0 right-0 top-16 z-30 space-y-1.5 bg-background/95 px-4 pb-1.5 pt-1.5 backdrop-blur md:px-6 lg:left-[264px]">
+          <PatientDetailTopStrip
+            initials={initials}
+            patient={patient}
+            rapidReviewPatient={rapidReviewPatient}
+            tone={tone}
+          />
 
-      <Tabs className="space-y-4" onValueChange={setActiveTab} value={activeTab}>
-        <div className="sticky top-16 z-30 rounded-xl border border-border bg-white/95 p-1.5 shadow-sm backdrop-blur">
-          <TabsList className="grid w-full grid-cols-2 rounded-lg bg-surface-muted/70 p-1 pb-1 sm:grid-cols-4 xl:grid-cols-8">
-            <PatientTab icon={LayoutDashboard} label="Overview" value="overview" />
-            <PatientTab icon={Radio} label="Live Monitoring" value="live-monitoring" />
-            <PatientTab icon={FlaskConical} label="Results" value="results" />
-            <PatientTab icon={HeartPulse} label="Vitals" value="vitals" />
-            <PatientTab icon={ClipboardCheck} label="Nurse Timeline" value="shift-summary" />
-            <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
-            <PatientTab icon={ChartNoAxesCombined} label="Add POCT" value="AddPoct" />
-            <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
-          </TabsList>
+          <div className="overflow-x-auto rounded-xl border border-border bg-white/95 p-1 shadow-sm">
+            <TabsList className="inline-flex h-auto w-max min-w-max rounded-lg bg-surface-muted/70 p-1">
+              <PatientTab icon={LayoutDashboard} label="Overview" value="overview" />
+              <PatientTab icon={Radio} label="Live Monitoring" value="live-monitoring" />
+              <PatientTab icon={FlaskConical} label="Results" value="results" />
+              <PatientTab icon={HeartPulse} label="Vitals" value="vitals" />
+              <PatientTab icon={ClipboardCheck} label="Nurse Timeline" value="shift-summary" />
+              <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
+              <PatientTab icon={ChartNoAxesCombined} label="POCT" value="Poct" />
+              <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
+            </TabsList>
+          </div>
         </div>
-        <TabsContent className="mt-0" value="overview">
-          <PatientOverview patient={patient} rapidReviewPatient={rapidReviewPatient} />
-        </TabsContent>
-        <TabsContent className="mt-0" value="live-monitoring">
-          <LiveMonitoringPage />
-        </TabsContent>
-        <TabsContent className="mt-0" value="results">
-          <ResultsCenterView
-            defaultDepartment="all"
-            patientContext={{
-              ageSex: rapidReviewPatient?.ageGender,
-              mrn: getResultPatientMrn(patient.id),
-              name: patient.name,
-              uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
-              wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
-            }}
-            viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
-            viewTitle="Results Center"
-          />
-        </TabsContent>
-        <TabsContent className="mt-0" value="vitals">
-          <PatientVitalsTabs patient={patient} rapidReviewPatient={rapidReviewPatient} />
-        </TabsContent>
-        <TabsContent className="mt-0" value="shift-summary">
-          <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />
-        </TabsContent>
-         <TabsContent className="mt-0" value="AddPoct">
-          <AddPoctPage key={patient.id}  />
-        </TabsContent> 
-        <TabsContent className="mt-0" value="orders">
-          <DoctorOrdersPage
-            defaultTab="radiology"
-            key={patient.id}
-            patientContext={{
-              ageSex: rapidReviewPatient?.ageGender,
-              diagnosis: patient.diagnosis,
-              id: `doctor-ipd-${patient.id}`,
-              name: patient.name,
-              radiologyPatientId: getRadiologyPatientId(patient.id),
-              uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
-              wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
-            }}
-          />
-        </TabsContent>
-        <TabsContent className="mt-0" value="Intake Output">
-          <IntakeOutputPage key={patient.id}  />
-        </TabsContent>
+        <div className="h-[calc(100dvh-202px)] overflow-y-auto overscroll-contain pb-6 pr-1">
+          <TabsContent className="mt-0" value="overview">
+            <PatientOverview patient={patient} rapidReviewPatient={rapidReviewPatient} />
+          </TabsContent>
+          <TabsContent className="mt-0" value="live-monitoring">
+            <LiveMonitoringPage />
+          </TabsContent>
+          <TabsContent className="mt-0" value="results">
+            <ResultsCenterView
+              defaultDepartment="all"
+              patientContext={{
+                ageSex: rapidReviewPatient?.ageGender,
+                mrn: getResultPatientMrn(patient.id),
+                name: patient.name,
+                uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
+                wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+              }}
+              viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
+              viewTitle="Results Center"
+            />
+          </TabsContent>
+          <TabsContent className="mt-0" value="vitals">
+            <PatientVitalsTabs patient={patient} rapidReviewPatient={rapidReviewPatient} />
+          </TabsContent>
+          <TabsContent className="mt-0" value="shift-summary">
+            <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />
+          </TabsContent>
+          <TabsContent className="mt-0" value="Poct">
+            <AddPoctPage key={patient.id} />
+          </TabsContent>
+          <TabsContent className="mt-0" value="orders">
+            <DoctorOrdersPage
+              defaultTab="radiology"
+              key={patient.id}
+              patientContext={{
+                ageSex: rapidReviewPatient?.ageGender,
+                diagnosis: patient.diagnosis,
+                id: `doctor-ipd-${patient.id}`,
+                name: patient.name,
+                radiologyPatientId: getRadiologyPatientId(patient.id),
+                uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
+                wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+              }}
+            />
+          </TabsContent>
+          <TabsContent className="mt-0" value="Intake Output">
+            <IntakeOutputPage key={patient.id} />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
@@ -178,12 +149,66 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
 
 function PatientTab({ icon: Icon, label, value }: { icon: typeof Activity; label: string; value: string }) {
   return (
-    <TabsTrigger className="h-10 min-w-0 rounded-lg px-2 text-sm data-[state=active]:text-primary" value={value}>
+    <TabsTrigger className="h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm data-[state=active]:text-primary" value={value}>
       <span className="inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap">
         <Icon className="h-4 w-4 shrink-0" />
         <span className="truncate">{label}</span>
       </span>
     </TabsTrigger>
+  );
+}
+
+function PatientDetailTopStrip({
+  initials,
+  patient,
+  rapidReviewPatient,
+  tone,
+}: {
+  initials: string;
+  patient: Dashboard1Patient;
+  rapidReviewPatient?: RapidReviewPatient;
+  tone: ReturnType<typeof patientTone>;
+}) {
+  const details = [
+    { label: "MR", value: "94346597930" },
+    { label: "DOB", value: "30-12-1995" },
+    { label: "", value: rapidReviewPatient?.ageGender?.split("/")[0]?.trim() ? `${rapidReviewPatient.ageGender.split("/")[0].trim()} year(s)` : "25 year(s)" },
+    { label: "", value: "75 kg" },
+    { label: "Blood Group", value: "AB" },
+    { label: "Rh", value: "+ve" },
+  ];
+
+  return (
+    <div className="overflow-x-auto overflow-y-hidden rounded-xl border border-[#7367f0]/40 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)]" style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}>
+      <div className="flex min-h-11 min-w-max items-center justify-between gap-8 px-3 py-2">
+        <div className="flex min-w-max flex-1 items-center gap-7">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/18 text-xs font-bold shadow-sm">
+              {initials || <UserRound className="h-4 w-4" />}
+            </div>
+            <span className="truncate text-sm font-bold">{patient.name}</span>
+            <Badge tone={tone === "red" ? "critical" : tone === "orange" ? "warning" : "success"}>
+              {tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Stable"}
+            </Badge>
+          </div>
+          {details.map((item) => (
+            <div className="whitespace-nowrap text-sm font-semibold" key={`${item.label}-${item.value}`}>
+              {item.label ? <span className="text-white/80">{item.label}: </span> : null}
+              <span>{item.value}</span>
+            </div>
+          ))}
+          <div className="whitespace-nowrap text-sm font-bold text-orange-300">Allergies: Meropenem</div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button asChild className="h-8 border-white/30 bg-white/15 px-3 text-xs text-white hover:bg-white/25" size="sm">
+            <Link href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}><Activity className="h-4 w-4" />Rapid Review</Link>
+          </Button>
+          <Button asChild className="h-8 border-white/30 bg-white px-3 text-xs text-[#1d4f8d] hover:bg-white/90" size="sm" variant="outline">
+            <Link href="/doctor-dashboard1"><ArrowLeft className="h-4 w-4" />Dashboard1</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -209,65 +234,17 @@ function getResultPatientMrn(patientId: number) {
   return resultMrns[(patientId - 1) % resultMrns.length];
 }
 
-function PatientContextChip({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon?: typeof BedDouble;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="inline-flex items-center gap-1 rounded-md border border-white/80 bg-white/85 px-1.5 py-0.5 font-medium text-muted-foreground shadow-sm backdrop-blur">
-      {Icon ? <Icon className="h-3.5 w-3.5 text-primary" /> : null}
-      <span>{label}:</span>
-      <span className="font-semibold text-foreground">{value}</span>
-    </div>
-  );
-}
-
 function PatientOverview({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(1,1fr)_320px]">
         <Card className="overflow-hidden border-border/80">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-muted/50 px-4 py-3">
-            <div>
-              <div className="text-sm font-semibold text-foreground">Clinical Snapshot</div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Latest recorded bedside observations</div>
-            </div>
-            <Badge tone="info">Updated now</Badge>
-          </div>
-          <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
+          <CardContent className="grid gap-3 p-1 sm:grid-cols-5 xl:grid-cols-5">
             <PatientMetric label="HR" value={`${patient.hr.value} bpm`} tone={patient.hr.tone} />
             <PatientMetric label="SpO2" value={`${patient.spo2.value}%`} tone={patient.spo2.tone} />
             <PatientMetric label="ABPS" value={`${patient.abps.value} mmHg`} tone={patient.abps.tone} />
             <PatientMetric label="ABPD" value={`${patient.abpd.value} mmHg`} tone={patient.abpd.tone} />
             <PatientMetric label="Temperature" value={`${patient.temperature.value} °C`} tone={patient.temperature.tone} />
-          </CardContent>
-        </Card>
-
-        <Card className="border-primary/15 bg-gradient-to-br from-white to-[#f6f8ff]">
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-primary/10 p-2 text-primary"><ClipboardCheck className="h-4 w-4" /></div>
-              <div>
-                <div className="text-sm font-semibold text-foreground">Care Summary</div>
-                <div className="text-xs text-muted-foreground">Current clinical context</div>
-              </div>
-            </div>
-            <CareRow label="Response" value={rapidReviewPatient?.responseLevel ?? "Routine"} />
-            <CareRow label="Consultant" value={rapidReviewPatient?.consultant ?? "Duty consultant"} />
-            <CareRow label="Review due" value={rapidReviewPatient?.reviewDue ?? "As scheduled"} />
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <Button asChild size="sm">
-                <Link href={`/rapid-review?tab=entry&patient=${patient.rapidReviewPatientId}`}>Rapid Review</Link>
-              </Button>
-              <Button asChild size="sm" variant="outline">
-                <Link href="/clinical-examination">Clinical Exam</Link>
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -434,17 +411,7 @@ function PatientMonitoring({ patient, rapidReviewPatient }: { patient: Dashboard
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-gradient-to-br from-white to-surface-muted/70 p-4 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold text-foreground">Current Vitals</div>
-            <div className="mt-0.5 text-xs text-muted-foreground">Latest bedside monitoring snapshot</div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link href="/live-monitoring">Open Live Monitoring</Link>
-            </Button>
-          </div>
-        </div>
+        
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <PatientMetric label="HR" value={`${patient.hr.value} bpm`} tone={patient.hr.tone} />
           <PatientMetric label="SpO2" value={`${patient.spo2.value}%`} tone={patient.spo2.tone} />

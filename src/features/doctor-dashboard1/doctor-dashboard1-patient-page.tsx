@@ -249,17 +249,13 @@ function PatientOverview({ patient, rapidReviewPatient }: { patient: Dashboard1P
         </Card>
       </div>
 
-      <Card className="overflow-hidden border-border/80">
-        <CardContent className="p-4">
-          {rapidReviewPatient ? (
-            <PatientVitalsAllGraphOnly patient={rapidReviewPatient} />
-          ) : (
-            <div className="rounded-xl border border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
-              Vitals graph data is not available for this patient.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {rapidReviewPatient ? (
+        <PatientVitalsAllGraphOnly patient={rapidReviewPatient} />
+      ) : (
+        <div className="rounded-xl border border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
+          Vitals graph data is not available for this patient.
+        </div>
+      )}
     </div>
   );
 }

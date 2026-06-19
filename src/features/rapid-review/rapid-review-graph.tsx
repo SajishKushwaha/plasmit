@@ -81,20 +81,22 @@ type AllVitalsGraphSection = {
 
 const reviewGraphLineColor = "#2563eb";
 const allVitalsGraphView = "All vitals graph";
-const combinedGraphColors = [
-  "#2563eb",
-  "#16a34a",
-  "#f97316",
-  "#7c3aed",
-  "#dc2626",
-  "#0891b2",
-  "#be123c",
-  "#9333ea",
-  "#4f46e5",
-  "#ca8a04",
-  "#0f766e",
-  "#db2777",
-];
+const reviewMetricColors: Record<ReviewGraphMetricId, string> = {
+  respiratoryRate: "#e66100",
+  oxygenSaturation: "#0072b2",
+  oxygenFlowRate: "#8f5a11",
+  fio2: "#009e73",
+  bloodPressure: "#d55e00",
+  bloodPressureDiastolic: "#cc79a7",
+  pulseRate: "#d00000",
+  monitorHeartRate: "#0057b8",
+  temperature: "#b00020",
+  consciousnessSedation: "#6f2dbd",
+  painScore: "#111827",
+  bloodGlucose: "#00a6a6",
+  fluidIntake: "#1f9d55",
+  urineOutput: "#6d4c41",
+};
 
 const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
@@ -480,7 +482,7 @@ export function PatientVitalsGraph({ patient }: { patient: RapidReviewPatient })
 }
 
 export function PatientVitalsAllGraphOnly({ patient }: { patient: RapidReviewPatient }) {
-  return <VitalsGraphOneReference data={buildCombinedReviewGraphData(patient.observationHistory)} graphOnly />;
+  return <VitalsGraphWorkspace data={buildCombinedReviewGraphData(patient.observationHistory)} showAllGraphOnly />;
 }
 
 function ReviewGraphDateFilter({
@@ -884,9 +886,11 @@ function AllVitalsGraphDashboard({
 
 function VitalsGraphWorkspace({
   data,
+  showAllGraphOnly = false,
   showGraphTabs = false,
 }: {
   data: CombinedReviewGraphPoint[];
+  showAllGraphOnly?: boolean;
   showGraphTabs?: boolean;
 }) {
   const availableDates = Array.from(new Set(data.map((point) => point.date))).sort();
@@ -904,31 +908,11 @@ function VitalsGraphWorkspace({
   const latestDateTime = Math.max(...dateFilteredData.map(graphPointDateTimeValue).filter(Number.isFinite));
   const filteredData = dateFilteredData.filter((point) => graphPointMatchesTimeInterval(point, timeInterval, startTime, endTime, latestDateTime));
   const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
-  const rollingInterval = rollingTimeIntervalHours(timeInterval);
-  const rangeSummary = `${startDate ? formatDateLabel(startDate) : "First record"} to ${endDate ? formatDateLabel(endDate) : "Latest record"} | ${timeFilterSummary(timeInterval, startTime, endTime)}${rollingInterval && Number.isFinite(latestDateTime) ? ` ending ${formatGraphPointDateTime(latestDateTime)}` : ""}`;
   const visibleData = invalidDateRange ? [] : filteredData;
-
-  function resetRange() {
-    setStartDate("");
-    setEndDate("");
-    setStartTime("");
-    setEndTime("");
-    setTimeInterval("All times");
-  }
 
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="px-4 py-3">
-          <div>
-            <CardTitle>Vitals Graph Filter</CardTitle>
-            <CardDescription>{rangeSummary} | {filteredData.length} records</CardDescription>
-          </div>
-          <Button onClick={resetRange} size="sm" variant="outline">
-            <RefreshCcw className="h-4 w-4" />
-            Reset
-          </Button>
-        </CardHeader>
         <CardContent className="p-3">
           <div className="flex flex-wrap items-end gap-3">
             <div className="w-full sm:w-[290px]">
@@ -991,7 +975,9 @@ function VitalsGraphWorkspace({
           ) : null}
         </CardContent>
       </Card>
-      {showGraphTabs ? (
+      {showAllGraphOnly ? (
+        <VitalsGraphOneReference data={visibleData} />
+      ) : showGraphTabs ? (
         <Tabs className="space-y-4" onValueChange={setActiveGraphSection} value={activeGraphSection}>
           <TabsList aria-label="Patient vitals graph categories">
             {/* <TabsTrigger value="All1">All1</TabsTrigger> */}
@@ -1079,34 +1065,12 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
       yAxisId: "foreign" as const,
     };
 
-  const section = onlySection ? allVitalsGraphSections.find((item) => item.title === onlySection) : undefined;
-  const headerTitle = section?.title ?? "All";
-  const headerDescription = section
-    ? section.description
-    : "All vitals trend with the same section names and legends as All1.";
-
   if (!chartData.length) {
     return <EmptyState icon={BarChart3} title="Vitals Graph 1 unavailable" description="No observation data matched the selected date and time filter." />;
   }
 
   const content = (
     <>
-      {!graphOnly ? (
-        <div className="border-b border-border bg-surface-muted px-4 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="text-xs font-semibold uppercase text-muted-foreground">{headerTitle} vitals graph</div>
-              <h3 className="mt-1 text-lg font-semibold text-foreground">{headerTitle}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{headerDescription}</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <StatusPill tone="info">{chartData.length} observations</StatusPill>
-              <StatusPill tone="success">Recorded values only</StatusPill>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
         <div className={cn("space-y-4", graphOnly ? "p-0" : "p-4")}>
           {(!onlySection || onlySection === "CVS") && (
             <VitalsGraphOneSection
@@ -1126,10 +1090,10 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
                   <YAxis domain={[30, 220]} tick={{ fontSize: 10 }} width={44} />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
-                  <Line connectNulls dataKey="pulseRate" dot={{ r: 2 }} name="Pulse" stroke={reviewMetricColor("pulseRate")} strokeWidth={2.2} type="monotone" />
-                  <Line connectNulls dataKey="monitorHeartRate" dot={{ r: 2 }} name="HR" stroke={reviewMetricColor("monitorHeartRate")} strokeDasharray="5 4" strokeWidth={2} type="monotone" />
-                  <Line connectNulls dataKey="bloodPressure" dot={{ r: 2 }} name="BP sys" stroke={reviewMetricColor("bloodPressure")} strokeWidth={2.2} type="monotone" />
-                  <Line connectNulls dataKey="bloodPressureDiastolic" dot={{ r: 2 }} name="BP dia" stroke={reviewMetricColor("bloodPressureDiastolic")} strokeWidth={2} type="monotone" />
+                  <Line connectNulls dataKey="pulseRate" dot={{ r: 3 }} name="Pulse" stroke={reviewMetricColor("pulseRate")} strokeWidth={3} type="monotone" />
+                  <Line connectNulls dataKey="monitorHeartRate" dot={{ r: 3 }} name="HR" stroke={reviewMetricColor("monitorHeartRate")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" />
+                  <Line connectNulls dataKey="bloodPressure" dot={{ r: 3 }} name="BP sys" stroke={reviewMetricColor("bloodPressure")} strokeWidth={3} type="monotone" />
+                  <Line connectNulls dataKey="bloodPressureDiastolic" dot={{ r: 3 }} name="BP dia" stroke={reviewMetricColor("bloodPressureDiastolic")} strokeWidth={2.8} type="monotone" />
                 </LineChart>
               </ResponsiveContainer>
             </VitalsGraphOneSection>
@@ -1155,10 +1119,10 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <YAxis domain={[0, 100]} orientation="right" tick={{ fontSize: 10 }} width={38} yAxisId="spo2" />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
                   <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={95} y2={100} yAxisId="spo2" />
-                  <Line connectNulls dataKey="respiratoryRate" dot={{ r: 2 }} name="RR" stroke={reviewMetricColor("respiratoryRate")} strokeWidth={2.2} type="monotone" yAxisId="rate" />
-                  <Line connectNulls dataKey="oxygenFlowRate" dot={{ r: 2 }} name="O2 Flow" stroke={reviewMetricColor("oxygenFlowRate")} strokeDasharray="5 4" strokeWidth={2} type="monotone" yAxisId="rate" />
-                  <Line connectNulls dataKey="oxygenSaturation" dot={{ r: 2 }} name="SpO2" stroke={reviewMetricColor("oxygenSaturation")} strokeWidth={2.4} type="monotone" yAxisId="spo2" />
-                  <Line connectNulls dataKey="fio2" dot={{ r: 2 }} name="FiO2" stroke={reviewMetricColor("fio2")} strokeDasharray="3 4" strokeWidth={2} type="monotone" yAxisId="spo2" />
+                  <Line connectNulls dataKey="respiratoryRate" dot={{ r: 3 }} name="RR" stroke={reviewMetricColor("respiratoryRate")} strokeWidth={3} type="monotone" yAxisId="rate" />
+                  <Line connectNulls dataKey="oxygenFlowRate" dot={{ r: 3 }} name="O2 Flow" stroke={reviewMetricColor("oxygenFlowRate")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" yAxisId="rate" />
+                  <Line connectNulls dataKey="oxygenSaturation" dot={{ r: 3 }} name="SpO2" stroke={reviewMetricColor("oxygenSaturation")} strokeWidth={3.2} type="monotone" yAxisId="spo2" />
+                  <Line connectNulls dataKey="fio2" dot={{ r: 3 }} name="FiO2" stroke={reviewMetricColor("fio2")} strokeDasharray="4 4" strokeWidth={2.8} type="monotone" yAxisId="spo2" />
                 </LineChart>
               </ResponsiveContainer>
             </VitalsGraphOneSection>
@@ -1178,7 +1142,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <YAxis domain={[34, 42]} tick={{ fontSize: 10 }} width={44} />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
                   <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={36.1} y2={37.5} />
-                  <Line connectNulls dataKey="temperature" dot={{ r: 2 }} name="Temp" stroke={reviewMetricColor("temperature")} strokeWidth={2.2} type="monotone" />
+                  <Line connectNulls dataKey="temperature" dot={{ r: 3 }} name="Temp" stroke={reviewMetricColor("temperature")} strokeWidth={3.2} type="monotone" />
                 </LineChart>
               </ResponsiveContainer>
             </VitalsGraphOneSection>
@@ -1200,8 +1164,8 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
                   <YAxis domain={[0, 15]} tick={{ fontSize: 10 }} ticks={[0, 3, 6, 9, 12, 15]} width={44} />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
-                  <Line connectNulls dataKey="consciousnessSedation" dot={{ r: 2 }} name="GCS" stroke={reviewMetricColor("consciousnessSedation")} strokeWidth={2.2} type="monotone" />
-                  <Line connectNulls dataKey="painScore" dot={{ r: 2 }} name="Pain" stroke={reviewMetricColor("painScore")} strokeDasharray="5 4" strokeWidth={2} type="monotone" />
+                  <Line connectNulls dataKey="consciousnessSedation" dot={{ r: 3 }} name="GCS" stroke={reviewMetricColor("consciousnessSedation")} strokeWidth={3} type="monotone" />
+                  <Line connectNulls dataKey="painScore" dot={{ r: 3 }} name="Pain" stroke={reviewMetricColor("painScore")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" />
                 </LineChart>
               </ResponsiveContainer>
             </VitalsGraphOneSection>
@@ -1226,7 +1190,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <Tooltip content={<VitalsGraphOneTooltip />} />
                   <ReferenceArea fill={activeGlucoseConfig.color} fillOpacity={0.08} y1={activeGlucoseConfig.min} y2={activeGlucoseConfig.max} yAxisId={activeGlucoseConfig.yAxisId} />
                   <ReferenceLine label={{ value: activeGlucoseConfig.label, fill: activeGlucoseConfig.color, fontSize: 10, position: "insideTopRight" }} stroke={activeGlucoseConfig.color} strokeDasharray="4 4" y={activeGlucoseConfig.max} yAxisId={activeGlucoseConfig.yAxisId} />
-                  <Line connectNulls dataKey={activeGlucoseConfig.dataKey} dot={{ r: 2 }} name={activeGlucoseConfig.name} stroke={activeGlucoseConfig.color} strokeWidth={2.4} type="monotone" yAxisId={activeGlucoseConfig.yAxisId} />
+                  <Line connectNulls dataKey={activeGlucoseConfig.dataKey} dot={{ r: 3 }} name={activeGlucoseConfig.name} stroke={activeGlucoseConfig.color} strokeWidth={3.2} type="monotone" yAxisId={activeGlucoseConfig.yAxisId} />
                 </LineChart>
               </ResponsiveContainer>
             </VitalsGraphOneSection>
@@ -1250,8 +1214,8 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <Tooltip content={<VitalsGraphOneTooltip />} />
                   <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={40} y2={120} />
                   <ReferenceLine label={{ value: "Review below 30", fill: "#b91c1c", fontSize: 10, position: "insideTopRight" }} stroke="#dc2626" strokeDasharray="4 4" y={30} />
-                  <Line connectNulls dataKey="fluidIntake" dot={{ r: 2 }} name="Intake" stroke={reviewMetricColor("fluidIntake")} strokeDasharray="5 4" strokeWidth={2} type="monotone" />
-                  <Line connectNulls dataKey="urineOutput" dot={{ r: 3 }} name="Urine" stroke={reviewMetricColor("urineOutput")} strokeWidth={2.4} type="monotone" />
+                  <Line connectNulls dataKey="fluidIntake" dot={{ r: 3 }} name="Intake" stroke={reviewMetricColor("fluidIntake")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" />
+                  <Line connectNulls dataKey="urineOutput" dot={{ r: 3 }} name="Urine" stroke={reviewMetricColor("urineOutput")} strokeWidth={3.2} type="monotone" />
                 </LineChart>
               </ResponsiveContainer>
             </VitalsGraphOneSection>
@@ -1300,7 +1264,7 @@ function VitalsGraphOneSection({
             {legends.map((legend) => {
               const content = (
                 <>
-                <span className="mt-0.5 h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: legend.color }} />
+                <span className="mt-0.5 h-4 w-6 shrink-0 rounded-sm border border-slate-900/20 shadow-sm" style={{ backgroundColor: legend.color }} />
                 <span className="min-w-0">
                   <span className="block font-semibold text-foreground">{legend.label}</span>
                   <span className="block text-muted-foreground">{legend.description}</span>
@@ -2020,8 +1984,7 @@ function buildVitalsGraphOneData(data: CombinedReviewGraphPoint[]): VitalsGraphO
 }
 
 function reviewMetricColor(metricId: ReviewGraphMetricId) {
-  const index = reviewGraphMetrics.findIndex((metric) => metric.id === metricId);
-  return combinedGraphColors[Math.max(0, index) % combinedGraphColors.length];
+  return reviewMetricColors[metricId];
 }
 
 function combinedGraphYAxisConfig(section: AllVitalsGraphSection): { domain: [number, number]; ticks?: number[] } {

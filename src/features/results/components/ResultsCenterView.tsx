@@ -763,7 +763,7 @@ export function ResultsCenterView({
             </label>
 
             <div className="flex flex-wrap items-end gap-2">
-              {!isDepartmentLocked ? (
+              {!isDepartmentLocked && !isPatientResultsView ? (
                 <select
                   aria-label="Results"
                   className="h-10 min-w-[190px] rounded-lg border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none transition focus:ring-2 focus:ring-ring/20"
@@ -799,6 +799,13 @@ export function ResultsCenterView({
               />
             </div>
           </div>
+          {isPatientResultsView && !isDepartmentLocked ? (
+            <PatientResultDepartmentTabs
+              counts={departmentCounts}
+              department={department}
+              onChange={changeDepartment}
+            />
+          ) : null}
         </CardContent>
       </Card>
 
@@ -1368,6 +1375,60 @@ function StatusActionChip({
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
     </span>
+  );
+}
+
+function PatientResultDepartmentTabs({
+  counts,
+  department,
+  onChange,
+}: {
+  counts: Record<string, number>;
+  department: DepartmentFilter;
+  onChange: (department: DepartmentFilter) => void;
+}) {
+  const icons: Record<DepartmentFilter, ReactNode> = {
+    all: <Layers3 className="h-4 w-4" />,
+    laboratory: <FlaskConical className="h-4 w-4" />,
+    radiology: <ScanSearch className="h-4 w-4" />,
+    poct: <Zap className="h-4 w-4" />,
+  };
+
+  return (
+    <div aria-label="Patient result departments" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" role="tablist">
+      {resultDepartments.map((item) => {
+        const active = department === item.id;
+
+        return (
+          <button
+            aria-selected={active}
+            className={cn(
+              "flex h-11 items-center justify-between gap-3 rounded-lg border px-3 text-left text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-ring/20",
+              active
+                ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                : "border-border bg-surface-muted text-foreground hover:border-primary/40 hover:bg-primary-soft hover:text-primary",
+            )}
+            key={item.id}
+            onClick={() => onChange(item.id)}
+            role="tab"
+            type="button"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              {icons[item.id]}
+              <span className="truncate">{item.label}</span>
+            </span>
+            <span
+              className={cn(
+                "inline-flex h-6 min-w-7 items-center justify-center rounded-full px-2 text-xs font-bold",
+                active ? "bg-white/20 text-primary-foreground" : "bg-white text-muted-foreground",
+              )}
+            >
+              {counts[item.id] ?? 0}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

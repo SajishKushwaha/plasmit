@@ -4,10 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-import { medicationTimeSlots } from "./data";
-import type { AdministrationCell, NurseDrugCategory, NurseDrugOrder } from "./types";
-
-const categories: NurseDrugCategory[] = ["Scheduled", "SOS", "Intermittent", "Continuous", "Discontinued", "Unscheduled"];
+import { medicationTimeSlots, nurseDrugCategories } from "./data";
+import type { AdministrationCell, NurseDrugOrder } from "./types";
 
 function capsuleClass(cell?: AdministrationCell) {
   if (!cell || cell.status === "empty") return "bg-surface-muted text-muted-foreground";
@@ -56,7 +54,7 @@ export function AdministrationTimeline({
   return (
     <Card>
       <CardHeader>
-        <div>
+        <div className="space-y-1">
           <CardTitle>Drug Administration Schedule</CardTitle>
           <CardDescription>24 hour MAR grid with 1 hour intervals, dosage visibility, and overdue flagging.</CardDescription>
         </div>
@@ -93,7 +91,7 @@ export function AdministrationTimeline({
                 </tr>
               </thead>
               <tbody>
-                {categories.map((category) => {
+                {nurseDrugCategories.map((category) => {
                   const categoryOrders = orders.filter((order) => order.category === category);
                   return (
                     <tr key={category} className="align-top">

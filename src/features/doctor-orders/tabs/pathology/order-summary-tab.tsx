@@ -1,6 +1,5 @@
 "use client";
-
-import { ArrowLeftRight, Pencil, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Save, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,29 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import type { PathologySummaryRow } from "./types";
 
-type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "specialty" | "specimen" | "priority">;
+type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
+
+function SortButton({
+  label,
+  column,
+  sort,
+  onSort,
+}: {
+  label: string;
+  column: SummarySortKey;
+  sort: { key: SummarySortKey; direction: "asc" | "desc" };
+  onSort: (key: SummarySortKey) => void;
+}) {
+  const active = sort.key === column;
+  const SortIcon = active ? (sort.direction === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown;
+
+  return (
+    <button type="button" className="flex items-center gap-2 text-left font-semibold uppercase tracking-wide hover:text-foreground" onClick={() => onSort(column)}>
+      {label}
+      <SortIcon className={active ? "h-3.5 w-3.5 text-foreground" : "h-3.5 w-3.5 text-muted-foreground/70"} />
+    </button>
+  );
+}
 
 export function PathologyOrderSummaryTab({
   rows,
@@ -41,24 +62,17 @@ export function PathologyOrderSummaryTab({
     { key: "name", label: "Test name" },
     { key: "loinc", label: "LOINC code" },
     { key: "cpt", label: "CPT code" },
-    { key: "specialty", label: "Speciality" },
+    { key: "department", label: "Department" },
     { key: "specimen", label: "Specimen" },
     { key: "priority", label: "Priority" },
   ];
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="space-y-4 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-foreground">ORDER SUMMARY</div>
-              <div className="mt-1 text-xs text-muted-foreground">{selectedCount} selected tests ready for save.</div>
-            </div>
-            <Badge tone="info">PATHOLOGY</Badge>
-          </div>
-
-          <div className="rounded-md border border-border bg-surface-muted p-3 text-sm text-muted-foreground">{billingNote}</div>
+      {/* <Card>
+        <CardContent className="space-y-4 p-4"> */}
+          
+          {/* <div className="rounded-md border border-border bg-surface-muted p-3 text-sm text-muted-foreground">{billingNote}</div> */}
 
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="min-w-[1200px] w-full border-collapse text-left text-sm">
@@ -66,14 +80,11 @@ export function PathologyOrderSummaryTab({
                 <tr>
                   {headers.map((header) => (
                     <th key={header.key} className="px-4 py-3">
-                      <button type="button" className="inline-flex items-center gap-2" onClick={() => onSort(header.key)}>
-                        {header.label}
-                        <ArrowLeftRight className="h-3.5 w-3.5" />
-                      </button>
+                      <SortButton label={header.label} column={header.key} sort={sort} onSort={onSort} />
                     </th>
                   ))}
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Ordered By</th>
+                  {/* <th className="px-4 py-3">Ordered By</th> */}
                   <th className="px-4 py-3">Order Date Time</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
@@ -84,7 +95,7 @@ export function PathologyOrderSummaryTab({
                     <td className="px-4 py-3 font-medium text-foreground">{row.name}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.loinc}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.cpt}</td>
-                    <td className="px-4 py-3">{row.specialty}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.department}</td>
                     <td className="px-4 py-3">{row.specimen}</td>
                     <td className="px-4 py-3">
                       <Badge tone={row.priority === "Urgent" || row.priority === "STAT" ? "warning" : "default"}>{row.priority}</Badge>
@@ -94,17 +105,15 @@ export function PathologyOrderSummaryTab({
                         {row.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.orderedBy}</td>
+                    {/* <td className="px-4 py-3 text-muted-foreground">{row.orderedBy}</td> */}
                     <td className="px-4 py-3 text-muted-foreground">{row.orderDateTime}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         <Button type="button" size="sm" variant="outline" onClick={() => onEdit(row.id)}>
                           <Pencil className="h-4 w-4" />
-                          Edit
                         </Button>
                         <Button type="button" size="sm" variant="outline" className="text-danger" onClick={() => onDelete(row.id)}>
                           <Trash2 className="h-4 w-4" />
-                          Delete
                         </Button>
                       </div>
                     </td>
@@ -126,16 +135,16 @@ export function PathologyOrderSummaryTab({
                 <Save className="h-4 w-4" />
                 Save
               </Button>
-              {/* <Button type="button" variant="outline" onClick={onAddToBill}>
+              <Button type="button" variant="outline" onClick={onAddToBill}>
                 Add to bill
               </Button>
-              <Button type="button" onClick={onSaveAndBill}>
+              {/* <Button type="button" onClick={onSaveAndBill}>
                 Save & add to bill
               </Button> */}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        {/* </CardContent>
+      </Card> */}
     </div>
   );
 }

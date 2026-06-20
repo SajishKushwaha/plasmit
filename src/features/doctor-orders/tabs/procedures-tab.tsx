@@ -92,12 +92,12 @@ export function ProceduresTab() {
 
   return (
     <div className="space-y-4">
-      <PatientSummaryBanner />
+      {/* <PatientSummaryBanner /> */}
       <Card>
-        <CardHeader>
+        {/* <CardHeader>
           <CardTitle>Procedures Order</CardTitle>
           <CardDescription>Doctor-side procedure request with schedule, consent, and review tabs.</CardDescription>
-        </CardHeader>
+        </CardHeader> */}
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {(["test-order", "order-summary"] as const).map((tab) => (

@@ -25,14 +25,14 @@ export function OrderDetailsCard({
   onDraftChange: (id: string, values: Partial<OrderDraft>) => void;
 }) {
   return (
-    <Card>
+    <Card className="min-w-0 overflow-hidden">
       <CardHeader>
         <div>
           <CardTitle>Order Details</CardTitle>
           <CardDescription>Selected drugs show as editable forms. Summary updates while you type.</CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="min-w-0 space-y-4">
         {orders.length ? (
           orders.map((order) => {
             const draft = drafts[order.id];
@@ -49,13 +49,13 @@ export function OrderDetailsCard({
               >
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
+                  className="flex w-full min-w-0 items-center justify-between gap-3 px-3 py-3 text-left"
                   onClick={() => onActiveChange(open ? null : order.id)}
                 >
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-foreground">{draft.name}</div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <div className="mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span>{draft.genericName}</span>
                         <span>{order.name}</span>
                         <span>{draft.form || order.form}</span>

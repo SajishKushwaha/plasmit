@@ -515,9 +515,7 @@ export function AssessmentConfigurationPage({ ldtId }: { ldtId?: string }) {
       {({ readOnly }) => (
         <>
           <PageHeader
-            eyebrow="Hospital Admin"
             title="Assessment Configuration"
-            description={ldtId ? `Create and maintain assessment fields for selected LDT: ${ldtId}.` : "Create and maintain assessment fields used across clinical workflows."}
             className="static mx-0 border-b bg-transparent px-0 py-2"
             actions={
               <Button disabled={readOnly} onClick={() => setDrawerState({ type: "add" })}>

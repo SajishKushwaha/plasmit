@@ -81,7 +81,6 @@ export const navigationItems: NavigationItem[] = [
   // { id: "doctor-live-monitoring", label: "Live Monitoring",   icon: RadioTower,        route: "/live-monitoring",       group: "Clinical", allowedRoles: ["Doctor IPD"], status: "ready" },
   { id: "doctor-ipd-results",  label: "Result",               icon: FileText,          route: "/results",              group: "Clinical", allowedRoles: [], status: "ready" },
   { id: "doctor-lab",          label: "Laboratory",           icon: FlaskConical,      route: "/laboratory",           group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
-  { id: "doctor-ldt-management", label: "LDT Management", icon: ListPlus,             route: "/doctor/ldt-management", group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   { id: "doctor-radiology",    label: "Radiology",            icon: ScanSearch,        route: "/radiology",            group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD", "Doctor IPD"], status: "ready" },
   { id: "doctor-emergency",    label: "Emergency Alerts",     icon: ShieldAlert,       route: "/emergency",            group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   { id: "doctor-tele",         label: "Telemedicine",         icon: Video,             route: "/telemedicine",         group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
@@ -299,11 +298,14 @@ export const navigationItems: NavigationItem[] = [
     ],
   },
   { id: "worklist", label: "Worklist", icon: ClipboardList, route: "/worklist", group: "Nursing", allowedRoles: ["Nurse ICU 2"], status: "ready" },
-  { id: "nurse-active-order",   label: "Active Order", icon: Archive, route: "/nurse/active-order", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
-  { id: "nurse-drug-administration", label: "Drug Administration", icon: Pill, route: "/nurse/drug-administration", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
-  { id: "nurse-completed-order", label: "Completed Orders", icon: ClipboardList, route: "/nurse/completed-order", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
-  { id: "nurse-discontinued-order", label: "Discontinued Orders", icon: Ban, route: "/nurse/discontinued-order", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
-  { id: "nurse-ldt-management", label: "LDT Management", icon: ListPlus, route: "/nurse/ldt-management", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
+  { id: "blood-product", label: "Blood/Blood Product", icon: Archive, route: "/nurse/blood-product", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
+  { id: "blood-receipt-verification", label: "Blood Receipt & Verification", icon: CheckCircle2, route: "/nurse/blood-receipt-verification", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
+  { id: "blood-administration", label: "Blood Administration", icon: CheckCircle2, route: "/nurse/blood-administration", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
+  // { id: "active-order", label: "Active Order", icon: Archive, route: "/nurse/active-order", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
+  { id: "drug-administration", label: "Drug Administration", icon: Pill, route: "/nurse/drug-administration", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
+  // { id: "completed-order", label: "Completed Orders", icon: ClipboardCheck, route: "/nurse/completed-order", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
+  // { id: "discontinued-order", label: "Discontinued Orders", icon: Ban, route: "/nurse/discontinued-order", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
+  { id: "ldt-management", label: "LDT Management", icon: ListPlus, route: "/nurse/ldt-management", group: "Nurse", allowedRoles: ["Nurse"], status: "ready" },
   { id: "blood-bank-blood-request", label: "Blood Requests", icon: Droplets, route: "/blood-bank/blood-request", group: "Blood Bank", allowedRoles: ["Blood Bank"], status: "ready" },
   {
     id: "nursing",
@@ -377,7 +379,8 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   }
 
   if (role === "Nurse") {
-    return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || item.id.startsWith("nurse-") || item.id === "radiology-mnt" || item.id === "results");
+    const nurseModules = new Set(["blood-product", "blood-receipt-verification", "blood-administration", "drug-administration", "ldt-management", "radiology-mnt", "results"]);
+    return roleItems.filter((item) => item.id.startsWith("icu-nursing-") || nurseModules.has(item.id));
   }
 
   if (role === "Nurse ICU") {

@@ -39,10 +39,12 @@ function buildAdministrationDetail(order: NurseDrugOrder, selectedDate: string, 
     administrationDate: selectedDate,
     dosage: cell?.label?.replace("Overdue ", "") || order.dosage,
     time: formatCurrentTime(),
+    priority: order.priority ?? defaultAdministrationDetail.priority,
     lastAdministeredAt: order.lastAdministeredAt ?? "",
     lastAdministeredBy: order.lastAdministeredBy ?? "",
     action: isOverdue ? "Late administered" : "Administered",
     reason: isOverdue ? "Scheduled dose overdue by more than 1 hour" : "",
+    administrationNote: order.administrationNote ?? "",
     counterChecked: false,
     counterCheckedBy: "",
     counterCheckedAt: "",
@@ -62,6 +64,7 @@ function buildFluidDetail(order: NurseDrugOrder, selectedDate: string): FluidAdm
     administrationDate: selectedDate,
     rate: order.dosage,
     time: formatCurrentTime(),
+    diluent: order.diluent ?? defaultFluidDetail.diluent,
     lastAdministeredAt: order.lastAdministeredAt ?? "",
     lastAdministeredBy: order.lastAdministeredBy ?? "",
     bagVolume: String(bagVolume),
@@ -70,6 +73,7 @@ function buildFluidDetail(order: NurseDrugOrder, selectedDate: string): FluidAdm
     newBag: false,
     bagCount: String(order.bagCount ?? 1),
     bolusDose: order.bolusDose ?? "",
+    bolusRoute: order.bolusRoute ?? defaultFluidDetail.bolusRoute,
     counterChecked: false,
     counterCheckedBy: "",
     counterCheckedAt: "",
@@ -128,7 +132,7 @@ export function NurseDrugAdministrationPage() {
   }
 
   const handleCellSelect = (order: NurseDrugOrder, cell?: AdministrationCell) => {
-    if (order.category === "Continuous" || order.form === "IV Fluid") {
+    if (order.category === "Continuous" || order.category === "Diluent" || order.form === "IV Fluid") {
       setFluidDetail(buildFluidDetail(order, selectedDate));
       setFluidOpen(true);
       return;
@@ -140,9 +144,7 @@ export function NurseDrugAdministrationPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Nursing - Medication Administration"
         title="Drug Administration"
-        description="Time-wise MAR view for scheduled, SOS, intermittent, continuous, discontinued, and unscheduled drugs."
         className="static mx-0 border-b bg-transparent px-0 py-2"
       />
 

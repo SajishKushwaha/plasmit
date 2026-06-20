@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import type { AdministrationAction, AdministrationDetail, FluidAdministrationDetail } from "./types";
 
 const administrationActions: AdministrationAction[] = ["Administered", "Not administered", "Late administered"];
+const priorityOptions = ["Routine", "Urgent", "Immediate"] as const;
 
 function formatCurrentDate() {
   const now = new Date();
@@ -50,7 +51,7 @@ function SelectField<T extends string>({
   onChange,
 }: {
   value: T;
-  options: T[];
+  options: readonly T[];
   onChange: (value: T) => void;
 }) {
   return (
@@ -105,7 +106,7 @@ function Modal({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[88dvh] w-[min(94vw,720px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-white shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
               <Dialog.Title className="text-sm font-semibold text-foreground">{title}</Dialog.Title>
@@ -212,7 +213,7 @@ export function AdministrationDetailsPanel({
     >
       <div className="grid gap-4">
         {/* Row 1 */}
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <FormField label="Date">
             <Input
               type="date"
@@ -240,6 +241,14 @@ export function AdministrationDetailsPanel({
               onChange={(event) =>
                 onChange({ ...detail, time: event.target.value })
               }
+            />
+          </FormField>
+
+          <FormField label="Priority">
+            <SelectField
+              value={detail.priority || "Routine"}
+              options={priorityOptions}
+              onChange={(priority) => onChange({ ...detail, priority })}
             />
           </FormField>
         </div>
@@ -278,6 +287,18 @@ export function AdministrationDetailsPanel({
               />
             </FormField>
           )}
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <FormField label="Administration note">
+            <Input
+              value={detail.administrationNote}
+              onChange={(event) => onChange({ ...detail, administrationNote: event.target.value })}
+              placeholder="Optional nurse note"
+            />
+          </FormField>
+
+          <ReadOnlyField label="Category" value={detail.category} />
         </div>
 
         <CounterCheckFields
@@ -374,7 +395,7 @@ export function FluidAdministrationDetailsPanel({
     >
       <div className="grid gap-4">
         {/* Row 1 */}
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <FormField label="Date">
             <Input
               type="date"
@@ -405,6 +426,10 @@ export function FluidAdministrationDetailsPanel({
                 onChange({ ...detail, time: event.target.value })
               }
             />
+          </FormField>
+
+          <FormField label="Diluent">
+            <Input value={detail.diluent} onChange={(event) => onChange({ ...detail, diluent: event.target.value })} placeholder="Diluent name" />
           </FormField>
         </div>
 
@@ -496,6 +521,11 @@ export function FluidAdministrationDetailsPanel({
               placeholder="Optional note"
             />
           </FormField>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <ReadOnlyField label="Bolus route" value={detail.bolusRoute} />
+          <ReadOnlyField label="Category" value={detail.category} />
         </div>
 
         {/* Counter Check Section */}

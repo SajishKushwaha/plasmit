@@ -1,4 +1,4 @@
-export type NurseDrugCategory = "Scheduled" | "SOS" | "Intermittent" | "Continuous" | "Discontinued" | "Unscheduled";
+export type NurseDrugCategory = "Scheduled" | "SOS" | "STAT" | "Bolus" | "Diluent" | "Intermittent" | "Continuous" | "Discontinued" | "Unscheduled";
 export type AdministrationCellStatus = "due" | "overdue" | "administered" | "bolus" | "infusion" | "empty";
 export type AdministrationAction = "Administered" | "Not administered" | "Late administered";
 
@@ -18,6 +18,9 @@ export type NurseDrugOrder = {
   days: string;
   route: string;
   instructions: string;
+  diluent?: string;
+  priority?: string;
+  administrationNote?: string;
   orderedQty: number;
   dispensedQty: number;
   receivedQty: number;
@@ -25,9 +28,11 @@ export type NurseDrugOrder = {
   discontinuedReason?: string;
   taperedDose?: string;
   bolusDose?: string;
+  bolusRoute?: string;
   bagVolume?: number;
   administeredVolume?: number;
   bagCount?: number;
+  newBag?: boolean;
   lastAdministeredAt?: string;
   lastAdministeredBy?: string;
   cells: AdministrationCell[];
@@ -40,10 +45,12 @@ export type AdministrationDetail = {
   administrationDate: string;
   dosage: string;
   time: string;
+  priority: string;
   lastAdministeredAt: string;
   lastAdministeredBy: string;
   action: AdministrationAction;
   reason: string;
+  administrationNote: string;
   counterChecked: boolean;
   counterCheckedBy: string;
   counterCheckedAt: string;
@@ -56,6 +63,7 @@ export type FluidAdministrationDetail = {
   administrationDate: string;
   rate: string;
   time: string;
+  diluent: string;
   lastAdministeredAt: string;
   lastAdministeredBy: string;
   counterCheckedBy: string;
@@ -67,6 +75,7 @@ export type FluidAdministrationDetail = {
   newBag: boolean;
   bagCount: string;
   bolusDose: string;
+  bolusRoute: string;
   stopAdministrationAt: string;
   reason: string;
 };

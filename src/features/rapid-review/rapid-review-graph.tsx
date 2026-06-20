@@ -102,7 +102,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "respiratoryRate",
     vitalType: "respiratoryRate",
-    label: "Respiratory Rate",
+    label: "",
     shortLabel: "RR",
     unit: "/min",
     normalText: "Normal 16-20 /min",
@@ -112,7 +112,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "oxygenSaturation",
     vitalType: "oxygenSaturation",
-    label: "O2 Saturation",
+    label: "",
     shortLabel: "SpO2",
     unit: "%",
     normalText: "Normal >= 98%",
@@ -122,7 +122,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "oxygenFlowRate",
     vitalType: "oxygenFlowRate",
-    label: "O2 Flow Rate",
+    label: "",
     shortLabel: "O2 Flow",
     unit: "L/min",
     normalText: "Normal 0 L/min",
@@ -142,7 +142,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "bloodPressure",
     vitalType: "bloodPressure",
-    label: "BP Systolic",
+    label: "",
     shortLabel: "BP sys",
     unit: "mmHg",
     normalText: "Systolic normal 91-159",
@@ -152,7 +152,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "bloodPressureDiastolic",
     vitalType: "bloodPressure",
-    label: "BP Diastolic",
+    label: "",
     shortLabel: "BP dia",
     unit: "mmHg",
     normalText: "Diastolic normal 60-89",
@@ -166,7 +166,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "pulseRate",
     vitalType: "pulseRate",
-    label: "Pulse Rate",
+    label: "",
     shortLabel: "Pulse",
     unit: "/min",
     normalText: "Normal 60-99 /min",
@@ -176,7 +176,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "monitorHeartRate",
     vitalType: "monitorHeartRate",
-    label: "Monitor Heart Rate",
+    label: "",
     shortLabel: "HR",
     unit: "bpm",
     normalText: "Normal 60-99 bpm",
@@ -186,7 +186,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "temperature",
     vitalType: "temperature",
-    label: "Temperature",
+    label: "",
     shortLabel: "Temp",
     unit: "deg C",
     normalText: "Normal 36.1-37.5 deg C",
@@ -196,7 +196,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "consciousnessSedation",
     vitalType: "consciousnessSedation",
-    label: "GCS Score",
+    label: "",
     shortLabel: "GCS",
     unit: "score",
     normalText: "GCS up to 15",
@@ -210,7 +210,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "painScore",
     vitalType: "painScore",
-    label: "Pain Score",
+    label: "",
     shortLabel: "Pain",
     unit: "/10",
     normalText: "Normal 0-3",
@@ -231,7 +231,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "fluidIntake",
     vitalType: "intervention",
-    label: "Fluid Intake",
+    label: "",
     shortLabel: "Intake",
     unit: "ml/hr",
     normalText: "Sample hourly intake for graph review",
@@ -244,7 +244,7 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
   {
     id: "urineOutput",
     vitalType: "intervention",
-    label: "Urine Output",
+    label: "",
     shortLabel: "Urine",
     unit: "ml/hr",
     normalText: "Normal >= 40 ml/hr, low < 30 ml/hr",
@@ -1202,7 +1202,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
             <VitalsGraphOneSection
               graphOnly={graphOnly}
               legends={[
-                vitalsGraphOneLegend("bloodGlucose", "Blood glucose trend (mg/dL)"),
+                vitalsGraphOneLegend("bloodGlucose", " (mg/dL)"),
                 { active: activeGlucoseGraph === "india", color: "#10b981", description: "Target band 70-140 mg/dL", label: "India graph", onClick: () => setActiveGlucoseGraph("india") },
                 { active: activeGlucoseGraph === "foreign", color: "#8b5cf6", description: "Target band 4.4-10 mmol/L", label: "Foreign graph", onClick: () => setActiveGlucoseGraph("foreign") },
               ]}

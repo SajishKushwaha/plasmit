@@ -95,12 +95,12 @@ export function OrderSetsTab() {
   const updateIncluded = (id: string, values: Partial<IncludedOrder>) => setDraft((current) => ({ ...current, includedOrders: current.includedOrders.map((item) => (item.id === id ? { ...item, ...values } : item)) }));
   return (
     <div className="space-y-4">
-      <PatientSummaryBanner />
+      {/* <PatientSummaryBanner /> */}
       <Card>
-        <CardHeader>
+        {/* <CardHeader>
           <CardTitle>Order Sets</CardTitle>
           <CardDescription>Order set builder for multiple orders with selective inclusion and quantity controls.</CardDescription>
-        </CardHeader>
+        </CardHeader> */}
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {(["test-order", "order-summary"] as const).map((tab) => (

@@ -1,9 +1,13 @@
 export type PathologyPriority = "Routine" | "Urgent" | "STAT" | "ASAP";
+export type PathologySex = "Male" | "Female" | "Other";
+export type PathologyIndicationType = "Therapeutic" | "Surgery";
+export type PathologyRequestType = "Routine" | "Emergency";
 
 export type PathologyTest = {
   id: string;
   name: string;
   description: string;
+  department: string;
   code?: string;
   children?: string[];
 };
@@ -11,6 +15,7 @@ export type PathologyTest = {
 export type PathologyGroupedTest = {
   id: string;
   name: string;
+  department: string;
   selected?: boolean;
 };
 
@@ -34,7 +39,7 @@ export type PathologySummaryRow = {
   name: string;
   loinc: string;
   cpt: string;
-  specialty: string;
+  department: string;
   specimen: string;
   priority: PathologyPriority;
   status: "Ordered" | "Sample Collected" | "Received" | "Processing" | "Verified" | "Released" | "Cancelled";

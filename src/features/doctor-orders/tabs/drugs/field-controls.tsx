@@ -75,7 +75,7 @@ function CategoryRadio({
   return (
     <label
       className={[
-        "flex min-h-9 min-w-[120px] shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium transition md:min-w-0",
+        "flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-md border px-3 text-sm font-medium transition md:flex-none md:min-w-0",
         checked ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground",
         "cursor-pointer hover:bg-surface-muted",
       ].join(" ")}
@@ -230,8 +230,8 @@ export function DrugDraftFields({
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_180px]">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_180px]">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <label className="space-y-2">
             <FieldLabel>Route</FieldLabel>
             <SelectField value={draft.route} options={routeOptions} disabled={infusion || continuous} onChange={(route) => onChange({ route })} />
@@ -305,15 +305,15 @@ export function DrugDraftFields({
             <label className="space-y-2 xl:col-span-2">
               <FieldLabel>Rate</FieldLabel>
 
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_100px_100px]">
+                <div className="min-w-0">
                   <NumberInput
                     value={draft.rateDose}
                     onChange={(event) => onChange({ rateDose: event.target.value })}
                   />
                 </div>
 
-                <div className="w-[100px]">
+                <div className="min-w-0">
                   <SelectField
                     value={draft.rateUnit}
                     options={doseUnits}
@@ -321,7 +321,7 @@ export function DrugDraftFields({
                   />
                 </div>
 
-                <div className="w-[100px]">
+                <div className="min-w-0">
                   <SelectField
                     value={draft.rateTimeUnit}
                     options={infusionTimeUnits}
@@ -383,9 +383,9 @@ export function DrugDraftFields({
           </label>
         </div>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <FieldLabel>Category</FieldLabel>
-          <div className="flex gap-2 overflow-x-auto pb-1 md:grid md:overflow-visible md:pb-0">
+          <div className="grid min-w-0 grid-cols-2 gap-2 md:flex md:flex-wrap md:overflow-visible">
             {categoryOptions.map((category) => (
               <CategoryRadio
                 key={category}
@@ -400,7 +400,7 @@ export function DrugDraftFields({
       </div>
 
       {draft.bolus ? (
-        <div className="grid gap-4 rounded-md border border-border bg-surface-muted p-3 md:grid-cols-3">
+        <div className="grid gap-4 rounded-md border border-border bg-surface-muted p-3 sm:grid-cols-2 md:grid-cols-3">
           <label className="space-y-2">
             <FieldLabel>Bolus Dose</FieldLabel>
             <div className="grid grid-cols-[1fr_120px] gap-2">
@@ -417,7 +417,7 @@ export function DrugDraftFields({
         </div>
       ) : null}
 
-      <div className="flex items-end gap-4 rounded-md border border-border bg-surface-muted p-3">
+      <div className="grid gap-4 rounded-md border border-border bg-surface-muted p-3 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <FieldLabel>Dosage Cal Dose</FieldLabel>
           <NumberInput
@@ -426,7 +426,7 @@ export function DrugDraftFields({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel>Unit</FieldLabel>
           <SelectField
             value={draft.dosageCalcUnit}
@@ -435,7 +435,7 @@ export function DrugDraftFields({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel>Frequency</FieldLabel>
           <SelectField
             value={draft.dosageCalcFrequency}
@@ -444,12 +444,12 @@ export function DrugDraftFields({
           />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel>Weight(Kg)</FieldLabel>
           <Input readOnly value={draft.weightKg} />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <FieldLabel>Total Dosage</FieldLabel>
           <Input readOnly value={totalDosageValue} />
         </div>

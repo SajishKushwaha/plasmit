@@ -3,16 +3,16 @@
 import * as React from "react";
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FlaskConical, ListChecks, Pencil, Plus, Save, SlidersHorizontal, Trash2 } from "lucide-react";
+import { FlaskConical, ListChecks, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
 import { AdminSection, FilterBar, ProtectedAdmin, StickyActionBar } from "@/features/admin/admin-shared";
+import { MasterDialog } from "@/features/pharmacy-master/components/master-dialog";
 
 type LdtRecord = {
   id: string;
@@ -79,25 +79,21 @@ function LdtFormDrawer({
   };
 
   return (
-    <Drawer
+    <MasterDialog
       open={Boolean(state)}
       onOpenChange={(open) => !open && onClose()}
       title={editingRecord ? "Edit LDT" : "Add LDT"}
       description="LDT master"
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="ldt-form">
-            <Save className="h-4 w-4" />
-            Save LDT
-          </Button>
-        </div>
-      }
+      submitLabel="Save LDT"
+      onSubmit={() => {
+        const form = document.getElementById("ldt-form") as HTMLFormElement | null;
+        form?.requestSubmit();
+      }}
     >
       <form id="ldt-form" className="grid gap-4" onSubmit={handleSubmit}>
         <label className="space-y-1 text-sm">
           <span className="font-medium text-foreground">LDT Name</span>
-          <Input value={values.name} onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))} placeholder="Complete Blood Count" />
+          <Input value={values.name} onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))} placeholder="Enter LDT Name" />
           {errors.name ? <span className="text-xs font-medium text-danger">{errors.name}</span> : null}
         </label>
         <label className="space-y-1 text-sm">
@@ -116,7 +112,7 @@ function LdtFormDrawer({
           {errors.type ? <span className="text-xs font-medium text-danger">{errors.type}</span> : null}
         </label>
       </form>
-    </Drawer>
+    </MasterDialog>
   );
 }
 
@@ -187,9 +183,7 @@ export function LdtPage() {
       {({ readOnly }) => (
         <>
           <PageHeader
-            eyebrow="Hospital Admin"
             title="LDT"
-            description="Configure LDT masters and open related properties or assessment configuration by LDT."
             className="static mx-0 border-b bg-transparent px-0 py-2"
             actions={
               <>

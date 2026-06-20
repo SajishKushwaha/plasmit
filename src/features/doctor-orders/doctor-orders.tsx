@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { ClipboardCheck, Droplet, FileSearch, FlaskConical, Layers, Microscope, Pill, Stethoscope, UserPlus } from "lucide-react";
 
@@ -37,91 +36,86 @@ export type DoctorOrdersPatientContext = {
   radiologyPatientId?: string;
 };
 
-function getOrderTabs(patientContext?: DoctorOrdersPatientContext): OrderTab[] {
-  return [
-    {
-      id: "blood",
-      label: "Blood/Blood Product",
-      description: "Blood component request details for blood bank approval.",
-      icon: Droplet,
-      component: <BloodRequestTab />,
-    },
-    {
-      id: "drugs",
-      label: "Drugs",
-      description: "Medication orders, dosing, route, frequency, and review context.",
-      icon: Pill,
-      component: <DrugsTab />,
-    },
-    {
-      id: "pathology",
-      label: "Pathology",
-      description: "Pathology test order, summary, and result review workflow.",
-      icon: Microscope,
-      component: <PathologyTab />,
-    },
-    {
-      id: "lab",
-      label: "Laboratory",
-      description: "Laboratory investigations and sample request workflow.",
-      icon: FlaskConical,
-      component: <LaboratoryTab />,
-    },
-    {
-      id: "radiology",
-      label: "Radiology",
-      description: "Imaging orders for radiology scheduling and reporting.",
-      icon: FileSearch,
-      component: <RadiologyTab patientContext={patientContext} />,
-    },
-    {
-      id: "procedures",
-      label: "Procedures",
-      description: "Procedure orders, clinical notes, and operational instructions.",
-      icon: Stethoscope,
-      component: <ProceduresTab />,
-    },
-    {
-      id: "referral",
-      label: "Refer/Consult",
-      description: "Specialist referral and consultation request workflow.",
-      icon: UserPlus,
-      component: <ReferConsultationTab />,
-    },
-    // {
-    //   id: "requests",
-    //   label: "Requests",
-    //   description: "General clinical requests and pending order follow-up.",
-    //   icon: ClipboardCheck,
-    //   component: <RequestsTab />,
-    // },
-    {
-      id: "ordersets",
-      label: "Master Order Sets",
-      description: "Reusable clinical order bundles for common workflows.",
-      icon: Layers,
-      component: <OrderSetsTab />,
-    },
-  ];
-}
+const tabs: OrderTab[] = [
+  {
+    id: "blood",
+    label: "Blood/Blood Product",
+    description: "Blood component request details for blood bank approval.",
+    icon: Droplet,
+    component: <BloodRequestTab />,
+  },
+  {
+    id: "drugs",
+    label: "Drugs",
+    description: "Medication orders, dosing, route, frequency, and review context.",
+    icon: Pill,
+    component: <DrugsTab />,
+  },
+  {
+    id: "pathology",
+    label: "Pathology",
+    description: "Pathology test order, summary, and result review workflow.",
+    icon: Microscope,
+    component: <PathologyTab />,
+  },
+  {
+    id: "lab",
+    label: "Laboratory",
+    description: "Laboratory investigations and sample request workflow.",
+    icon: FlaskConical,
+    component: <LaboratoryTab />,
+  },
+  {
+    id: "radiology",
+    label: "Radiology",
+    description: "Imaging orders for radiology scheduling and reporting.",
+    icon: FileSearch,
+    component: <RadiologyTab />,
+  },
+  {
+    id: "procedures",
+    label: "Procedures",
+    description: "Procedure orders, clinical notes, and operational instructions.",
+    icon: Stethoscope,
+    component: <ProceduresTab />,
+  },
+  {
+    id: "referral",
+    label: "Refer/Consult",
+    description: "Specialist referral and consultation request workflow.",
+    icon: UserPlus,
+    component: <ReferConsultationTab />,
+  },
+  // {
+  //   id: "requests",
+  //   label: "Requests",
+  //   description: "General clinical requests and pending order follow-up.",
+  //   icon: ClipboardCheck,
+  //   component: <RequestsTab />,
+  // },
+  {
+    id: "ordersets",
+    label: "Master Order Sets",
+    description: "Reusable clinical order bundles for common workflows.",
+    icon: Layers,
+    component: <OrderSetsTab />,
+  },
+];
 
 export function DoctorOrdersPage({
   defaultTab: defaultTabProp,
-  patientContext,
 }: {
   defaultTab?: string;
   patientContext?: DoctorOrdersPatientContext;
 } = {}) {
-  const searchParams = useSearchParams();
-  const tabs = getOrderTabs(patientContext);
-  const requestedTab = searchParams.get("tab") ?? undefined;
+//   const searchParams = useSearchParams();
+//   const requestedTab = searchParams.get("tab") ?? undefined;
 
-  const defaultTab =
-    requestedTab && tabs.some((tab) => tab.id === requestedTab)
-      ? requestedTab
-      : defaultTabProp && tabs.some((tab) => tab.id === defaultTabProp)
-        ? defaultTabProp
-        : "blood";
+// const defaultTab =
+//   requestedTab && tabs.some((tab) => tab.id === requestedTab)
+//     ? requestedTab
+//     : "blood";
+const defaultTab = defaultTabProp && tabs.some((tab) => tab.id === defaultTabProp) ? defaultTabProp : "blood";
   return (
     <div className="space-y-4 px-2 py-2 sm:space-y-5 sm:px-0 sm:py-3">
       <PageHeader

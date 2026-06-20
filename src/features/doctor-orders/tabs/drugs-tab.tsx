@@ -211,7 +211,7 @@ export function DrugsTab() {
 
   return (
     <div className="space-y-4">
-      <PatientSummaryBanner />
+      {/* <PatientSummaryBanner /> */}
 
       <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
         <SelectDrugsCard

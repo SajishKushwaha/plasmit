@@ -1,230 +1,304 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Edit2, Plus, Save, Trash2 } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-
-import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
-import { PatientSummaryBanner } from "./shared/patient-summary-banner";
+import { previousTestOrders, resultBlocks as initialResultBlocks, groupedTests, summaryRows as initialSummaryRows, testList } from "./pathology/data";
 
-type LabStatus = "Ordered" | "Sample Pending" | "Result Pending" | "Completed";
-type LabPriority = "Routine" | "Urgent" | "Stat";
+import type { PathologyPriority, PathologyResultBlock, PathologySummaryRow } from "./pathology/types";
+import { LaboratoryCriticalFindingsTab } from "./laboratory/critical-findings-tab";
+import { LaboratoryTestOrderTab } from "./laboratory/test-order-tab";
+import { LaboratoryOrderSummaryTab } from "./laboratory/order-summary-tab";
+import { LaboratoryResultReviewTab } from "./laboratory/result-review-tab";
 
-type LabOrder = {
-  id: string;
-  testName: string;
-  testCategory: string;
-  priority: LabPriority;
-  clinicalNotes: string;
-  sampleType: string;
-  collectionRequired: boolean;
-  preferredDateTime: string;
-  instructions: string;
-  status: LabStatus;
-};
-export const sampleTypes = ["Blood", "Urine", "Stool", "CSF", "Sputum", "Wound swab", "Pleural Fluid", "Ascitic Fluid", "Biopsy"];
+type MainTab = "test-order" | "order-summary" | "result-review" | "critical-findings";
+type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
 
-// const sampleTypes = ["Blood", "Urine", "Stool", "CSF", "Sputum", "Swab"];
-const categories = ["Hematology", "Biochemistry", "Microbiology", "Pathology", "Immunology"];
-const priorities: LabPriority[] = ["Routine", "Urgent", "Stat"];
-
-const initialOrders: LabOrder[] = [
-  { id: "lab-1", testName: "CBC", testCategory: "Hematology", priority: "Routine", clinicalNotes: "Fever and weakness", sampleType: "Blood", collectionRequired: true, preferredDateTime: "2026-06-08T10:30", instructions: "Fasting not required", status: "Ordered" },
-  { id: "lab-2", testName: "KFT", testCategory: "Biochemistry", priority: "Urgent", clinicalNotes: "Rule out renal dysfunction", sampleType: "Blood", collectionRequired: true, preferredDateTime: "2026-06-08T11:00", instructions: "Send stat if creatinine rises", status: "Sample Pending" },
-  { id: "lab-3", testName: "Urine R/M", testCategory: "Pathology", priority: "Routine", clinicalNotes: "Dysuria", sampleType: "Urine", collectionRequired: true, preferredDateTime: "2026-06-08T12:00", instructions: "Midstream sample", status: "Result Pending" },
-];
-
-function StatTile({ label, value, meta }: { label: string; value: string; meta: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
-      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-foreground">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{meta}</div>
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: LabStatus }) {
-  const tone = status === "Completed" ? "success" : status === "Result Pending" ? "warning" : status === "Sample Pending" ? "info" : "default";
-  return <Badge tone={tone}>{status}</Badge>;
-}
-
-function confirmDelete(message: string) {
-  return window.confirm(message);
-}
+const selectedByDefault = ["cbc", "kft"];
 
 export function LaboratoryTab() {
-  const [activeTab, setActiveTab] = React.useState<"test-order" | "order-summary">("test-order");
+  const [activeTab, setActiveTab] = React.useState<MainTab>("test-order");
   const [search, setSearch] = React.useState("");
-  const [orders, setOrders] = React.useState<LabOrder[]>(initialOrders);
-  const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [draft, setDraft] = React.useState<LabOrder>({
-    id: "",
-    testName: "",
-    testCategory: "Hematology",
-    priority: "Routine",
-    clinicalNotes: "",
-    sampleType: "Blood",
-    collectionRequired: true,
-    preferredDateTime: "",
-    instructions: "",
-    status: "Ordered",
-  });
+  const [departmentFilter, setDepartmentFilter] = React.useState("All");
+  const [selectedTestIds, setSelectedTestIds] = React.useState<string[]>(selectedByDefault);
+  const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(["renal"]);
+  const [problemListVisible, setProblemListVisible] = React.useState(true);
+  const [activeProblemView, setActiveProblemView] = React.useState<"Active" | "Find">("Active");
+  const [problems, setProblems] = React.useState(["Diabetes Type 2", "Hypertension", "Fatigue"]);
+  const [newProblem, setNewProblem] = React.useState("");
+  const [specimenSourceById, setSpecimenSourceById] = React.useState<Record<string, string>>({});
+  const [priority, setPriority] = React.useState<PathologyPriority>("Routine");
+  const [fasting, setFasting] = React.useState(false);
+  const [clinicalNotes, setClinicalNotes] = React.useState("");
+  const [instructionsForLab, setInstructionsForLab] = React.useState("");
+  const [collectionDate, setCollectionDate] = React.useState(new Date().toISOString().slice(0, 10));
+  const [collectionTime, setCollectionTime] = React.useState(new Date().toTimeString().slice(0, 5));
+  const [summarySort, setSummarySort] = React.useState<{ key: SummarySortKey; direction: "asc" | "desc" }>({ key: "name", direction: "asc" });
+  const [summaryRows, setSummaryRows] = React.useState(initialSummaryRows);
+  const [resultList, setResultList] = React.useState<PathologyResultBlock[]>(initialResultBlocks);
+  const [diagnosisSearch, setDiagnosisSearch] = React.useState("");
+  const [diagnosisType, setDiagnosisType] = React.useState("Primary");
+  const [diagnosisOpen, setDiagnosisOpen] = React.useState(false);
+  const [selectedDiagnosisLabel, setSelectedDiagnosisLabel] = React.useState("");
+  const [billingNote, setBillingNote] = React.useState("Orders are ready.");
+  const [deleteTarget, setDeleteTarget] = React.useState<PathologySummaryRow | null>(null);
 
-  const filteredOrders = orders.filter((item) => `${item.testName} ${item.testCategory} ${item.status}`.toLowerCase().includes(search.trim().toLowerCase()));
+  const selectedCount = selectedTestIds.length + selectedGroupIds.length;
 
-  const saveOrder = () => {
-    if (!draft.testName.trim()) {
-      toast.error("Test Name is required");
+  const filteredTests = React.useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return testList.filter((test) => {
+      const matchesSearch = `${test.name} ${test.description} ${test.code ?? ""}`.toLowerCase().includes(query);
+      const matchesDepartment = departmentFilter === "All" || test.department === departmentFilter;
+      return matchesSearch && matchesDepartment;
+    });
+  }, [departmentFilter, search]);
+
+  const availableDepartments = React.useMemo(() => ["All", ...Array.from(new Set(testList.map((test) => test.department)))], []);
+  const selectedTests = React.useMemo(() => testList.filter((test) => selectedTestIds.includes(test.id)), [selectedTestIds]);
+
+  const sortedSummaryRows = React.useMemo(() => {
+    return [...summaryRows].sort((left, right) => {
+      const leftValue = String(left[summarySort.key]);
+      const rightValue = String(right[summarySort.key]);
+      const comparison = leftValue.localeCompare(rightValue);
+      return summarySort.direction === "asc" ? comparison : -comparison;
+    });
+  }, [summaryRows, summarySort]);
+
+  const addProblem = () => {
+    const value = newProblem.trim();
+    if (!value) {
+      toast.error("Please enter a problem or symptom");
       return;
     }
-    if (editingId) {
-      setOrders((current) => current.map((item) => (item.id === editingId ? { ...draft, id: editingId } : item)));
-      toast.success("Laboratory order updated");
-    } else {
-      const id = `lab-${Date.now()}`;
-      setOrders((current) => [{ ...draft, id }, ...current]);
-      toast.success("Laboratory order saved");
+    setProblems((current) => [value, ...current]);
+    setNewProblem("");
+    setProblemListVisible(true);
+    toast.success("Problem added");
+  };
+
+  const toggleTest = (id: string) => {
+    setSelectedTestIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  };
+
+  const toggleGroup = (id: string) => {
+    setSelectedGroupIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  };
+
+  const updateSpecimenSource = (id: string, value: string) => {
+    setSpecimenSourceById((current) => ({ ...current, [id]: value }));
+  };
+
+  const selectHistory = (historyId: string) => {
+    const history = previousTestOrders.find((item) => item.id === historyId);
+    if (!history) return;
+    setSelectedTestIds(history.selectedTestIds);
+    setSelectedGroupIds(history.selectedGroupIds);
+    toast.success(`${history.label} loaded`);
+  };
+
+  const handleOpenSummary = () => {
+    const selectedRows = sortedSummaryRows.filter((row) => selectedTestIds.some((id) => row.name.toLowerCase().includes(id.replace(/-/g, " ").split(" ")[0])));
+    if (!selectedRows.length) {
+      toast.info("No matching summary rows found yet");
     }
-    setEditingId(null);
-    setDraft({ ...draft, id: "", testName: "", clinicalNotes: "", preferredDateTime: "", instructions: "" });
+    setActiveTab("order-summary");
   };
 
-  const editOrder = (id: string) => {
-    const item = orders.find((row) => row.id === id);
-    if (!item) return;
-    setEditingId(id);
-    setDraft(item);
-    setActiveTab("test-order");
+  const saveOrder = () => {
+    setBillingNote("Pathology order saved successfully.");
+    toast.success("Pathology order saved");
   };
 
-  const removeOrder = (id: string) => {
-    if (!confirmDelete("Delete this laboratory order?")) return;
-    setOrders((current) => current.filter((item) => item.id !== id));
-    toast.success("Laboratory order deleted");
+  const saveAndBill = () => {
+    setBillingNote("Order saved and sent to billing.");
+    toast.success("Order saved and added to bill");
   };
 
+  const addToBill = () => {
+    setBillingNote("Order sent to billing queue.");
+    toast.success("Added to billing queue");
+  };
+
+  const updateSummarySort = (key: SummarySortKey) => {
+    setSummarySort((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" }));
+  };
+
+  const editSummaryRow = (id: string) => {
+      const row = summaryRows.find((item) => item.id === id);
+      if (!row) return;
+      setSearch(row.name);
+      setDepartmentFilter(row.department);
+      const matchedTest = testList.find((test) => test.name.toLowerCase() === row.name.toLowerCase());
+      if (matchedTest) {
+        setSelectedTestIds((current) => Array.from(new Set([...current, matchedTest.id])));
+      }
+      const matchedGroup = groupedTests.find((group) => row.name.toLowerCase().includes(group.name.toLowerCase().split(" ")[0] ?? ""));
+      if (matchedGroup) {
+        setSelectedGroupIds((current) => Array.from(new Set([...current, matchedGroup.id])));
+      }
+      setActiveTab("test-order");
+      toast.success(`Editing ${row.name}`);
+    };
+  
+    const requestDeleteSummaryRow = (id: string) => {
+      const row = summaryRows.find((item) => item.id === id);
+      if (!row) return;
+      setDeleteTarget(row);
+    };
+  
+    const confirmDeleteSummaryRow = () => {
+      if (!deleteTarget) return;
+      setSummaryRows((current) => current.filter((row) => row.id !== deleteTarget.id));
+      toast.success(`${deleteTarget.name} deleted`);
+      setDeleteTarget(null);
+    };
+  
+    const addDiagnosis = () => {
+      const label = diagnosisSearch.trim();
+      // if (!label) {
+      //   toast.error("Search diagnosis first");
+      //   return;
+      // }
+      setSelectedDiagnosisLabel(`${label} (${diagnosisType})`);
+      setDiagnosisOpen(false);
+      toast.success("Diagnosis added");
+    };
+  
+    const removeResultBlock = (id: string) => {
+      setResultList((current) => current.filter((block) => block.id !== id));
+      toast.success("Result removed");
+    };
+  
+    const editResultBlock = (name: string) => {
+      setDiagnosisSearch(name);
+      setDiagnosisOpen(true);
+      toast.success(`Editing ${name}`);
+    };
+  
+  const reorderResult = (name: string) => {
+    toast.success(`Reorder requested for ${name}`);
+  };
+
+  const downloadAllReports = () => {
+    toast.info("Preparing laboratory reports download");
+    // The actual PDF generation stays in the result review tab; this keeps the test-order action visible here.
+  };
+              
   return (
-    <div className="space-y-4">
-      <PatientSummaryBanner />
-
-      {/* <div className="grid gap-3 md:grid-cols-3">
-        <StatTile label="Lab orders" value={`${orders.length}`} meta="Current request queue" />
-        <StatTile label="Pending samples" value={`${orders.filter((item) => item.status === "Sample Pending").length}`} meta="Need collection" />
-        <StatTile label="Completed" value={`${orders.filter((item) => item.status === "Completed").length}`} meta="Result ready" />
-      </div> */}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Laboratory Order</CardTitle>
-          <CardDescription>Doctor-side lab order screen with test order, summary, and status review.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {(["test-order", "order-summary"] as const).map((tab) => (
-              <Button key={tab} type="button" size="sm" variant={activeTab === tab ? "default" : "outline"} onClick={() => setActiveTab(tab)}>
-                {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result / Status Review"}
-              </Button>
-            ))}
-          </div>
-
-          {activeTab === "test-order" ? (
-            <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">Test Name</div>
-                  <Input value={draft.testName} onChange={(e) => setDraft((d) => ({ ...d, testName: e.target.value }))} placeholder="CBC, KFT..." />
-                </label>
-                <label className="space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">Test Category</div>
-                  <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.testCategory} onChange={(e) => setDraft((d) => ({ ...d, testCategory: e.target.value }))}>
-                    {categories.map((item) => <option key={item}>{item}</option>)}
-                  </select>
-                </label>
-                <label className="space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">Priority</div>
-                  <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.priority} onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value as LabPriority }))}>
-                    {priorities.map((item) => <option key={item}>{item}</option>)}
-                  </select>
-                </label>
-                <label className="space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">Sample Type</div>
-                  <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.sampleType} onChange={(e) => setDraft((d) => ({ ...d, sampleType: e.target.value }))}>
-                    {sampleTypes.map((item) => <option key={item}>{item}</option>)}
-                  </select>
-                </label>
-                <label className="space-y-2 md:col-span-2">
-                  <div className="text-xs font-medium text-muted-foreground">Clinical Notes / Diagnosis</div>
-                  <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none" value={draft.clinicalNotes} onChange={(e) => setDraft((d) => ({ ...d, clinicalNotes: e.target.value }))} />
-                </label>
-                <label className="space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">Collection Required</div>
-                  <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={String(draft.collectionRequired)} onChange={(e) => setDraft((d) => ({ ...d, collectionRequired: e.target.value === "true" }))}>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
-                </label>
-                <label className="space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">Preferred Date & Time</div>
-                  <Input type="datetime-local" value={draft.preferredDateTime} onChange={(e) => setDraft((d) => ({ ...d, preferredDateTime: e.target.value }))} />
-                </label>
-                <label className="space-y-2 md:col-span-2">
-                  <div className="text-xs font-medium text-muted-foreground">Instructions</div>
-                  <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none" value={draft.instructions} onChange={(e) => setDraft((d) => ({ ...d, instructions: e.target.value }))} />
-                </label>
-              </div>
-
-              <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  Order Summary
-                </div>
-                <div className="grid gap-2 text-sm">
-                  <div className="rounded-md border border-border bg-white p-3"><span className="text-muted-foreground">Test:</span> <span className="font-semibold">{draft.testName || "-"}</span></div>
-                  <div className="rounded-md border border-border bg-white p-3"><span className="text-muted-foreground">Category:</span> <span className="font-semibold">{draft.testCategory}</span></div>
-                  <div className="rounded-md border border-border bg-white p-3"><span className="text-muted-foreground">Priority:</span> <span className="font-semibold">{draft.priority}</span></div>
-                  <div className="rounded-md border border-border bg-white p-3"><span className="text-muted-foreground">Status:</span> <span className="font-semibold">{draft.status}</span></div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button className="flex-1" onClick={saveOrder}><Save className="h-4 w-4" />Submit Order</Button>
-                  <Button variant="outline" className="flex-1" onClick={() => setActiveTab("order-summary")}>View Summary</Button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {activeTab === "order-summary" ? (
-            <div className="space-y-3">
-              <div className="grid gap-3">
-                {filteredOrders.map((item) => (
-                  <div key={item.id} className="grid gap-3 rounded-xl border border-border bg-surface p-4 md:grid-cols-[minmax(0,1fr)_120px_120px_auto] md:items-center">
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">{item.testName}</div>
-                      <div className="text-xs text-muted-foreground">{item.testCategory} • {item.sampleType} • {item.instructions || "No instruction"}</div>
-                    </div>
-                    <StatusBadge status={item.status} />
-                    <Badge tone={item.priority === "Stat" ? "danger" : item.priority === "Urgent" ? "warning" : "success"}>{item.priority}</Badge>
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button size="sm" variant="outline" onClick={() => editOrder(item.id)}><Edit2 className="h-4 w-4" />Edit</Button>
-                      <Button size="sm" variant="outline" className="text-danger" onClick={() => removeOrder(item.id)}><Trash2 className="h-4 w-4" />Delete</Button>
-                    </div>
-                  </div>
+      <div className="space-y-4">
+        {/* <PatientSummaryBanner /> */}
+  
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MainTab)} className="w-full">
+          <Card>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {(["test-order", "order-summary", "result-review", "critical-findings"] as const).map((tab) => (
+                  <Button
+                    key={tab}
+                    type="button"
+                    size="sm"
+                    variant={activeTab === tab ? "default" : "outline"}
+                    onClick={() => setActiveTab(tab)}
+                    className="min-w-[132px]"
+                  >
+                    {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : tab === "result-review" ? "Result Review" : "Critical Findings"}
+                  </Button>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={saveOrder}>Save</Button>
-                <Button variant="outline" onClick={() => toast.success("Order submitted to lab queue")}>Submit Order</Button>
-                {/* <Button variant="outline" onClick={() => setActiveTab("result-review")}>View Result / Status</Button> */}
-              </div>
-            </div>
-          ) : null}
-
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+  
+          <TabsContent value="test-order" className="mt-0">
+            <LaboratoryTestOrderTab
+              search={search}
+              onSearchChange={setSearch}
+              filteredTests={filteredTests}
+              departmentFilter={departmentFilter}
+              onDepartmentFilterChange={setDepartmentFilter}
+              selectedTestIds={selectedTestIds}
+              selectedGroupIds={selectedGroupIds}
+              problems={problems}
+              newProblem={newProblem}
+              onNewProblemChange={setNewProblem}
+              problemListVisible={problemListVisible}
+              activeProblemView={activeProblemView}
+              onProblemListVisibleChange={setProblemListVisible}
+              onActiveProblemViewChange={setActiveProblemView}
+              onAddProblem={addProblem}
+              onToggleTest={toggleTest}
+              onToggleGroup={toggleGroup}
+              specimenSourceById={specimenSourceById}
+              onSpecimenSourceChange={updateSpecimenSource}
+              priority={priority}
+              onPriorityChange={setPriority}
+              fasting={fasting}
+              onFastingChange={setFasting}
+              clinicalNotes={clinicalNotes}
+              onClinicalNotesChange={setClinicalNotes}
+              instructionsForLab={instructionsForLab}
+              onInstructionsForLabChange={setInstructionsForLab}
+              collectionDate={collectionDate}
+              onCollectionDateChange={setCollectionDate}
+              collectionTime={collectionTime}
+              onCollectionTimeChange={setCollectionTime}
+              onOpenSummary={handleOpenSummary}
+              onSave={saveOrder}
+              onSaveAndBill={saveAndBill}
+              onAddToBill={addToBill}
+              onReorderPrevious={selectHistory}
+              onDownloadAllReports={downloadAllReports}
+            />
+          </TabsContent>
+          <TabsContent value="order-summary" className="mt-0">
+            <LaboratoryOrderSummaryTab
+              rows={sortedSummaryRows}
+              selectedCount={selectedCount}
+              billingNote={billingNote}
+              onSort={updateSummarySort}
+              sort={summarySort}
+              onSave={saveOrder}
+              onAddToBill={addToBill}
+              onSaveAndBill={saveAndBill}
+              onEdit={editSummaryRow}
+              onDelete={requestDeleteSummaryRow}
+              onViewAll={() => setSummaryRows(initialSummaryRows)}
+              onBackToTestOrder={() => setActiveTab("test-order")}
+            />
+          </TabsContent>
+          <TabsContent value="result-review" className="mt-0">
+          <LaboratoryResultReviewTab
+            resultBlocks={resultList}
+            diagnosisSearch={diagnosisSearch}
+              diagnosisType={diagnosisType}
+              diagnosisOpen={diagnosisOpen}
+              selectedDiagnosisLabel={selectedDiagnosisLabel}
+              onDiagnosisSearchChange={setDiagnosisSearch}
+              onDiagnosisTypeChange={setDiagnosisType}
+              onDiagnosisOpenChange={setDiagnosisOpen}
+              onAddDiagnosis={addDiagnosis}
+              onEditResult={editResultBlock}
+              onDeleteResult={removeResultBlock}
+              onReorderResult={reorderResult}
+            />
+          </TabsContent>
+          <TabsContent value="critical-findings" className="mt-0">
+            <LaboratoryCriticalFindingsTab resultBlocks={resultList} />
+          </TabsContent>
+            </CardContent>
+          </Card>
+        </Tabs>
+  
+        <ConfirmDialog
+          open={Boolean(deleteTarget)}
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+          description={`Are you sure you want to delete ${deleteTarget?.name ?? "this laboratory row"}? This action cannot be undone in the current screen.`}
+          onConfirm={confirmDeleteSummaryRow}
+        />
+      </div>
+    );
+  }
+  

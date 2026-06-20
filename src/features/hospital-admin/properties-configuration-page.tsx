@@ -2,17 +2,17 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { CalendarDays, CheckSquare, Clock, Hash, ListChecks, Pencil, Plus, Save, SlidersHorizontal, Trash2, Type } from "lucide-react";
+import { CalendarDays, CheckSquare, Clock, Hash, ListChecks, Pencil, Plus, SlidersHorizontal, Trash2, Type } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
 import { AdminSection, FilterBar, ProtectedAdmin, StickyActionBar } from "@/features/admin/admin-shared";
+import { MasterDialog } from "@/features/pharmacy-master/components/master-dialog";
 
 type PropertyType = "Free text" | "Date" | "Time" | "Number" | "Dropdown" | "Checkbox";
 type SelectionMode = "Single" | "Multi";
@@ -335,22 +335,16 @@ function PropertyFormDrawer({
   };
 
   return (
-    <Drawer
+    <MasterDialog
       open={Boolean(state)}
       onOpenChange={(open) => !open && onClose()}
       title={editingRecord ? "Edit Property" : "Add Property"}
       description="Properties configuration"
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button type="button" className="bg-danger" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" form="property-form">
-            <Save className="h-4 w-4" />
-            {editingRecord ? "Save Property" : "Add Property"}
-          </Button>
-        </div>
-      }
+      submitLabel={editingRecord ? "Save Property" : "Add Property"}
+      onSubmit={() => {
+        const form = document.getElementById("property-form") as HTMLFormElement | null;
+        form?.requestSubmit();
+      }}
     >
       <form id="property-form" className="grid gap-4" onSubmit={handleSubmit}>
         <FieldShell label="Property Name" error={errors.name}>
@@ -359,7 +353,7 @@ function PropertyFormDrawer({
         <SelectField label="Type" value={values.type} options={propertyTypes} onChange={(type) => updateValues({ type })} />
         <DynamicPropertyFields values={values} errors={errors} onChange={updateValues} />
       </form>
-    </Drawer>
+    </MasterDialog>
   );
 }
 
@@ -446,9 +440,7 @@ export function PropertiesConfigurationPage({ ldtId }: { ldtId?: string }) {
       {({ readOnly }) => (
         <>
           <PageHeader
-            eyebrow="Hospital Admin"
             title="Properties Configuration"
-            description={ldtId ? `Manage properties for selected LDT: ${ldtId}.` : "Manage hospital-level operational properties and workflow defaults."}
             className="static mx-0 border-b bg-transparent px-0 py-2"
             actions={
               <Button disabled={readOnly} onClick={() => setDrawerState({ type: "add" })}>

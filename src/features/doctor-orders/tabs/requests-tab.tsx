@@ -162,7 +162,7 @@ export function RequestsTab() {
 
   return (
     <div className="space-y-4">
-      <PatientSummaryBanner />
+      {/* <PatientSummaryBanner /> */}
       <Card>
         <CardHeader>
           <CardTitle>Requests</CardTitle>

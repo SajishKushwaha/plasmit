@@ -71,7 +71,7 @@ type IntakeOutputEntry = {
   unit: string;
 };
 
-const ldtAssessmentRoles: Role[] = ["Nurse", "Doctor", "Doctor OPD", "Super Admin", "Hospital Admin"];
+const nurseRoles: Role[] = ["Nurse", "Super Admin", "Hospital Admin"];
 
 const ldtConfigurations: Record<string, LdtConfig> = {
   "ldt-001": {
@@ -79,10 +79,11 @@ const ldtConfigurations: Record<string, LdtConfig> = {
     name: "PICC double lumen",
     type: "Line",
     assessments: [
-      { id: "assess-site", name: "Site Assessment", type: "Dropdown", config: { options: ["Clean", "Redness", "Swelling", "Discharge"], selectionMode: "Single" } },
-      { id: "assess-status", name: "LDT Status", type: "Dropdown", config: { options: ["Patent", "Blocked", "Leaking", "Removed"], selectionMode: "Single" } },
-      { id: "assess-dressing-type", name: "Dressing Type", type: "Dropdown", config: { options: ["Transparent", "Gauze", "Pressure", "Occlusive"], selectionMode: "Single" } },
-      { id: "assess-dressing-status", name: "Dressing Status", type: "Dropdown", config: { options: ["Dry", "Soiled", "Loose", "Changed"], selectionMode: "Single" } },
+      { id: "assess-site", name: "Site Assessment", type: "Dropdown", config: { options: ["Clean", "Tender", "Redness", "Leakage", "Dry", "Intact", "Bleeding", "Draining", "Edematous", "Extravasated", "Leaking", "Painful", "Pink", "Red", "Infected"], selectionMode: "Single" } },
+      { id: "assess-status", name: "LDT Status", type: "Dropdown", config: { options: ["Blood", "Return Noted", "No Blood Return", "Capped", "Occluded", "Flushed", "Heparin Locked"], selectionMode: "Single" } },
+
+      { id: "assess-dressing-type", name: "Dressing Type", type: "Dropdown", config: { options: ["Transparent", "Gauze", "Pressure", "Occlusive", "No Dressing","Securing Device", "Negative Pressure Wound Therapy"], selectionMode: "Single" } },
+      { id: "assess-dressing-status", name: "Dressing Status", type: "Dropdown", config: { options: ["Dry", "Soiled", "Loose", "Changed","New Drainage", "Old Drainage"], selectionMode: "Single" } },
       { id: "assess-volume", name: "Volume", type: "Number", config: { decimalPlaces: 0, min: 0, max: 500, unit: "ml", trackInIntake: true } },
     ],
   },
@@ -567,8 +568,7 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
   const [editingEntry, setEditingEntry] = React.useState<AssessmentEntry | null>(null);
   const [patientId, setPatientId] = React.useState(mockPatients[0]?.id ?? "");
   const patient = mockPatients.find((item) => item.id === patientId) ?? mockPatients[0];
-  const allowed = ldtAssessmentRoles.includes(role);
-  const managementPath = role === "Doctor" || role === "Doctor OPD" ? "/doctor/ldt-management" : "/nurse/ldt-management";
+  const allowed = nurseRoles.includes(role);
 
   React.useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -654,8 +654,8 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
     return (
       <EmptyState
         icon={UserRound}
-        title="LDT access required"
-        description="Switch to Nurse, Doctor OPD, or Hospital Admin role to open LDT assessment."
+        title="Nurse access required"
+        description="Switch to Nurse role to open LDT assessment."
       />
     );
   }
@@ -663,13 +663,13 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Clinical - LDT Assessment"
+        eyebrow="Nursing - LDT Assessment"
         title={`${ldtConfig.name} Assessment`}
         description="Capture time-wise assessment values from the selected LDT admin configuration."
         className="static mx-0 border-b bg-transparent px-0 py-2"
         actions={
           <Button variant="outline" asChild>
-            <Link href={managementPath}>
+            <Link href="/nurse/ldt-management">
               <ArrowLeft className="h-4 w-4" />
               Back
             </Link>

@@ -113,9 +113,67 @@ export function SummaryCard({
         {!orders.length ? (
           <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">Select drugs from the left card to build the order summary.</div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border">
-            <div className="max-w-full overflow-x-auto">
-              <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+          <>
+            <div className="space-y-3 md:hidden">
+              {sortedOrders.map((order) => {
+                const draft = drafts[order.id];
+                if (!draft) return null;
+
+                return (
+                  <div key={order.id} className="rounded-lg border border-border bg-surface p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-foreground">{draft.name}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{draft.form || "-"} · {draft.route || "-"}</div>
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        <Button size="icon" variant="outline" onClick={() => onEdit(order.id)} aria-label={`Edit ${draft.name}`}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="outline" onClick={() => onDelete(order.id)} aria-label={`Delete ${draft.name}`}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-md bg-surface-muted p-2">
+                        <div className="text-muted-foreground">Category</div>
+                        <div className="mt-1 font-medium">{draft.category ? <Badge tone={categoryTone(draft.category)}>{draft.category}</Badge> : "-"}</div>
+                      </div>
+                      <div className="rounded-md bg-surface-muted p-2">
+                        <div className="text-muted-foreground">Qty</div>
+                        <div className="mt-1 font-medium text-foreground">{draft.orderedQty || "-"}</div>
+                      </div>
+                      <div className="rounded-md bg-surface-muted p-2">
+                        <div className="text-muted-foreground">Dosage</div>
+                        <div className="mt-1 font-medium text-foreground">{draftValue(draft, "dosage") || "-"}</div>
+                      </div>
+                      <div className="rounded-md bg-surface-muted p-2">
+                        <div className="text-muted-foreground">Frequency</div>
+                        <div className="mt-1 font-medium text-foreground">{isHidden(draft, "frequency") ? "-" : (!draft.category || draft.category === "Unscheduled" || draft.category === "STAT" || draft.category === "Bolus" || draft.category === "Continuous" ? "-" : draft.frequency || "-")}</div>
+                      </div>
+                      <div className="rounded-md bg-surface-muted p-2">
+                        <div className="text-muted-foreground">Days</div>
+                        <div className="mt-1 font-medium text-foreground">{isHidden(draft, "days") ? "-" : (draft.category === "Unscheduled" || draft.category === "STAT" || draft.category === "Bolus" || draft.category === "Continuous" ? "-" : draft.days || "-")}</div>
+                      </div>
+                      <div className="rounded-md bg-surface-muted p-2">
+                        <div className="text-muted-foreground">Instruction</div>
+                        <div className="mt-1 line-clamp-2 font-medium text-foreground">{draft.instructions || "-"}</div>
+                      </div>
+                      <div className="col-span-2 rounded-md bg-surface-muted p-2">
+                        <div className="text-muted-foreground">Taper dose</div>
+                        <div className="mt-1 line-clamp-2 font-medium text-foreground">{draftValue(draft, "taper") || "-"}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-hidden rounded-lg border border-border md:block">
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full min-w-[980px] border-collapse text-left text-sm">
                 <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <tr>
                     {columns.map((column) => (
@@ -175,9 +233,10 @@ export function SummaryCard({
                     );
                   })}
                 </tbody>
-              </table>
+                </table>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </CardContent>
     </Card>

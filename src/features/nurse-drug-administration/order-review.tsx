@@ -10,9 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+import { nurseDrugCategories } from "./data";
 import type { NurseDrugOrder } from "./types";
-
-const drugCategories: NurseDrugOrder["category"][] = ["Scheduled", "SOS", "Intermittent", "Continuous", "Discontinued", "Unscheduled"];
 type NurseOrderAction = "Receive" | "Discontinue" | "Return" | "Modify";
 
 function remainingQty(order: NurseDrugOrder) {
@@ -53,7 +52,7 @@ function PopupShell({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[88dvh] w-[min(94vw,620px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-white shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
               <Dialog.Title className="text-sm font-semibold text-foreground">{action}</Dialog.Title>
@@ -76,10 +75,13 @@ function PopupShell({
 function OrderActionFields({ action, order, canReceive }: { action: NurseOrderAction | "Status"; order: NurseDrugOrder; canReceive: boolean }) {
   if (action === "Status") {
     return (
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <ReadOnlyInput label="Status" value={orderStatus(order)} />
         <ReadOnlyInput label="Received" value={`${order.receivedQty}/${order.orderedQty}`} />
         <ReadOnlyInput label="Administered" value={`${order.administeredQty}/${order.receivedQty}`} />
+        <ReadOnlyInput label="Priority" value={order.priority || "Routine"} />
+        <ReadOnlyInput label="Diluent" value={order.diluent || "-"} />
+        <ReadOnlyInput label="Bolus route" value={order.bolusRoute || "-"} />
       </div>
     );
   }
@@ -195,8 +197,8 @@ function CategoryList({
         <CardTitle>Orders</CardTitle>
         <CardDescription>Review pharmacy receipt and order actions.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {drugCategories.map((category) => (
+      <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+        {nurseDrugCategories.map((category) => (
           <button
             key={category}
             type="button"
@@ -228,6 +230,12 @@ function OrderCard({ order, onAction }: { order: NurseDrugOrder; onAction: (orde
             {order.form} / {order.dosage || "-"} / {order.frequency || "-"} / {order.days || "-"} days
           </div>
           <div className="text-xs text-muted-foreground">Instructions: {order.instructions || "-"} {order.taperedDose ? `(Tapered dose: ${order.taperedDose})` : ""}</div>
+          <div className="flex flex-wrap gap-2 pt-1 text-xs">
+            <Badge tone="muted">{order.category}</Badge>
+            {order.priority ? <Badge tone="info">{order.priority}</Badge> : null}
+            {order.diluent ? <Badge tone="muted">{order.diluent}</Badge> : null}
+            {order.bolusDose ? <Badge tone="warning">Bolus {order.bolusDose}</Badge> : null}
+          </div>
         </div>
         <div>
           <div className="mb-1 text-xs font-medium text-muted-foreground">Status</div>
@@ -277,7 +285,7 @@ function OrdersPanel({
 }
 
 export function DrugOrderReviewTab({ orders }: { orders: NurseDrugOrder[] }) {
-  const [activeCategory, setActiveCategory] = React.useState<NurseDrugOrder["category"]>("Scheduled");
+  const [activeCategory, setActiveCategory] = React.useState<NurseDrugOrder["category"]>("SOS");
   const [popupOrder, setPopupOrder] = React.useState<NurseDrugOrder | null>(null);
   const [popupAction, setPopupAction] = React.useState<NurseOrderAction | "Status" | null>(null);
   const categoryOrders = orders.filter((order) => order.category === activeCategory);

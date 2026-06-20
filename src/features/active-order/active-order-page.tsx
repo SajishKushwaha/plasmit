@@ -370,9 +370,7 @@ export function ActiveOrderPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Nursing - Active Orders"
         title="Active Order"
-        description="Track released blood requests and capture nursing administration details."
         className="static mx-0 border-b bg-transparent px-0 py-2"
       />
 

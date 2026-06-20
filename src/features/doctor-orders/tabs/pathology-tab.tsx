@@ -1,20 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { PatientSummaryBanner } from "./shared/patient-summary-banner";
 import { previousTestOrders, resultBlocks as initialResultBlocks, groupedTests, summaryRows as initialSummaryRows, testList } from "./pathology/data";
+import { PathologyCriticalFindingsTab } from "./pathology/critical-findings-tab";
 import { PathologyOrderSummaryTab } from "./pathology/order-summary-tab";
 import { PathologyResultReviewTab } from "./pathology/result-review-tab";
 import { PathologyTestOrderTab } from "./pathology/test-order-tab";
 import type { PathologyPriority, PathologyResultBlock, PathologySummaryRow } from "./pathology/types";
 
-type MainTab = "test-order" | "order-summary" | "result-review";
-type ReviewMode = "Result history" | "All results";
-type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "specialty" | "specimen" | "priority">;
+type MainTab = "test-order" | "order-summary" | "result-review" | "critical-findings";
+type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
 
 const selectedByDefault = ["cbc", "kft"];
 
@@ -27,17 +29,15 @@ export function PathologyTab() {
   const [activeProblemView, setActiveProblemView] = React.useState<"Active" | "Find">("Active");
   const [problems, setProblems] = React.useState(["Diabetes Type 2", "Hypertension", "Fatigue"]);
   const [newProblem, setNewProblem] = React.useState("");
-  const [specimenSource, setSpecimenSource] = React.useState("Blood");
+  const [specimenSourceById, setSpecimenSourceById] = React.useState<Record<string, string>>({});
   const [priority, setPriority] = React.useState<PathologyPriority>("Routine");
   const [fasting, setFasting] = React.useState(false);
-  const [instructions, setInstructions] = React.useState("");
   const [clinicalNotes, setClinicalNotes] = React.useState("");
   const [instructionsForLab, setInstructionsForLab] = React.useState("");
   const [collectionDate, setCollectionDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [collectionTime, setCollectionTime] = React.useState(new Date().toTimeString().slice(0, 5));
   const [summarySort, setSummarySort] = React.useState<{ key: SummarySortKey; direction: "asc" | "desc" }>({ key: "name", direction: "asc" });
   const [summaryRows, setSummaryRows] = React.useState(initialSummaryRows);
-  const [resultMode, setResultMode] = React.useState<ReviewMode>("Result history");
   const [resultList, setResultList] = React.useState<PathologyResultBlock[]>(initialResultBlocks);
   const [diagnosisSearch, setDiagnosisSearch] = React.useState("");
   const [diagnosisType, setDiagnosisType] = React.useState("Primary");
@@ -80,6 +80,10 @@ export function PathologyTab() {
 
   const toggleGroup = (id: string) => {
     setSelectedGroupIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  };
+
+  const updateSpecimenSource = (id: string, value: string) => {
+    setSpecimenSourceById((current) => ({ ...current, [id]: value }));
   };
 
   const selectHistory = (historyId: string) => {
@@ -172,52 +176,32 @@ export function PathologyTab() {
     toast.success(`Reorder requested for ${name}`);
   };
 
+  const downloadAllReports = () => {
+    toast.info("Preparing pathology reports download");
+    // The actual PDF generation stays in the result review tab; this keeps the test-order action visible here.
+  };
+
   return (
     <div className="space-y-4">
-      <PatientSummaryBanner />
+      {/* <PatientSummaryBanner /> */}
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MainTab)} className="w-full">
-        <div className="space-y-3">
-          <TabsList className="w-full gap-2 overflow-x-auto bg-transparent p-0 pb-4">
-            <TabsTrigger
-              value="test-order"
-              className="flex h-10 min-w-[132px] items-center justify-center rounded-md border border-border bg-white px-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              Test order
-            </TabsTrigger>
-            <TabsTrigger
-              value="order-summary"
-              className="flex h-10 min-w-[132px] items-center justify-center rounded-md border border-border bg-white px-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              Order summary
-            </TabsTrigger>
-            <TabsTrigger
-              value="result-review"
-              className="flex h-10 min-w-[132px] items-center justify-center rounded-md border border-border bg-white px-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              Result review
-            </TabsTrigger>
-          </TabsList>
-
-          {/* <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-muted px-4 py-3 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Patient already selected</span>
-            <span>UHID-45821 - Ramesh Kumar - IPD</span>
-          </div> */}
-
-          {/* <div className="flex gap-2 overflow-x-auto pb-1">
-            {pathologySubTabs.map((tab) => (
-              <span
-                key={tab}
-                className={[
-                  "inline-flex shrink-0 rounded-full border px-3 py-1 text-xs font-medium",
-                  tab === "Pathology" ? "border-primary bg-primary/10 text-primary" : "border-border bg-white text-muted-foreground",
-                ].join(" ")}
-              >
-                {tab}
-              </span>
-            ))}
-          </div> */}
-        </div>
+        <Card>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {(["test-order", "order-summary", "result-review", "critical-findings"] as const).map((tab) => (
+                <Button
+                  key={tab}
+                  type="button"
+                  size="sm"
+                  variant={activeTab === tab ? "default" : "outline"}
+                  onClick={() => setActiveTab(tab)}
+                  className="min-w-[132px]"
+                >
+                  {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : tab === "result-review" ? "Result Review" : "Critical Findings"}
+                </Button>
+              ))}
+            </div>
 
         <TabsContent value="test-order" className="mt-0">
           <PathologyTestOrderTab
@@ -236,14 +220,12 @@ export function PathologyTab() {
             onAddProblem={addProblem}
             onToggleTest={toggleTest}
             onToggleGroup={toggleGroup}
-            specimenSource={specimenSource}
-            onSpecimenSourceChange={setSpecimenSource}
+            specimenSourceById={specimenSourceById}
+            onSpecimenSourceChange={updateSpecimenSource}
             priority={priority}
             onPriorityChange={setPriority}
             fasting={fasting}
             onFastingChange={setFasting}
-            instructions={instructions}
-            onInstructionsChange={setInstructions}
             clinicalNotes={clinicalNotes}
             onClinicalNotesChange={setClinicalNotes}
             instructionsForLab={instructionsForLab}
@@ -257,6 +239,7 @@ export function PathologyTab() {
             onSaveAndBill={saveAndBill}
             onAddToBill={addToBill}
             onReorderPrevious={selectHistory}
+            onDownloadAllReports={downloadAllReports}
           />
         </TabsContent>
         <TabsContent value="order-summary" className="mt-0">
@@ -277,8 +260,6 @@ export function PathologyTab() {
         </TabsContent>
         <TabsContent value="result-review" className="mt-0">
           <PathologyResultReviewTab
-            resultMode={resultMode}
-            onResultModeChange={setResultMode}
             resultBlocks={resultList}
             diagnosisSearch={diagnosisSearch}
             diagnosisType={diagnosisType}
@@ -293,6 +274,11 @@ export function PathologyTab() {
             onReorderResult={reorderResult}
           />
         </TabsContent>
+        <TabsContent value="critical-findings" className="mt-0">
+          <PathologyCriticalFindingsTab resultBlocks={resultList} />
+        </TabsContent>
+          </CardContent>
+        </Card>
       </Tabs>
 
       <ConfirmDialog

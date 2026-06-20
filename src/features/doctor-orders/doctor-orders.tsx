@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { ClipboardCheck, Droplet, FileSearch, FlaskConical, Layers, Microscope, Pill, Stethoscope, UserPlus } from "lucide-react";
 
+import { PageHeader } from "@/components/shell/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { BloodRequestTab } from "./tabs/blood-request-tab";
@@ -16,6 +17,7 @@ import { ProceduresTab } from "./tabs/procedures-tab";
 import { RadiologyTab } from "./tabs/radiology-tab";
 import { ReferConsultationTab } from "./tabs/refer-consultation-tab";
 import { RequestsTab } from "./tabs/requests-tab";
+import { PatientSummaryBanner } from "./tabs/shared/patient-summary-banner";
 
 type OrderTab = {
   id: string;
@@ -121,18 +123,23 @@ export function DoctorOrdersPage({
         ? defaultTabProp
         : "blood";
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-2 py-2 sm:space-y-5 sm:px-0 sm:py-3">
+      <PageHeader
+        title="Order Management"
+        className="static mx-0 border-b bg-transparent px-0 py-1 sm:py-2"
+      />
+      <PatientSummaryBanner />
       <Tabs defaultValue={defaultTab} className="w-full">
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <TabsList className="w-full gap-2 overflow-x-auto">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-2">
+            <TabsList className="w-full gap-1.5 overflow-x-auto px-1 py-1 sm:gap-2 sm:px-0">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="flex h-10 min-w-[132px] flex-row items-center justify-center gap-2 border border-transparent px-3 data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex h-8 min-w-[110px] flex-row items-center justify-center gap-1.5 border border-transparent px-2.5 text-xs sm:h-10 sm:min-w-[132px] sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
-                  <tab.icon className="h-4 w-4 shrink-0" />
+                  <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                   <span className="min-w-0 truncate leading-none">{tab.label}</span>
                 </TabsTrigger>
               ))}
@@ -140,7 +147,7 @@ export function DoctorOrdersPage({
           </div>
 
           {tabs.map((tab) => (
-            <TabsContent key={tab.id} value={tab.id}>
+            <TabsContent key={tab.id} value={tab.id} className="mt-2 sm:mt-3">
               {/* <div className="mb-4 flex items-start gap-3 rounded-md border border-border bg-surface-muted p-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-surface">
                   <tab.icon className="h-4 w-4 text-primary" />

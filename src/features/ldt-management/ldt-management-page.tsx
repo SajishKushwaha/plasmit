@@ -57,7 +57,7 @@ type ScannableLdtItem = {
   propertyValues: Record<string, FieldValue>;
 };
 
-const nurseRoles: Role[] = ["Nurse", "Super Admin", "Hospital Admin"];
+const ldtManagementRoles: Role[] = ["Nurse", "Doctor", "Doctor OPD", "Super Admin", "Hospital Admin"];
 
 const ldtOptions: LdtOption[] = [
   { id: "ldt-001", name: "PICC double lumen", type: "Line" },
@@ -308,12 +308,14 @@ function PropertiesDrawer({
 function LdtList({
   ldts,
   selectedId,
+  assessmentBasePath,
   onSelect,
   onDelete,
   onOpenProperties,
 }: {
   ldts: AddedLdt[];
   selectedId: string | null;
+  assessmentBasePath: string;
   onSelect: (id: string) => void;
   onDelete: (ldt: AddedLdt) => void;
   onOpenProperties: (ldt: AddedLdt) => void;
@@ -363,7 +365,7 @@ function LdtList({
                     Properties
                   </Button>
                   <Button size="sm" variant="outline" asChild>
-                    <Link href={`/nurse/ldt-management/assessment?ldtId=${ldt.id}`}>
+                    <Link href={`${assessmentBasePath}?ldtId=${ldt.id}`}>
                       <ClipboardList className="h-3.5 w-3.5" />
                       Assessment
                     </Link>
@@ -382,7 +384,7 @@ function LdtList({
   );
 }
 
-function LdtManagementWorkspace() {
+function LdtManagementWorkspace({ assessmentBasePath }: { assessmentBasePath: string }) {
   const [selectedLdtType, setSelectedLdtType] = React.useState<LdtType | "">("");
   const [deletedLdtIds, setDeletedLdtIds] = React.useState<string[]>([]);
   const [selectedLdtId, setSelectedLdtId] = React.useState<string | null>(null);
@@ -466,6 +468,7 @@ function LdtManagementWorkspace() {
       <LdtList
         ldts={visibleLdts}
         selectedId={selectedLdtId}
+        assessmentBasePath={assessmentBasePath}
         onSelect={setSelectedLdtId}
         onDelete={handleDelete}
         onOpenProperties={(ldt) => {
@@ -490,7 +493,8 @@ function LdtManagementWorkspace() {
 
 export function LdtManagementPage() {
   const { role } = useRole();
-  const allowed = nurseRoles.includes(role);
+  const allowed = ldtManagementRoles.includes(role);
+  const assessmentBasePath = role === "Doctor" || role === "Doctor OPD" ? "/doctor/ldt-management/assessment" : "/nurse/ldt-management/assessment";
   const [patientId, setPatientId] = React.useState(mockPatients[0]?.id ?? "");
   const patient = mockPatients.find((item) => item.id === patientId) ?? mockPatients[0];
 
@@ -498,8 +502,8 @@ export function LdtManagementPage() {
     return (
       <EmptyState
         icon={UserRound}
-        title="Nurse access required"
-        description="Switch to Nurse role to open LDT management."
+        title="LDT access required"
+        description="Switch to Nurse, Doctor OPD, or Hospital Admin role to open LDT management."
       />
     );
   }
@@ -507,7 +511,7 @@ export function LdtManagementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Nursing - LDT Management"
+        eyebrow="Clinical - LDT Management"
         title="LDT Management"
         description="Add patient lines, drains, and tubes, then capture their properties and assessment."
         className="static mx-0 border-b bg-transparent px-0 py-2"
@@ -522,7 +526,7 @@ export function LdtManagementPage() {
         </CardContent>
       </Card>
 
-      <LdtManagementWorkspace />
+      <LdtManagementWorkspace assessmentBasePath={assessmentBasePath} />
     </div>
   );
 }

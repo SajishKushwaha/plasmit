@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div
           className={cn(
             "flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden transition-[margin] duration-200 ease-out",
-            sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[264px]",
+            sidebarCollapsed ? "lg:ml-[72px] lg:[--app-sidebar-offset:72px]" : "lg:ml-[264px] lg:[--app-sidebar-offset:264px]",
           )}
         >
           <TopHeader />

@@ -78,7 +78,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
       <Tabs className="space-y-3 pt-[118px]" onValueChange={setActiveTab} value={activeTab}>
         <div
           className={cn(
-            "fixed left-0 right-0 space-y-1.5 bg-background/95 px-4 pb-1.5 pt-1.5 backdrop-blur transition-[top,box-shadow] duration-200 md:px-6 lg:left-[264px]",
+            "fixed left-0 right-0 space-y-1.5 bg-background/95 px-4 pb-1.5 pt-1.5 backdrop-blur transition-[top,box-shadow] duration-200 md:px-6 lg:left-[var(--app-sidebar-offset)]",
             isPatientHeaderCompact ? "top-0 z-50 shadow-sm" : "top-16 z-30"
           )}
         >
@@ -201,7 +201,15 @@ function PatientDetailTopStrip({
         <div className={cn("flex min-w-max flex-1 items-center transition-all duration-200", isCompact ? "gap-4" : "gap-7")}>
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-bold">{patient.name}</span>
-            <Badge tone={tone === "red" ? "critical" : tone === "orange" ? "warning" : "success"}>
+            <Badge
+              className={cn(
+                "border-white/30 px-2.5 font-bold shadow-sm",
+                tone === "red" && "bg-red-500 text-white",
+                tone === "orange" && "bg-orange-400 text-white",
+                tone === "blue" && "bg-blue-500 text-white",
+              )}
+              tone={tone === "red" ? "critical" : tone === "orange" ? "warning" : "success"}
+            >
               {tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Stable"}
             </Badge>
           </div>
@@ -384,13 +392,13 @@ function buildNurseShiftNotes(patient: Dashboard1Patient, rapidReviewPatient?: R
 function PatientVitalsTabs({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
   return (
     <Tabs className="space-y-4" defaultValue="chart">
-      <div className="rounded-xl border border-border bg-white p-1.5 shadow-sm">
-        <TabsList className="grid w-full grid-cols-2 rounded-lg bg-surface-muted/70 p-1 md:w-[360px]">
-          <TabsTrigger className="h-10 gap-2 rounded-lg text-sm data-[state=active]:text-primary" value="chart">
+      <div className="flex justify-start rounded-xl border border-border bg-white p-1.5 shadow-sm">
+        <TabsList className="no-tab-scroll-hint grid w-full max-w-[420px] grid-cols-2 rounded-lg bg-surface-muted/70 p-1">
+          <TabsTrigger className="h-10 justify-center gap-2 rounded-lg text-sm data-[state=active]:text-primary" value="chart">
             <ClipboardCheck className="h-4 w-4" />
             Chart
           </TabsTrigger>
-          <TabsTrigger className="h-10 gap-2 rounded-lg text-sm data-[state=active]:text-primary" value="graph">
+          <TabsTrigger className="h-10 justify-center gap-2 rounded-lg text-sm data-[state=active]:text-primary" value="graph">
             <ChartNoAxesCombined className="h-4 w-4" />
             Graph
           </TabsTrigger>
@@ -401,7 +409,7 @@ function PatientVitalsTabs({ patient, rapidReviewPatient }: { patient: Dashboard
         <PatientMonitoring key={`monitoring-${patient.id}`} patient={patient} rapidReviewPatient={rapidReviewPatient} />
       </TabsContent>
 
-      <TabsContent className="mt-0" value="graph">
+      <TabsContent className="mt-0 " value="graph">
         {rapidReviewPatient ? (
           <PatientVitalsGraph patient={rapidReviewPatient} />
         ) : (

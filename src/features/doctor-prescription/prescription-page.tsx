@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
+import { PatientSummaryBanner } from "@/components/ui/patient-summary-banner";
 import { useRole } from "@/components/providers/role-provider";
 import { mockPatients } from "@/data/patients";
 import { PatientSearchSelect } from "@/features/patients/patient-search-select";
@@ -60,7 +61,7 @@ type DrugColumn = {
   render: (row: DrugRow, rowErrors: Partial<Record<"drugName" | "dosage", string>>, updateDrug: (row: DrugRow, values: Partial<DrugRow>) => void, onDelete: (id: string) => void) => React.ReactNode;
 };
 
-const doctorRoles: Role[] = ["Doctor", "Doctor OPD", "Super Admin", "Hospital Admin"];
+const doctorRoles: Role[] = ["Doctor", "Doctor OPD", "Doctor IPD", "Super Admin", "Hospital Admin"];
 const drugForms = ["Tablet", "Capsule", "Syrup", "Injection", "IV Fluid", "Cream", "Drops"] as const;
 const frequencies = ["OD", "BD", "TDS", "QID", "6 hrly", "8 hrly", "SOS", "Continuous", "Intermittent"] as const;
 const routes = ["Oral", "IV", "IM", "SC", "Topical", "Inhalation"] as const;
@@ -194,22 +195,23 @@ function PatientInformation({
 
   return (
     <div className="space-y-4">
-      <Card>
+      {/* <Card>
         <CardContent className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-4">
           <PatientSearchSelect patientId={selectedPatientId} onPatientChange={onPatientSelect} />
           {details.map((detail) => (
             <DetailItem key={detail.label} label={detail.label} value={detail.value || "-"} />
           ))}
         </CardContent>
-      </Card>
+      </Card> */}
+      <PatientSummaryBanner />
 
       <Card>
-        <CardHeader>
+        {/* <CardHeader>
           <div>
             <CardTitle>Clinical Details</CardTitle>
             <CardDescription>Add the diagnosis for this prescription.</CardDescription>
           </div>
-        </CardHeader>
+        </CardHeader> */}
         <CardContent>
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">
@@ -534,9 +536,7 @@ export function PrescriptionPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Doctor Workspace"
         title="Prescription"
-        description="Create a prescription and send medicines to the drug ordering queue."
         className="static mx-0 border-b bg-transparent px-0 py-2"
         // actions={
         //   <Button onClick={submitPrescription}>

@@ -167,6 +167,20 @@ body {
     display: grid;
   }
 
+  .tabs-scroll-list.no-tab-scroll-hint {
+    scrollbar-width: none;
+    box-shadow: none;
+    background-image: none;
+  }
+
+  .tabs-scroll-list.no-tab-scroll-hint::after {
+    display: none;
+  }
+
+  .tabs-scroll-list.no-tab-scroll-hint::-webkit-scrollbar {
+    height: 0;
+  }
+
   .tabs-scroll-list::-webkit-scrollbar {
     height: 8px;
   }

@@ -428,10 +428,10 @@ function DateTextInput({
 function ActionButtons() {
   return (
     <>
-      <Button asChild>
+      <Button asChild size="sm">
         <Link href="/poct/add">Add POCT</Link>
       </Button>
-      <Button asChild variant="outline">
+      <Button asChild size="sm" variant="outline">
         <Link href="/poct/results">View POCT Result</Link>
       </Button>
     </>
@@ -444,25 +444,36 @@ function TestPicker({
   onSearchChange,
   onToggle,
   onAddAnotherTime,
+  actions,
 }: {
   selectedTests: string[];
   search: string;
   onSearchChange: (value: string) => void;
   onToggle: (id: string) => void;
   onAddAnotherTime: () => void;
+  actions?: React.ReactNode;
 }) {
   const filtered = poctTests.filter((test) => test.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <Card className="shadow-none">
       <CardContent className="space-y-3 p-3">
-        <label className={fieldClass}>
-          <span className={labelClass}>Configured POCT Tests <span className="text-danger">*</span></span>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Search lab master tests linked to equipment..." value={search} onChange={(event) => onSearchChange(event.target.value)} />
+        <div className="flex flex-col gap-3 md:flex-row md:items-end">
+          <div className="min-w-[180px] md:pb-2 xl:min-w-[220px]">
+            <span className={labelClass}>Configured POCT Tests <span className="text-danger">*</span></span>
           </div>
-        </label>
+          <label className="min-w-[260px] flex-1 space-y-1.5">
+            <span className="sr-only">Search configured POCT tests</span>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input className="pl-9" placeholder="Search lab master tests linked to equipment..." value={search} onChange={(event) => onSearchChange(event.target.value)} />
+            </div>
+          </label>
+          {/* <Button className="shrink-0" size="sm" type="button" onClick={onAddAnotherTime} disabled={!selectedTests.length}>
+            Add another time
+          </Button> */}
+          {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+        </div>
         <div className="rounded-md border border-border bg-background p-2">
           <div className="mb-2 flex flex-wrap gap-1">
             {selectedTests.length ? selectedTests.map((id) => {
@@ -486,9 +497,6 @@ function TestPicker({
               </label>
             ))}
           </div>
-          <Button className="mt-2" size="sm" type="button" onClick={onAddAnotherTime} disabled={!selectedTests.length}>
-            Add another time for selected tests
-          </Button>
         </div>
       </CardContent>
     </Card>
@@ -710,15 +718,10 @@ export function AddPoctPage() {
 
   return (
     <div className="space-y-4">
-      <div className="text-end mt-3 mb-3">
-  <ActionButtons />
-      </div>
-    
-      
       <datalist id="poct-staff-options">
         {poctUsers.map((user) => <option key={user} value={user} />)}
       </datalist>
-      <Card>
+      {/* <Card>
         <CardContent className="grid gap-3 p-4 md:grid-cols-3">
           <label className={fieldClass}>
             <span className={labelClass}>Patient <span className="text-danger">*</span></span>
@@ -739,8 +742,15 @@ export function AddPoctPage() {
             </div>
           </label>
         </CardContent>
-      </Card>
-      <TestPicker selectedTests={selectedTests} search={search} onSearchChange={setSearch} onToggle={toggleTest} onAddAnotherTime={addAnotherTimeForSelectedTests} />
+      </Card> */}
+      <TestPicker
+        actions={<ActionButtons />}
+        selectedTests={selectedTests}
+        search={search}
+        onSearchChange={setSearch}
+        onToggle={toggleTest}
+        onAddAnotherTime={addAnotherTimeForSelectedTests}
+      />
       <section className="grid gap-4 xl:grid-cols-3">
         {drafts.map((draft) => <DraftCardForm draft={draft} errors={draftErrors[draft.id]} key={draft.id} onChange={updateDraft} onRemove={removeDraft} />)}
       </section>
@@ -894,12 +904,8 @@ export function ViewPoctResultPage() {
 
   return (
     <div className="space-y-4">
-      <div className="text-end mt-3 mb-3">
- <ActionButtons />
-      </div>
-       
       <Card>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_auto_auto]">
+        <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[1.3fr_0.9fr_0.9fr_1fr_0.9fr_auto_auto_auto]">
           <label className={fieldClass}>
             <span className={labelClass}>Patient <span className="text-danger">*</span></span>
             <select className={selectClass} value={patient} onChange={(event) => setPatient(event.target.value)}>
@@ -936,6 +942,11 @@ export function ViewPoctResultPage() {
           </label>
           <div className="flex items-end"><Button className="w-full" type="button" onClick={searchResults}>Search</Button></div>
           <div className="flex items-end"><Button className="w-full" type="button" variant="outline" onClick={resetFilters}>Reset</Button></div>
+          <div className="flex items-end justify-end xl:min-w-[220px]">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <ActionButtons />
+            </div>
+          </div>
         </CardContent>
       </Card>
 

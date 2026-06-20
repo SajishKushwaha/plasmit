@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Activity, BarChart3, CalendarDays, ChevronLeft, ChevronRight, Clock, HeartPulse, RefreshCcw, Search, Table2, UsersRound } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock, Filter, HeartPulse, RefreshCcw, Search, Table2, UsersRound } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Badge } from "@/components/ui/badge";
@@ -257,39 +257,39 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
 const allVitalsGraphSections: AllVitalsGraphSection[] = [
   {
     title: "Respiration",
-    description: "Respiratory rate, oxygen saturation, oxygen flow, and FiO2 trend.",
+    description: "",
     metrics: ["respiratoryRate", "oxygenSaturation", "oxygenFlowRate", "fio2"],
   },
   {
     title: "CVS",
-    description: "Pulse, monitor heart rate, systolic blood pressure, and diastolic blood pressure trends.",
+    description: "",
     metrics: ["pulseRate", "monitorHeartRate", "bloodPressure", "bloodPressureDiastolic"],
   },
   {
     title: "Infection",
-    description: "Temperature trend with risk markers.",
+    description: "",
     metrics: ["temperature"],
   },
   {
     title: "Neuro / Pain",
-    description: "GCS plotted below 15 and pain score plotted below 10 with 3-point y-axis intervals.",
+    description: "",
     metrics: ["consciousnessSedation", "painScore"],
   },
   {
     title: "Glucose",
-    description: "Blood glucose trend with India and foreign reference legends.",
+    description: "",
     metrics: ["bloodGlucose"],
   },
   {
     title: "Intake / Output",
-    description: "Hourly intake and urine output trend from rapid review observations.",
+    description: "",
     metrics: ["fluidIntake", "urineOutput"],
   },
 ];
 
 const coreVitalsGraphSection: AllVitalsGraphSection = {
   title: "Vitals Graph",
-  description: "Core respiratory, cardiovascular, and temperature trends in the selected date and time range.",
+  description: "",
   metrics: ["respiratoryRate", "oxygenSaturation", "pulseRate", "monitorHeartRate", "bloodPressure", "bloodPressureDiastolic", "temperature"],
 };
 
@@ -900,6 +900,7 @@ function VitalsGraphWorkspace({
   const [endTime, setEndTime] = React.useState("");
   const [timeInterval, setTimeInterval] = React.useState("All times");
   const [activeGraphSection, setActiveGraphSection] = React.useState("All");
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const dateFilteredData = data.filter((point) => {
     if (startDate && point.date < startDate) return false;
     if (endDate && point.date > endDate) return false;
@@ -909,65 +910,91 @@ function VitalsGraphWorkspace({
   const filteredData = dateFilteredData.filter((point) => graphPointMatchesTimeInterval(point, timeInterval, startTime, endTime, latestDateTime));
   const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
   const visibleData = invalidDateRange ? [] : filteredData;
+  const dateSummary = startDate
+    ? `${formatDateLabel(startDate)}${endDate ? ` - ${formatDateLabel(endDate)}` : " - Select end date"}`
+    : "All dates";
+  const timeSummary = timeInterval === "Custom time range" && (startTime || endTime)
+    ? `${startTime || "--:--"} - ${endTime || "--:--"}`
+    : timeInterval;
 
   return (
     <div className="space-y-4">
       <Card>
         <CardContent className="p-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="w-full sm:w-[290px]">
-              <DateRangeCalendar
-                endDate={endDate}
-                maxDate={availableDates.at(-1)}
-                minDate={availableDates[0]}
-                onChange={(start, end) => {
-                  setStartDate(start);
-                  setEndDate(end);
-                }}
-                startDate={startDate}
-              />
-            </div>
-            <label className="w-full space-y-1 text-sm sm:w-[220px]">
-              <span className="font-medium text-foreground">Time interval</span>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
-                onChange={(event) => setTimeInterval(event.target.value)}
-                value={timeInterval}
-              >
-                {patientVitalsTimeIntervals.map((interval) => (
-                  <option key={interval} value={interval}>{interval}</option>
-                ))}
-              </select>
-            </label>
-            {timeInterval === "Custom time range" ? (
-              <div className="w-full sm:w-[260px]">
-                <TimeRangePicker
-                  endTime={endTime}
-                  onChange={(start, end) => {
-                    setStartTime(start);
-                    setEndTime(end);
-                  }}
-                  startTime={startTime}
-                />
+          <button
+            aria-expanded={filtersOpen}
+            className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-surface-muted px-3 py-2 text-left transition hover:bg-surface-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/20"
+            onClick={() => setFiltersOpen((current) => !current)}
+            type="button"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <Filter className="h-4 w-4 shrink-0 text-primary" />
+              <span>
+                <span className="block text-sm font-semibold text-foreground">Filter</span>
+                <span className="block truncate text-xs text-muted-foreground">{dateSummary} | {timeSummary}</span>
+              </span>
+            </span>
+            <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition", filtersOpen && "rotate-180")} />
+          </button>
+
+          {filtersOpen ? (
+            <div className="mt-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="w-full sm:w-[290px]">
+                  <DateRangeCalendar
+                    endDate={endDate}
+                    maxDate={availableDates.at(-1)}
+                    minDate={availableDates[0]}
+                    onChange={(start, end) => {
+                      setStartDate(start);
+                      setEndDate(end);
+                    }}
+                    startDate={startDate}
+                  />
+                </div>
+                <label className="w-full space-y-1 text-sm sm:w-[220px]">
+                  <span className="font-medium text-foreground">Time interval</span>
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                    onChange={(event) => setTimeInterval(event.target.value)}
+                    value={timeInterval}
+                  >
+                    {patientVitalsTimeIntervals.map((interval) => (
+                      <option key={interval} value={interval}>{interval}</option>
+                    ))}
+                  </select>
+                </label>
+                {timeInterval === "Custom time range" ? (
+                  <div className="w-full sm:w-[260px]">
+                    <TimeRangePicker
+                      endTime={endTime}
+                      onChange={(start, end) => {
+                        setStartTime(start);
+                        setEndTime(end);
+                      }}
+                      startTime={startTime}
+                    />
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-          <div className="mt-3 border-t border-border pt-3">
-            {/* <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Date-wise time interval</div>
-            <div className="flex flex-wrap gap-2">
-              {rollingVitalsTimeIntervals.map((interval) => (
-                <Button
-                  key={interval}
-                  onClick={() => setTimeInterval(interval)}
-                  size="sm"
-                  type="button"
-                  variant={timeInterval === interval ? "default" : "outline"}
-                >
-                  {interval.replace("Last ", "")}
-                </Button>
-              ))}
-            </div> */}
-          </div>
+              <div className="mt-3 border-t border-border pt-3">
+                {/* <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Date-wise time interval</div>
+                <div className="flex flex-wrap gap-2">
+                  {rollingVitalsTimeIntervals.map((interval) => (
+                    <Button
+                      key={interval}
+                      onClick={() => setTimeInterval(interval)}
+                      size="sm"
+                      type="button"
+                      variant={timeInterval === interval ? "default" : "outline"}
+                    >
+                      {interval.replace("Last ", "")}
+                    </Button>
+                  ))}
+                </div> */}
+              </div>
+            </div>
+          ) : null}
           {invalidDateRange ? (
             <div className="mt-3 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
               Start date cannot be after end date.
@@ -979,11 +1006,11 @@ function VitalsGraphWorkspace({
         <VitalsGraphOneReference data={visibleData} />
       ) : showGraphTabs ? (
         <Tabs className="space-y-4" onValueChange={setActiveGraphSection} value={activeGraphSection}>
-          <TabsList aria-label="Patient vitals graph categories">
+          <TabsList aria-label="Patient vitals graph categories" className="no-tab-scroll-hint w-full rounded-lg bg-surface-muted/70 p-1">
             {/* <TabsTrigger value="All1">All1</TabsTrigger> */}
-            <TabsTrigger value="All">All</TabsTrigger>
+            <TabsTrigger className="min-w-[92px] justify-center rounded-md" value="All">All</TabsTrigger>
             {allVitalsGraphSections.map((section) => (
-              <TabsTrigger key={section.title} value={section.title}>
+              <TabsTrigger className="min-w-[132px] justify-center rounded-md" key={section.title} value={section.title}>
                 {section.title}
               </TabsTrigger>
             ))}
@@ -1081,7 +1108,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                 vitalsGraphOneLegend("bloodPressure"),
                 vitalsGraphOneLegend("bloodPressureDiastolic"),
               ]}
-              subtitle="Pulse, monitor heart rate, systolic blood pressure, and diastolic blood pressure trends."
+              subtitle=""
               title="CVS"
             >
               <ResponsiveContainer height="100%" width="100%">
@@ -1108,7 +1135,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                 vitalsGraphOneLegend("oxygenFlowRate"),
                 vitalsGraphOneLegend("fio2"),
               ]}
-              subtitle="Respiratory rate, oxygen saturation, oxygen flow, and FiO2 trend."
+              subtitle=""
               title="Respiration"
             >
               <ResponsiveContainer height="100%" width="100%">
@@ -1132,7 +1159,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
             <VitalsGraphOneSection
               graphOnly={graphOnly}
               legends={[vitalsGraphOneLegend("temperature")]}
-              subtitle="Temperature trend with risk markers."
+              subtitle=""
               title="Infection"
             >
               <ResponsiveContainer height="100%" width="100%">
@@ -1155,7 +1182,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                 vitalsGraphOneLegend("consciousnessSedation"),
                 vitalsGraphOneLegend("painScore"),
               ]}
-              subtitle="GCS plotted below 15 and pain score plotted below 10 with 3-point y-axis intervals."
+              subtitle=""
               title="Neuro / Pain"
             >
               <ResponsiveContainer height="100%" width="100%">
@@ -1179,7 +1206,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                 { active: activeGlucoseGraph === "india", color: "#10b981", description: "Target band 70-140 mg/dL", label: "India graph", onClick: () => setActiveGlucoseGraph("india") },
                 { active: activeGlucoseGraph === "foreign", color: "#8b5cf6", description: "Target band 4.4-10 mmol/L", label: "Foreign graph", onClick: () => setActiveGlucoseGraph("foreign") },
               ]}
-              subtitle="Blood glucose trend with India and foreign reference legends."
+              subtitle=""
               title="Glucose"
             >
               <ResponsiveContainer height="100%" width="100%">
@@ -1203,7 +1230,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                 vitalsGraphOneLegend("fluidIntake"),
                 vitalsGraphOneLegend("urineOutput"),
               ]}
-              subtitle="Hourly intake and urine output trend from rapid review observations."
+              subtitle=""
               title="Intake / Output"
             >
               <ResponsiveContainer height="100%" width="100%">
@@ -1259,15 +1286,15 @@ function VitalsGraphOneSection({
       {!graphOnly ? (
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h4 className="text-sm font-semibold text-foreground">{title}</h4>
-          <p className="mt-1 text-xs leading-4 text-muted-foreground">{subtitle}</p>
+          {subtitle ? <p className="mt-1 text-xs leading-4 text-muted-foreground">{subtitle}</p> : null}
           <div className="mt-4 space-y-2.5">
             {legends.map((legend) => {
               const content = (
                 <>
                 <span className="mt-0.5 h-4 w-6 shrink-0 rounded-sm border border-slate-900/20 shadow-sm" style={{ backgroundColor: legend.color }} />
-                <span className="min-w-0">
-                  <span className="block font-semibold text-foreground">{legend.label}</span>
-                  <span className="block text-muted-foreground">{legend.description}</span>
+                <span className="min-w-0 leading-5">
+                  <span className="font-semibold text-foreground">{legend.label}</span>
+                  <span className="text-muted-foreground"> {legend.description}</span>
                 </span>
                 </>
               );
@@ -1609,16 +1636,16 @@ function AllVitalsGraphSectionCard({
       <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h3 className="text-2xl font-semibold text-foreground">{section.title}</h3>
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p>
+          {section.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p> : null}
           <div className="mt-5">
             <p className="text-sm font-semibold text-foreground">Legend</p>
             <div className="mt-3 space-y-3">
               {sectionMetrics.map((metric) => (
                 <div className="flex items-start gap-3 text-sm" key={metric.id}>
                   <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-white shadow-sm" style={{ backgroundColor: reviewMetricColor(metric.id) }} />
-                  <span className="min-w-0">
-                    <span className="block font-medium text-foreground">{metric.shortLabel}</span>
-                    <span className="block text-xs leading-4 text-muted-foreground">{metric.label} {metric.unit ? `(${metric.unit})` : ""}</span>
+                  <span className="min-w-0 leading-5">
+                    <span className="font-medium text-foreground">{metric.shortLabel}</span>
+                    <span className="text-xs text-muted-foreground"> {metric.label} {metric.unit ? `(${metric.unit})` : ""}</span>
                   </span>
                 </div>
               ))}
@@ -1706,15 +1733,15 @@ function AllVitalsGlucoseSectionCard({
       <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h3 className="text-2xl font-semibold text-foreground">{section.title}</h3>
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p>
+          {section.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p> : null}
           <div className="mt-5">
             <p className="text-sm font-semibold text-foreground">Legend</p>
             <div className="mt-3 space-y-3">
               <div className="flex items-start gap-3 text-sm">
                 <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-white shadow-sm" style={{ backgroundColor: reviewMetricColor("bloodGlucose") }} />
-                <span className="min-w-0">
-                  <span className="block font-medium text-foreground">{glucoseMetric?.shortLabel ?? "Glucose"}</span>
-                  <span className="block text-xs leading-4 text-muted-foreground">Blood glucose trend ({activeStandard.unit})</span>
+                <span className="min-w-0 leading-5">
+                  <span className="font-medium text-foreground">{glucoseMetric?.shortLabel ?? "Glucose"}</span>
+                  <span className="text-xs text-muted-foreground"> Blood glucose trend ({activeStandard.unit})</span>
                 </span>
               </div>
               {glucoseStandards.map((standard) => {
@@ -1728,11 +1755,11 @@ function AllVitalsGlucoseSectionCard({
                     key={standard.id}
                     onClick={() => setActiveStandardId(standard.id)}
                     type="button"
-                  >
+                    >
                     <span className="mt-1 h-3 w-6 shrink-0 rounded-sm border" style={{ backgroundColor: standard.fill, borderColor: standard.color }} />
-                    <span className="min-w-0">
-                      <span className="block font-medium text-foreground">{standard.label} graph</span>
-                      <span className="block text-xs leading-4 text-muted-foreground">Target band {standard.min}-{standard.max} {standard.unit}</span>
+                    <span className="min-w-0 leading-5">
+                      <span className="font-medium text-foreground">{standard.label} graph</span>
+                      <span className="text-xs text-muted-foreground"> Target band {standard.min}-{standard.max} {standard.unit}</span>
                     </span>
                   </button>
                 );
@@ -1781,29 +1808,29 @@ function AllVitalsFluidBalanceSectionCard({
       <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h3 className="text-2xl font-semibold text-foreground">{section.title}</h3>
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p>
+          {section.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p> : null}
           <div className="mt-5">
             <p className="text-sm font-semibold text-foreground">Legend</p>
             <div className="mt-3 space-y-3">
               <div className="flex items-start gap-3 text-sm">
                 <span className="mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-white bg-sky-500 shadow-sm" />
-                <span className="min-w-0">
-                  <span className="block font-medium text-foreground">{intakeMetric?.shortLabel ?? "Intake"}</span>
-                  <span className="block text-xs leading-4 text-muted-foreground">Fluid intake above baseline ({intakeMetric?.unit ?? "ml/hr"})</span>
+                <span className="min-w-0 leading-5">
+                  <span className="font-medium text-foreground">{intakeMetric?.shortLabel ?? "Intake"}</span>
+                  <span className="text-xs text-muted-foreground"> Fluid intake above baseline ({intakeMetric?.unit ?? "ml/hr"})</span>
                 </span>
               </div>
               <div className="flex items-start gap-3 text-sm">
                 <span className="mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-white bg-emerald-500 shadow-sm" />
-                <span className="min-w-0">
-                  <span className="block font-medium text-foreground">{outputMetric?.shortLabel ?? "Output"}</span>
-                  <span className="block text-xs leading-4 text-muted-foreground">Urine output below baseline ({outputMetric?.unit ?? "ml/hr"})</span>
+                <span className="min-w-0 leading-5">
+                  <span className="font-medium text-foreground">{outputMetric?.shortLabel ?? "Output"}</span>
+                  <span className="text-xs text-muted-foreground"> Urine output below baseline ({outputMetric?.unit ?? "ml/hr"})</span>
                 </span>
               </div>
               <div className="flex items-start gap-3 text-sm">
                 <span className="mt-2 h-0 w-8 shrink-0 border-t border-dashed border-slate-400" />
-                <span className="min-w-0">
-                  <span className="block font-medium text-foreground">Baseline</span>
-                  <span className="block text-xs leading-4 text-muted-foreground">Zero reference line</span>
+                <span className="min-w-0 leading-5">
+                  <span className="font-medium text-foreground">Baseline</span>
+                  <span className="text-xs text-muted-foreground"> Zero reference line</span>
                 </span>
               </div>
             </div>
@@ -1959,7 +1986,7 @@ function GraphStatCard({
 }
 
 function buildVitalsGraphOneData(data: CombinedReviewGraphPoint[]): VitalsGraphOnePoint[] {
-  return data.slice(-14).map((point) => ({
+  return sampleVitalsGraphPoints(data, 14).map((point) => ({
     date: point.date,
     time: point.time,
     xLabel: `${formatDateShortLabel(point.date)} ${point.time}`,
@@ -1981,6 +2008,21 @@ function buildVitalsGraphOneData(data: CombinedReviewGraphPoint[]): VitalsGraphO
     displays: point.displays,
     risks: point.risks,
   }));
+}
+
+function sampleVitalsGraphPoints(data: CombinedReviewGraphPoint[], maxPoints: number) {
+  if (data.length <= maxPoints) return data;
+  const lastIndex = data.length - 1;
+  const sampledIndexes = new Set<number>();
+
+  for (let index = 0; index < maxPoints; index += 1) {
+    sampledIndexes.add(Math.round((index * lastIndex) / (maxPoints - 1)));
+  }
+
+  return Array.from(sampledIndexes)
+    .sort((a, b) => a - b)
+    .map((index) => data[index])
+    .filter((point): point is CombinedReviewGraphPoint => Boolean(point));
 }
 
 function reviewMetricColor(metricId: ReviewGraphMetricId) {

@@ -5,10 +5,12 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {
   Activity,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Droplets,
   FileClock,
+  Filter,
   FlaskConical,
   LineChart,
   Plus,
@@ -160,6 +162,13 @@ function formatDateLabel(value: string) {
   const date = parseDateKey(value);
   if (!date) return value;
   return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short" }).format(date);
+}
+
+function viewLabel(value: ViewWindow) {
+  if (value === "6-hourly") return "6 hourly";
+  if (value === "12-hours") return "12 hours";
+  if (value === "24-hours") return "24 hours";
+  return "Hourly";
 }
 
 function dateKeyFromDate(date: Date) {
@@ -514,6 +523,7 @@ export function IntakeOutputPage() {
   const [selectedDate, setSelectedDate] = React.useState(today);
   const [fromDate, setFromDate] = React.useState(defaultFromDate);
   const [toDate, setToDate] = React.useState(today);
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [entries, setEntries] = React.useState<FlowEntry[]>(seedEntries);
   const [popupOpen, setPopupOpen] = React.useState(false);
   const [editingCell, setEditingCell] = React.useState<{ row: RowConfig; bucket: Bucket; dateKey: string } | null>(null);
@@ -546,6 +556,7 @@ export function IntakeOutputPage() {
     const output = sumEntries(dayEntries.filter((entry) => entry.type === "output"));
     return { day, intake, output, balance: intake - output };
   });
+  const filterSummary = `${viewLabel(view)} | ${formatDateLabel(activeSelectedDate)} | ${formatDateLabel(fromDate)} - ${formatDateLabel(toDate)}`;
 
   function openEntryPopup(row?: RowConfig, bucket?: Bucket) {
     const hour = bucket && bucket.startHour < 24 ? bucket.startHour : new Date().getHours();
@@ -630,40 +641,51 @@ export function IntakeOutputPage() {
           <StatCard label="Previous day" value={previousDayNet} change="Carry" context="Previous day I/O" tone="muted" icon={FileClock} />
         </div>
 
-        <AlertBanner icon={CalendarDays} tone="info" title="Workbook rules applied">
-          Drug fluids, blood administration, urine, stool, and emesis assessments are reflected as source-tagged entries. Double-click any quantity cell to add component, quantity, comment, and editable exact time.
-        </AlertBanner>
+      
 
         <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Filters</CardTitle>
-              <CardDescription>Date and display controls from Sheet1 and the Intake-Output screen mockup.</CardDescription>
-            </div>
-            <Badge tone="info">Table, Graph, Cumulative</Badge>
-          </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-4">
-            <label className="space-y-1 text-sm">
-              <span className="font-medium">View</span>
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={view} onChange={(event) => setView(event.target.value as ViewWindow)}>
-                <option value="hourly">Hourly</option>
-                <option value="6-hourly">6 hourly</option>
-                <option value="12-hours">12 Hours</option>
-                <option value="24-hours">24 Hours</option>
-              </select>
-            </label>
-            <label className="space-y-1 text-sm">
-              <span className="font-medium">Date</span>
-              <DateTextInput value={selectedDate} onChange={setSelectedDate} />
-            </label>
-            <label className="space-y-1 text-sm">
-              <span className="font-medium">From</span>
-              <DateTextInput value={fromDate} onChange={setFromDate} />
-            </label>
-            <label className="space-y-1 text-sm">
-              <span className="font-medium">To</span>
-              <DateTextInput value={toDate} onChange={setToDate} />
-            </label>
+          <CardContent className="p-3">
+            <button
+              aria-expanded={filtersOpen}
+              className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-surface-muted px-3 py-2 text-left transition hover:bg-surface-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/20"
+              onClick={() => setFiltersOpen((current) => !current)}
+              type="button"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <Filter className="h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  <span className="block text-sm font-semibold text-foreground">Filter</span>
+                  <span className="block truncate text-xs text-muted-foreground">{filterSummary}</span>
+                </span>
+              </span>
+              <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition", filtersOpen && "rotate-180")} />
+            </button>
+
+            {filtersOpen ? (
+              <div className="mt-3 grid gap-3 md:grid-cols-4">
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">View</span>
+                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={view} onChange={(event) => setView(event.target.value as ViewWindow)}>
+                    <option value="hourly">Hourly</option>
+                    <option value="6-hourly">6 hourly</option>
+                    <option value="12-hours">12 Hours</option>
+                    <option value="24-hours">24 Hours</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">Date</span>
+                  <DateTextInput value={selectedDate} onChange={setSelectedDate} />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">From</span>
+                  <DateTextInput value={fromDate} onChange={setFromDate} />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">To</span>
+                  <DateTextInput value={toDate} onChange={setToDate} />
+                </label>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 

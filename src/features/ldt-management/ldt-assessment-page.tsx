@@ -71,7 +71,7 @@ type IntakeOutputEntry = {
   unit: string;
 };
 
-const nurseRoles: Role[] = ["Nurse", "Super Admin", "Hospital Admin"];
+const ldtAssessmentRoles: Role[] = ["Nurse", "Doctor", "Doctor OPD", "Super Admin", "Hospital Admin"];
 
 const ldtConfigurations: Record<string, LdtConfig> = {
   "ldt-001": {
@@ -567,7 +567,8 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
   const [editingEntry, setEditingEntry] = React.useState<AssessmentEntry | null>(null);
   const [patientId, setPatientId] = React.useState(mockPatients[0]?.id ?? "");
   const patient = mockPatients.find((item) => item.id === patientId) ?? mockPatients[0];
-  const allowed = nurseRoles.includes(role);
+  const allowed = ldtAssessmentRoles.includes(role);
+  const managementPath = role === "Doctor" || role === "Doctor OPD" ? "/doctor/ldt-management" : "/nurse/ldt-management";
 
   React.useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -653,8 +654,8 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
     return (
       <EmptyState
         icon={UserRound}
-        title="Nurse access required"
-        description="Switch to Nurse role to open LDT assessment."
+        title="LDT access required"
+        description="Switch to Nurse, Doctor OPD, or Hospital Admin role to open LDT assessment."
       />
     );
   }
@@ -662,13 +663,13 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Nursing - LDT Assessment"
+        eyebrow="Clinical - LDT Assessment"
         title={`${ldtConfig.name} Assessment`}
         description="Capture time-wise assessment values from the selected LDT admin configuration."
         className="static mx-0 border-b bg-transparent px-0 py-2"
         actions={
           <Button variant="outline" asChild>
-            <Link href="/nurse/ldt-management">
+            <Link href={managementPath}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </Link>

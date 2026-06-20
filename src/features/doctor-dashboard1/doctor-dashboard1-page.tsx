@@ -43,20 +43,20 @@ const patients: Dashboard1Patient[] = [
   row(2, "HN_3*ICU-70***", "Influenza", [85, "green"], [98, "green"], [120, "green"], [80, "green"], ["40", "red"]),
   row(3, "HN_53ICU--9***", "Myocardial Infarction (MI)", [115, "red"], [95, "green"], [110, "green"], [60, "green"], ["38", "green"]),
   row(4, "HN_33*ICU-10***", "Upper Gastrointestinal bleeding", [110, "red"], [65, "red"], [120, "green"], [52, "orange"], ["36.5", "green"]),
-  row(5, "OR_0*Induction-6***", "Pneumonia", [102, "red"], [95, "green"], [120, "green"], [85, "green"], ["37", "green"]),
+  row(5, "OR_0*Induction-6***", "Pneumonia", [102, "orange"], [95, "green"], [120, "green"], [85, "green"], ["37", "green"]),
   row(6, "HN_40*ICU-50-***", "Lower Gastrointestinal bleeding", [57, "orange"], [95, "green"], [120, "green"], [52, "orange"], ["36.5", "green"]),
-  row(7, "HN_17* isolatio-11 ***", "Myocarditis", [70, "green"], [95, "green"], [70, "orange"], [132, "red"], ["36.5", "green"]),
-  row(8, "OR_0*Induction-6***", "H1N1 Influenza", [82, "green"], [89, "orange"], [150, "red"], [140, "red"], ["38", "green"]),
-  row(9, "HN_40 * ICU - 10 ***", "Upper Gastrointestinal bleeding", [130, "red"], [90, "orange"], [75, "orange"], [50, "orange"], ["37.5", "green"]),
-  row(10, "HN_17*isolatio-11 ***", "Pulmonary embolism", [125, "red"], [68, "red"], [80, "orange"], [90, "green"], ["39.5", "red"]),
-  row(11, "OR_0*Induction-6***", "H1N1 Influenza", [82, "green"], [79, "red"], [150, "red"], [90, "green"], ["38", "green"]),
-  row(12, "HN_40 * ICU - 10 ***", "Upper Gastrointestinal bleeding", [130, "red"], [92, "green"], [75, "orange"], [50, "orange"], ["37.5", "green"]),
-  row(13, "HN_17*isolatio-11***", "Pulmonary embolism", [125, "red"], [88, "orange"], [80, "orange"], [90, "green"], ["39.5", "red"]),
-  row(14, "OR_0*Induction-6***", "H1N1 Influenza", [82, "green"], [79, "red"], [150, "red"], [90, "green"], ["38", "green"]),
+  row(7, "HN_17* isolatio-11 ***", "Myocarditis", [70, "green"], [95, "green"], [70, "orange"], [132, "orange"], ["36.5", "green"]),
+  row(8, "OR_0*Induction-6***", "H1N1 Influenza", [82, "green"], [89, "orange"], [150, "orange"], [140, "orange"], ["38", "green"]),
+  row(9, "HN_40 * ICU - 10 ***", "Upper Gastrointestinal bleeding", [130, "orange"], [90, "orange"], [75, "orange"], [50, "orange"], ["37.5", "green"]),
+  row(10, "HN_17*isolatio-11 ***", "Pulmonary embolism", [125, "orange"], [68, "orange"], [80, "orange"], [90, "green"], ["39.5", "orange"]),
+  row(11, "OR_0*Induction-6***", "H1N1 Influenza", [82, "green"], [79, "orange"], [150, "orange"], [90, "green"], ["38", "green"]),
+  row(12, "HN_40 * ICU - 10 ***", "Upper Gastrointestinal bleeding", [130, "orange"], [92, "green"], [75, "orange"], [50, "orange"], ["37.5", "green"]),
+  row(13, "HN_17*isolatio-11***", "Pulmonary embolism", [125, "orange"], [88, "orange"], [80, "orange"], [90, "green"], ["39.5", "orange"]),
+  row(14, "OR_0*Induction-6***", "H1N1 Influenza", [82, "green"], [79, "orange"], [150, "orange"], [90, "green"], ["38", "green"]),
   row(15, "HN_40 * ICU - 10 ***", "Upper Gastrointestinal bleeding", [90, "green"], [90, "orange"], [75, "orange"], [50, "orange"], ["37.5", "green"]),
   row(16, "HN_89*isolatio-001***", "Lower Gastrointestinal bleeding", [89, "green"], [96, "green"], [98, "green"], [78, "green"], ["37.5", "green"]),
   row(17, "HN_33*ICU-10***", "H1N1 Influenza", [89, "green"], [95, "green"], [110, "green"], [87, "green"], ["36.5", "green"]),
-  row(18, "HN_17*isolatio-11***", "Pulmonary embolism", [69, "green"], [98, "green"], [97, "green"], [85, "green"], ["39.5", "red"]),
+  row(18, "HN_17*isolatio-11***", "Pulmonary embolism", [69, "green"], [98, "green"], [97, "green"], [85, "green"], ["39.5", "green"]),
 ];
 
 const patientToneOrder: Record<PatientTone, number> = {
@@ -104,9 +104,21 @@ export function patientTone(patient: Dashboard1Patient): PatientTone {
 }
 
 export function patientToneClass(tone: PatientTone) {
-  if (tone === "red") return "text-red-600";
-  if (tone === "orange") return "text-orange-500";
+  if (tone === "red") return "text-red-700";
+  if (tone === "orange") return "text-orange-600";
   return "text-blue-700";
+}
+
+function patientToneRowClass(tone: PatientTone) {
+  if (tone === "red") return "bg-red-50/70 hover:bg-red-50";
+  if (tone === "orange") return "bg-orange-50/70 hover:bg-orange-50";
+  return "bg-blue-50/60 hover:bg-blue-50";
+}
+
+function patientToneCellClass(tone: PatientTone) {
+  if (tone === "red") return "border-l-4 border-l-red-500 bg-red-50";
+  if (tone === "orange") return "border-l-4 border-l-orange-400 bg-orange-50";
+  return "border-l-4 border-l-blue-500 bg-blue-50";
 }
 
 function csvCell(value: string | number) {
@@ -204,13 +216,13 @@ export function DoctorDashboard1Page() {
                   const tone = patientTone(patient);
 
                   return (
-                  <tr className="border-b border-slate-100 bg-white hover:bg-slate-50" key={patient.id}>
-                    <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-3 py-2">
+                  <tr className={cn("border-b border-slate-100 font-semibold", patientToneRowClass(tone))} key={patient.id}>
+                    <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", patientToneCellClass(tone))}>
                       <Link
-                        className="block rounded-md px-1 py-0.5 transition hover:bg-slate-100"
+                        className="block rounded-md px-1 py-0.5 transition hover:bg-white/70"
                         href={`/doctor-dashboard1/patients/${patient.id}`}
                       >
-                        <div className={cn("font-bold", patientToneClass(tone))}>
+                        <div className={cn("text-sm font-extrabold", patientToneClass(tone))}>
                           {patient.name}
                         </div>
                         <div className="mt-0.5 font-semibold text-slate-700">{patient.bed}</div>

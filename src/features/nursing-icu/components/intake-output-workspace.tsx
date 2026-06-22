@@ -6,17 +6,16 @@ import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   BarChart3,
+  ChevronDown,
   Droplets,
   FileSearch,
   ListFilter,
   Plus,
   RefreshCcw,
   Search,
-  ShieldCheck,
   Table2,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -35,13 +34,14 @@ import {
 type IoView = "Hourly" | "12 Hours" | "24 Hours" | "Cumulative";
 type IoMode = "Table" | "Graph";
 type TimeWindow = "All time" | "Day shift" | "Night shift" | "Custom range";
-type MatrixRowType = "section" | "category" | "total" | "net";
+type MatrixRowType = "section" | "group" | "category" | "total" | "net";
 type SourceFilter = "All sources" | IcuIntakeOutput["source"];
 
 type MatrixRow = {
   label: string;
   type: MatrixRowType;
   kind?: IcuIntakeOutput["kind"];
+  subRow?: boolean;
 };
 
 type Bucket = {
@@ -78,9 +78,23 @@ type IoDraft = {
   comment: string;
 };
 
+type IntakeOutputWorkspaceProps = {
+  initialPatientId?: string;
+  lockedPatientId?: string;
+  initialView?: IoView;
+  initialMode?: IoMode;
+  forceFluidBalanceView?: boolean;
+};
+
 const selectedToday = "2026-06-06";
 const selectedFromDate = "2026-06-05";
+const ioDateOptions = [
+  { label: "06 Jun 2026", value: selectedToday },
+  { label: "05 Jun 2026", value: selectedFromDate },
+  { label: "04 Jun 2026", value: "2026-06-04" },
+];
 const hourOptions = ["All hours", ...Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`)] as const;
+const exactHourOptions = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`);
 const timeWindowOptions: TimeWindow[] = ["All time", "Day shift", "Night shift", "Custom range"];
 
 const intakeCategories = [
@@ -89,6 +103,7 @@ const intakeCategories = [
   "IV Fluids",
   "IV Medication Dilution",
   "Continuous Infusions",
+  "NTG Pump",
   "Blood & Blood Products",
   "Parenteral Nutrition / TPN",
   "Electrolyte Replacement",
@@ -99,14 +114,15 @@ const intakeCategories = [
 const outputCategories = [
   "Urine",
   "Fecal",
-  "Vomitus",
   "NG Aspirate",
   "Ryle's Tube Aspirate",
   "Gastric Drainage",
   "Gastrostomy Output",
   "Abdominal Drain",
-  "Chest Drain",
+  "Pleural Space",
+  "Mediastinum",
   "Blood Loss",
+  "Other Output",
 ];
 
 const sourceOptions: SourceFilter[] = [
@@ -128,25 +144,40 @@ const matrixRows: MatrixRow[] = [
   ...intakeCategories.map((label) => ({ label, type: "category" as const, kind: "Intake" as const })),
   { label: "Intake total", type: "total", kind: "Intake" },
   { label: "Output", type: "section" },
-  ...outputCategories.map((label) => ({ label, type: "category" as const, kind: "Output" as const })),
+  ...outputCategories.flatMap((label): MatrixRow[] => {
+    if (label === "Pleural Space") {
+      return [
+        { label: "Chest Drainage", type: "group", kind: "Output" },
+        { label, type: "category", kind: "Output", subRow: true },
+      ];
+    }
+    if (label === "Mediastinum") return [{ label, type: "category", kind: "Output", subRow: true }];
+    return [{ label, type: "category", kind: "Output" }];
+  }),
   { label: "Output total", type: "total", kind: "Output" },
   { label: "Intake/Output", type: "net" },
 ];
 
-export function IntakeOutputWorkspace() {
+export function IntakeOutputWorkspace(props: IntakeOutputWorkspaceProps = {}) {
   return (
     <React.Suspense fallback={<FluidWorkspaceLoading />}>
-      <IntakeOutputWorkspaceInner />
+      <IntakeOutputWorkspaceInner {...props} />
     </React.Suspense>
   );
 }
 
-function IntakeOutputWorkspaceInner() {
+function IntakeOutputWorkspaceInner({
+  initialPatientId,
+  lockedPatientId,
+  initialView = "Hourly",
+  initialMode = "Table",
+  forceFluidBalanceView,
+}: IntakeOutputWorkspaceProps) {
   const searchParams = useSearchParams();
-  const isFluidBalanceView = searchParams.get("view") === "fluid-balance";
-  const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
-  const [view, setView] = React.useState<IoView>("Hourly");
-  const [mode, setMode] = React.useState<IoMode>("Table");
+  const isFluidBalanceView = forceFluidBalanceView ?? searchParams.get("view") === "fluid-balance";
+  const [patientId, setPatientId] = React.useState(lockedPatientId ?? initialPatientId ?? icuPatients[0]?.id ?? "");
+  const [view, setView] = React.useState<IoView>(initialView);
+  const [mode, setMode] = React.useState<IoMode>(initialMode);
   const [selectedDate, setSelectedDate] = React.useState(selectedToday);
   const [fromDate, setFromDate] = React.useState(selectedFromDate);
   const [toDate, setToDate] = React.useState(selectedToday);
@@ -171,7 +202,7 @@ function IntakeOutputWorkspaceInner() {
     comment: "",
   });
 
-  const selectedPatient = icuPatients.find((patient) => patient.id === patientId) ?? icuPatients[0];
+  const selectedPatient = icuPatients.find((patient) => patient.id === (lockedPatientId ?? patientId)) ?? icuPatients[0];
   const allRows = React.useMemo(() => [...manualRows, ...intakeOutputRows.map(normalizeIoCategory)], [manualRows]);
 
   const scopedRows = React.useMemo(() => {
@@ -194,11 +225,7 @@ function IntakeOutputWorkspaceInner() {
   const previousBalance = React.useMemo(() => summarizeRows(previousRows).balance, [previousRows]);
   const alerts = React.useMemo(() => buildFluidAlerts(scopedRows, totals.balance), [scopedRows, totals.balance]);
   const graphSeries = React.useMemo(() => buildGraphSeries(scopedRows, buckets), [buckets, scopedRows]);
-  const screenTitle = isFluidBalanceView ? "Fluid Balance Graph" : "Intake / Output Chart";
-  const screenEyebrow = isFluidBalanceView ? "ICU Fluid Balance Review" : "Bedside Intake / Output Entry";
-  const screenDescription = isFluidBalanceView
-    ? "Trend review for intake, output, net balance, low urine output, drain output, and shift-level escalation."
-    : "Capture and verify oral, IV, blood product, tube feed, urine, drain, stool, emesis, and manual bedside entries.";
+  const isCumulative = view === "Cumulative";
   const effectiveMode: IoMode = isFluidBalanceView ? "Graph" : mode;
 
   const resetFilters = () => {
@@ -211,8 +238,8 @@ function IntakeOutputWorkspaceInner() {
     setHourFilter("All hours");
     setSourceFilter("All sources");
     setQuery("");
-    setView("Hourly");
-    setMode("Table");
+    setView(initialView);
+    setMode(initialMode);
     toast.success("Intake/output filters reset");
   };
 
@@ -266,34 +293,26 @@ function IntakeOutputWorkspaceInner() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-sky-200 bg-white shadow-sm">
-        <div className="grid gap-4 border-b border-sky-100 bg-sky-700 p-4 text-white lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase text-sky-100">
-              {isFluidBalanceView ? <BarChart3 className="h-4 w-4" /> : <Droplets className="h-4 w-4" />}
-              {screenEyebrow}
-              <span className="rounded-full bg-white/15 px-2 py-0.5">{selectedPatient.bedNo}</span>
-            </div>
-            <h2 className="mt-2 text-xl font-bold leading-tight">{screenTitle} - {selectedPatient.patientName}</h2>
-            <p className="mt-1 max-w-4xl text-sm text-sky-50">{screenDescription}</p>
-            <p className="mt-1 max-w-4xl text-xs text-sky-100">{selectedPatient.diagnosis} | {selectedPatient.assignedWardNurse} | {selectedPatient.admittingDoctor}</p>
-          </div>
-          <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
-            <FluidHeaderMetric label="Intake" value={`${totals.intake} ml`} tone="info" />
-            <FluidHeaderMetric label="Output" value={`${totals.output} ml`} tone="success" />
-            <FluidHeaderMetric label="Balance" value={formatSignedMl(totals.balance)} tone={balanceTone(totals.balance)} />
-          </div>
-        </div>
-
-        <div className="border-b border-slate-100 bg-slate-50/80 p-3">
+      <IoCollapsiblePanel
+        summary={`${selectedPatient.bedNo} - ${selectedPatient.patientName} | ${view} | ${timeWindow} | ${hourFilter} | ${scopedRows.length} row(s)`}
+        title="Search & filters"
+      >
+        <div className="p-3">
           <div className="space-y-3">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(230px,1fr)_140px_150px_150px_160px_120px]">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
               <FieldBlock label="Patient / bed">
-                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={patientId} onChange={(event) => setPatientId(event.target.value)}>
-                  {icuPatients.map((patient) => (
-                    <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
-                  ))}
-                </select>
+                {lockedPatientId ? (
+                  <div className="flex h-10 items-center justify-between gap-2 rounded-md border border-slate-300 bg-slate-100 px-3 text-sm text-slate-950">
+                    <span className="truncate">{selectedPatient.bedNo} - {selectedPatient.patientName}</span>
+                    <Badge tone="info">Locked</Badge>
+                  </div>
+                ) : (
+                  <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={patientId} onChange={(event) => setPatientId(event.target.value)}>
+                    {icuPatients.map((patient) => (
+                      <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+                    ))}
+                  </select>
+                )}
               </FieldBlock>
               <FieldBlock label="View">
                 <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={view} onChange={(event) => setView(event.target.value as IoView)}>
@@ -301,10 +320,14 @@ function IntakeOutputWorkspaceInner() {
                 </select>
               </FieldBlock>
               <FieldBlock label={view === "Cumulative" ? "From date" : "Date"}>
-                <Input value={view === "Cumulative" ? fromDate : selectedDate} type="date" onChange={(event) => view === "Cumulative" ? setFromDate(event.target.value) : setSelectedDate(event.target.value)} />
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={view === "Cumulative" ? fromDate : selectedDate} onChange={(event) => view === "Cumulative" ? setFromDate(event.target.value) : setSelectedDate(event.target.value)}>
+                  {ioDateOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
               </FieldBlock>
               <FieldBlock label="To date">
-                <Input disabled={view !== "Cumulative"} value={view === "Cumulative" ? toDate : selectedDate} type="date" onChange={(event) => setToDate(event.target.value)} />
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-100 disabled:text-slate-500" disabled={view !== "Cumulative"} value={view === "Cumulative" ? toDate : selectedDate} onChange={(event) => setToDate(event.target.value)}>
+                  {ioDateOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
               </FieldBlock>
               <FieldBlock label="Time window">
                 <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={timeWindow} onChange={(event) => setTimeWindow(event.target.value as TimeWindow)}>
@@ -317,12 +340,16 @@ function IntakeOutputWorkspaceInner() {
                 </select>
               </FieldBlock>
             </div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[120px_120px_190px_minmax(240px,1fr)_auto_auto_auto] xl:items-end">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[120px_120px_190px_minmax(240px,1fr)_minmax(150px,auto)_minmax(130px,auto)_minmax(110px,auto)] 2xl:items-end">
               <FieldBlock label="From time">
-                <Input disabled={timeWindow !== "Custom range"} value={customStartTime} type="time" onChange={(event) => setCustomStartTime(event.target.value)} />
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-100 disabled:text-slate-500" disabled={timeWindow !== "Custom range"} value={customStartTime} onChange={(event) => setCustomStartTime(event.target.value)}>
+                  {exactHourOptions.map((option) => <option key={option}>{option}</option>)}
+                </select>
               </FieldBlock>
               <FieldBlock label="To time">
-                <Input disabled={timeWindow !== "Custom range"} value={customEndTime} type="time" onChange={(event) => setCustomEndTime(event.target.value)} />
+                <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-100 disabled:text-slate-500" disabled={timeWindow !== "Custom range"} value={customEndTime} onChange={(event) => setCustomEndTime(event.target.value)}>
+                  {exactHourOptions.map((option) => <option key={option}>{option}</option>)}
+                </select>
               </FieldBlock>
               <FieldBlock label="Source">
                 <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as SourceFilter)}>
@@ -336,14 +363,14 @@ function IntakeOutputWorkspaceInner() {
                 </div>
               </FieldBlock>
               {isFluidBalanceView ? (
-                <div className="flex h-10 items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 text-xs font-bold uppercase text-sky-800">
+                <div className="flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 text-xs font-bold uppercase text-sky-800">
                   <BarChart3 className="h-4 w-4" />Graph review
                 </div>
               ) : (
-                <div className="flex h-10 rounded-md border border-slate-300 bg-white p-1">
+                <div className="flex h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white p-1">
                   {(["Table", "Graph"] satisfies IoMode[]).map((option) => (
                     <button
-                      className={cn("flex h-8 items-center gap-1 rounded px-3 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
+                      className={cn("flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded px-2 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
                       key={option}
                       type="button"
                       onClick={() => setMode(option)}
@@ -354,26 +381,19 @@ function IntakeOutputWorkspaceInner() {
                 </div>
               )}
               {!isFluidBalanceView ? (
-                <Button className="h-10 whitespace-nowrap" onClick={() => setQuickAddOpen(true)}>
+                <Button className="h-10 w-full justify-center whitespace-nowrap" onClick={() => setQuickAddOpen(true)}>
                   <Plus className="h-4 w-4" />Quick add
                 </Button>
               ) : null}
-              <Button className="h-10 whitespace-nowrap" variant="outline" onClick={resetFilters}>
+              <Button className="h-10 w-full justify-center whitespace-nowrap" variant="outline" onClick={resetFilters}>
                 <RefreshCcw className="h-4 w-4" />Reset
               </Button>
             </div>
           </div>
         </div>
-      </div>
+      </IoCollapsiblePanel>
 
       <div className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <FluidMetricCard icon={Droplets} label="Current intake" value={`${totals.intake} ml`} detail={`${countRows(scopedRows, "Intake")} intake entries`} tone="info" />
-          <FluidMetricCard icon={Droplets} label="Current output" value={`${totals.output} ml`} detail={`${countRows(scopedRows, "Output")} output entries`} tone="success" />
-          <FluidMetricCard icon={ShieldCheck} label="Net balance" value={formatSignedMl(totals.balance)} detail={`Previous ${formatSignedMl(previousBalance)}`} tone={balanceTone(totals.balance)} />
-          <FluidMetricCard icon={AlertTriangle} label="Fluid alerts" value={alerts.length} detail={alerts[0]?.title ?? "No open fluid alert"} tone={alerts.some((alert) => alert.tone === "danger" || alert.tone === "critical") ? "danger" : alerts.length ? "warning" : "success"} />
-        </div>
-
         {isFluidBalanceView ? (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
             <FluidBalanceGraph series={graphSeries} />
@@ -428,6 +448,30 @@ function FluidHeaderMetric({ label, value, tone }: { label: string; value: strin
   );
 }
 
+function IoCollapsiblePanel({ children, summary, title }: { children: React.ReactNode; summary: string; title: string }) {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      <button
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
+        onClick={() => setOpen((current) => !current)}
+        type="button"
+      >
+        <span className="min-w-0">
+          <span className="block text-sm font-bold text-slate-950">{title}</span>
+          <span className="mt-0.5 block truncate text-xs text-slate-500">{summary}</span>
+        </span>
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm">
+          <ChevronDown className={cn("h-4 w-4 transition-transform", open ? "rotate-180" : "")} />
+        </span>
+      </button>
+      {open ? <div className="border-t border-slate-200 bg-slate-50/80">{children}</div> : null}
+    </div>
+  );
+}
+
 function FieldBlock({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <label className={cn("block min-w-0 space-y-1", className)}>
@@ -437,38 +481,9 @@ function FieldBlock({ label, children, className }: { label: string; children: R
   );
 }
 
-function FluidMetricCard({ icon: Icon, label, value, detail, tone }: { icon: LucideIcon; label: string; value: React.ReactNode; detail: string; tone: StatusTone }) {
-  return (
-    <div className={cn("rounded-md border p-4 shadow-sm", metricToneClass(tone))}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-xs font-semibold uppercase text-slate-500">{label}</div>
-          <div className="mt-2 text-2xl font-bold text-slate-950">{value}</div>
-        </div>
-        <span className="rounded-md bg-white/80 p-2 shadow-sm">
-          <Icon className="h-5 w-5" />
-        </span>
-      </div>
-      <p className="mt-3 text-xs text-slate-600">{detail}</p>
-    </div>
-  );
-}
-
 function FluidBalanceMatrix({ buckets, rows, activeCell, onSelectCell }: { buckets: Bucket[]; rows: IcuIntakeOutput[]; activeCell: ActiveCell; onSelectCell: (cell: ActiveCell) => void }) {
   return (
     <Card className="overflow-hidden border-slate-200">
-      <CardHeader className="border-b border-slate-100 bg-white">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <CardTitle>Intake / Output Chart</CardTitle>
-            <CardDescription>Hourly, shift, 24-hour, and cumulative balance with source-level details.</CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <StatusPill tone="info">{rows.length} entries</StatusPill>
-            <StatusPill tone={rows.some((row) => row.status === "Pending review") ? "warning" : "success"}>{rows.filter((row) => row.status === "Pending review").length} pending</StatusPill>
-          </div>
-        </div>
-      </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1180px] border-collapse text-sm">
@@ -485,12 +500,13 @@ function FluidBalanceMatrix({ buckets, rows, activeCell, onSelectCell }: { bucke
             </thead>
             <tbody>
               {matrixRows.map((row) => (
-                <tr className={cn(row.type === "section" ? "bg-slate-900 text-white" : row.type === "total" || row.type === "net" ? "bg-slate-100 font-bold" : "bg-white", "border-b border-slate-100")} key={`${row.type}-${row.label}`}>
-                  <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", row.type === "section" ? "bg-slate-900 text-white" : row.type === "total" || row.type === "net" ? "bg-slate-100 text-slate-950" : row.kind === "Intake" ? "bg-sky-50 text-slate-900" : "bg-emerald-50 text-slate-900")}>
-                    {row.label}
+                <tr className={cn(row.type === "section" ? "bg-slate-900 text-white" : row.type === "group" ? "bg-emerald-100 font-bold text-emerald-950" : row.type === "total" || row.type === "net" ? "bg-slate-100 font-bold" : "bg-white", "border-b border-slate-100")} key={`${row.type}-${row.label}`}>
+                  <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", row.type === "section" ? "bg-slate-900 text-white" : row.type === "group" ? "bg-emerald-100 text-emerald-950" : row.type === "total" || row.type === "net" ? "bg-slate-100 text-slate-950" : row.kind === "Intake" ? "bg-sky-50 text-slate-900" : "bg-emerald-50 text-slate-900", row.subRow ? "pl-7 text-sm" : "")}>
+                    {row.subRow ? <span className="mr-2 text-emerald-500">-</span> : null}{row.label}
                   </td>
                   {buckets.map((bucket) => {
                     if (row.type === "section") return <td className="border-r border-slate-800 bg-slate-900 px-3 py-2" key={bucket.key} />;
+                    if (row.type === "group") return <td className="border-r border-emerald-200 bg-emerald-100 px-3 py-2" key={bucket.key} />;
                     const cellRows = getCellRows(rows, row, bucket);
                     const value = sumCellRows(cellRows, row.type);
                     return (
@@ -616,7 +632,7 @@ function FluidGraphReviewPanel({
   const peakPositive = series.reduce((best, point) => point.balance > best.balance ? point : best, series[0] ?? fallbackPoint);
   const peakNegative = series.reduce((best, point) => point.balance < best.balance ? point : best, series[0] ?? fallbackPoint);
   const lowUrineCount = rows.filter((row) => row.category === "Urine" && row.quantityMl < 30).length;
-  const drainOutput = rows.filter((row) => ["Abdominal Drain", "Chest Drain", "Gastric Drainage", "Gastrostomy Output"].includes(row.category)).reduce((sum, row) => sum + row.quantityMl, 0);
+  const drainOutput = rows.filter((row) => ["Abdominal Drain", "Pleural Space", "Mediastinum", "Gastric Drainage", "Gastrostomy Output"].includes(row.category)).reduce((sum, row) => sum + row.quantityMl, 0);
   const pendingCount = rows.filter((row) => row.status === "Pending review").length;
 
   return (
@@ -846,6 +862,7 @@ function getIoDraftDefaults(kind: IcuIntakeOutput["kind"], category = kind === "
     "IV Fluids": { component: "Normal saline", route: "IV" },
     "IV Medication Dilution": { component: "Medication diluent", route: "IV" },
     "Continuous Infusions": { component: "Infusion carrier volume", route: "Infusion" },
+    "NTG Pump": { component: "NTG infusion pump", route: "Infusion pump" },
     "Blood & Blood Products": { component: "Blood product unit", route: "Blood transfusion" },
     "Parenteral Nutrition / TPN": { component: "TPN bag", route: "Central line" },
     "Electrolyte Replacement": { component: "Electrolyte infusion", route: "IV" },
@@ -853,14 +870,15 @@ function getIoDraftDefaults(kind: IcuIntakeOutput["kind"], category = kind === "
     "Other Intake": { component: "Other intake", route: "As documented" },
     Urine: { component: "Foley catheter", route: "Urinary catheter" },
     Fecal: { component: "Stool", route: "Stool chart" },
-    Vomitus: { component: "Vomitus", route: "Oral" },
     "NG Aspirate": { component: "NG aspirate", route: "NG tube" },
     "Ryle's Tube Aspirate": { component: "Ryle's tube aspirate", route: "Ryle's tube" },
     "Gastric Drainage": { component: "Gastric drainage", route: "Gastric tube" },
     "Gastrostomy Output": { component: "Gastrostomy output", route: "Gastrostomy" },
     "Abdominal Drain": { component: "Abdominal drain", route: "Surgical drain" },
-    "Chest Drain": { component: "Chest drain", route: "Chest drain" },
+    "Pleural Space": { component: "Pleural chest drain", route: "Pleural drain" },
+    Mediastinum: { component: "Mediastinal chest drain", route: "Mediastinal drain" },
     "Blood Loss": { component: "Estimated blood loss", route: "Procedure estimate" },
+    "Other Output": { component: "Other output", route: "As documented" },
   };
   return { category, component: defaults[category]?.component ?? category, route: defaults[category]?.route ?? category, source };
 }
@@ -869,13 +887,12 @@ function getCaptureSourceForIoCategory(kind: IcuIntakeOutput["kind"], category: 
   if (kind === "Intake") {
     if (category === "Blood & Blood Products") return "Blood administration";
     if (category === "IV Medication Dilution" || category === "Electrolyte Replacement") return "Medication administration";
-    if (category === "IV Fluids" || category === "Continuous Infusions") return "Infusion pump";
+    if (category === "IV Fluids" || category === "Continuous Infusions" || category === "NTG Pump") return "Infusion pump";
     return "Manual entry";
   }
   if (category === "Urine") return "Urine assessment";
   if (category === "Fecal") return "Stool assessment";
-  if (category === "Vomitus") return "Emesis assessment";
-  if (["NG Aspirate", "Ryle's Tube Aspirate", "Gastric Drainage", "Gastrostomy Output", "Abdominal Drain", "Chest Drain"].includes(category)) return "Drain assessment";
+  if (["NG Aspirate", "Ryle's Tube Aspirate", "Gastric Drainage", "Gastrostomy Output", "Abdominal Drain", "Pleural Space", "Mediastinum"].includes(category)) return "Drain assessment";
   return "Manual entry";
 }
 
@@ -883,6 +900,7 @@ function normalizeIoCategoryName(kind: IcuIntakeOutput["kind"], category: string
   const text = `${category} ${component} ${outputType} ${intakeType}`.toLowerCase();
 
   if (kind === "Intake") {
+    if (text.includes("ntg") || text.includes("nitroglycerin")) return "NTG Pump";
     if (text.includes("blood") || text.includes("prbc") || text.includes("ffp") || text.includes("platelet")) return "Blood & Blood Products";
     if (text.includes("medication") || text.includes("medicine") || text.includes("diluent") || text.includes("antibiotic")) return "IV Medication Dilution";
     if (text.includes("infusion") || text.includes("vasopressor") || text.includes("noradrenaline")) return "Continuous Infusions";
@@ -897,15 +915,16 @@ function normalizeIoCategoryName(kind: IcuIntakeOutput["kind"], category: string
 
   if (text.includes("urine") || text.includes("foley") || text.includes("catheter") || text.includes("urinal")) return "Urine";
   if (text.includes("stool") || text.includes("fecal")) return "Fecal";
-  if (text.includes("vomit") || text.includes("emesis")) return "Vomitus";
+  if (text.includes("vomit") || text.includes("emesis")) return "Other Output";
   if (text.includes("ryle")) return "Ryle's Tube Aspirate";
   if (text.includes("ng aspirate")) return "NG Aspirate";
   if (text.includes("gastric")) return "Gastric Drainage";
   if (text.includes("gastrostomy")) return "Gastrostomy Output";
-  if (text.includes("chest drain")) return "Chest Drain";
+  if (text.includes("mediastinum") || text.includes("mediastinal")) return "Mediastinum";
+  if (text.includes("chest drain") || text.includes("pleural")) return "Pleural Space";
   if (text.includes("drain")) return "Abdominal Drain";
   if (text.includes("blood loss") || text.includes("blood")) return "Blood Loss";
-  return category;
+  return outputCategories.includes(category) ? category : "Other Output";
 }
 
 function RunningTotalPanel({ rows, alerts, activeCell }: { rows: IcuIntakeOutput[]; alerts: Array<{ title: string; detail: string; tone: StatusTone }>; activeCell: ActiveCell }) {
@@ -1051,10 +1070,6 @@ function summarizeRows(rows: IcuIntakeOutput[]) {
   return { intake, output, balance: intake - output };
 }
 
-function countRows(rows: IcuIntakeOutput[], kind: IcuIntakeOutput["kind"]) {
-  return rows.filter((row) => row.kind === kind).length;
-}
-
 function buildGraphSeries(rows: IcuIntakeOutput[], buckets: Bucket[]) {
   return buckets.map((bucket) => {
     const bucketRows = rows.filter((row) => bucket.match(row));
@@ -1065,7 +1080,7 @@ function buildGraphSeries(rows: IcuIntakeOutput[], buckets: Bucket[]) {
 
 function buildFluidAlerts(rows: IcuIntakeOutput[], balance: number): Array<{ title: string; detail: string; tone: StatusTone }> {
   const lowUrine = rows.filter((row) => row.category === "Urine" && row.quantityMl < 30);
-  const drainTotal = rows.filter((row) => ["Abdominal Drain", "Chest Drain", "Gastric Drainage", "Gastrostomy Output"].includes(row.category)).reduce((sum, row) => sum + row.quantityMl, 0);
+  const drainTotal = rows.filter((row) => ["Abdominal Drain", "Pleural Space", "Mediastinum", "Gastric Drainage", "Gastrostomy Output"].includes(row.category)).reduce((sum, row) => sum + row.quantityMl, 0);
   const pending = rows.filter((row) => row.status === "Pending review");
   const alerts: Array<{ title: string; detail: string; tone: StatusTone }> = [];
 

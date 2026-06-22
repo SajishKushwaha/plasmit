@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
+import { redirect } from "next/navigation";
 
 export default function IcuCommandCenterRoute() {
-  return <NursingIcuModulePage page="patient-timeline" />;
+  redirect("/icu-command-center");
 }

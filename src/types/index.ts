@@ -36,6 +36,7 @@ export type NavigationChildItem = {
   label: string;
   route: string;
   status?: "ready" | "planned";
+  children?: NavigationChildItem[];
 };
 
 export type NotificationPriority = "high" | "medium" | "low";

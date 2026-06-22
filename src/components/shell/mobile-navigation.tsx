@@ -12,6 +12,11 @@ import { Button } from "@/components/ui/button";
 import { useRole } from "@/components/providers/role-provider";
 import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
+import type { NavigationChildItem } from "@/types";
+
+function childIsActive(child: NavigationChildItem, pathname: string): boolean {
+  return pathname === child.route || (child.children?.some((nestedChild) => childIsActive(nestedChild, pathname)) ?? false);
+}
 
 export function MobileNavigation() {
   const [open, setOpen] = useState(false);
@@ -21,6 +26,51 @@ export function MobileNavigation() {
   const { role, roles, setRole } = useRole();
   const visibleItems = useMemo(() => getNavigationItemsForRole(role), [role]);
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
+  const renderChildItem = (child: NavigationChildItem, depth = 0) => {
+    const hasNestedChildren = Boolean(child.children?.length);
+    const active = childIsActive(child, pathname);
+    const expanded = openItems[child.id] ?? active;
+
+    if (hasNestedChildren) {
+      return (
+        <div key={child.id}>
+          <button
+            className={cn(
+              "flex min-h-9 w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium outline-none transition hover:bg-sidebar-active/10 focus-visible:ring-2 focus-visible:ring-ring/25",
+              active && "bg-sidebar-active/80 text-sidebar-active-foreground",
+              depth > 0 && "text-[11px]",
+            )}
+            onClick={() => setOpenItems((current) => ({ ...current, [child.id]: !expanded }))}
+            type="button"
+          >
+            <span className="min-w-0 flex-1 truncate text-left">{child.label}</span>
+            <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition", expanded && "rotate-180")} />
+          </button>
+          {expanded ? (
+            <div className={cn("mt-1 space-y-1 border-l border-sidebar-foreground/15 pl-2", depth === 0 ? "ml-3" : "ml-2")}>
+              {child.children?.map((nestedChild) => renderChildItem(nestedChild, depth + 1))}
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        className={cn(
+          "flex min-h-9 items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium outline-none transition hover:bg-sidebar-active/10 focus-visible:ring-2 focus-visible:ring-ring/25",
+          active && "bg-sidebar-active/80 text-sidebar-active-foreground",
+          depth > 0 && "text-[11px]",
+        )}
+        href={child.route}
+        key={child.id}
+        onClick={() => setOpen(false)}
+      >
+        <span className="min-w-0 flex-1 truncate">{child.label}</span>
+        {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}
+      </Link>
+    );
+  };
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -91,7 +141,7 @@ export function MobileNavigation() {
                     .map((item) => {
                       const Icon = item.icon;
                       const hasChildren = Boolean(item.children?.length);
-                      const childActive = item.children?.some((child) => pathname === child.route) ?? false;
+                      const childActive = item.children?.some((child) => childIsActive(child, pathname)) ?? false;
                       const moreSpecificRouteActive = visibleItems.some((candidate) => (
                         candidate.id !== item.id &&
                         candidate.route.startsWith(`${item.route}/`) &&
@@ -117,23 +167,7 @@ export function MobileNavigation() {
                             </button>
                             {expanded ? (
                               <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-foreground/15 pl-2">
-                                {item.children?.map((child) => {
-                                  const childIsActive = pathname === child.route;
-                                  return (
-                                    <Link
-                                      className={cn(
-                                        "flex min-h-9 items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium outline-none transition hover:bg-sidebar-active/10 focus-visible:ring-2 focus-visible:ring-ring/25",
-                                        childIsActive && "bg-sidebar-active/80 text-sidebar-active-foreground",
-                                      )}
-                                      href={child.route}
-                                      key={child.id}
-                                      onClick={() => setOpen(false)}
-                                    >
-                                      <span className="min-w-0 flex-1 truncate">{child.label}</span>
-                                      {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}
-                                    </Link>
-                                  );
-                                })}
+                                {item.children?.map((child) => renderChildItem(child))}
                               </div>
                             ) : null}
                           </div>

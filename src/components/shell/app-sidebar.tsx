@@ -15,6 +15,18 @@ import { Badge } from "@/components/ui/badge";
 import { useRole } from "@/components/providers/role-provider";
 import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
+import type { NavigationChildItem } from "@/types";
+
+function routeIsActive(route: string, pathname: string, currentHash: string) {
+  const [routePath = "/", routeHash] = route.split("#");
+  const routePathname = routePath || "/";
+  const routeCurrentHash = routeHash ? `#${routeHash}` : "";
+  return pathname === routePathname && (routeCurrentHash ? currentHash === routeCurrentHash : !currentHash);
+}
+
+function childIsActive(child: NavigationChildItem, pathname: string, currentHash: string): boolean {
+  return routeIsActive(child.route, pathname, currentHash) || (child.children?.some((nestedChild) => childIsActive(nestedChild, pathname, currentHash)) ?? false);
+}
 
 export function AppSidebar({
   collapsed,
@@ -42,6 +54,50 @@ export function AppSidebar({
     () => Array.from(new Set(visibleItems.map((item) => item.group))),
     [visibleItems],
   );
+  const renderChildItem = (child: NavigationChildItem, depth = 0) => {
+    const hasNestedChildren = Boolean(child.children?.length);
+    const active = childIsActive(child, pathname, currentHash);
+    const expanded = openItems[child.id] ?? active;
+
+    if (hasNestedChildren) {
+      return (
+        <div key={child.id}>
+          <button
+            className={cn(
+              "flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold outline-none transition hover:bg-primary-soft hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/25",
+              active && "bg-primary-soft text-primary",
+              depth > 0 && "text-[11px] font-medium",
+            )}
+            onClick={() => setOpenItems((curr) => ({ ...curr, [child.id]: !expanded }))}
+            type="button"
+          >
+            <span className="min-w-0 flex-1 truncate text-left">{child.label}</span>
+            <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition", expanded && "rotate-180")} />
+          </button>
+          {expanded ? (
+            <div className={cn("mt-1 space-y-1 border-l border-border pl-2", depth === 0 ? "ml-3" : "ml-2")}>
+              {child.children?.map((nestedChild) => renderChildItem(nestedChild, depth + 1))}
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        className={cn(
+          "flex min-h-8 items-center rounded-md px-2 py-1.5 text-xs font-semibold outline-none transition hover:bg-primary-soft hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/25",
+          active && "bg-primary-soft text-primary",
+          depth > 0 && "text-[11px] font-medium",
+        )}
+        href={child.route}
+        key={child.id}
+      >
+        <span className="min-w-0 flex-1 truncate">{child.label}</span>
+        {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}
+      </Link>
+    );
+  };
 
   return (
     <aside
@@ -96,11 +152,7 @@ export function AppSidebar({
                   const exactRouteActive =
                     pathname === itemRoutePath &&
                     (itemRouteHash ? currentHash === itemRouteHash : !currentHash);
-                  const childActive = item.children?.some((child) => {
-                    const [childPath = "/", childHash] = child.route.split("#");
-                    const childRouteHash = childHash ? `#${childHash}` : "";
-                    return pathname === (childPath || "/") && (childRouteHash ? currentHash === childRouteHash : !currentHash);
-                  }) ?? false;
+                  const childActive = item.children?.some((child) => childIsActive(child, pathname, currentHash)) ?? false;
                   const moreSpecificRouteActive = visibleItems.some((candidate) => {
                     if (candidate.id === item.id) return false;
                     const [candidatePath = "/", candidateHash] = candidate.route.split("#");
@@ -146,24 +198,7 @@ export function AppSidebar({
                         </button>
                         {expanded ? (
                           <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-                            {item.children?.map((child) => {
-                              const [childPath = "/", childHash] = child.route.split("#");
-                              const childRouteHash = childHash ? `#${childHash}` : "";
-                              const childIsActive = pathname === (childPath || "/") && (childRouteHash ? currentHash === childRouteHash : !currentHash);
-                              return (
-                                <Link
-                                  className={cn(
-                                    "flex min-h-8 items-center rounded-md px-2 py-1.5 text-xs font-semibold outline-none transition hover:bg-primary-soft hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/25",
-                                    childIsActive && "bg-primary-soft text-primary",
-                                  )}
-                                  href={child.route}
-                                  key={child.id}
-                                >
-                                  <span className="min-w-0 flex-1 truncate">{child.label}</span>
-                                  {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}
-                                </Link>
-                              );
-                            })}
+                            {item.children?.map((child) => renderChildItem(child))}
                           </div>
                         ) : null}
                       </div>

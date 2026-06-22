@@ -243,7 +243,7 @@ export function DoctorDashboard1Page() {
                     <td className="px-3 py-2 text-center">
                       <RoundActionButton icon={ClipboardList} tone="dark" label="Open nurse timeline" onClick={() => setShiftSummaryPatient(patient)} />
                     </td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="/radiology" label="Open radiology" /></td>
+                    <td className="px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="" label="Open radiology" /></td>
                     <td className="px-3 py-2 text-center">
                       <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
                     </td>

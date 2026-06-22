@@ -114,6 +114,11 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
               defaultDepartment="all"
               patientContext={{
                 ageSex: rapidReviewPatient?.ageGender,
+                allergy: "Meropenem",
+                bed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+                bloodGroup: "AB +ve",
+                consultantDoctor: rapidReviewPatient?.consultant,
+                dob: "30-12-1995",
                 mrn: getResultPatientMrn(patient.id),
                 name: patient.name,
                 uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,

@@ -40,7 +40,7 @@ export function TopHeader() {
       <MobileNavigation />
       <div className="min-w-0 flex-1 flex items-center gap-4">
         <Image
-          src="/plasmit-sidebar-logo.webp"
+          src="/pi med.png"
           alt="Plasmit Healthcare IT Vector"
           width={150}
           height={61}

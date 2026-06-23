@@ -131,6 +131,7 @@ export function DoctorDashboard1Page() {
   const [shiftSummaryPatient, setShiftSummaryPatient] = React.useState<Dashboard1Patient | null>(null);
   const [collaboratePatient, setCollaboratePatient] = React.useState<Dashboard1Patient | null>(null);
   const [eventPatient, setEventPatient] = React.useState<Dashboard1Patient | null>(null);
+  const [medicationPatient, setMedicationPatient] = React.useState<Dashboard1Patient | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredPatients = orderedPatients.filter((patient) =>
     `${patient.name} ${patient.bed} ${patient.diagnosis}`.toLowerCase().includes(normalizedSearch),
@@ -238,8 +239,23 @@ export function DoctorDashboard1Page() {
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.abps} href="/ipd" /></td>
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.abpd} href="/ipd" /></td>
                     <td className="px-3 py-2 text-center"><VitalPill {...patient.temperature} href="/ipd" /></td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={FlaskConical} tone="dark" href="/results" label="Open results" /></td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={Pill} tone="dark" href="/doctor/orders?tab=drugs" label="Open medication and intervention" /></td>
+                    <td className="px-3 py-2 text-center">
+                      <RoundAction
+                        icon={FlaskConical}
+                        tone="dark"
+                        href={`/doctor-dashboard1/patients/${patient.id}?tab=results&resultsView=laboratory-all`}
+                        label={`Open laboratory results for ${patient.name}`}
+                      />
+                    </td>
+                    {/* <td className="px-3 py-2 text-center"><RoundAction icon={Pill} tone="dark" href="" label="Open medication and intervention" /></td> */}
+                    <td className="px-3 py-2 text-center">
+  <RoundActionButton
+    icon={Pill}
+    tone="dark"
+    label={`Open medication and intervention for ${patient.name}`}
+    onClick={() => setMedicationPatient(patient)}
+  />
+</td>
                     <td className="px-3 py-2 text-center">
                       <RoundActionButton icon={ClipboardList} tone="dark" label="Open nurse timeline" onClick={() => setShiftSummaryPatient(patient)} />
                     </td>
@@ -287,7 +303,19 @@ export function DoctorDashboard1Page() {
           </Button>
         </div>
       </div>
-
+<CenterModal
+  className="w-[min(94vw,920px)]"
+  description={
+    medicationPatient
+      ? `${medicationPatient.name} | ${medicationPatient.bed} | ${medicationPatient.diagnosis}`
+      : undefined
+  }
+  onOpenChange={(open) => !open && setMedicationPatient(null)}
+  open={Boolean(medicationPatient)}
+  title="Medication & Intervention"
+>
+  {medicationPatient ? <MedicationInterventionPopup patient={medicationPatient} /> : null}
+</CenterModal>
       <CenterModal
         className="w-[min(94vw,1040px)]"
         description={shiftSummaryPatient ? `${shiftSummaryPatient.name} | ${shiftSummaryPatient.bed} | ${shiftSummaryPatient.diagnosis}` : undefined}
@@ -407,7 +435,7 @@ function DashboardShiftSummaryTimeline({ patient }: { patient: Dashboard1Patient
           </div>
           <div className="rounded-md border border-border bg-[#f7f7f7] shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-              <div className="font-semibold text-[#3ba3d8]">{patient.name} ({note.bedCode})</div>
+              {/* <div className="font-semibold text-[#3ba3d8]">{patient.name} ({note.bedCode})</div> */}
               <div className="text-xs text-muted-foreground">Created By: {note.createdBy}</div>
             </div>
             <div className="space-y-3 px-3 py-3 text-sm">
@@ -693,4 +721,213 @@ function buildPatientEvents(patient: Dashboard1Patient) {
       priority: patient.temperature.tone === "red" ? "high" : "low",
     },
   ] satisfies Array<{ name: string; value: number; time: string; priority: "high" | "medium" | "low" }>;
+}
+function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }) {
+  const [tab, setTab] = React.useState<"current" | "past" | "intervention">("current");
+
+  const currentMedication = [
+    {
+      name: "Inj. Pantoprazole",
+      dose: "40 mg",
+      route: "IV",
+      frequency: "BD",
+      startDate: "18/06/2026",
+      status: "Active",
+      prescribedBy: "Dr. Amandeep Singh",
+    },
+    {
+      name: "Tab. Paracetamol",
+      dose: "500 mg",
+      route: "Oral",
+      frequency: "SOS",
+      startDate: "18/06/2026",
+      status: "Active",
+      prescribedBy: "Dr. Meera Rao",
+    },
+    {
+      name: "Normal Saline",
+      dose: "100 ml/hr",
+      route: "IV",
+      frequency: "Continuous",
+      startDate: "18/06/2026",
+      status: "Running",
+      prescribedBy: "Dr. Super Admin",
+    },
+  ];
+
+  const pastMedication = [
+    {
+      name: "Tab. Azithromycin",
+      dose: "500 mg",
+      route: "Oral",
+      frequency: "OD",
+      startDate: "14/06/2026",
+      endDate: "17/06/2026",
+      status: "Completed",
+      prescribedBy: "Dr. Meera Rao",
+    },
+    {
+      name: "Inj. Ceftriaxone",
+      dose: "1 g",
+      route: "IV",
+      frequency: "BD",
+      startDate: "12/06/2026",
+      endDate: "16/06/2026",
+      status: "Stopped",
+      prescribedBy: "Dr. Amandeep Singh",
+    },
+  ];
+
+  const interventions = [
+    {
+      title: "Oxygen Support",
+      detail: "Nasal cannula 2 L/min. Maintain SpO2 above 94%.",
+      time: "18/06/2026 08:30 PM",
+      status: "Active",
+    },
+    {
+      title: "Fluid Monitoring",
+      detail: "Strict input/output charting every 4 hours.",
+      time: "18/06/2026 06:15 PM",
+      status: "Ongoing",
+    },
+    {
+      title: "Nursing Instruction",
+      detail: "Monitor vitals every 30 minutes and inform doctor if BP drops.",
+      time: "18/06/2026 05:45 PM",
+      status: "Assigned",
+    },
+  ];
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+       
+
+      <div className="flex border-b bg-white text-sm font-semibold">
+        <MedicationTabButton active={tab === "current"} onClick={() => setTab("current")}>
+          Current Medication
+        </MedicationTabButton>
+        <MedicationTabButton active={tab === "past"} onClick={() => setTab("past")}>
+          Past Medication
+        </MedicationTabButton>
+        <MedicationTabButton active={tab === "intervention"} onClick={() => setTab("intervention")}>
+          Intervention
+        </MedicationTabButton>
+      </div>
+
+      <div className="max-h-[60dvh] overflow-y-auto p-5">
+        {tab === "current" ? (
+          <MedicationTable type="current" rows={currentMedication} />
+        ) : null}
+
+        {tab === "past" ? (
+          <MedicationTable type="past" rows={pastMedication} />
+        ) : null}
+
+        {tab === "intervention" ? (
+          <div className="space-y-3">
+            {interventions.map((item) => (
+              <div
+                key={item.title}
+                className="rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-slate-900">{item.title}</div>
+                    <p className="mt-1 text-sm font-medium text-slate-600">{item.detail}</p>
+                    <div className="mt-2 text-xs font-semibold text-slate-400">{item.time}</div>
+                  </div>
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                    {item.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function MedicationTabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex-1 border-b-2 px-4 py-3 text-center transition hover:bg-slate-50",
+        active
+          ? "border-blue-600 text-blue-700"
+          : "border-transparent text-slate-500",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MedicationTable({
+  rows,
+  type,
+}: {
+  rows: Array<{
+    name: string;
+    dose: string;
+    route: string;
+    frequency: string;
+    startDate: string;
+    endDate?: string;
+    status: string;
+    prescribedBy: string;
+  }>;
+  type: "current" | "past";
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-slate-100 text-xs uppercase text-slate-600">
+          <tr>
+            <th className="px-4 py-3">Medicine</th>
+            <th className="px-4 py-3">Dose</th>
+            <th className="px-4 py-3">Route</th>
+            <th className="px-4 py-3">Frequency</th>
+            <th className="px-4 py-3">Start Date</th>
+            {type === "past" ? <th className="px-4 py-3">End Date</th> : null}
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Prescribed By</th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-slate-100 bg-white">
+          {rows.map((row) => (
+            <tr key={`${row.name}-${row.startDate}`} className="hover:bg-slate-50">
+              <td className="px-4 py-3 font-bold text-slate-900">{row.name}</td>
+              <td className="px-4 py-3 font-medium text-slate-700">{row.dose}</td>
+              <td className="px-4 py-3 font-medium text-slate-700">{row.route}</td>
+              <td className="px-4 py-3 font-medium text-slate-700">{row.frequency}</td>
+              <td className="px-4 py-3 font-medium text-slate-700">{row.startDate}</td>
+              {type === "past" ? (
+                <td className="px-4 py-3 font-medium text-slate-700">{row.endDate}</td>
+              ) : null}
+              <td className="px-4 py-3">
+                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
+                  {row.status}
+                </span>
+              </td>
+              <td className="px-4 py-3 font-medium text-slate-700">{row.prescribedBy}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }

@@ -296,6 +296,30 @@ const coreVitalsGraphSection: AllVitalsGraphSection = {
 const rollingVitalsTimeIntervals = ["Last 3 hours", "Last 6 hours", "Last 12 hours", "Last 24 hours", "Last 48 hours"];
 const patientVitalsTimeIntervals = ["All times", ...rollingVitalsTimeIntervals];
 
+function getVitalsChartMinWidth(pointCount: number, baseWidth = 760) {
+  return Math.max(baseWidth, pointCount * 72);
+}
+
+function HorizontalVitalsChart({
+  children,
+  className,
+  pointCount,
+  baseWidth,
+}: {
+  children: React.ReactNode;
+  className: string;
+  pointCount: number;
+  baseWidth?: number;
+}) {
+  return (
+    <div className={cn("overflow-x-auto overflow-y-hidden", className)}>
+      <div className="h-full" style={{ minWidth: getVitalsChartMinWidth(pointCount, baseWidth) }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table" }: { patients: RapidReviewPatient[]; defaultViewMode?: string }) {
   const [metricId, setMetricId] = React.useState<ReviewGraphMetricId>("respiratoryRate");
   const [patientId, setPatientId] = React.useState(patients[0]?.id ?? "");
@@ -671,7 +695,7 @@ function ReviewGraphPanel({
       </CardHeader>
       <CardContent>
         <ReviewGraphRiskLegend />
-        <div className="h-[360px]">
+        <HorizontalVitalsChart className="h-[360px]" pointCount={data.length}>
           <ResponsiveContainer height="100%" width="100%">
             <LineChart data={data} margin={{ left: -16, right: 16, top: 8, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -691,7 +715,7 @@ function ReviewGraphPanel({
               />
             </LineChart>
           </ResponsiveContainer>
-        </div>
+        </HorizontalVitalsChart>
       </CardContent>
     </Card>
   );
@@ -1111,7 +1135,8 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="CVS"
             >
-              <ResponsiveContainer height="100%" width="100%">
+              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+                <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
@@ -1123,6 +1148,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <Line connectNulls dataKey="bloodPressureDiastolic" dot={{ r: 3 }} name="BP dia" stroke={reviewMetricColor("bloodPressureDiastolic")} strokeWidth={2.8} type="monotone" />
                 </LineChart>
               </ResponsiveContainer>
+              </HorizontalVitalsChart>
             </VitalsGraphOneSection>
           )}
 
@@ -1138,7 +1164,8 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Respiration"
             >
-              <ResponsiveContainer height="100%" width="100%">
+              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+                <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
@@ -1152,6 +1179,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <Line connectNulls dataKey="fio2" dot={{ r: 3 }} name="FiO2" stroke={reviewMetricColor("fio2")} strokeDasharray="4 4" strokeWidth={2.8} type="monotone" yAxisId="spo2" />
                 </LineChart>
               </ResponsiveContainer>
+              </HorizontalVitalsChart>
             </VitalsGraphOneSection>
           )}
 
@@ -1162,7 +1190,8 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Infection"
             >
-              <ResponsiveContainer height="100%" width="100%">
+              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+                <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
@@ -1172,6 +1201,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <Line connectNulls dataKey="temperature" dot={{ r: 3 }} name="Temp" stroke={reviewMetricColor("temperature")} strokeWidth={3.2} type="monotone" />
                 </LineChart>
               </ResponsiveContainer>
+              </HorizontalVitalsChart>
             </VitalsGraphOneSection>
           )}
 
@@ -1185,7 +1215,8 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Neuro / Pain"
             >
-              <ResponsiveContainer height="100%" width="100%">
+              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+                <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
@@ -1195,6 +1226,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <Line connectNulls dataKey="painScore" dot={{ r: 3 }} name="Pain" stroke={reviewMetricColor("painScore")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" />
                 </LineChart>
               </ResponsiveContainer>
+              </HorizontalVitalsChart>
             </VitalsGraphOneSection>
           )}
 
@@ -1209,7 +1241,8 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Glucose"
             >
-              <ResponsiveContainer height="100%" width="100%">
+              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+                <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
@@ -1220,6 +1253,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <Line connectNulls dataKey={activeGlucoseConfig.dataKey} dot={{ r: 3 }} name={activeGlucoseConfig.name} stroke={activeGlucoseConfig.color} strokeWidth={3.2} type="monotone" yAxisId={activeGlucoseConfig.yAxisId} />
                 </LineChart>
               </ResponsiveContainer>
+              </HorizontalVitalsChart>
             </VitalsGraphOneSection>
           )}
 
@@ -1233,7 +1267,8 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Intake / Output"
             >
-              <ResponsiveContainer height="100%" width="100%">
+              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+                <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
@@ -1245,6 +1280,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
                   <Line connectNulls dataKey="urineOutput" dot={{ r: 3 }} name="Urine" stroke={reviewMetricColor("urineOutput")} strokeWidth={3.2} type="monotone" />
                 </LineChart>
               </ResponsiveContainer>
+              </HorizontalVitalsChart>
             </VitalsGraphOneSection>
           )}
 
@@ -1593,7 +1629,7 @@ function AllVitalsGraphSectionCard({
     .filter((metric): metric is ReviewGraphMetric => Boolean(metric));
   const yAxisConfig = combinedGraphYAxisConfig(section);
   const graphContent = data.length ? (
-    <div className="h-[310px]">
+    <HorizontalVitalsChart className="h-[310px]" pointCount={data.length}>
       <ResponsiveContainer height="100%" width="100%">
         <LineChart data={data} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -1616,7 +1652,7 @@ function AllVitalsGraphSectionCard({
           ))}
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </HorizontalVitalsChart>
   ) : (
     <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
   );
@@ -1691,7 +1727,7 @@ function AllVitalsGlucoseSectionCard({
     };
   });
   const graphContent = data.length ? (
-    <div className="h-[310px]">
+    <HorizontalVitalsChart className="h-[310px]" pointCount={glucoseData.length}>
       <ResponsiveContainer height="100%" width="100%">
         <LineChart data={glucoseData} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -1713,7 +1749,7 @@ function AllVitalsGlucoseSectionCard({
           />
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </HorizontalVitalsChart>
   ) : (
     <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
   );

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import {
   ChevronDown,
   ChevronsLeft,
@@ -26,6 +26,12 @@ function routeIsActive(route: string, pathname: string, currentHash: string) {
 
 function childIsActive(child: NavigationChildItem, pathname: string, currentHash: string): boolean {
   return routeIsActive(child.route, pathname, currentHash) || (child.children?.some((nestedChild) => childIsActive(nestedChild, pathname, currentHash)) ?? false);
+}
+
+function getDashboard1PoctMode(child: NavigationChildItem) {
+  if (child.id === "poct-add") return "add";
+  if (child.id === "poct-results") return "results";
+  return null;
 }
 
 export function AppSidebar({
@@ -58,6 +64,7 @@ export function AppSidebar({
     const hasNestedChildren = Boolean(child.children?.length);
     const active = childIsActive(child, pathname, currentHash);
     const expanded = openItems[child.id] ?? active;
+    const poctMode = getDashboard1PoctMode(child);
 
     if (hasNestedChildren) {
       return (
@@ -92,6 +99,11 @@ export function AppSidebar({
         )}
         href={child.route}
         key={child.id}
+        onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+          if (!poctMode || !pathname.startsWith("/doctor-dashboard1/patients/")) return;
+          event.preventDefault();
+          window.dispatchEvent(new CustomEvent("plasmit-dashboard1-poct-mode", { detail: { mode: poctMode } }));
+        }}
       >
         <span className="min-w-0 flex-1 truncate">{child.label}</span>
         {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}

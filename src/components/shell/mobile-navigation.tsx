@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,6 +18,12 @@ function childIsActive(child: NavigationChildItem, pathname: string): boolean {
   return pathname === child.route || (child.children?.some((nestedChild) => childIsActive(nestedChild, pathname)) ?? false);
 }
 
+function getDashboard1PoctMode(child: NavigationChildItem) {
+  if (child.id === "poct-add") return "add";
+  if (child.id === "poct-results") return "results";
+  return null;
+}
+
 export function MobileNavigation() {
   const [open, setOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
@@ -30,6 +36,7 @@ export function MobileNavigation() {
     const hasNestedChildren = Boolean(child.children?.length);
     const active = childIsActive(child, pathname);
     const expanded = openItems[child.id] ?? active;
+    const poctMode = getDashboard1PoctMode(child);
 
     if (hasNestedChildren) {
       return (
@@ -64,7 +71,13 @@ export function MobileNavigation() {
         )}
         href={child.route}
         key={child.id}
-        onClick={() => setOpen(false)}
+        onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+          if (poctMode && pathname.startsWith("/doctor-dashboard1/patients/")) {
+            event.preventDefault();
+            window.dispatchEvent(new CustomEvent("plasmit-dashboard1-poct-mode", { detail: { mode: poctMode } }));
+          }
+          setOpen(false);
+        }}
       >
         <span className="min-w-0 flex-1 truncate">{child.label}</span>
         {child.status === "planned" ? <Badge tone="muted">Plan</Badge> : null}

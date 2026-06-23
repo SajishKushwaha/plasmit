@@ -1,5 +1,5 @@
-import { ViewPoctResultPage } from "@/features/poct/poct-pages";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <ViewPoctResultPage />;
+  redirect("/doctor-dashboard1/patients/1?tab=Poct&poct=results");
 }

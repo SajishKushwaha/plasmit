@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { resultRecords } from "@/features/results/data/mockResults";
-import type { ResultDepartment, ResultRecord, ResultStatus } from "@/features/results/types";
+import type { ResultDepartment, ResultRecord, ResultStatus, ResultValue } from "@/features/results/types";
 
 type DepartmentFilter = ResultDepartment | "all";
 
@@ -144,6 +144,13 @@ function getDepartmentLabel(department: ResultDepartment) {
   if (department === "laboratory") return "Laboratory";
   if (department === "radiology") return "Radiology";
   return "POCT";
+}
+
+function resultValueClass(value: ResultValue) {
+  if (value.flag === "Critical") return "font-bold text-danger";
+  if (value.flag === "High") return "font-bold text-danger";
+  if (value.flag === "Low") return "font-bold text-info";
+  return "text-foreground";
 }
 
 function getPatientAgeGender(result: ResultRecord, patientContext?: ResultsPatientContext) {
@@ -476,6 +483,7 @@ function DateRangeCalendar({
 }
 
 export function ResultsWorkflowView({
+  autoOpenAllDepartment,
   initialDepartment = "all",
   defaultDepartment = initialDepartment,
   criticalOnly = false,
@@ -483,6 +491,7 @@ export function ResultsWorkflowView({
   viewTitle = "Results Center",
   viewDescription = "Laboratory, radiology, and POCT reports organized for IPD review.",
 }: {
+  autoOpenAllDepartment?: ResultDepartment;
   initialDepartment?: DepartmentFilter;
   defaultDepartment?: DepartmentFilter;
   criticalOnly?: boolean;
@@ -500,6 +509,7 @@ export function ResultsWorkflowView({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [reportModal, setReportModal] = useState<ReportModalState>(null);
   const [printPayload, setPrintPayload] = useState<PrintPayload | null>(null);
+  const hasAutoOpenedAllDepartment = useRef(false);
   const dateFilterRef = useRef<HTMLDivElement | null>(null);
 
   const records = useMemo(() => scopedPatientRecords(patientContext), [patientContext]);
@@ -563,6 +573,15 @@ export function ResultsWorkflowView({
       window.removeEventListener("afterprint", clearPrintPayload);
     };
   }, [printPayload]);
+
+  useEffect(() => {
+    if (!autoOpenAllDepartment || hasAutoOpenedAllDepartment.current) return;
+
+    const departmentRecords = records.filter((result) => result.department === autoOpenAllDepartment && (!criticalOnly || result.status === "Critical"));
+    setActiveDepartment(autoOpenAllDepartment);
+    setReportModal({ type: "all", department: autoOpenAllDepartment, records: departmentRecords });
+    hasAutoOpenedAllDepartment.current = true;
+  }, [autoOpenAllDepartment, criticalOnly, records]);
 
   function printReports(recordsToPrint: ResultRecord[], title: string) {
     if (recordsToPrint.length === 0) return;
@@ -901,7 +920,6 @@ function AllCategoryView({ department, records }: { department: ResultDepartment
               <div className="rounded-lg border border-border bg-white p-4" key={result.id}>
                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm font-semibold text-foreground">{formatDateTime(result.completedAt ?? result.orderedAt)}</div>
-                  <Badge tone={statusTone[result.status]}>{result.status}</Badge>
                 </div>
                 <SingleReportView result={result} />
               </div>
@@ -987,17 +1005,15 @@ function ResultValueTable({ result, title }: { result: ResultRecord; title: stri
             <th className="px-3 py-2">Result Value</th>
             <th className="px-3 py-2">Unit</th>
             <th className="px-3 py-2">Reference Range</th>
-            <th className="px-3 py-2">Status</th>
           </tr>
         </thead>
         <tbody>
           {result.values.map((value) => (
             <tr className="border-t border-border" key={`${result.id}-${value.name}`}>
               <td className="px-3 py-2 font-medium text-foreground">{value.name}</td>
-              <td className="px-3 py-2">{value.value}</td>
+              <td className={cn("px-3 py-2", resultValueClass(value))}>{value.value}</td>
               <td className="px-3 py-2">{value.unit ?? "-"}</td>
               <td className="px-3 py-2">{value.range ?? "-"}</td>
-              <td className="px-3 py-2">{value.flag ? <Badge tone={value.flag === "Critical" ? "critical" : value.flag === "High" || value.flag === "Low" ? "warning" : "success"}>{value.flag}</Badge> : "-"}</td>
             </tr>
           ))}
         </tbody>

@@ -34,10 +34,48 @@ import { IntakeOutputPage } from "@/features/intake-output/intake-output-page";
 
 import { cn } from "@/lib/utils";
 
+type PatientTabValue = "overview" | "live-monitoring" | "results" | "vitals" | "shift-summary" | "orders" | "Poct" | "Intake Output";
+type DashboardPoctMode = "add" | "results";
+type ResultsAutoView = "laboratory-all";
+
+function getRequestedPatientTab(tab: string | null): PatientTabValue | null {
+  switch (tab) {
+    case "overview":
+    case "live-monitoring":
+    case "results":
+    case "vitals":
+    case "shift-summary":
+    case "orders":
+    case "Poct":
+    case "Intake Output":
+      return tab;
+    case "poct":
+    case "POCT":
+      return "Poct";
+    case "intake-output":
+      return "Intake Output";
+    default:
+      return null;
+  }
+}
+
+function getRequestedPoctMode(mode: string | null): DashboardPoctMode | null {
+  if (mode === "add" || mode === "results") return mode;
+  return null;
+}
+
+function getRequestedResultsAutoView(view: string | null): ResultsAutoView | null {
+  if (view === "laboratory-all") return view;
+  return null;
+}
+
 export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }) {
   const searchParams = useSearchParams();
-  const requestedTab = searchParams.get("tab");
-  const [activeTab, setActiveTab] = React.useState(requestedTab === "shift-summary" ? "shift-summary" : "overview");
+  const requestedTab = getRequestedPatientTab(searchParams.get("tab"));
+  const requestedPoctMode = getRequestedPoctMode(searchParams.get("poct"));
+  const requestedResultsAutoView = getRequestedResultsAutoView(searchParams.get("resultsView"));
+  const [activeTab, setActiveTab] = React.useState<PatientTabValue>(requestedTab ?? "overview");
+  const [poctMode, setPoctMode] = React.useState<DashboardPoctMode>(requestedPoctMode ?? "add");
   const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
   const patient = orderedPatients.find((item) => String(item.id) === patientId);
   const rapidReviewPatient = patient ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId) : undefined;
@@ -54,10 +92,29 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
   }, []);
 
   React.useEffect(() => {
-    if (requestedTab === "shift-summary") {
-      setActiveTab("shift-summary");
+    if (requestedTab) {
+      setActiveTab(requestedTab);
     }
   }, [requestedTab]);
+
+  React.useEffect(() => {
+    if (requestedPoctMode) {
+      setActiveTab("Poct");
+      setPoctMode(requestedPoctMode);
+    }
+  }, [requestedPoctMode]);
+
+  React.useEffect(() => {
+    const openPoctInPlace = (event: Event) => {
+      const mode = getRequestedPoctMode((event as CustomEvent<{ mode?: string }>).detail?.mode ?? null);
+      if (!mode) return;
+      setActiveTab("Poct");
+      setPoctMode(mode);
+    };
+
+    window.addEventListener("plasmit-dashboard1-poct-mode", openPoctInPlace);
+    return () => window.removeEventListener("plasmit-dashboard1-poct-mode", openPoctInPlace);
+  }, []);
 
   if (!patient) {
     return (
@@ -75,7 +132,11 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
   const tone = patientTone(patient);
   return (
     <div className="space-y-4 py-4">
-      <Tabs className="space-y-3 pt-[118px]" onValueChange={setActiveTab} value={activeTab}>
+      <Tabs
+        className="space-y-3 pt-[118px]"
+        onValueChange={(value) => setActiveTab(getRequestedPatientTab(value) ?? "overview")}
+        value={activeTab}
+      >
         <div
           className={cn(
             "fixed left-0 right-0 space-y-1.5 bg-background/95 px-4 pb-1.5 pt-1.5 backdrop-blur transition-[top,box-shadow] duration-200 md:px-6 lg:left-[var(--app-sidebar-offset)]",
@@ -111,6 +172,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
           </TabsContent>
           <TabsContent className="mt-0" value="results">
             <ResultsCenterView
+              autoOpenAllDepartment={requestedResultsAutoView === "laboratory-all" ? "laboratory" : undefined}
               defaultDepartment="all"
               patientContext={{
                 ageSex: rapidReviewPatient?.ageGender,
@@ -135,7 +197,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />
           </TabsContent>
           <TabsContent className="mt-0" value="Poct">
-            <AddPoctPage key={patient.id} />
+            <AddPoctPage embedded key={patient.id} mode={poctMode} onModeChange={setPoctMode} />
           </TabsContent>
           <TabsContent className="mt-0" value="orders">
             <DoctorOrdersPage

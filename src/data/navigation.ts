@@ -425,12 +425,12 @@ export const navigationItems: NavigationItem[] = [
     status: "ready",
   },
   {
-    id: "poct-add", label: "Add POCT", icon: FlaskConical, route: "/poct/add", group: "Clinical",
+    id: "poct-add", label: "Add POCT", icon: FlaskConical, route: "/doctor-dashboard1/patients/1?tab=Poct&poct=add", group: "Clinical",
     allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Nurse", "Lab Technician", "Management"],
     status: "ready",
   },
   {
-    id: "poct-results", label: "View POCT Result", icon: Microscope, route: "/poct/results", group: "Clinical",
+    id: "poct-results", label: "View POCT Result", icon: Microscope, route: "/doctor-dashboard1/patients/1?tab=Poct&poct=results", group: "Clinical",
     allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Nurse", "Lab Technician", "Management"],
     status: "ready",
   },

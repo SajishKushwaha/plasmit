@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Eye, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,6 +44,13 @@ type DraftCard = {
 };
 
 type DraftErrors = Partial<Record<"result" | "date" | "time" | "performedBy", string>>;
+type PoctWorkspaceMode = "add" | "results";
+
+type PoctWorkspaceProps = {
+  embedded?: boolean;
+  mode?: PoctWorkspaceMode;
+  onModeChange?: (mode: PoctWorkspaceMode) => void;
+};
 
 type DraftAction =
   | { type: "add"; drafts: DraftCard[] }
@@ -425,14 +431,14 @@ function DateTextInput({
   );
 }
 
-function ActionButtons() {
+function ActionButtons({ mode, onModeChange }: { mode?: PoctWorkspaceMode; onModeChange?: (mode: PoctWorkspaceMode) => void }) {
   return (
     <>
-      <Button asChild size="sm">
-        <Link href="/poct/add">Add POCT</Link>
+      <Button size="sm" type="button" variant={mode === "add" ? "default" : "outline"} onClick={() => onModeChange?.("add")}>
+        Add POCT
       </Button>
-      <Button asChild size="sm" variant="outline">
-        <Link href="/poct/results">View POCT Result</Link>
+      <Button size="sm" type="button" variant={mode === "results" ? "default" : "outline"} onClick={() => onModeChange?.("results")}>
+        View POCT Result
       </Button>
     </>
   );
@@ -589,9 +595,18 @@ function DraftCardForm({
   );
 }
 
-export function AddPoctPage() {
+export function AddPoctPage({ embedded = false, mode, onModeChange }: PoctWorkspaceProps = {}) {
   const { role } = useRole();
   const performedBy = getPoctPerformer(role);
+  const [localMode, setLocalMode] = React.useState<PoctWorkspaceMode>("add");
+  const activeMode = mode ?? localMode;
+  const changeMode = React.useCallback(
+    (nextMode: PoctWorkspaceMode) => {
+      if (onModeChange) onModeChange(nextMode);
+      else setLocalMode(nextMode);
+    },
+    [onModeChange],
+  );
   const [search, setSearch] = React.useState("");
   const [patientId, setPatientId] = React.useState("100123");
   const [selectedTests, setSelectedTests] = React.useState<string[]>(() => readSelectedPoctTests());
@@ -716,6 +731,10 @@ export function AddPoctPage() {
     toast.success("POCT results saved.");
   }
 
+  if (activeMode === "results") {
+    return <ViewPoctResultPage embedded={embedded} mode="results" onModeChange={changeMode} />;
+  }
+
   return (
     <div className="space-y-4">
       <datalist id="poct-staff-options">
@@ -744,7 +763,7 @@ export function AddPoctPage() {
         </CardContent>
       </Card> */}
       <TestPicker
-        actions={<ActionButtons />}
+        actions={<ActionButtons mode="add" onModeChange={changeMode} />}
         selectedTests={selectedTests}
         search={search}
         onSearchChange={setSearch}
@@ -837,7 +856,16 @@ function ResultsMatrix({ results }: { results: PoctResult[] }) {
   );
 }
 
-export function ViewPoctResultPage() {
+export function ViewPoctResultPage({ embedded = false, mode, onModeChange }: PoctWorkspaceProps = {}) {
+  const [localMode, setLocalMode] = React.useState<PoctWorkspaceMode>("results");
+  const activeMode = mode ?? localMode;
+  const changeMode = React.useCallback(
+    (nextMode: PoctWorkspaceMode) => {
+      if (onModeChange) onModeChange(nextMode);
+      else setLocalMode(nextMode);
+    },
+    [onModeChange],
+  );
   const [results, setResults] = React.useState<PoctResult[]>(() => readPoctResults());
   const [syncedTestIds, setSyncedTestIds] = React.useState<string[]>(() => readSelectedPoctTests());
   const [patient, setPatient] = React.useState("All");
@@ -902,6 +930,10 @@ export function ViewPoctResultPage() {
     toast.info("POCT filters reset.");
   }
 
+  if (activeMode === "add") {
+    return <AddPoctPage embedded={embedded} mode="add" onModeChange={changeMode} />;
+  }
+
   return (
     <div className="space-y-4">
       <Card>
@@ -944,7 +976,7 @@ export function ViewPoctResultPage() {
           <div className="flex items-end"><Button className="w-full" type="button" variant="outline" onClick={resetFilters}>Reset</Button></div>
           <div className="flex items-end justify-end xl:min-w-[220px]">
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <ActionButtons />
+              <ActionButtons mode="results" onModeChange={changeMode} />
             </div>
           </div>
         </CardContent>

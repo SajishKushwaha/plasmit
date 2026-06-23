@@ -2840,15 +2840,10 @@ type TaskMatrixGroup = {
 function TaskMatrixPatientCell({ row }: { row: TaskMatrixGroup }) {
   const tone = row.topTask ? taskMatrixToneFromTask(row.topTask) : taskMatrixToneFromAssessment(row.assessment);
   return (
-    <Link className="relative block min-h-24 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm" href={taskMatrixPatientDetailHref(row.patientId, "overview")}>
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", taskMatrixDotClass(tone))} />
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-bold text-slate-950">{row.bedNo}</p>
-          <p className="mt-1 text-sm font-bold text-slate-950">{row.patientName}</p>
-        </div>
-      </div>
-      <p className="mt-1 text-xs text-slate-500">{row.mrn} | {row.unit}</p>
+    <Link className="block min-h-16 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm" href={taskMatrixPatientDetailHref(row.patientId, "overview")}>
+      <p className={cn("truncate text-sm font-bold", taskMatrixTextClass(tone))}>{row.patientName}</p>
+      <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</p>
+      <p className="mt-0.5 truncate text-xs text-slate-500">{row.mrn}</p>
     </Link>
   );
 }
@@ -3152,6 +3147,14 @@ function taskMatrixDotClass(tone: StatusTone) {
   if (tone === "success") return "bg-success";
   if (tone === "muted") return "bg-muted-foreground";
   return "bg-info";
+}
+
+function taskMatrixTextClass(tone: StatusTone) {
+  if (tone === "critical" || tone === "danger") return "text-red-700";
+  if (tone === "warning") return "text-orange-700";
+  if (tone === "success") return "text-green-700";
+  if (tone === "muted") return "text-slate-700";
+  return "text-sky-700";
 }
 
 function TaskActionDialog({

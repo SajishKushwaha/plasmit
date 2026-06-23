@@ -500,13 +500,13 @@ function FluidBalanceMatrix({ buckets, rows, activeCell, onSelectCell }: { bucke
             </thead>
             <tbody>
               {matrixRows.map((row) => (
-                <tr className={cn(row.type === "section" ? "bg-slate-900 text-white" : row.type === "group" ? "bg-emerald-100 font-bold text-emerald-950" : row.type === "total" || row.type === "net" ? "bg-slate-100 font-bold" : "bg-white", "border-b border-slate-100")} key={`${row.type}-${row.label}`}>
-                  <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", row.type === "section" ? "bg-slate-900 text-white" : row.type === "group" ? "bg-emerald-100 text-emerald-950" : row.type === "total" || row.type === "net" ? "bg-slate-100 text-slate-950" : row.kind === "Intake" ? "bg-sky-50 text-slate-900" : "bg-emerald-50 text-slate-900", row.subRow ? "pl-7 text-sm" : "")}>
-                    {row.subRow ? <span className="mr-2 text-emerald-500">-</span> : null}{row.label}
+                <tr className={cn(row.type === "section" ? "bg-sky-700 text-white" : row.type === "group" ? "bg-sky-100 font-bold text-sky-950" : row.type === "total" || row.type === "net" ? "bg-slate-100 font-bold" : "bg-white", "border-b border-slate-100")} key={`${row.type}-${row.label}`}>
+                  <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", row.type === "section" ? "bg-sky-700 text-white" : row.type === "group" ? "bg-sky-100 text-sky-950" : row.type === "total" || row.type === "net" ? "bg-slate-100 text-slate-950" : row.kind === "Intake" ? "bg-sky-50 text-slate-900" : "bg-blue-50 text-slate-900", row.subRow ? "pl-7 text-sm" : "")}>
+                    {row.subRow ? <span className="mr-2 text-sky-500">-</span> : null}{row.label}
                   </td>
                   {buckets.map((bucket) => {
-                    if (row.type === "section") return <td className="border-r border-slate-800 bg-slate-900 px-3 py-2" key={bucket.key} />;
-                    if (row.type === "group") return <td className="border-r border-emerald-200 bg-emerald-100 px-3 py-2" key={bucket.key} />;
+                    if (row.type === "section") return <td className="border-r border-sky-600 bg-sky-700 px-3 py-2" key={bucket.key} />;
+                    if (row.type === "group") return <td className="border-r border-sky-200 bg-sky-100 px-3 py-2" key={bucket.key} />;
                     const cellRows = getCellRows(rows, row, bucket);
                     const value = sumCellRows(cellRows, row.type);
                     return (
@@ -534,8 +534,8 @@ function FluidBalanceMatrix({ buckets, rows, activeCell, onSelectCell }: { bucke
 
 function IoQuantityCell({ bucket, row, rows, value, active, onSelect }: { bucket: Bucket; row: MatrixRow; rows: IcuIntakeOutput[]; value: number; active: boolean; onSelect: () => void }) {
   const title = rows.length ? rows.map((entry) => `${entry.component}: ${entry.quantityMl} ml at ${entry.time} | ${entry.source} | ${entry.note}`).join("\n") : "No entry";
-  const tone = row.type === "net" ? balanceTextClass(value) : row.kind === "Intake" ? "text-sky-800" : "text-emerald-800";
-  const surface = rows.length ? row.kind === "Intake" ? "bg-sky-50 border-sky-200 hover:bg-sky-100" : row.kind === "Output" ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100" : "bg-slate-50 border-slate-200 hover:bg-slate-100" : "bg-white border-transparent text-slate-300";
+  const tone = row.type === "net" ? balanceTextClass(value) : row.kind === "Intake" ? "text-sky-800" : "text-blue-800";
+  const surface = rows.length ? row.kind === "Intake" ? "bg-sky-50 border-sky-200 hover:bg-sky-100" : row.kind === "Output" ? "bg-blue-50 border-blue-200 hover:bg-blue-100" : "bg-slate-50 border-slate-200 hover:bg-slate-100" : "bg-white border-transparent text-slate-300";
 
   return (
     <button
@@ -965,7 +965,7 @@ function RunningTotalPanel({ rows, alerts, activeCell }: { rows: IcuIntakeOutput
         </CardHeader>
         <CardContent className="space-y-3 p-4">
           {alerts.map((alert) => (
-            <div className={cn("rounded-md border p-3", metricToneClass(alert.tone))} key={alert.title}>
+            <div className={cn("rounded-md border border-l-4 p-3 shadow-sm", metricToneClass(alert.tone))} key={alert.title}>
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4" />
                 <div>
@@ -976,7 +976,7 @@ function RunningTotalPanel({ rows, alerts, activeCell }: { rows: IcuIntakeOutput
             </div>
           ))}
           {!alerts.length ? (
-            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">Fluid balance is within review limits.</div>
+            <div className="rounded-md border border-l-4 border-slate-200 border-l-sky-500 bg-white p-3 text-sm font-semibold text-slate-700 shadow-sm">Fluid balance is within review limits.</div>
           ) : null}
 
           <div className="rounded-md border border-slate-200 bg-white p-3">
@@ -1164,11 +1164,11 @@ function balanceTextClass(value: number) {
 }
 
 function metricToneClass(tone: StatusTone) {
-  if (tone === "danger" || tone === "critical") return "border-rose-200 bg-rose-50 text-rose-800";
-  if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-800";
-  if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (tone === "info") return "border-sky-200 bg-sky-50 text-sky-800";
-  return "border-slate-200 bg-slate-50 text-slate-700";
+  if (tone === "danger" || tone === "critical") return "border-slate-200 border-l-rose-500 bg-white text-rose-700";
+  if (tone === "warning") return "border-slate-200 border-l-amber-500 bg-white text-amber-700";
+  if (tone === "success") return "border-slate-200 border-l-sky-500 bg-white text-sky-700";
+  if (tone === "info") return "border-slate-200 border-l-sky-500 bg-white text-sky-700";
+  return "border-slate-200 border-l-slate-300 bg-white text-slate-700";
 }
 
 function statusTone(status: IcuIntakeOutput["status"]): StatusTone {

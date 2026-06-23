@@ -2099,11 +2099,11 @@ function ExecutiveDashboardMatrix({ rows, onAction }: { rows: ExecutiveDashboard
         <IcuLegend />
       </div>
       <div className="max-h-[620px] overflow-auto">
-        <table className="w-full min-w-[1500px] border-collapse bg-white text-sm">
+        <table className="w-full min-w-[1640px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white">
             <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
               <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-3 text-left">ICU unit</th>
-              {columns.map((column) => <th className="min-w-[130px] px-2 py-3 text-center" key={column}>{column}</th>)}
+              {columns.map((column) => <th className={cn("px-2 py-3 text-center", column === "Action" ? "min-w-[250px]" : "min-w-[130px]")} key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -2111,9 +2111,8 @@ function ExecutiveDashboardMatrix({ rows, onAction }: { rows: ExecutiveDashboard
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
                 <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
                   <Link className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={executiveDrilldownHref(row, "unit")}>
-                    <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(row.tone))} />
-                    <span className="block text-sm font-bold text-slate-950">{row.unit}</span>
-                    <span className="mt-1 block text-xs text-slate-500">{row.occupied}/{row.capacity} occupied</span>
+                    <span className={cn("block text-sm font-bold", dashboardToneTextClass(row.tone))}>{row.unit}</span>
+                    <span className="mt-1 block text-xs font-semibold text-slate-700">{row.occupied}/{row.capacity} occupied</span>
                   </Link>
                 </td>
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "occupancy")} icon={BedDouble} title={`${executiveOccupancyPercent(row)}%`} detail={`${row.available} open beds`} tone={executiveOccupancyTone(row)} /></td>
@@ -2125,8 +2124,8 @@ function ExecutiveDashboardMatrix({ rows, onAction }: { rows: ExecutiveDashboard
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "device")} icon={Activity} title={`${row.deviceUptime}%`} detail="Device uptime" tone={row.deviceUptime >= 95 ? "success" : row.deviceUptime >= 90 ? "warning" : "danger"} showDetail={false} /></td>
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "transfer")} icon={ArrowRightLeft} title={`${row.transferReady}`} detail="Ready/ordered" tone={row.transferReady ? "info" : "success"} showDetail={false} /></td>
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "owner")} icon={UserRound} title={row.owner.replace("Dr. ", "")} detail={row.nurseCoverage} tone="info" /></td>
-                <td className="px-2 py-2 align-middle">
-                  <div className="grid grid-cols-3 gap-2">
+                <td className="min-w-[250px] px-3 py-2 align-middle">
+                  <div className="grid min-w-[220px] grid-cols-3 gap-2">
                     <Button asChild className="h-9 px-2 text-xs" size="sm" variant="outline"><Link href={executiveDrilldownHref(row, "unit")}>Review</Link></Button>
                     <Button asChild className="h-9 px-2 text-xs" size="sm" variant={row.openAlerts || row.critical ? "danger" : "outline"}><Link href={executiveDrilldownHref(row, row.openAlerts ? "alerts" : row.critical ? "critical" : "unit")}>Focus</Link></Button>
                     <Button asChild className="h-9 px-2 text-xs" size="sm"><Link href={executiveDrilldownHref(row, "action")}>Plan</Link></Button>
@@ -2159,22 +2158,21 @@ function ExecutiveLeadershipPanel({ rows }: { rows: ExecutiveDashboardRow[] }) {
             <p className="text-sm font-bold text-slate-950">Leadership focus queue</p>
             <p className="mt-1 text-xs text-slate-500">Open executive decisions by urgency.</p>
           </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(focusRows.length ? "warning" : "success"))}>{focusRows.length}</span>
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{focusRows.length}</span>
         </div>
         <div className="mt-4 space-y-2">
           {focusRows.map((row) => (
-            <Link className={cn("block w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(row.tone))} href={executiveDrilldownHref(row, row.openAlerts ? "alerts" : row.deviceUptime < 92 ? "device" : "unit")} key={row.id}>
+            <Link className="block w-full rounded-md border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md" href={executiveDrilldownHref(row, row.openAlerts ? "alerts" : row.deviceUptime < 92 ? "device" : "unit")} key={row.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-bold text-slate-950">{row.unit}</p>
                   <p className="mt-1 text-xs text-slate-600">{row.bottleneck}</p>
                 </div>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
               </div>
               <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {row.occupied}/{row.capacity} occupied | {row.openAlerts} alert(s)</p>
             </Link>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-emerald-300 bg-emerald-50 p-5 text-center text-sm font-semibold text-emerald-800">All executive focus items are clear.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">All executive focus items are clear.</div> : null}
         </div>
       </div>
 
@@ -2452,22 +2450,21 @@ function NotificationsTasksMatrix({ rows, onAction }: { rows: NotificationComman
         <IcuLegend />
       </div>
       <div className="max-h-[670px] overflow-auto">
-        <table className="w-full min-w-[1320px] border-collapse bg-white text-sm">
+        <table className="w-full min-w-[1080px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white">
             <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[300px] bg-white px-3 py-3 text-left">Patient / notification</th>
-              {columns.map((column) => <th className="min-w-[135px] px-2 py-3 text-center" key={column}>{column}</th>)}
+              <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-3 text-left">Patient / notification</th>
+              {columns.map((column) => <th className="min-w-[120px] px-2 py-3 text-center" key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
             {pagination.pageRows.map((row) => (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
-                <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
-                  <button className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => onAction({ row, kind: "open" })}>
-                    <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(row.tone))} />
-                    <span className="block text-xs font-bold text-sky-700">{row.patient}</span>
-                    <span className="mt-1 block max-w-[250px] truncate text-sm font-bold text-slate-950">{row.title}</span>
-                    <span className="mt-1 block text-xs text-slate-500">{row.unit} | {row.createdAt}</span>
+                <td className="sticky left-0 z-10 max-w-[260px] bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
+                  <button className="block min-h-14 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => onAction({ row, kind: "open" })}>
+                    <span className={cn("block truncate text-sm font-bold", dashboardToneTextClass(row.tone))}>{row.patient}</span>
+                    <span className="mt-0.5 block truncate text-xs font-semibold text-slate-700">{row.unit} | {row.createdAt}</span>
+                    <span className="mt-0.5 block truncate text-xs font-bold text-slate-950">{row.title}</span>
                   </button>
                 </td>
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={notificationSourceIcon(row.source)} title={row.source} detail={row.type} tone={notificationSourceTone(row.source)} showDetail={false} onClick={() => onAction({ row, kind: "open" })} /></td>
@@ -2506,13 +2503,12 @@ function NotificationsTasksSidePanel({ rows, onAction }: { rows: NotificationCom
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm font-bold text-slate-950">Immediate queue</p>
-            <p className="mt-1 text-xs text-slate-500">Critical, breached, or escalated items first.</p>
           </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(focusRows.length ? "critical" : "success"))}>{focusRows.length}</span>
+          <span className={cn("rounded-full border bg-white px-2.5 py-1 text-xs font-bold", patientDetailIconClass(focusRows.length ? "critical" : "success"))}>{focusRows.length}</span>
         </div>
         <div className="mt-4 space-y-2">
           {focusRows.map((row) => (
-            <button className={cn("w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(row.tone))} key={row.id} type="button" onClick={() => onAction({ row, kind: "escalate" })}>
+            <button className={cn("w-full rounded-md border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md", patientDetailAccentClass(row.tone))} key={row.id} type="button" onClick={() => onAction({ row, kind: "escalate" })}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-bold text-slate-950">{row.patient}</p>
@@ -2523,7 +2519,7 @@ function NotificationsTasksSidePanel({ rows, onAction }: { rows: NotificationCom
               <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {notificationSlaLabel(row)}</p>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-emerald-300 bg-emerald-50 p-5 text-center text-sm font-semibold text-emerald-800">No critical queue item in selected view.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No critical queue item in selected view.</div> : null}
         </div>
       </div>
 
@@ -4086,22 +4082,16 @@ function SmartBedViewCommand() {
                 <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
                   <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
                     {row.patient ? (
-                      <Link className="relative block min-h-24 rounded-md px-2 py-2 transition hover:bg-sky-50" href={icuPatientDetailHref(row.patient.id, "overview")}>
-                        <span className={cn("absolute right-2 top-2 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(smartBedDashboardTone(row, "risk")))} />
-                        <p className="text-xs font-bold text-sky-700">{row.bedNo}</p>
-                        <p className="mt-1 text-sm font-bold text-slate-950">{row.patient.patientName}</p>
-                        <p className="mt-1 text-xs text-slate-500">{row.patient.mrn} | {row.patient.ageGender}</p>
+                      <Link className="block min-h-16 rounded-md px-2 py-2 transition hover:bg-sky-50" href={icuPatientDetailHref(row.patient.id, "overview")}>
+                        <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(smartBedDashboardTone(row, "risk")))}>{row.patient.patientName}</p>
+                        <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</p>
+                        <p className="mt-0.5 truncate text-xs text-slate-500">{row.patient.mrn} | {row.patient.ageGender}</p>
                       </Link>
                     ) : (
-                      <button className="relative block min-h-24 w-full rounded-md px-2 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveBedAction({ id: row.id, kind: "status" })}>
-                        <span className={cn("absolute right-2 top-2 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(smartBedDashboardTone(row, "status")))} />
-                        <p className="text-xs font-bold text-sky-700">{row.bedNo}</p>
-                        <p className="mt-1 text-sm font-bold text-slate-950">No patient assigned</p>
-                        <p className="mt-1 text-xs text-slate-500">{row.unit}</p>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(smartBedDashboardTone(row, "status")))}>{row.status}</span>
-                          <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700">Open bed</span>
-                        </div>
+                      <button className="block min-h-16 w-full rounded-md px-2 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveBedAction({ id: row.id, kind: "status" })}>
+                        <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(smartBedDashboardTone(row, "status")))}>No patient assigned</p>
+                        <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</p>
+                        <p className="mt-0.5 truncate text-xs text-slate-500">{row.status}</p>
                       </button>
                     )}
                   </td>
@@ -4134,12 +4124,12 @@ function SmartBedViewCommand() {
         <CommandSection title="Admission pressure queue" description="Patients waiting for an appropriate ICU bed.">
           <div className="grid gap-2 md:grid-cols-3">
             {smartBedWaitingAdmissions.map((item, index) => (
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-3" key={item}>
+              <div className="rounded-md border border-slate-200 border-l-amber-500 bg-white p-3 shadow-sm" key={item}>
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-bold text-amber-950">Priority {index + 1}</p>
+                  <p className="text-sm font-bold text-slate-950">Priority {index + 1}</p>
                   <Badge tone={index === 0 ? "critical" : "warning"}>{index === 0 ? "Immediate" : "Waiting"}</Badge>
                 </div>
-                <p className="mt-2 text-xs text-amber-900">{item}</p>
+                <p className="mt-2 text-xs text-slate-600">{item}</p>
               </div>
             ))}
           </div>
@@ -4380,8 +4370,8 @@ function SmartBedActionDialog({
                 `Device state: ${smartBedDeviceLabel(bed)}`,
                 `Nurse station: ${bed.nurseStation}`,
               ].map((item) => (
-                <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900" key={item}>
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <div className="flex items-center gap-2 rounded-md border border-slate-200 border-l-sky-500 bg-white p-3 text-sm text-slate-800 shadow-sm" key={item}>
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-sky-600" />
                   {item}
                 </div>
               ))}
@@ -5065,20 +5055,18 @@ function IcuOpsMatrixCell({
 }) {
   const content = (
     <>
-      <span className={cn("inline-flex min-h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", dashboardToneSolidClass(tone))}>
+      <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", dashboardToneSolidClass(tone))}>
         <Icon className="h-4 w-4" />
         <span className="max-w-24 truncate whitespace-nowrap">{title}</span>
       </span>
-      {showDetail ? (
-        <span className="mt-1 block max-w-32 truncate whitespace-nowrap text-center text-[11px] font-semibold leading-tight text-slate-600">
-          {detail || "-"}
-        </span>
-      ) : null}
+      <span className={cn("mt-1 block max-w-32 truncate whitespace-nowrap text-center text-[11px] font-semibold leading-tight text-slate-600", !showDetail && "invisible")} aria-hidden={!showDetail}>
+        {detail || "-"}
+      </span>
     </>
   );
   const shellClass = cn(
     "flex w-full min-w-24 flex-col items-center justify-center rounded-md outline-none transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring/30",
-    showDetail ? "min-h-20" : "min-h-14",
+    "min-h-20",
   );
 
   if (href) {
@@ -6314,8 +6302,8 @@ function EscalationCenterCommand() {
             <DashboardCommandMetric label="Unassigned" value={unassignedRows.length} tone={unassignedRows.length ? "warning" : "success"} />
             <DashboardCommandMetric label="Owners" value={ownerLoad.length} tone="info" />
           </div>
-          <div className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(220px,1fr)_170px_150px_150px_180px_minmax(112px,0.7fr)] lg:items-end">
-            <label className="space-y-1 text-sm">
+          <div className="grid min-w-0 gap-3 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(180px,1.25fr)_repeat(4,minmax(115px,0.8fr))_104px] xl:items-end">
+            <label className="min-w-0 space-y-1 text-sm">
               <span className="font-medium text-slate-700">Search escalation</span>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -6326,7 +6314,7 @@ function EscalationCenterCommand() {
             <NativeSelect label="Severity" value={severity} onChange={setSeverity} options={["All severity", "Critical", "High", "Medium", "Info"]} />
             <NativeSelect label="Source" value={source} onChange={setSource} options={sourceOptions} />
             <NativeSelect label="Owner" value={owner} onChange={setOwner} options={ownerOptions} />
-            <Button className="h-10 w-full" variant="outline" onClick={resetFilters}>Reset</Button>
+            <Button className="h-10 w-full min-w-0" variant="outline" onClick={resetFilters}>Reset</Button>
           </div>
         </CollapsibleCommandPanel>
 
@@ -6339,7 +6327,7 @@ function EscalationCenterCommand() {
                   <th className="min-w-[122px] px-3 py-3 text-center">Priority</th>
                   <th className="min-w-[150px] px-3 py-3 text-center">Trigger</th>
                   <th className="min-w-[130px] px-3 py-3 text-center">Source</th>
-                  <th className="min-w-[145px] px-3 py-3 text-center">Owner</th>
+                  <th className="min-w-[145px] px-3 py-3 text-center">Assigned To</th>
                   <th className="min-w-[125px] px-3 py-3 text-center">SLA</th>
                   <th className="min-w-[130px] px-3 py-3 text-center">Status</th>
                   <th className="min-w-[130px] px-3 py-3 text-center">Review</th>
@@ -6399,7 +6387,7 @@ function EscalationCenterCommand() {
                   <p className="text-sm font-bold text-slate-950">{row.bedNo} - {row.category}</p>
                   <p className="mt-1 text-xs text-slate-600">{row.sla} | {row.owner}</p>
                 </button>
-              )) : <p className="rounded-md border border-green-200 bg-green-50 p-3 text-sm font-semibold text-green-700">No SLA breach in selected queue.</p>}
+              )) : <p className="rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm font-semibold text-slate-600">No SLA breach in selected queue.</p>}
             </EscalationSidePanel>
 
             <EscalationSidePanel title="Owner workload" badge={`${ownerLoad.length} owners`} tone="info">
@@ -6489,13 +6477,11 @@ function EscalationPatientCell({ group }: { group: EscalationPatientGroup }) {
   const row = group.top;
 
   return (
-    <div className="relative min-h-24 rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:border-sky-300 hover:shadow-sm">
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(group.patientTone))} />
-      <Link className="block w-full pr-5 text-left" href={icuPatientDetailHref(row.patientId, "overview")}>
-        <p className="text-xs font-black text-slate-950">{row.bedNo}</p>
-        <p className="mt-1 text-sm font-black text-slate-950">{patient?.patientName ?? row.patient}</p>
+    <div className="flex min-h-20 items-center rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:border-sky-300 hover:shadow-sm">
+      <Link className="block w-full text-left" href={icuPatientDetailHref(row.patientId, "overview")}>
+        <p className={cn("text-sm font-black", dashboardToneTextClass(group.patientTone))}>{patient?.patientName ?? row.patient}</p>
+        <p className="mt-1 text-xs font-semibold text-slate-700">{row.bedNo}</p>
         <p className="mt-1 text-xs text-slate-500">{patient?.mrn ?? "ICU patient"} | {patient?.ageGender ?? row.unit}</p>
-        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-slate-500">{patient?.diagnosis ?? row.category}</p>
       </Link>
     </div>
   );
@@ -8922,25 +8908,25 @@ function RemotePatientCell({ row }: { row: RemoteCommandRow }) {
   const tone = remotePriorityTone(row.priority);
   return (
     <Link
-      className="relative block min-h-24 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
+      className="block min-h-16 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
       href={icuPatientDetailHref(row.patientId, "overview")}
       title={`Open patient command profile for ${row.patientName}`}
     >
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(tone))} />
-      <p className="text-xs font-bold text-slate-950">{row.bedNo}</p>
-      <p className="mt-1 text-sm font-bold text-slate-950">{row.patientName}</p>
-      <p className="mt-1 text-xs text-slate-500">{row.mrn} | {row.ageGender}</p>
+      <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(tone))}>{row.patientName}</p>
+      <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</p>
+      <p className="mt-0.5 truncate text-xs text-slate-500">{row.mrn} | {row.ageGender}</p>
     </Link>
   );
 }
 
 function RemoteMatrixCell({ detail, href, icon: Icon, onClick, title, tone }: { detail: string; href?: string; icon: typeof Activity; onClick?: () => void; title: string; tone: DashboardCellTone }) {
   const content = (
-    <span className="flex min-h-14 w-full min-w-24 flex-col items-center justify-center">
+    <span className="flex min-h-20 w-full min-w-24 flex-col items-center justify-center">
       <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", dashboardToneSolidClass(tone))}>
         <Icon className="h-3.5 w-3.5" />
-        {title}
+        <span className="max-w-24 truncate whitespace-nowrap">{title}</span>
       </span>
+      <span className="invisible mt-1 block max-w-32 truncate whitespace-nowrap text-center text-[11px] font-semibold leading-tight text-slate-600" aria-hidden="true">{detail || "-"}</span>
     </span>
   );
   if (href) {
@@ -9021,7 +9007,7 @@ function RemoteCommandSidePanel({ rows, onAction }: { rows: RemoteCommandRow[]; 
               </div>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-emerald-300 bg-emerald-50 p-5 text-center text-sm font-semibold text-emerald-800">No urgent remote action in selected view.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent remote action in selected view.</div> : null}
         </div>
       </div>
 
@@ -9762,7 +9748,7 @@ function RemoteConsultationMatrix({
                     <p className="text-sm font-semibold text-slate-900">{row.reason}</p>
                   </div>
                 </td>
-                <td className="px-2 py-2 align-middle text-center"><RemoteCircleCell icon={Stethoscope} title={row.specialty} detail={row.requestedBy} tone={remoteConsultSpecialtyTone(row.specialty)} onClick={() => onCell({ row, kind: "specialty" })} /></td>
+                <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell icon={Stethoscope} title={row.specialty} detail={row.requestedBy} tone={remoteConsultSpecialtyTone(row.specialty)} onClick={() => onCell({ row, kind: "specialty" })} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={teleIcuScenarioHref("readiness", row.patientId)} icon={ClipboardCheck} title={`${row.readinessScore}%`} detail={remoteConsultReadinessLabel(row)} tone={remoteConsultReadinessTone(row)} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={icuPatientDetailHref(row.patientId, "results")} icon={FileText} title={row.missingDocuments.length ? `${row.missingDocuments.length} due` : "Ready"} detail={row.documents} tone={row.missingDocuments.length ? "warning" : "success"} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={icuPatientDetailHref(row.patientId, "monitoring", "24h-chart")} icon={HeartPulse} title={remoteConsultLatestVitals(row.patientId)} detail="Latest vitals" tone={row.priority === "Critical" ? "danger" : "success"} /></td>
@@ -9789,14 +9775,13 @@ function RemoteConsultPatientCell({ row }: { row: RemoteConsultationRow }) {
   const tone = remotePriorityTone(row.priority);
   return (
     <Link
-      className="relative block min-h-24 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
+      className="block min-h-16 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
       href={icuPatientDetailHref(row.patientId, "overview")}
       title={`Open patient profile for ${row.patientName}`}
     >
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(tone))} />
-      <p className="text-xs font-bold text-slate-950">{row.bedNo}</p>
-      <p className="mt-1 text-sm font-bold text-slate-950">{row.patientName}</p>
-      <p className="mt-1 text-xs text-slate-500">{row.mrn} | {row.ageGender}</p>
+      <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(tone))}>{row.patientName}</p>
+      <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</p>
+      <p className="mt-0.5 truncate text-xs text-slate-500">{row.mrn} | {row.ageGender}</p>
     </Link>
   );
 }
@@ -9838,7 +9823,7 @@ function RemoteConsultationSidePanel({ rows, onAction }: { rows: RemoteConsultat
               </div>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-emerald-300 bg-emerald-50 p-5 text-center text-sm font-semibold text-emerald-800">No urgent consult in selected view.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent consult in selected view.</div> : null}
         </div>
       </div>
 
@@ -10483,8 +10468,8 @@ function EscalatedCasesMatrix({
                 </td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={escalatedCaseScenarioHref("trigger", row.id)} icon={AlertTriangle} title={row.trigger.split(" ").slice(0, 3).join(" ")} detail={row.trigger} tone={escalatedCaseSeverityTone(row.severity)} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={escalatedCaseScenarioHref("severity", row.id)} icon={ShieldAlert} title={row.severity} detail={row.status} tone={escalatedCaseSeverityTone(row.severity)} /></td>
-                <td className="px-2 py-2 align-middle text-center"><RemoteCircleCell href={escalatedCaseScenarioHref("source", row.id)} icon={escalatedCaseSourceIcon(row.source)} title={row.source} detail={row.openedAt} tone={escalatedCaseSourceTone(row.source)} /></td>
-                <td className="px-2 py-2 align-middle text-center"><RemoteCircleCell href={escalatedCaseScenarioHref("owner-chain", row.id)} icon={UserRound} title={row.primaryOwner} detail={row.escalatedTo} tone="info" /></td>
+                <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={escalatedCaseScenarioHref("source", row.id)} icon={escalatedCaseSourceIcon(row.source)} title={row.source} detail={row.openedAt} tone={escalatedCaseSourceTone(row.source)} /></td>
+                <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={escalatedCaseScenarioHref("owner-chain", row.id)} icon={UserRound} title={row.primaryOwner} detail={row.escalatedTo} tone="info" /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={escalatedCaseScenarioHref("sla", row.id)} icon={Clock3} title={escalatedCaseSlaLabel(row)} detail={`${row.waitingMinutes} min wait`} tone={escalatedCaseSlaTone(row)} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={escalatedCaseScenarioHref("current-action", row.id)} icon={ClipboardCheck} title={row.status} detail={row.currentAction} tone={escalatedCaseStatusTone(row.status)} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={escalatedCaseScenarioHref("outcome", row.id)} icon={CheckCircle2} title={row.outcome.includes("Pending") ? "Pending" : "Updated"} detail={row.outcome} tone={row.status === "Closed" || row.status === "Resolved" ? "success" : "warning"} /></td>
@@ -10507,11 +10492,10 @@ function EscalatedCasesMatrix({
 function EscalatedCasePatientCell({ row }: { row: EscalatedCaseRow }) {
   const tone = escalatedCaseSeverityTone(row.severity);
   const content = (
-    <span className="relative block min-h-24 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm">
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(tone))} />
-      <span className="block text-xs font-bold text-slate-950">{row.bedNo}</span>
-      <span className="mt-1 block text-sm font-bold text-slate-950">{row.patientName}</span>
-      <span className="mt-1 block text-xs text-slate-500">{row.mrn} | {row.ageGender}</span>
+    <span className="block min-h-16 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm">
+      <span className={cn("block truncate text-sm font-bold", dashboardToneTextClass(tone))}>{row.patientName}</span>
+      <span className="mt-1 block truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</span>
+      <span className="mt-0.5 block truncate text-xs text-slate-500">{row.mrn} | {row.ageGender}</span>
     </span>
   );
 
@@ -10562,7 +10546,7 @@ function EscalatedCasesSidePanel({ rows, onAction }: { rows: EscalatedCaseRow[];
               </div>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-emerald-300 bg-emerald-50 p-5 text-center text-sm font-semibold text-emerald-800">No urgent escalation in selected view.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent escalation in selected view.</div> : null}
         </div>
       </div>
 
@@ -11390,11 +11374,10 @@ function DeviceMonitoringCommand() {
               {pagination.pageRows.map((row) => (
                 <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
                   <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
-                    <button className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveAction({ row, kind: "patient" })}>
-                      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(row.tone))} />
-                      <p className="text-xs font-bold text-sky-700">{row.bedNo}</p>
-                      <p className="mt-1 truncate whitespace-nowrap text-sm font-bold text-slate-950">{row.patient}</p>
-                      <p className="mt-1 truncate whitespace-nowrap text-xs text-slate-500">{row.unit} | {row.patientImpact}</p>
+                    <button className="block min-h-16 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveAction({ row, kind: "patient" })}>
+                      <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(row.tone))}>{row.patient}</p>
+                      <p className="mt-1 truncate whitespace-nowrap text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</p>
+                      <p className="mt-0.5 truncate whitespace-nowrap text-xs text-slate-500">{row.patientImpact}</p>
                     </button>
                   </td>
                   <td className="px-2 py-2 text-center align-middle">
@@ -12152,15 +12135,10 @@ function DeviceOpsMatrix({
 
 function DeviceOpsPatientCell({ onOpen, row }: { row: DeviceOpsRow; onOpen: () => void }) {
   return (
-    <button className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={onOpen}>
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(row.tone))} />
-      <span className="block text-xs font-bold text-sky-700">{row.bedNo}</span>
-      <span className="mt-1 block text-sm font-bold text-slate-950">{row.mappedPatient}</span>
-      <span className="mt-1 block text-xs text-slate-500">{row.unit} | {row.mappingStatus}</span>
-      <span className="mt-2 flex flex-wrap gap-2">
-        <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(row.tone))}>{row.lifecycle}</span>
-        {row.patientId ? <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700">Patient linked</span> : null}
-      </span>
+    <button className="block min-h-16 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={onOpen}>
+      <span className={cn("block truncate text-sm font-bold", dashboardToneTextClass(row.tone))}>{row.mappedPatient}</span>
+      <span className="mt-1 block truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</span>
+      <span className="mt-0.5 block truncate text-xs text-slate-500">{row.mappingStatus}</span>
     </button>
   );
 }
@@ -12262,7 +12240,7 @@ function DeviceOpsSidePanel({
               </div>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-emerald-300 bg-emerald-50 p-5 text-center text-sm font-semibold text-emerald-800">No urgent device work in selected view.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent device work in selected view.</div> : null}
         </div>
       </div>
 
@@ -13076,23 +13054,22 @@ function RiskPatientCell({ href, onOpen, row }: { row: PatientRiskRow; href?: st
   const tone = riskLevelTone(row.riskLevel);
   const content = (
     <>
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(tone))} />
-      <span className="block text-xs font-bold text-sky-700">{row.bedNo}</span>
-      <span className="mt-1 block text-sm font-bold text-slate-950">{row.patient}</span>
+      <span className={cn("block text-sm font-bold", dashboardToneTextClass(tone))}>{row.patient}</span>
+      <span className="mt-1 block text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</span>
       <span className="mt-1 block text-xs text-slate-500">{row.mrn} | {row.ageGender}</span>
     </>
   );
 
   if (href) {
     return (
-      <Link className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={href}>
+      <Link className="block min-h-20 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={href}>
         {content}
       </Link>
     );
   }
 
   return (
-    <button className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={onOpen}>
+    <button className="block min-h-20 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={onOpen}>
       {content}
     </button>
   );
@@ -13365,7 +13342,7 @@ function PatientRiskMedicationDetail({ riskCount, rows }: { riskCount: number; r
 
 function PatientRiskDeviceDetail({ deviceRow, row }: { deviceRow?: ReturnType<typeof getCommandDeviceRows>[number]; row: PatientRiskRow }) {
   if (!deviceRow) {
-    return <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">No device mapping found. Risk adds +1 because bedside device signal is not mapped.</div>;
+    return <div className="rounded-md border border-slate-200 border-l-amber-500 bg-white p-4 text-sm font-semibold text-slate-700 shadow-sm">No device mapping found. Risk adds +1 because bedside device signal is not mapped.</div>;
   }
   const deviceRisk = deviceRow.signal !== "Good" || deviceRow.connectivity !== "Online";
   return (
@@ -13671,7 +13648,7 @@ function RiskCommandSidePanel({ mode, onAction, rows }: { mode: RiskCommandMode;
               <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {mode === "ews" ? observationFrequency(row.score) : `Score ${row.score}`}</p>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-emerald-300 bg-emerald-50 p-5 text-center text-sm font-semibold text-emerald-800">No urgent patient in selected view.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent patient in selected view.</div> : null}
         </div>
       </div>
 
@@ -14039,7 +14016,7 @@ function escalationTrigger(score: number) {
 
 function SepsisReferenceCard({ row }: { row: PatientRiskRow }) {
   return (
-    <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+    <div className="rounded-md border border-slate-200 border-l-amber-500 bg-white p-3 shadow-sm">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-black text-slate-950">Sepsis screening reference</p>
@@ -15069,26 +15046,25 @@ function CollapsibleCommandPanel({
   summary: string;
   title: string;
 }) {
-  const [open, setOpen] = React.useState(false);
+  const panelId = React.useId();
 
   return (
-    <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-      <button
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-slate-50"
-        onClick={() => setOpen((current) => !current)}
-        type="button"
+    <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      <input className="peer sr-only" id={panelId} type="checkbox" />
+      <label
+        className="flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-slate-50 peer-checked:[&_svg]:rotate-180"
+        htmlFor={panelId}
       >
         <span className="min-w-0">
           <span className="block text-sm font-bold text-slate-950">{title}</span>
           <span className="mt-0.5 block truncate text-xs text-slate-500">{summary}</span>
         </span>
         <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm">
-          <ChevronDown className={cn("h-4 w-4 transition-transform", open ? "rotate-180" : "")} />
+          <ChevronDown className="h-4 w-4 transition-transform" />
         </span>
-      </button>
-      {open ? <div className="border-t border-slate-200">{children}</div> : null}
-    </div>
+      </label>
+      <div className="hidden border-t border-slate-200 peer-checked:block">{children}</div>
+    </section>
   );
 }
 
@@ -15180,13 +15156,13 @@ function DashboardMatrix({ patients }: { patients: IcuPatient[] }) {
         <IcuLegend />
       </div>
       <div className="max-h-[620px] overflow-auto">
-        <table className="w-full min-w-[1360px] border-collapse bg-white text-sm">
+        <table className="w-full min-w-[1580px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20">
             <tr className="border-b border-slate-300 bg-white text-[11px] uppercase text-sky-700">
               <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Patient</th>
               <th className="min-w-[230px] px-3 py-3 text-left">Diagnosis</th>
               {columns.map((column) => (
-                <th className="min-w-[112px] px-3 py-3 text-center" key={column}>{icuColumnLabel(column)}</th>
+                <th className={cn("px-3 py-3 text-center", dashboardMatrixColumnClass(column))} key={column}>{icuColumnLabel(column)}</th>
               ))}
             </tr>
           </thead>
@@ -15228,17 +15204,37 @@ function DashboardMatrix({ patients }: { patients: IcuPatient[] }) {
   );
 }
 
+function dashboardMatrixColumnClass(column: string) {
+  if (column === "Ventilation") return "min-w-[160px]";
+  if (column === "Intake / Output") return "min-w-[145px]";
+  if (column === "Medication" || column === "Events") return "min-w-[130px]";
+  return "min-w-[125px]";
+}
+
 function IcuMonitorPatientCell({ patient }: { patient: IcuPatient }) {
   const tone = patientDashboardTone(patient);
   return (
     <Link
-      className="relative block min-h-24 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
+      className="block min-h-20 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
       href={icuPatientDetailHref(patient.id, "overview")}
       title={`Show complete ICU detail for ${patient.patientName}`}
     >
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(tone))} />
-      <p className="text-xs font-bold text-slate-950">{patient.bedNo}</p>
-      <p className="mt-1 text-sm font-bold text-slate-950">{patient.patientName}</p>
+      <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(tone))}>{patient.patientName}</p>
+      <p className="mt-1 truncate text-xs font-semibold text-slate-700">{patient.bedNo} | {patient.unit}</p>
+    </Link>
+  );
+}
+
+function IcuPatientTabLink({ active, children, href }: { active: boolean; children: React.ReactNode; href: string }) {
+  return (
+    <Link
+      className={cn(
+        "inline-flex min-h-10 shrink-0 items-center justify-center rounded px-3 text-xs font-medium outline-none transition hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-sky-300",
+        active ? "bg-white text-slate-950 shadow-sm" : "text-slate-600 hover:bg-white/70",
+      )}
+      href={href}
+    >
+      {children}
     </Link>
   );
 }
@@ -15319,16 +15315,16 @@ function IcuPatientCommandProfile({
 
   return (
     <div className="overflow-hidden rounded-sm border border-sky-200 bg-white shadow-sm">
-      <Tabs className="p-4" defaultValue={initialTab}>
+      <Tabs className="p-4" value={initialTab}>
         <TabsList className="grid h-auto w-full gap-1 rounded-md bg-slate-100 p-1 md:grid-cols-4 xl:grid-cols-8">
-          <TabsTrigger className="min-h-10" value="overview">Patient Overview</TabsTrigger>
-          <TabsTrigger className="min-h-10" value="monitoring">Monitoring</TabsTrigger>
-          <TabsTrigger className="min-h-10" value="results">Results</TabsTrigger>
-          <TabsTrigger className="min-h-10" value="graph">Vital Graph</TabsTrigger>
-          <TabsTrigger className="min-h-10" value="orders">Medication & Orders</TabsTrigger>
-          <TabsTrigger className="min-h-10" value="events">Events</TabsTrigger>
-          <TabsTrigger className="min-h-10" value="shift-summary">Shift Summary</TabsTrigger>
-          <TabsTrigger className="min-h-10" value="collaborate">Collaborate</TabsTrigger>
+          <IcuPatientTabLink active={initialTab === "overview"} href={icuPatientDetailHref(patient.id, "overview")}>Patient Overview</IcuPatientTabLink>
+          <IcuPatientTabLink active={initialTab === "monitoring"} href={icuPatientDetailHref(patient.id, "monitoring")}>Monitoring</IcuPatientTabLink>
+          <IcuPatientTabLink active={initialTab === "results"} href={icuPatientDetailHref(patient.id, "results")}>Results</IcuPatientTabLink>
+          <IcuPatientTabLink active={initialTab === "graph"} href={icuPatientDetailHref(patient.id, "graph")}>Vital Graph</IcuPatientTabLink>
+          <IcuPatientTabLink active={initialTab === "orders"} href={icuPatientDetailHref(patient.id, "orders")}>Medication & Orders</IcuPatientTabLink>
+          <IcuPatientTabLink active={initialTab === "events"} href={icuPatientDetailHref(patient.id, "events")}>Events</IcuPatientTabLink>
+          <IcuPatientTabLink active={initialTab === "shift-summary"} href={icuPatientDetailHref(patient.id, "shift-summary")}>Shift Summary</IcuPatientTabLink>
+          <IcuPatientTabLink active={initialTab === "collaborate"} href={icuPatientDetailHref(patient.id, "collaborate")}>Collaborate</IcuPatientTabLink>
         </TabsList>
 
         <TabsContent className="mt-4 space-y-4" value="overview">
@@ -15347,12 +15343,12 @@ function IcuPatientCommandProfile({
         </TabsContent>
 
         <TabsContent className="mt-4 space-y-4" value="monitoring">
-          <Tabs defaultValue={initialMonitoringTab}>
+          <Tabs value={initialMonitoringTab}>
             <TabsList className="grid h-auto w-full gap-1 rounded-md bg-slate-100 p-1 md:grid-cols-4">
-              <TabsTrigger className="min-h-10" value="monitoring-overview">Monitoring Overview</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="24h-chart">24h Chart</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="intake-output">Intake Output</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="device-snapshot">Device Snapshot</TabsTrigger>
+              <IcuPatientTabLink active={initialMonitoringTab === "monitoring-overview"} href={icuPatientDetailHref(patient.id, "monitoring", "monitoring-overview")}>Monitoring Overview</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "24h-chart"} href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}>24h Chart</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "intake-output"} href={icuPatientDetailHref(patient.id, "monitoring", "intake-output")}>Intake Output</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "device-snapshot"} href={icuPatientDetailHref(patient.id, "monitoring", "device-snapshot")}>Device Snapshot</IcuPatientTabLink>
             </TabsList>
 
             <TabsContent className="mt-4 space-y-4" value="monitoring-overview">
@@ -15998,19 +15994,37 @@ function clampIcuNumber(value: number, min: number, max: number) {
 
 function IcuPatientDetailMetric({ icon: Icon, label, value, detail, tone }: { icon: typeof Activity; label: string; value: React.ReactNode; detail: string; tone: DashboardCellTone }) {
   return (
-    <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(tone))}>
+    <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(tone))}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase">{label}</p>
-          <p className="mt-2 text-lg font-black leading-tight">{value}</p>
+          <p className="text-xs font-bold uppercase text-slate-500">{label}</p>
+          <p className="mt-2 text-lg font-black leading-tight text-slate-950">{value}</p>
         </div>
-        <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full text-white", dashboardToneSolidClass(tone))}>
+        <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full border bg-slate-50", patientDetailIconClass(tone))}>
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <p className="mt-2 text-xs">{detail}</p>
+      <p className="mt-2 text-xs text-slate-500">{detail}</p>
     </div>
   );
+}
+
+function patientDetailAccentClass(tone: DashboardCellTone) {
+  if (tone === "critical" || tone === "danger") return "border-l-4 border-l-rose-500";
+  if (tone === "warning") return "border-l-4 border-l-amber-500";
+  if (tone === "purple") return "border-l-4 border-l-violet-500";
+  if (tone === "success") return "border-l-4 border-l-sky-500";
+  if (tone === "muted") return "border-l-4 border-l-slate-300";
+  return "border-l-4 border-l-sky-500";
+}
+
+function patientDetailIconClass(tone: DashboardCellTone) {
+  if (tone === "critical" || tone === "danger") return "border-rose-200 text-rose-600";
+  if (tone === "warning") return "border-amber-200 text-amber-600";
+  if (tone === "purple") return "border-violet-200 text-violet-600";
+  if (tone === "success") return "border-sky-200 text-sky-600";
+  if (tone === "muted") return "border-slate-200 text-slate-500";
+  return "border-sky-200 text-sky-600";
 }
 
 function IcuPatientDetailPanel({ title, children }: { title: string; children: React.ReactNode }) {
@@ -16482,13 +16496,13 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
         </div>
         <div className="grid gap-3 p-3 lg:grid-cols-3">
           {historyRows.map((row) => (
-            <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(row.tone))} key={row.id}>
+            <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(row.tone))} key={row.id}>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-bold">{row.shift}</p>
-                  <p className="mt-1 text-xs">{row.time}</p>
+                  <p className="text-sm font-bold text-slate-950">{row.shift}</p>
+                  <p className="mt-1 text-xs text-slate-500">{row.time}</p>
                 </div>
-                <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(row.tone))}>{row.status}</span>
+                <span className={cn("rounded-full border bg-white px-2.5 py-1 text-xs font-bold", patientDetailIconClass(row.tone))}>{row.status}</span>
               </div>
               <div className="mt-3 grid gap-2 text-xs">
                 <InfoLine label="Outgoing" value={row.outgoing} />
@@ -16507,9 +16521,9 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
 
 function IcuShiftNurseRoleCard({ label, name, tone }: { label: string; name: string; tone: DashboardCellTone }) {
   return (
-    <div className={cn("rounded-md border px-3 py-2", dashboardToneSurfaceClass(tone))}>
-      <p className="text-xs font-black uppercase tracking-wide">{label}</p>
-      <p className="mt-1 truncate text-sm font-black">{name}</p>
+    <div className={cn("rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm", patientDetailAccentClass(tone))}>
+      <p className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 truncate text-sm font-black text-slate-950">{name}</p>
     </div>
   );
 }
@@ -16611,14 +16625,14 @@ function formatIcuShiftHistoryDate(date: string) {
 
 function IcuPatientShiftSummaryList({ title, items, tone }: { title: string; items: string[]; tone: DashboardCellTone }) {
   return (
-    <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(tone))}>
+    <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(tone))}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-bold">{title}</p>
-        <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(tone))}>{items.length}</span>
+        <p className="text-sm font-bold text-slate-950">{title}</p>
+        <span className={cn("rounded-full border bg-white px-2.5 py-1 text-xs font-bold", patientDetailIconClass(tone))}>{items.length}</span>
       </div>
       <div className="mt-3 space-y-2">
         {items.map((item) => (
-          <div className="rounded-md border border-white/70 bg-white/75 px-3 py-2 text-xs font-medium" key={item}>{item}</div>
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-800" key={item}>{item}</div>
         ))}
       </div>
     </div>
@@ -17052,7 +17066,7 @@ const icuAllVitalsGraphMetrics: IcuAllVitalsGraphMetric[] = [
 const icuVitalGraphSeverityStyles: Record<IcuVitalGraphSeverity, { label: string; description: string; color: string; bg: string; border: string; text: string }> = {
   critical: { label: "Critical", description: "Immediate review", color: "#dc2626", bg: "bg-red-50", border: "border-red-300", text: "text-red-700" },
   warning: { label: "Warning", description: "Needs watch", color: "#f59e0b", bg: "bg-amber-50", border: "border-amber-300", text: "text-amber-700" },
-  normal: { label: "Normal", description: "Within range", color: "#16a34a", bg: "bg-emerald-50", border: "border-emerald-300", text: "text-emerald-700" },
+  normal: { label: "Normal", description: "Within range", color: "#0284c7", bg: "bg-sky-50", border: "border-sky-300", text: "text-sky-700" },
 };
 
 const icuAllVitalsGraphSections: IcuAllVitalsGraphSection[] = [
@@ -17901,13 +17915,13 @@ function IcuPatientTimeline({ rows }: { rows: Array<{ id: string; label: string;
       </div>
       <div className="mt-3 grid gap-2 lg:grid-cols-2">
         {rows.map((row) => (
-          <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(row.tone))} key={row.id}>
+          <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(row.tone))} key={row.id}>
             <div className="flex items-start justify-between gap-3">
-              <p className="text-xs font-black uppercase">{row.label}</p>
+              <p className="text-xs font-black uppercase text-slate-600">{row.label}</p>
               <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
             </div>
-            <p className="mt-2 text-sm font-bold">{row.title}</p>
-            <p className="mt-1 text-xs">{row.detail}</p>
+            <p className="mt-2 text-sm font-bold text-slate-950">{row.title}</p>
+            <p className="mt-1 text-xs text-slate-500">{row.detail}</p>
           </div>
         ))}
         {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm font-semibold text-slate-500">No timeline activity found.</div> : null}
@@ -17942,9 +17956,9 @@ function IcuPatientQueuePanel({
       </div>
       <div className="mt-3 space-y-2">
         {rows.slice(0, 5).map((row) => (
-          <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(row.tone))} key={row.id}>
-            <p className="text-sm font-bold">{row.title}</p>
-            <p className="mt-1 text-xs">{row.detail}</p>
+          <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(row.tone))} key={row.id}>
+            <p className="text-sm font-bold text-slate-950">{row.title}</p>
+            <p className="mt-1 text-xs text-slate-500">{row.detail}</p>
           </div>
         ))}
         {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-xs font-semibold text-slate-500">{empty}</div> : null}
@@ -18908,7 +18922,7 @@ function IcuPatientMedicationAlertMeasurePanel({
                   </td>
                   <td className="px-3 py-3">
                     <div className="space-y-1">
-                      {item.triggers.slice(0, 4).map((trigger) => <p className="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700" key={trigger}>{trigger}</p>)}
+                      {item.triggers.slice(0, 4).map((trigger) => <p className="rounded-md border border-slate-200 border-l-rose-500 bg-white px-2 py-1 text-xs font-semibold text-slate-700" key={trigger}>{trigger}</p>)}
                     </div>
                   </td>
                   <td className="px-3 py-3">
@@ -19221,7 +19235,7 @@ function DashboardMatrixCell({
   if (column === "Risk") {
     return (
       <button
-        className="inline-flex min-h-14 w-full items-center justify-center"
+        className="inline-flex min-h-24 w-full items-center justify-center"
         type="button"
         onClick={() => onOpenRiskReference?.(patient)}
         title={`Risk score and sepsis reference - ${patient.bedNo}`}
@@ -19233,7 +19247,7 @@ function DashboardMatrixCell({
 
   if (cell.route) {
     return (
-      <Link className="inline-flex min-h-14 w-full items-center justify-center" href={cell.route} title={`${icuColumnLabel(column)} - ${cell.title}`}>
+      <Link className="inline-flex min-h-24 w-full items-center justify-center" href={cell.route} title={`${icuColumnLabel(column)} - ${cell.title}`}>
         {isAction ? <IcuActionCircleButton cell={cell} column={column} icon={Icon} /> : <VitalTrafficPill cell={cell} icon={Icon} />}
       </Link>
     );
@@ -19241,7 +19255,7 @@ function DashboardMatrixCell({
 
   return (
     <button
-      className="inline-flex min-h-14 w-full items-center justify-center"
+      className="inline-flex min-h-24 w-full items-center justify-center"
       type="button"
       onClick={() => toast.info(`${cell.title} opened for ${patient.bedNo}`)}
       title={`${icuColumnLabel(column)} - ${cell.title}`}
@@ -19298,7 +19312,7 @@ function IcuCommandSepsisReferenceDialog({ patient, onOpenChange }: { patient: I
 
 function VitalTrafficPill({ cell, icon: Icon }: { cell: DashboardCell; icon: typeof Activity }) {
   return (
-    <span className="grid min-h-20 w-full min-w-24 grid-rows-[40px_18px_14px] place-items-center">
+    <span className="grid min-h-24 w-full min-w-24 grid-rows-[42px_20px_16px] place-items-center">
       <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", dashboardToneSolidClass(cell.tone))}>
         <Icon className="h-3.5 w-3.5" />
         <span className="max-w-24 truncate whitespace-nowrap">{cell.title}</span>
@@ -19320,11 +19334,12 @@ function IcuActionCircleButton({ cell, column, icon: Icon }: { cell: DashboardCe
           ? "bg-amber-500 hover:bg-amber-600"
           : "bg-slate-700 hover:bg-slate-800";
   return (
-    <span className="flex min-h-20 w-full min-w-24 flex-col items-center justify-center">
+    <span className="grid min-h-24 w-full min-w-24 grid-rows-[42px_22px_14px] place-items-center">
       <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition", actionClass)}>
         <Icon className="h-4 w-4" />
       </span>
-      <span className="mt-1 block max-w-24 truncate whitespace-nowrap text-center text-xs font-bold leading-tight text-slate-800">{cell.title}</span>
+      <span className="block max-w-24 truncate whitespace-nowrap text-center text-xs font-bold leading-tight text-slate-800">{cell.title}</span>
+      <span aria-hidden className="invisible block max-w-24 truncate whitespace-nowrap text-center text-[11px] leading-none">-</span>
     </span>
   );
 }
@@ -19354,17 +19369,17 @@ function DashboardFocusStrip({ patients }: { patients: IcuPatient[] }) {
       </div>
       <div className="mt-4 grid gap-2 lg:grid-cols-2">
         {rows.map((row) => (
-          <Link className={cn("rounded-md border p-3 transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(row.tone))} href={`/nursing-icu/patient-board?patient=${row.patient.id}&view=smart-bed`} key={row.id}>
+          <Link className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md", patientDetailAccentClass(row.tone))} href={`/nursing-icu/patient-board?patient=${row.patient.id}&view=smart-bed`} key={row.id}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-bold">{row.patient.bedNo} - {row.label}</p>
-                <p className="mt-1 text-xs">{row.detail}</p>
+                <p className="text-sm font-bold text-slate-950">{row.patient.bedNo} - {row.label}</p>
+                <p className="mt-1 text-xs text-slate-600">{row.detail}</p>
               </div>
-              <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
+              <span className={cn("mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
             </div>
           </Link>
         ))}
-        {!rows.length ? <div className="rounded-md border border-dashed border-emerald-300 bg-emerald-50 p-5 text-center text-sm font-semibold text-emerald-800">No urgent action in selected view.</div> : null}
+        {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent action in selected view.</div> : null}
       </div>
     </div>
   );
@@ -19384,12 +19399,12 @@ function DashboardShiftPanel() {
       </div>
       <div className="mt-4 space-y-2">
         {rows.map((row) => (
-          <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(row.tone))} key={row.label}>
+          <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(row.tone))} key={row.label}>
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-bold">{row.label}</p>
+              <p className="text-sm font-bold text-slate-950">{row.label}</p>
               <span className={cn("h-2.5 w-2.5 rounded-full", dashboardToneDotClass(row.tone))} />
             </div>
-            <p className="mt-1 text-xs">{row.detail}</p>
+            <p className="mt-1 text-xs text-slate-600">{row.detail}</p>
           </div>
         ))}
       </div>
@@ -19416,16 +19431,16 @@ function DashboardOvernightEvents() {
         </div>
         <div className="mt-4 grid gap-2 lg:grid-cols-2">
           {rows.map((row) => (
-            <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(row.tone))} key={row.id}>
+            <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(row.tone))} key={row.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-bold">{row.patient}</p>
-                  <p className="mt-1 text-xs">{row.time} | {row.source}</p>
+                  <p className="text-sm font-bold text-slate-950">{row.patient}</p>
+                  <p className="mt-1 text-xs text-slate-500">{row.time} | {row.source}</p>
                 </div>
                 <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
               </div>
-              <p className="mt-3 text-sm font-semibold">{row.event}</p>
-              <p className="mt-1 text-xs">{row.action}</p>
+              <p className="mt-3 text-sm font-semibold text-slate-900">{row.event}</p>
+              <p className="mt-1 text-xs text-slate-600">{row.action}</p>
             </div>
           ))}
         </div>
@@ -19565,13 +19580,13 @@ function patientDashboardTone(patient: IcuPatient): DashboardCellTone {
 }
 
 function dashboardToneSurfaceClass(tone: DashboardCellTone) {
-  if (tone === "critical") return "border-red-300 bg-red-50 text-red-950";
-  if (tone === "danger") return "border-rose-300 bg-rose-50 text-rose-950";
-  if (tone === "warning") return "border-amber-300 bg-amber-50 text-amber-950";
-  if (tone === "success") return "border-emerald-300 bg-emerald-50 text-emerald-950";
-  if (tone === "purple") return "border-violet-300 bg-violet-50 text-violet-950";
-  if (tone === "muted") return "border-slate-300 bg-slate-50 text-slate-700";
-  return "border-sky-300 bg-sky-50 text-sky-950";
+  if (tone === "critical") return "border-slate-200 border-l-red-500 bg-white text-slate-950";
+  if (tone === "danger") return "border-slate-200 border-l-rose-500 bg-white text-slate-950";
+  if (tone === "warning") return "border-slate-200 border-l-amber-500 bg-white text-slate-950";
+  if (tone === "success") return "border-slate-200 border-l-sky-500 bg-white text-slate-950";
+  if (tone === "purple") return "border-slate-200 border-l-violet-500 bg-white text-slate-950";
+  if (tone === "muted") return "border-slate-200 border-l-slate-300 bg-white text-slate-700";
+  return "border-slate-200 border-l-sky-500 bg-white text-slate-950";
 }
 
 function dashboardTonePillClass(tone: DashboardCellTone) {
@@ -19602,6 +19617,16 @@ function dashboardToneDotClass(tone: DashboardCellTone) {
   if (tone === "purple") return "bg-violet-600";
   if (tone === "muted") return "bg-zinc-700";
   return "bg-sky-600";
+}
+
+function dashboardToneTextClass(tone: DashboardCellTone) {
+  if (tone === "critical") return "text-red-700";
+  if (tone === "danger") return "text-red-700";
+  if (tone === "warning") return "text-orange-700";
+  if (tone === "success") return "text-green-700";
+  if (tone === "purple") return "text-violet-700";
+  if (tone === "muted") return "text-slate-700";
+  return "text-sky-700";
 }
 
 type IcuHourlyVital = {
@@ -21860,13 +21885,13 @@ function DoctorRoundSignedPanel({ patient, savedRounds }: { patient?: IcuPatient
       </div>
       <div className="mt-3 space-y-2">
         {rows.map((round) => (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3" key={round.id}>
+          <div className="rounded-md border border-slate-200 border-l-sky-500 bg-white p-3 shadow-sm" key={round.id}>
             <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-bold text-emerald-950">{round.patient}</p>
-              <span className="rounded-full border border-emerald-300 bg-white px-2 py-0.5 text-xs font-bold text-emerald-700">{round.time}</span>
+              <p className="text-sm font-bold text-slate-950">{round.patient}</p>
+              <span className="rounded-full border border-sky-300 bg-white px-2 py-0.5 text-xs font-bold text-sky-700">{round.time}</span>
             </div>
-            <p className="mt-1 text-xs text-emerald-700">{round.mode} | {round.decision}</p>
-            <p className="mt-2 text-xs text-emerald-900">{round.summary}</p>
+            <p className="mt-1 text-xs text-slate-500">{round.mode} | {round.decision}</p>
+            <p className="mt-2 text-xs text-slate-700">{round.summary}</p>
           </div>
         ))}
         {!rows.length ? <EmptyWorkflowState title="No signed round yet" detail="Complete mandatory checks and sign the round." /> : null}
@@ -22320,10 +22345,9 @@ function DoctorRoundQueuePanel({
             return (
               <tr className={cn("border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40", patient.id === activePatientId ? "bg-sky-50/70" : "")} key={row.id}>
                 <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
-                  <Link className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={icuPatientDetailHref(patient.id, "overview")}>
-                    <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(rowTone))} />
-                    <p className="text-xs font-bold text-sky-700">{row.roundNo}. {patient.bedNo}</p>
-                    <p className="mt-1 text-sm font-bold text-slate-950">{patient.patientName}</p>
+                  <Link className="flex min-h-20 w-full flex-col justify-center rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={icuPatientDetailHref(patient.id, "overview")}>
+                    <p className={cn("text-sm font-bold", dashboardToneTextClass(rowTone))}>{patient.patientName}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-700">{row.roundNo}. {patient.bedNo}</p>
                     <p className="mt-1 truncate whitespace-nowrap text-xs text-slate-500">{patient.mrn} | {patient.unit}</p>
                   </Link>
                 </td>
@@ -22373,12 +22397,13 @@ function DoctorRoundQueuePanel({
                   <DoctorRoundPanelMatrixCell icon={CheckCircle2} title="Signed" detail={`${signedCount}`} tone={signedCount ? "success" : "muted"} showDetail={false} onClick={() => openPanel("signed")} />
                 </td>
                 <td className="px-2 py-2 text-center align-middle">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <button className="group flex w-full flex-col items-center justify-center" type="button" onClick={() => openPanel("workspace")}>
-                      <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(statusTone))}>
+                  <div className="flex min-h-20 items-center justify-center">
+                    <button className="group flex min-h-20 w-full flex-col items-center justify-center" type="button" onClick={() => openPanel("workspace")}>
+                      <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(statusTone))}>
                         <Stethoscope className="h-4 w-4" />
+                        <span className="max-w-20 truncate whitespace-nowrap">Entry</span>
                       </span>
-                      <span className="mt-1 text-xs font-bold text-slate-800">Round Entry</span>
+                      <span className="invisible mt-1 block max-w-32 truncate whitespace-nowrap text-center text-[11px] font-semibold leading-tight text-slate-600" aria-hidden="true">Round Entry</span>
                     </button>
                   </div>
                 </td>
@@ -22415,11 +22440,11 @@ function DoctorRoundPanelMatrixCell({
 }) {
   return (
     <button className="group flex min-h-20 w-full flex-col items-center justify-center" type="button" onClick={onClick}>
-      <span className={cn("inline-flex h-8 min-w-24 items-center justify-center gap-1 rounded-full px-2.5 text-[11px] font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.22)] transition group-hover:brightness-95", dashboardToneSolidClass(tone))}>
-        <Icon className="h-3.5 w-3.5" />
-        <span className="max-w-16 truncate whitespace-nowrap">{title}</span>
+      <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(tone))}>
+        <Icon className="h-4 w-4" />
+        <span className="max-w-20 truncate whitespace-nowrap">{title}</span>
       </span>
-      <span className={cn("mt-1 block max-w-24 truncate whitespace-nowrap text-[11px] font-semibold leading-tight text-slate-600", !showDetail && "invisible")} aria-hidden={!showDetail}>{detail || "-"}</span>
+      <span className={cn("mt-1 block max-w-32 truncate whitespace-nowrap text-center text-[11px] font-semibold leading-tight text-slate-600", !showDetail && "invisible")} aria-hidden={!showDetail}>{detail || "-"}</span>
     </button>
   );
 }
@@ -22441,9 +22466,9 @@ function DoctorRoundLinkMatrixCell({
 }) {
   return (
     <Link className="group flex min-h-20 w-full flex-col items-center justify-center" href={href}>
-      <span className={cn("inline-flex min-h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(tone))}>
+      <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(tone))}>
         <Icon className="h-4 w-4" />
-        <span className="max-w-24 truncate whitespace-nowrap">{title}</span>
+        <span className="max-w-20 truncate whitespace-nowrap">{title}</span>
       </span>
       <span className={cn("mt-1 block max-w-32 truncate whitespace-nowrap text-center text-[11px] font-semibold leading-tight text-slate-600", !showDetail && "invisible")} aria-hidden={!showDetail}>{detail || "-"}</span>
     </Link>
@@ -22795,7 +22820,7 @@ function DoctorRoundScenarioPanel({ scenarios }: { scenarios: DoctorRoundScenari
       </div>
       <div className="mt-4 space-y-2">
         {scenarios.map((scenario) => (
-          <div className={cn("rounded-md border p-3", scenario.blocking ? "border-red-300 bg-red-50" : clinicalToneSurfaceClass(scenario.tone))} key={scenario.id}>
+          <div className={cn("rounded-md border p-3", scenario.blocking ? "border-slate-200 border-l-rose-500 bg-white text-slate-950" : clinicalToneSurfaceClass(scenario.tone))} key={scenario.id}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-bold">{scenario.title}</p>
@@ -22917,19 +22942,19 @@ function EmptyWorkflowState({ title, detail }: { title: string; detail: string }
 }
 
 function clinicalToneSurfaceClass(tone: ClinicalTone) {
-  if (tone === "critical") return "border-red-300 bg-red-50 text-red-950";
-  if (tone === "danger") return "border-rose-300 bg-rose-50 text-rose-950";
-  if (tone === "warning") return "border-amber-300 bg-amber-50 text-amber-950";
-  if (tone === "success") return "border-emerald-300 bg-emerald-50 text-emerald-950";
-  if (tone === "purple") return "border-violet-300 bg-violet-50 text-violet-950";
-  return "border-sky-300 bg-sky-50 text-sky-950";
+  if (tone === "critical") return "border-slate-200 border-l-red-500 bg-white text-slate-950";
+  if (tone === "danger") return "border-slate-200 border-l-rose-500 bg-white text-slate-950";
+  if (tone === "warning") return "border-slate-200 border-l-amber-500 bg-white text-slate-950";
+  if (tone === "success") return "border-slate-200 border-l-sky-500 bg-white text-slate-950";
+  if (tone === "purple") return "border-slate-200 border-l-violet-500 bg-white text-slate-950";
+  return "border-slate-200 border-l-sky-500 bg-white text-slate-950";
 }
 
 function clinicalTonePillClass(tone: ClinicalTone) {
   if (tone === "critical") return "border-red-300 bg-red-50 text-red-700";
   if (tone === "danger") return "border-rose-300 bg-rose-50 text-rose-700";
   if (tone === "warning") return "border-amber-300 bg-amber-50 text-amber-700";
-  if (tone === "success") return "border-emerald-300 bg-emerald-50 text-emerald-700";
+  if (tone === "success") return "border-sky-300 bg-sky-50 text-sky-700";
   if (tone === "purple") return "border-violet-300 bg-violet-50 text-violet-700";
   return "border-sky-300 bg-sky-50 text-sky-700";
 }
@@ -22938,7 +22963,7 @@ function clinicalToneDotClass(tone: ClinicalTone) {
   if (tone === "critical") return "bg-red-600";
   if (tone === "danger") return "bg-rose-600";
   if (tone === "warning") return "bg-amber-500";
-  if (tone === "success") return "bg-emerald-600";
+  if (tone === "success") return "bg-sky-600";
   if (tone === "purple") return "bg-violet-600";
   return "bg-sky-600";
 }
@@ -23590,12 +23615,11 @@ function nursingStationWorkloadTone(items: SupervisionItem[]): DashboardCellTone
 function NursingStationPatientCell({ group, onOpen }: { group: NursingStationPatientGroup; onOpen: () => void }) {
   const tone = patientDashboardTone(group.patient);
   return (
-    <div className="relative min-h-24 rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:border-sky-300 hover:shadow-sm">
-      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(tone))} />
-      <button className="block w-full pr-5 text-left" type="button" onClick={onOpen}>
-        <p className="text-xs font-black text-slate-950">{group.patient.bedNo}</p>
-        <p className="mt-1 text-sm font-black text-slate-950">{group.patient.patientName}</p>
-        <p className="mt-1 text-xs text-slate-500">{group.patient.mrn} | {group.patient.unit}</p>
+    <div className="min-h-16 rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:border-sky-300 hover:shadow-sm">
+      <button className="block w-full text-left" type="button" onClick={onOpen}>
+        <p className={cn("truncate text-sm font-black", dashboardToneTextClass(tone))}>{group.patient.patientName}</p>
+        <p className="mt-1 truncate text-xs font-semibold text-slate-700">{group.patient.bedNo} | {group.patient.unit}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-500">{group.patient.mrn} | {group.patient.ageGender}</p>
       </button>
     </div>
   );
@@ -24037,7 +24061,10 @@ function NursingMedicationHistoryPanel({
       {section === "Allergy" ? (
         <div className="grid gap-3 lg:grid-cols-2">
           {allergyRows.map((row) => (
-            <div className={cn("rounded-md border p-4", row.severity === "High" ? "border-red-200 bg-red-50" : row.severity === "Medium" ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50")} key={row.id}>
+            <div className={cn(
+              "rounded-md border border-slate-200 bg-white p-4 shadow-sm",
+              patientDetailAccentClass(row.severity === "High" ? "danger" : row.severity === "Medium" ? "warning" : "success"),
+            )} key={row.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-black text-slate-950">{row.allergen}</p>
@@ -25335,48 +25362,42 @@ function IcuDischargeBoardRow({
     <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40">
       <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
         <Link
-          className="relative block min-h-24 rounded-md px-3 py-2 transition hover:bg-sky-50"
+          className="block min-h-16 rounded-md px-3 py-2 transition hover:bg-sky-50"
           href={icuPatientDetailHref(row.patient.id, "overview")}
           title={`Open ${row.patient.patientName} ICU detail`}
         >
-          <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(dischargePatientTone(row)))} />
-          <p className="text-xs font-bold text-sky-700">{row.patient.bedNo}</p>
-          <p className="mt-1 text-sm font-bold text-slate-950">{row.patient.patientName}</p>
-          <p className="mt-1 text-xs text-slate-500">{row.patient.mrn} | {row.patient.ageGender}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(dischargePatientTone(row)))}>Score {row.patient.criticalityScore}</span>
-            <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700">View detail</span>
-          </div>
+          <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(dischargePatientTone(row)))}>{row.patient.patientName}</p>
+          <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.patient.bedNo} | {row.patient.unit}</p>
+          <p className="mt-0.5 truncate text-xs text-slate-500">{row.patient.mrn} | {row.patient.ageGender}</p>
         </Link>
       </td>
       <td className="px-4 py-2 align-middle">
-        <div className="min-h-24">
+        <div className="min-h-16">
           <p className="text-sm font-bold text-slate-950">{row.patient.diagnosis}</p>
           <p className="mt-1 text-xs text-slate-500">{row.patient.unit} | {row.patient.assignedWardNurse}</p>
           <p className="mt-2 text-xs font-semibold text-slate-700">{row.orderType}</p>
-          <span className={cn("mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(dischargeStatusDashboardTone(row.status)))}>{row.patient.currentStatus}</span>
         </div>
       </td>
       <td className="px-2 py-2 text-center align-middle">
-        <IcuDischargeTrafficCell icon={ArrowRightLeft} title={row.destinationType} detail={row.destination} tone={dischargeDestinationTone(row)} onClick={onOpen} />
+        <IcuDischargeTrafficCell icon={ArrowRightLeft} title={row.destinationType} detail={row.destination} tone={dischargeDestinationTone(row)} showDetail={false} onClick={onOpen} />
       </td>
       <td className="px-2 py-2 text-center align-middle">
-        <IcuDischargeTrafficCell icon={CheckCircle2} title={`${readiness}%`} detail={row.status} tone={dischargeReadinessTone(readiness)} onClick={onOpen} />
+        <IcuDischargeTrafficCell icon={CheckCircle2} title={`${readiness}%`} detail={row.status} tone={dischargeReadinessTone(readiness)} showDetail={false} onClick={onOpen} />
       </td>
       <td className="px-2 py-2 text-center align-middle">
-        <IcuDischargeActionCell icon={AlertTriangle} title={row.blockers.length ? `${row.blockers.length} open` : "Clear"} detail={row.blockers[0] ?? "No active blocker"} tone={dischargeBlockerTone(row)} onClick={onOpen} />
+        <IcuDischargeActionCell icon={AlertTriangle} title={row.blockers.length ? `${row.blockers.length} open` : "Clear"} detail={row.blockers[0] ?? "No active blocker"} tone={dischargeBlockerTone(row)} showDetail={false} onClick={onOpen} />
       </td>
       <td className="px-2 py-2 text-center align-middle">
-        <IcuDischargeTrafficCell icon={ClipboardCheck} title={`${clearanceDone} done`} detail={`${clearancePending} pending`} tone={clearancePending ? "warning" : "success"} onClick={onOpen} />
+        <IcuDischargeTrafficCell icon={ClipboardCheck} title={`${clearanceDone} done`} detail={`${clearancePending} pending`} tone={clearancePending ? "warning" : "success"} showDetail={false} onClick={onOpen} />
       </td>
       <td className="px-2 py-2 text-center align-middle">
-        <IcuDischargeActionCell icon={FileText} title={`${row.handover.length} points`} detail={row.handover[0] ?? row.receivingTeam} tone={row.handover.length >= 3 ? "info" : "warning"} onClick={onOpen} />
+        <IcuDischargeActionCell icon={FileText} title={`${row.handover.length} points`} detail={row.handover[0] ?? row.receivingTeam} tone={row.handover.length >= 3 ? "info" : "warning"} showDetail={false} onClick={onOpen} />
       </td>
       <td className="px-2 py-2 text-center align-middle">
-        <IcuDischargeActionCell icon={ArrowRightLeft} title={row.eta} detail={row.transport} tone={dischargeTransportTone(row)} onClick={onOpen} />
+        <IcuDischargeActionCell icon={ArrowRightLeft} title={row.eta} detail={row.transport} tone={dischargeTransportTone(row)} showDetail={false} onClick={onOpen} />
       </td>
       <td className="px-2 py-2 text-center align-middle">
-        <IcuDischargeTrafficCell icon={BedDouble} title={dischargeBedReleaseTitle(row)} detail={row.bedRelease} tone={dischargeBedReleaseTone(row)} />
+        <IcuDischargeTrafficCell icon={BedDouble} title={dischargeBedReleaseTitle(row)} detail={row.bedRelease} tone={dischargeBedReleaseTone(row)} showDetail={false} />
       </td>
       <td className="px-2 py-2 text-center align-middle">
         <div className="flex min-h-20 items-center justify-center gap-2">
@@ -25403,21 +25424,23 @@ function IcuDischargeTrafficCell({
   title,
   detail,
   tone,
+  showDetail = true,
   onClick,
 }: {
   icon: typeof Activity;
   title: string;
   detail: string;
   tone: DashboardCellTone;
+  showDetail?: boolean;
   onClick?: () => void;
 }) {
   const content = (
-    <span className="flex min-h-20 w-full min-w-24 flex-col items-center justify-center">
+    <span className={cn("flex w-full min-w-24 flex-col items-center justify-center", showDetail ? "min-h-20" : "min-h-14")}>
       <span className={cn("inline-flex min-h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition", dashboardToneSolidClass(tone))}>
         <Icon className="h-4 w-4" />
         <span className="max-w-24 truncate">{title}</span>
       </span>
-      <span className="mt-1 block max-w-32 text-center text-[11px] font-semibold leading-tight text-slate-600">{detail}</span>
+      {showDetail ? <span className="mt-1 block max-w-32 text-center text-[11px] font-semibold leading-tight text-slate-600">{detail}</span> : null}
     </span>
   );
 
@@ -25435,21 +25458,23 @@ function IcuDischargeActionCell({
   title,
   detail,
   tone,
+  showDetail = true,
   onClick,
 }: {
   icon: typeof Activity;
   title: string;
   detail: string;
   tone: DashboardCellTone;
+  showDetail?: boolean;
   onClick?: () => void;
 }) {
   const content = (
-    <span className="flex min-h-20 w-full min-w-24 flex-col items-center justify-center">
+    <span className={cn("flex w-full min-w-24 flex-col items-center justify-center", showDetail ? "min-h-20" : "min-h-14")}>
       <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition", dashboardToneSolidClass(tone))}>
         <Icon className="h-4 w-4" />
       </span>
       <span className="mt-1 block text-center text-xs font-bold leading-tight text-slate-800">{title}</span>
-      <span className="mt-0.5 block max-w-32 truncate text-center text-[11px] leading-tight text-slate-500">{detail}</span>
+      {showDetail ? <span className="mt-0.5 block max-w-32 truncate text-center text-[11px] leading-tight text-slate-500">{detail}</span> : null}
     </span>
   );
 
@@ -26020,26 +26045,51 @@ async function downloadIcuDischargeSummaryPdf(
   dischargeMeds: ReturnType<typeof icuDischargeMedicationRows>,
   pendingRows: ReturnType<typeof icuDischargePendingRows>,
 ) {
-  const toastId = toast.loading("Preparing ICU discharge summary PDF...");
+  const toastId = toast.loading("Preparing ICU discharge summary print view...");
   let container: HTMLDivElement | null = null;
   let root: ReturnType<typeof createRoot> | null = null;
+  let printStyle: HTMLStyleElement | null = null;
 
   try {
-    const dynamicImport = new Function("specifier", "return import(specifier)") as (specifier: string) => Promise<any>;
-    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-      dynamicImport("html2canvas"),
-      dynamicImport("jspdf"),
-    ]);
-
     container = document.createElement("div");
+    container.id = "icu-discharge-summary-print-root";
+    container.style.display = "none";
     container.style.position = "fixed";
-    container.style.left = "-12000px";
+    container.style.left = "0";
     container.style.top = "0";
-    container.style.width = "826px";
+    container.style.width = "100%";
     container.style.background = "#f1f5f9";
     container.style.pointerEvents = "none";
-    container.style.zIndex = "-1";
+    container.style.zIndex = "9999";
     document.body.appendChild(container);
+
+    printStyle = document.createElement("style");
+    printStyle.textContent = `
+      @media print {
+        body > *:not(#icu-discharge-summary-print-root) {
+          display: none !important;
+        }
+
+        #icu-discharge-summary-print-root {
+          display: block !important;
+          position: static !important;
+          width: 100% !important;
+          background: #ffffff !important;
+          pointer-events: auto !important;
+        }
+
+        #icu-discharge-summary-print-root [data-icu-discharge-pdf-page='true'] {
+          box-shadow: none !important;
+          margin: 0 auto !important;
+        }
+
+        @page {
+          margin: 12mm;
+          size: A4 portrait;
+        }
+      }
+    `;
+    document.head.appendChild(printStyle);
 
     root = createRoot(container);
     flushSync(() => {
@@ -26064,37 +26114,17 @@ async function downloadIcuDischargeSummaryPdf(
     const pageElements = Array.from(container.querySelectorAll<HTMLElement>("[data-icu-discharge-pdf-page='true']"));
     if (!pageElements.length) throw new Error("ICU discharge PDF page is not available.");
 
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    for (const [index, pageElement] of pageElements.entries()) {
-      const canvas = await html2canvas(pageElement, {
-        backgroundColor: "#ffffff",
-        logging: false,
-        scale: 2,
-        useCORS: true,
-        windowWidth: pageElement.scrollWidth,
-        windowHeight: pageElement.scrollHeight,
-      });
-      const imageData = canvas.toDataURL("image/png");
-      const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
-      const renderWidth = canvas.width * ratio;
-      const renderHeight = canvas.height * ratio;
-      const x = (pdfWidth - renderWidth) / 2;
-
-      if (index > 0) pdf.addPage();
-      pdf.addImage(imageData, "PNG", x, 0, renderWidth, renderHeight, undefined, "FAST");
-    }
-
-    pdf.save(`${icuDischargeSummaryNo(row)}.pdf`);
-    toast.success("ICU discharge summary PDF downloaded", { id: toastId });
+    window.print();
+    toast.success("ICU discharge summary print dialog opened. Choose Save as PDF to download.", { id: toastId });
   } catch (error) {
     console.error(error);
-    toast.error("PDF download failed. Please use Preview PDF and print for now.", { id: toastId });
+    toast.error("PDF print view failed. Please use Preview PDF and print for now.", { id: toastId });
   } finally {
-    root?.unmount();
-    container?.remove();
+    window.setTimeout(() => {
+      root?.unmount();
+      container?.remove();
+      printStyle?.remove();
+    }, 500);
   }
 }
 

@@ -12,6 +12,7 @@ import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/ui/status-pill";
 import { users } from "@/data/mock";
+import { cn } from "@/lib/utils";
 import {
   poctPatients,
   poctTests,
@@ -434,10 +435,28 @@ function DateTextInput({
 function ActionButtons({ mode, onModeChange }: { mode?: PoctWorkspaceMode; onModeChange?: (mode: PoctWorkspaceMode) => void }) {
   return (
     <>
-      <Button size="sm" type="button" variant={mode === "add" ? "default" : "outline"} onClick={() => onModeChange?.("add")}>
+      <Button
+        className={cn(
+          "rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900",
+          mode === "add" && "bg-white text-primary shadow-sm hover:bg-white hover:text-primary",
+        )}
+        size="sm"
+        type="button"
+        variant="outline"
+        onClick={() => onModeChange?.("add")}
+      >
         Add POCT
       </Button>
-      <Button size="sm" type="button" variant={mode === "results" ? "default" : "outline"} onClick={() => onModeChange?.("results")}>
+      <Button
+        className={cn(
+          "rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900",
+          mode === "results" && "bg-white text-primary shadow-sm hover:bg-white hover:text-primary",
+        )}
+        size="sm"
+        type="button"
+        variant="outline"
+        onClick={() => onModeChange?.("results")}
+      >
         View POCT Result
       </Button>
     </>

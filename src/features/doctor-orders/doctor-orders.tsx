@@ -131,7 +131,7 @@ const defaultTab = defaultTabProp && tabs.some((tab) => tab.id === defaultTabPro
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="flex h-8 min-w-[110px] flex-row items-center justify-center gap-1.5 border border-transparent px-2.5 text-xs sm:h-10 sm:min-w-[132px] sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex h-8 min-w-[110px] flex-row items-center justify-center gap-1.5 rounded-lg border border-transparent bg-transparent px-2.5 text-xs font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 sm:h-10 sm:min-w-[132px] sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
                 >
                   <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                   <span className="min-w-0 truncate leading-none">{tab.label}</span>

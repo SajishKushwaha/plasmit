@@ -603,8 +603,8 @@ export function ResultsWorkflowView({
                 return (
                   <button
                     className={cn(
-                      "inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-all duration-200",
-                      active ? "border-primary bg-primary text-white shadow-sm" : "border-border bg-white text-muted-foreground hover:border-primary/40 hover:bg-primary-soft hover:text-foreground",
+                      "inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-transparent px-3 text-sm font-bold transition-all duration-200",
+                      active ? "bg-white text-primary shadow-sm" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
                     )}
                     key={department.id}
                     onClick={() => setActiveDepartment(department.id)}
@@ -612,7 +612,7 @@ export function ResultsWorkflowView({
                   >
                     <Icon className="h-4 w-4" />
                     {department.label}
-                    <span className={cn("rounded-full px-2 py-0.5 text-xs", active ? "bg-white/20 text-white" : "bg-surface-muted text-muted-foreground")}>{count}</span>
+                    <span className={cn("rounded-full px-2 py-0.5 text-xs", active ? "bg-primary-soft text-primary" : "bg-surface-muted text-muted-foreground")}>{count}</span>
                   </button>
                 );
               })}

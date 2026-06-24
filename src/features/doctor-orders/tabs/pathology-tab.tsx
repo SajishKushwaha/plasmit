@@ -194,9 +194,9 @@ export function PathologyTab() {
                   key={tab}
                   type="button"
                   size="sm"
-                  variant={activeTab === tab ? "default" : "outline"}
+                  variant="outline"
                   onClick={() => setActiveTab(tab)}
-                  className="min-w-[132px]"
+                  className={["min-w-[132px] rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900", activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary" : ""].join(" ")}
                 >
                   {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : tab === "result-review" ? "Result Review" : "Critical Findings"}
                 </Button>

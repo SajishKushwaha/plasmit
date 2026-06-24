@@ -19,6 +19,7 @@ export function ProfileMenu() {
   function handleLogout() {
     window.localStorage.removeItem("hk-general-auth");
     window.localStorage.removeItem("hk-general-remember");
+    window.localStorage.removeItem("plasmit-access-scope");
     window.localStorage.removeItem("plasmit-role");
     window.localStorage.removeItem("plasmit-ui-preference-v1");
     window.location.href = "/login";

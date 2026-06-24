@@ -31,6 +31,7 @@ import { ResultsCenterView } from "@/features/results/components/ResultsCenterVi
 import { DoctorOrdersPage } from "@/features/doctor-orders/doctor-orders";
 import { AddPoctPage } from "@/features/poct/poct-pages";
 import { IntakeOutputPage } from "@/features/intake-output/intake-output-page";
+import { ProgressNotesPanel } from "@/features/doctor-dashboard1/progress-notes";
 
 import { cn } from "@/lib/utils";
 
@@ -156,7 +157,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
               <PatientTab icon={Radio} label="Live Monitoring" value="live-monitoring" />
               <PatientTab icon={FlaskConical} label="Results" value="results" />
               <PatientTab icon={HeartPulse} label="Vitals" value="vitals" />
-              <PatientTab icon={ClipboardCheck} label="Nurse Timeline" value="shift-summary" />
+              <PatientTab icon={ClipboardCheck} label="Progress Note" value="shift-summary" />
               <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
               <PatientTab icon={ChartNoAxesCombined} label="POCT" value="Poct" />
               <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
@@ -225,7 +226,10 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
 
 function PatientTab({ icon: Icon, label, value }: { icon: typeof Activity; label: string; value: string }) {
   return (
-    <TabsTrigger className="h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm data-[state=active]:text-primary" value={value}>
+    <TabsTrigger
+      className="h-10 min-w-[132px] shrink-0 rounded-lg bg-transparent px-3 text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+      value={value}
+    >
       <span className="inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap">
         <Icon className="h-4 w-4 shrink-0" />
         <span className="truncate">{label}</span>
@@ -356,104 +360,7 @@ function CareRow({ label, value }: { label: string; value: string }) {
 }
 
 function NurseShiftSummaryTimeline({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
-  const notes = buildNurseShiftNotes(patient, rapidReviewPatient);
-
-  return (
-    <Card className="overflow-hidden border-border/80">
-      <div className="flex flex-col gap-3 border-b border-border bg-white px-4 py-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="text-base font-semibold text-foreground">Nurse Timeline</div>
-          <div className="mt-1 text-sm text-muted-foreground">
-            Shift timeline for {patient.name} | {rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`} | {rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed}
-          </div>
-        </div>
-        <Button size="sm" type="button">
-          <ClipboardCheck className="h-4 w-4" />
-          Add Nurse Note
-        </Button>
-      </div>
-
-      <CardContent className="max-h-[68dvh] overflow-y-auto p-4 pr-3">
-        <div className="relative space-y-6 pl-7 pr-2">
-          <div className="absolute bottom-3 left-[18px] top-3 w-px bg-border" />
-          {notes.map((note) => (
-            <div className="relative" key={note.id}>
-              <div className="absolute -left-[31px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#2d8ac8] text-white shadow-sm">
-                <ClipboardCheck className="h-3.5 w-3.5" />
-              </div>
-              <div className="mb-2 inline-flex rounded bg-[#2d8ac8] px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
-                {note.timestamp}
-              </div>
-              <div className="rounded-md border border-border bg-[#f7f7f7] shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-                  <div className="font-semibold text-[#3ba3d8]">{patient.name} ({note.bedCode})</div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{note.status}</span>
-                    <span>Created By: {note.createdBy}</span>
-                  </div>
-                </div>
-                <div className="space-y-3 px-3 py-3 text-sm">
-                  <div>
-                    <div className="text-xs font-bold text-foreground">Note</div>
-                    <p className="mt-1 text-muted-foreground">{note.note}</p>
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-foreground">Comment</div>
-                    <p className="mt-1 text-muted-foreground">{note.comment}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function buildNurseShiftNotes(patient: Dashboard1Patient, rapidReviewPatient?: RapidReviewPatient) {
-  const nurse = patientTone(patient) === "red" ? "Nurse Jason Abbott" : patientTone(patient) === "orange" ? "Nurse Priya Menon" : "Nurse Super Admin";
-  const vitalsSummary = `HR ${patient.hr.value} bpm, SpO2 ${patient.spo2.value}%, BP ${patient.abps.value}/${patient.abpd.value}, Temp ${patient.temperature.value} C.`;
-  const bedCode = rapidReviewPatient?.uhid?.replace("UHID-", "") ?? String(9000 + patient.id);
-
-  return [
-    {
-      id: "note-1",
-      timestamp: "17/06/2026 06:45 PM",
-      bedCode,
-      status: "Signed",
-      note: `Evening shift received. ${patient.diagnosis}. ${vitalsSummary}`,
-      comment: "Continue ordered monitoring, maintain aspiration precautions, and inform doctor if vitals worsen.",
-      createdBy: nurse,
-    },
-    {
-      id: "note-2",
-      timestamp: "17/06/2026 02:15 PM",
-      bedCode,
-      status: "Reviewed",
-      note: "Medication round completed. Patient tolerated oral intake and routine care.",
-      comment: "Follow diet plan and repeat vitals as scheduled for the next nursing round.",
-      createdBy: "Nurse Super Admin",
-    },
-    {
-      id: "note-3",
-      timestamp: "17/06/2026 09:30 AM",
-      bedCode,
-      status: "Signed",
-      note: "Morning assessment documented. Bedside safety checks completed.",
-      comment: "Doctor instruction acknowledged. Keep patient under observation and update shift handover.",
-      createdBy: "Nurse Priya Menon",
-    },
-    {
-      id: "note-4",
-      timestamp: "16/06/2026 08:10 PM",
-      bedCode,
-      status: "Signed",
-      note: "Previous nurse timeline added with intake, comfort, medication, and family update.",
-      comment: "No new adverse event reported during the previous shift.",
-      createdBy: "Nurse Super Admin",
-    },
-  ];
+  return <ProgressNotesPanel patient={patient} rapidReviewPatient={rapidReviewPatient} tone={patientTone(patient)} />;
 }
 
 function PatientVitalsTabs({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
@@ -461,11 +368,11 @@ function PatientVitalsTabs({ patient, rapidReviewPatient }: { patient: Dashboard
     <Tabs className="space-y-4" defaultValue="chart">
       <div className="flex justify-start rounded-xl border border-border bg-white p-1.5 shadow-sm">
         <TabsList className="no-tab-scroll-hint grid w-full max-w-[420px] grid-cols-2 rounded-lg bg-surface-muted/70 p-1">
-          <TabsTrigger className="h-10 justify-center gap-2 rounded-lg text-sm data-[state=active]:text-primary" value="chart">
+          <TabsTrigger className="h-10 justify-center gap-2 rounded-lg bg-transparent text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm" value="chart">
             <ClipboardCheck className="h-4 w-4" />
             Chart
           </TabsTrigger>
-          <TabsTrigger className="h-10 justify-center gap-2 rounded-lg text-sm data-[state=active]:text-primary" value="graph">
+          <TabsTrigger className="h-10 justify-center gap-2 rounded-lg bg-transparent text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm" value="graph">
             <ChartNoAxesCombined className="h-4 w-4" />
             Graph
           </TabsTrigger>

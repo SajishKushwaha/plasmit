@@ -11,6 +11,10 @@ export function RoleSwitcher({ className, portal = true }: { className?: string;
   const { role, setRole, roles } = useRole();
   const router = useRouter();
 
+  if (roles.length <= 1) {
+    return null;
+  }
+
   const handleRoleChange = (value: string) => {
     const nextRole = value as typeof role;
     setRole(nextRole);
@@ -23,7 +27,7 @@ export function RoleSwitcher({ className, portal = true }: { className?: string;
       router.push("/icu-nursing");
     } else if (nextRole === "Nurse ICU") {
       router.push("/nursing-icu");
-    } else if (nextRole === "Nurse ICU 2") {
+    } else if (nextRole === "ICU" || nextRole === "Nurse ICU 2") {
       router.push("/icu-command-center");
     } else {
       // Navigate to main dashboard for other roles

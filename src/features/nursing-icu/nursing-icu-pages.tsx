@@ -16389,9 +16389,25 @@ function icuPatientEventSeverityFromPriority(priority: string): IcuPatientEventR
   return "Info";
 }
 
+type IcuShiftFocus = "all" | "pending" | "critical" | "completed";
+
+type IcuShiftHandoverRow = {
+  id: string;
+  type: "Alert" | "Medication" | "Task" | "Doctor order" | "I/O" | "Vitals" | "Completed";
+  item: string;
+  time: string;
+  assignedTo: string;
+  status: string;
+  source: string;
+  nextAction: string;
+  tone: DashboardCellTone;
+  focus: Exclude<IcuShiftFocus, "all">;
+};
+
 function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
   const shiftOptions = React.useMemo(() => icuShiftSummaryScenarios(), []);
   const [shift, setShift] = React.useState(shiftOptions[0]?.label ?? "Morning shift (07:00-15:00)");
+  const [focus, setFocus] = React.useState<IcuShiftFocus>("all");
   const activeShift = shiftOptions.find((option) => option.label === shift) ?? shiftOptions[0];
   const patientHistoryDates = React.useMemo(() => {
     const dates = intakeOutputRows.filter((row) => row.patientId === patient.id).map((row) => row.date);
@@ -16403,6 +16419,11 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
   const [unitReviewer, setUnitReviewer] = React.useState(patient.assignedUnitNurse);
   const summary = React.useMemo(() => buildWholeShiftSummary(patient, outgoingNurse, shift), [outgoingNurse, patient, shift]);
   const historyRows = React.useMemo(() => buildIcuShiftHistoryRows(patient, historyDate, shiftOptions), [historyDate, patient, shiftOptions]);
+  const handoverRows = React.useMemo(() => buildIcuShiftHandoverRows(patient), [patient]);
+  const visibleRows = focus === "all" ? handoverRows : handoverRows.filter((row) => row.focus === focus);
+  const criticalRows = handoverRows.filter((row) => row.focus === "critical");
+  const pendingRows = handoverRows.filter((row) => row.focus === "pending");
+  const completedRows = handoverRows.filter((row) => row.focus === "completed");
   const wardNurseOptions = Array.from(new Set([patient.assignedWardNurse, activeShift?.outgoing, activeShift?.incoming, "Ward Nurse Kavita", "Ward Nurse Arjun", "Night Nurse Leena", "Ward Nurse Neha"].filter(Boolean)));
   const unitNurseOptions = Array.from(new Set([patient.assignedUnitNurse, "Unit Nurse Priya", "Unit Nurse Meera", "Head Nurse Sana"].filter(Boolean)));
   const updateShift = (nextShift: string) => {
@@ -16473,10 +16494,65 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <IcuPatientShiftSummaryList title="Completed in shift" items={summary.completed} tone="success" />
-        <IcuPatientShiftSummaryList title="Pending for next nurse" items={summary.pending} tone={summary.pending.length ? "warning" : "success"} />
-        <IcuPatientShiftSummaryList title="Critical watch" items={summary.critical} tone={summary.critical.some((item) => item !== "No critical watch item captured") ? "danger" : "success"} />
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-black text-slate-950">Handover queue</p>
+            <p className="mt-0.5 text-xs font-semibold text-slate-500">{patient.bedNo} | {patient.patientName} | {activeShift?.time ?? shift}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(["all", "critical", "pending", "completed"] as IcuShiftFocus[]).map((option) => (
+              <button
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-bold transition",
+                  focus === option ? "border-sky-400 bg-sky-50 text-sky-900 shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
+                )}
+                key={option}
+                type="button"
+                onClick={() => setFocus(option)}
+              >
+                {option === "all" ? `All ${handoverRows.length}` : option === "critical" ? `Critical ${criticalRows.length}` : option === "pending" ? `Pending ${pendingRows.length}` : `Completed ${completedRows.length}`}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-3">Type</th>
+                <th className="px-3 py-3">Handover Item</th>
+                <th className="px-3 py-3">Time</th>
+                <th className="px-3 py-3">Assigned To</th>
+                <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3">Source</th>
+                <th className="px-3 py-3">Next Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {visibleRows.map((row) => (
+                <tr className="align-middle hover:bg-slate-50" key={row.id}>
+                  <td className="px-3 py-3">
+                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{row.type}</span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <p className="font-semibold leading-5 text-slate-700">{row.item}</p>
+                  </td>
+                  <td className="px-3 py-3 font-bold text-slate-800">{row.time}</td>
+                  <td className="px-3 py-3 font-semibold text-slate-700">{row.assignedTo}</td>
+                  <td className="px-3 py-3"><StatusPill tone={smartBedStatusToneFromDashboard(row.tone)}>{row.status}</StatusPill></td>
+                  <td className="px-3 py-3 text-xs font-semibold text-slate-600">{row.source}</td>
+                  <td className="px-3 py-3 text-xs font-bold text-slate-800">{row.nextAction}</td>
+                </tr>
+              ))}
+              {!visibleRows.length ? (
+                <tr>
+                  <td className="px-3 py-8 text-center text-sm font-semibold text-slate-500" colSpan={7}>No handover item for selected focus.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 lg:grid-cols-2">
@@ -16526,6 +16602,149 @@ function IcuShiftNurseRoleCard({ label, name, tone }: { label: string; name: str
       <p className="mt-1 truncate text-sm font-black text-slate-950">{name}</p>
     </div>
   );
+}
+
+function buildIcuShiftHandoverRows(patient: IcuPatient): IcuShiftHandoverRow[] {
+  const alerts = icuAlerts
+    .filter((row) => row.patientId === patient.id && row.status !== "Resolved")
+    .map((row): IcuShiftHandoverRow => {
+      const critical = row.severity === "Critical" || row.severity === "High";
+      return {
+        id: `shift-alert-${row.id}`,
+        type: "Alert",
+        item: `${row.type}: ${row.message}`,
+        time: row.createdAt,
+        assignedTo: row.owner,
+        status: row.status,
+        source: row.source,
+        nextAction: row.status === "Open" ? "Acknowledge and close clinical response" : "Track closure",
+        tone: critical ? "danger" : "warning",
+        focus: critical ? "critical" : "pending",
+      };
+    });
+
+  const meds = medicationRows
+    .filter((row) => row.patientId === patient.id && (row.status === "Due" || row.status === "Late"))
+    .map((row): IcuShiftHandoverRow => ({
+      id: `shift-med-${row.id}`,
+      type: "Medication",
+      item: `${row.medication} ${row.dose}`,
+      time: row.scheduledTime,
+      assignedTo: row.administeredBy === "-" ? patient.assignedWardNurse : row.administeredBy,
+      status: row.status,
+      source: "MAR",
+      nextAction: row.status === "Late" ? "Give now or document hold reason" : "Give due dose",
+      tone: row.status === "Late" ? "danger" : "warning",
+      focus: row.status === "Late" ? "critical" : "pending",
+    }));
+
+  const tasks = icuTasks
+    .filter((row) => row.patientId === patient.id && row.status !== "Completed")
+    .map((row): IcuShiftHandoverRow => {
+      const critical = row.status === "Overdue" || row.status === "Escalated" || row.priority === "Critical";
+      return {
+        id: `shift-task-${row.id}`,
+        type: "Task",
+        item: row.title,
+        time: row.dueTime,
+        assignedTo: row.assignedTo,
+        status: row.status,
+        source: row.createdBy,
+        nextAction: critical ? "Escalate or complete before handover" : "Complete in next shift",
+        tone: critical ? "danger" : "warning",
+        focus: critical ? "critical" : "pending",
+      };
+    });
+
+  const instructions = doctorInstructions
+    .filter((row) => row.patientId === patient.id && row.status !== "Completed")
+    .map((row): IcuShiftHandoverRow => {
+      const critical = row.priority === "Critical" || row.priority === "High";
+      return {
+        id: `shift-order-${row.id}`,
+        type: "Doctor order",
+        item: row.instruction,
+        time: row.dueTime,
+        assignedTo: row.assignedNurse,
+        status: row.status,
+        source: row.doctor,
+        nextAction: "Acknowledge and document execution",
+        tone: critical ? "danger" : "info",
+        focus: critical ? "critical" : "pending",
+      };
+    });
+
+  const fluidRows = intakeOutputRows
+    .filter((row) => row.patientId === patient.id && (row.status === "Pending review" || (row.kind === "Output" && row.quantityMl < 30)))
+    .slice(-6)
+    .map((row): IcuShiftHandoverRow => {
+      const lowOutput = row.kind === "Output" && row.quantityMl < 30;
+      return {
+        id: `shift-io-${row.id}`,
+        type: "I/O",
+        item: `${row.component} ${row.quantityMl} ml`,
+        time: row.time,
+        assignedTo: row.nurse,
+        status: row.status,
+        source: row.source,
+        nextAction: lowOutput ? "Review urine/fluid plan" : "Verify I/O entry",
+        tone: lowOutput ? "danger" : "warning",
+        focus: lowOutput ? "critical" : "pending",
+      };
+    });
+
+  const abnormalVitals = icuVitals
+    .filter((row) => row.patientId === patient.id && row.abnormal)
+    .slice(-2)
+    .map((row): IcuShiftHandoverRow => ({
+      id: `shift-vital-${row.id}`,
+      type: "Vitals",
+      item: `SpO2 ${row.spo2}%, BP ${row.bp}, RR ${row.respiratoryRate}/min`,
+      time: row.time,
+      assignedTo: row.nurse,
+      status: "Abnormal",
+      source: "Vitals chart",
+      nextAction: "Repeat vitals and keep doctor informed",
+      tone: "danger",
+      focus: "critical",
+    }));
+
+  const completed = [
+    ...medicationRows
+      .filter((row) => row.patientId === patient.id && row.status === "Administered")
+      .slice(-2)
+      .map((row): IcuShiftHandoverRow => ({
+        id: `shift-done-med-${row.id}`,
+        type: "Completed",
+        item: `${row.medication} ${row.dose} administered`,
+        time: row.actualTime,
+        assignedTo: row.administeredBy,
+        status: "Completed",
+        source: "MAR",
+        nextAction: "No action",
+        tone: "success",
+        focus: "completed",
+      })),
+    ...intakeOutputRows
+      .filter((row) => row.patientId === patient.id && (row.status === "Signed" || row.status === "Auto synced"))
+      .slice(-2)
+      .map((row): IcuShiftHandoverRow => ({
+        id: `shift-done-io-${row.id}`,
+        type: "Completed",
+        item: `${row.kind}: ${row.component} ${row.quantityMl} ml`,
+        time: row.time,
+        assignedTo: row.nurse,
+        status: row.status,
+        source: row.source,
+        nextAction: "No action",
+        tone: "success",
+        focus: "completed",
+      })),
+  ];
+
+  const rows = [...alerts, ...meds, ...tasks, ...instructions, ...fluidRows, ...abnormalVitals, ...completed];
+  const priority: Record<IcuShiftHandoverRow["focus"], number> = { critical: 0, pending: 1, completed: 2 };
+  return rows.sort((left, right) => priority[left.focus] - priority[right.focus] || left.time.localeCompare(right.time));
 }
 
 function icuShiftSummaryScenarios() {

@@ -370,7 +370,10 @@ function IntakeOutputWorkspaceInner({
                 <div className="flex h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white p-1">
                   {(["Table", "Graph"] satisfies IoMode[]).map((option) => (
                     <button
-                      className={cn("flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded px-2 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
+                      className={cn(
+                        "flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg bg-transparent px-2 text-xs font-bold text-slate-600 transition hover:bg-white/70 hover:text-slate-900",
+                        mode === option && "bg-white text-primary shadow-sm hover:bg-white hover:text-primary",
+                      )}
                       key={option}
                       type="button"
                       onClick={() => setMode(option)}

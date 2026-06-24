@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 import { previousTestOrders, resultBlocks as initialResultBlocks, groupedTests, summaryRows as initialSummaryRows, testList } from "./pathology/data";
 
@@ -203,9 +204,12 @@ export function LaboratoryTab() {
                     key={tab}
                     type="button"
                     size="sm"
-                    variant={activeTab === tab ? "default" : "outline"}
+                    variant="outline"
                     onClick={() => setActiveTab(tab)}
-                    className="min-w-[132px]"
+                    className={cn(
+                      "min-w-[132px] rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900",
+                      activeTab === tab && "bg-white text-primary shadow-sm hover:bg-white hover:text-primary",
+                    )}
                   >
                     {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : tab === "result-review" ? "Result Review" : "Critical Findings"}
                   </Button>

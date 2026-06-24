@@ -190,7 +190,7 @@ export const navigationItems: NavigationItem[] = [
     icon: HeartPulse,
     route: "/icu-command-center",
     group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU", "Nurse ICU 2", "Lab Technician", "Radiologist", "Pharmacist", "Billing Executive", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "ICU", "Nurse ICU", "Nurse ICU 2", "Lab Technician", "Radiologist", "Pharmacist", "Billing Executive", "Management"],
     status: "ready",
     children: [
       {
@@ -479,6 +479,10 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   if (role === "Nurse ICU 2") {
     const nurseIcu2Modules = new Set(["icu-command-center", "nursing-icu", "worklist", "nursing", "radiology-mnt", "results", "surgery"]);
     return roleItems.filter((item) => nurseIcu2Modules.has(item.id));
+  }
+
+  if (role === "ICU") {
+    return roleItems.filter((item) => item.id === "icu-command-center");
   }
 
   if (role === "Doctor IPD") {

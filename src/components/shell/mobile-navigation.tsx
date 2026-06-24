@@ -112,38 +112,40 @@ export function MobileNavigation() {
               </Button>
             </Dialog.Close>
           </div>
-          <div className="relative shrink-0 border-b border-border p-3">
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/55">Select role</div>
-            <button
-              className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-sidebar px-3 text-sm font-medium text-sidebar-foreground outline-none hover:bg-sidebar-active/10 focus-visible:ring-2 focus-visible:ring-ring/25"
-              onClick={() => setRoleOpen((value) => !value)}
-              type="button"
-            >
-              <span className="truncate">{role}</span>
-              <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition", roleOpen && "rotate-180")} />
-            </button>
-            {roleOpen ? (
-              <div className="absolute left-3 right-3 top-[calc(100%-10px)] z-[110] max-h-56 touch-pan-y overflow-y-auto rounded-md border border-border bg-white p-1 shadow-soft [-webkit-overflow-scrolling:touch]">
-                {roles.map((item) => (
-                  <button
-                    className={cn(
-                      "flex h-10 w-full items-center justify-between rounded px-3 text-left text-sm font-medium text-foreground outline-none hover:bg-surface-muted focus-visible:bg-surface-muted",
-                      item === role && "bg-primary/10 text-primary",
-                    )}
-                    key={item}
-                    onClick={() => {
-                      setRole(item);
-                      setRoleOpen(false);
-                    }}
-                    type="button"
-                  >
-                    <span className="truncate">{item}</span>
-                    {item === role ? <Check className="h-4 w-4 shrink-0" /> : null}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          {roles.length > 1 ? (
+            <div className="relative shrink-0 border-b border-border p-3">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/55">Select role</div>
+              <button
+                className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-sidebar px-3 text-sm font-medium text-sidebar-foreground outline-none hover:bg-sidebar-active/10 focus-visible:ring-2 focus-visible:ring-ring/25"
+                onClick={() => setRoleOpen((value) => !value)}
+                type="button"
+              >
+                <span className="truncate">{role}</span>
+                <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition", roleOpen && "rotate-180")} />
+              </button>
+              {roleOpen ? (
+                <div className="absolute left-3 right-3 top-[calc(100%-10px)] z-[110] max-h-56 touch-pan-y overflow-y-auto rounded-md border border-border bg-white p-1 shadow-soft [-webkit-overflow-scrolling:touch]">
+                  {roles.map((item) => (
+                    <button
+                      className={cn(
+                        "flex h-10 w-full items-center justify-between rounded px-3 text-left text-sm font-medium text-foreground outline-none hover:bg-surface-muted focus-visible:bg-surface-muted",
+                        item === role && "bg-primary/10 text-primary",
+                      )}
+                      key={item}
+                      onClick={() => {
+                        setRole(item);
+                        setRoleOpen(false);
+                      }}
+                      type="button"
+                    >
+                      <span className="truncate">{item}</span>
+                      {item === role ? <Check className="h-4 w-4 shrink-0" /> : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <nav className="min-h-0 flex-1 touch-pan-y scroll-pb-6 overflow-y-auto overscroll-y-none p-2 pb-6 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch]" onScroll={() => setRoleOpen(false)}>
             {groups.map((group) => (
               <div className="mb-3" key={group}>

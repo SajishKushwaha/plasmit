@@ -893,7 +893,11 @@ function AllVitalsGraphDashboard({
       <Tabs className="space-y-4" onValueChange={setActiveSection} value={activeSection}>
         <TabsList aria-label="All vitals graph categories">
           {allVitalsGraphSections.map((section) => (
-            <TabsTrigger key={section.title} value={section.title}>
+            <TabsTrigger
+              className="rounded-lg bg-transparent font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+              key={section.title}
+              value={section.title}
+            >
               {section.title}
             </TabsTrigger>
           ))}
@@ -1032,9 +1036,9 @@ function VitalsGraphWorkspace({
         <Tabs className="space-y-4" onValueChange={setActiveGraphSection} value={activeGraphSection}>
           <TabsList aria-label="Patient vitals graph categories" className="no-tab-scroll-hint w-full rounded-lg bg-surface-muted/70 p-1">
             {/* <TabsTrigger value="All1">All1</TabsTrigger> */}
-            <TabsTrigger className="min-w-[92px] justify-center rounded-md" value="All">All</TabsTrigger>
+            <TabsTrigger className="min-w-[92px] justify-center rounded-lg bg-transparent font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm" value="All">All</TabsTrigger>
             {allVitalsGraphSections.map((section) => (
-              <TabsTrigger className="min-w-[132px] justify-center rounded-md" key={section.title} value={section.title}>
+              <TabsTrigger className="min-w-[132px] justify-center rounded-lg bg-transparent font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm" key={section.title} value={section.title}>
                 {section.title}
               </TabsTrigger>
             ))}

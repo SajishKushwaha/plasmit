@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CenterModal } from "@/components/ui/center-modal";
 import { SearchInput } from "@/components/ui/search-input";
+import { ProgressNotesPanel } from "@/features/doctor-dashboard1/progress-notes";
 import { cn } from "@/lib/utils";
 
 type VitalTone = "green" | "orange" | "red";
@@ -116,9 +117,9 @@ function patientToneRowClass(tone: PatientTone) {
 }
 
 function patientToneCellClass(tone: PatientTone) {
-  if (tone === "red") return "border-l-4 border-l-red-500 bg-red-50";
-  if (tone === "orange") return "border-l-4 border-l-orange-400 bg-orange-50";
-  return "border-l-4 border-l-blue-500 bg-blue-50";
+  if (tone === "red") return "border-l-4 border-l-red-500 ";
+  if (tone === "orange") return "border-l-4 border-l-orange-400 ";
+  return "border-l-4 border-l-blue-500 ";
 }
 
 function csvCell(value: string | number) {
@@ -206,7 +207,7 @@ export function DoctorDashboard1Page() {
                   <HeaderCell>Temperature<br />(°C)</HeaderCell>
                   <HeaderCell>Lab Results</HeaderCell>
                   <HeaderCell>Medication &<br />Intervention</HeaderCell>
-                  <HeaderCell>Nurse Timeline</HeaderCell>
+                  <HeaderCell>Progress Note</HeaderCell>
                   <HeaderCell>Radiology</HeaderCell>
                   <HeaderCell>Events</HeaderCell>
                   <HeaderCell>Timeline</HeaderCell>
@@ -257,7 +258,7 @@ export function DoctorDashboard1Page() {
   />
 </td>
                     <td className="px-3 py-2 text-center">
-                      <RoundActionButton icon={ClipboardList} tone="dark" label="Open nurse timeline" onClick={() => setShiftSummaryPatient(patient)} />
+                      <RoundActionButton icon={ClipboardList} tone="dark" label={`Open progress note for ${patient.name}`} onClick={() => setShiftSummaryPatient(patient)} />
                     </td>
                     <td className="px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="" label="Open radiology" /></td>
                     <td className="px-3 py-2 text-center">
@@ -321,9 +322,9 @@ export function DoctorDashboard1Page() {
         description={shiftSummaryPatient ? `${shiftSummaryPatient.name} | ${shiftSummaryPatient.bed} | ${shiftSummaryPatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setShiftSummaryPatient(null)}
         open={Boolean(shiftSummaryPatient)}
-        title="Nurse Timeline"
+        title="Progress Note"
       >
-        {shiftSummaryPatient ? <DashboardShiftSummaryTimeline patient={shiftSummaryPatient} /> : null}
+        {shiftSummaryPatient ? <ProgressNotesPanel compact patient={shiftSummaryPatient} tone={patientTone(shiftSummaryPatient)} /> : null}
       </CenterModal>
 
       <CenterModal

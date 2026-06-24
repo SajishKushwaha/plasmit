@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { roles } from "@/config/app-roles";
+import { roles as allRoles } from "@/config/app-roles";
 import type { Role } from "@/types";
 
 type RoleContextValue = {
@@ -14,13 +14,28 @@ type RoleContextValue = {
 const RoleContext = React.createContext<RoleContextValue | null>(null);
 
 const DEFAULT_ROLE: Role = "Hospital Admin";
+const DOCTOR_IPD_ROLE: Role = "Doctor IPD";
+const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
+type AccessScope = "doctor-ipd" | "admin";
+
+function readAccessScope(): AccessScope {
+  if (typeof window === "undefined") return "admin";
+  return window.localStorage.getItem(accessScopeKey) === "doctor-ipd" ? "doctor-ipd" : "admin";
+}
+
+function getAllowedRoles(scope: AccessScope): Role[] {
+  return scope === "doctor-ipd" ? [DOCTOR_IPD_ROLE] : allRoles;
+}
 
 function readStoredRole(): Role {
   if (typeof window === "undefined") return DEFAULT_ROLE;
+  const accessScope = readAccessScope();
+  if (accessScope === "doctor-ipd") return DOCTOR_IPD_ROLE;
+
   const saved = window.localStorage.getItem("plasmit-role");
   if (saved === "Doctor") return "Doctor OPD";
-  return saved && roles.includes(saved as Role) ? (saved as Role) : DEFAULT_ROLE;
+  return saved && allRoles.includes(saved as Role) ? (saved as Role) : DEFAULT_ROLE;
 }
 
 function subscribeRole(callback: () => void) {
@@ -35,15 +50,18 @@ function subscribeRole(callback: () => void) {
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const role = React.useSyncExternalStore(subscribeRole, readStoredRole, () => DEFAULT_ROLE);
+  const accessScope = React.useSyncExternalStore<AccessScope>(subscribeRole, readAccessScope, () => "admin");
+  const allowedRoles = React.useMemo(() => getAllowedRoles(accessScope), [accessScope]);
 
   const setRole = React.useCallback((nextRole: Role) => {
-    window.localStorage.setItem("plasmit-role", nextRole);
+    const nextAccessScope = readAccessScope();
+    window.localStorage.setItem("plasmit-role", nextAccessScope === "doctor-ipd" ? DOCTOR_IPD_ROLE : nextRole);
     window.dispatchEvent(new Event(roleChangeEvent));
   }, []);
 
   const value = React.useMemo(
-    () => ({ role, setRole, roles }),
-    [role, setRole],
+    () => ({ role, setRole, roles: allowedRoles }),
+    [role, setRole, allowedRoles],
   );
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;

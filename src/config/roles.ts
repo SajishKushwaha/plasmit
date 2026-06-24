@@ -15,6 +15,7 @@ export const roleRoutes: Record<Role, string> = {
   "Doctor OPD": "/doctor-dashboard",
   "Doctor IPD": "/doctor-dashboard1",
   Nurse: "/icu-nursing",
+  ICU: "/icu-command-center",
   "Nurse ICU": "/nursing-icu",
   "Nurse ICU 2": "/icu-command-center",
   "Blood Bank": "/blood-bank/blood-request",
@@ -214,6 +215,9 @@ export const roleModuleAccess: Record<Role, {
   },
   Nurse: {
     allowed: ["/icu-nursing", "/dashboard", "/admission", "/ipd", "/intake-output", "/nurse", "/poct", "/opd", "/emergency", "/radiology", "/results", "/surgery"],
+  },
+  ICU: {
+    allowed: ["/icu-command-center"],
   },
   "Nurse ICU": {
     allowed: ["/nursing-icu"],

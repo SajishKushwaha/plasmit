@@ -57,6 +57,7 @@ export function DashboardPage() {
   function handleLogout() {
     window.localStorage.removeItem("hk-general-auth");
     window.localStorage.removeItem("hk-general-remember");
+    window.localStorage.removeItem("plasmit-access-scope");
     window.localStorage.removeItem("plasmit-role");
     router.replace("/login");
   }

@@ -103,28 +103,7 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
   return (
     <Card className="overflow-hidden rounded-xl border-border/80 bg-white shadow-sm">
       <div className="border-b border-border bg-white px-4 py-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="text-lg font-bold text-foreground">Progress Note</div>
-              <Badge tone={tone === "red" ? "danger" : tone === "orange" ? "warning" : "info"}>
-                {toneLabel}
-              </Badge>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
-              <span className="rounded-md border border-border bg-surface-muted px-2.5 py-1 text-foreground">{patient.name}</span>
-              <span className="rounded-md border border-border bg-white px-2.5 py-1">{uhid}</span>
-              <span className="rounded-md border border-border bg-white px-2.5 py-1">{wardBed}</span>
-              <span className="rounded-md border border-border bg-white px-2.5 py-1">{patient.diagnosis}</span>
-            </div>
-          </div>
-          <div className="grid min-w-[280px] grid-cols-2 gap-2 text-xs lg:grid-cols-4 xl:grid-cols-2">
-            <ProgressMetric label="HR" value={`${patient.hr.value} bpm`} />
-            <ProgressMetric label="SpO2" value={`${patient.spo2.value}%`} />
-            <ProgressMetric label="BP" value={`${patient.abps.value}/${patient.abpd.value}`} />
-            <ProgressMetric label="Temp" value={`${patient.temperature.value} C`} />
-          </div>
-        </div>
+      
 
         <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3 md:flex-row md:items-center md:justify-between">
           <div className="inline-flex w-full rounded-lg border border-border bg-surface-muted/70 p-1 md:w-auto">
@@ -132,12 +111,7 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
             <ProgressNoteTab active={activeKind === "nurse"} count={nurseCount} icon={ClipboardCheck} label="Nurse Note" onClick={() => setActiveKind("nurse")} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {latestNote ? (
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2.5 py-2 text-xs font-semibold text-muted-foreground">
-                <Clock3 className="h-3.5 w-3.5" />
-                Last: {latestNote.timestamp}
-              </span>
-            ) : null}
+            
             <Button
               size="sm"
               type="button"

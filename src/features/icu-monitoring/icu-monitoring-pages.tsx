@@ -797,19 +797,19 @@ function ComparisonTable() {
           <table className="w-full min-w-[980px] border-collapse text-left text-sm">
             <thead className="bg-[#f7f7fb] text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="border-b border-border px-3 py-3">Parameter</th>
-                {hours.map((hour) => <th className="border-b border-border px-3 py-3" key={hour}>{hour}:00</th>)}
-                <th className="border-b border-border px-3 py-3">12 hour total</th>
-                <th className="border-b border-border px-3 py-3">24 hour total</th>
+                <th className="border-b border-border px-3 py-2">Parameter</th>
+                {hours.map((hour) => <th className="border-b border-border px-3 py-2" key={hour}>{hour}:00</th>)}
+                <th className="border-b border-border px-3 py-2">12 hour total</th>
+                <th className="border-b border-border px-3 py-2">24 hour total</th>
               </tr>
             </thead>
             <tbody>
               {abdominalComparisonRecords.map((record) => (
                 <tr className="border-b border-border/70 last:border-0 hover:bg-surface-muted/80" key={record.parameter}>
-                  <td className="px-3 py-3 font-semibold text-foreground">{record.parameter}</td>
-                  {record.hourly.map((value, index) => <td className="px-3 py-3 text-foreground" key={`${record.parameter}-${index}`}>{value}</td>)}
-                  <td className="px-3 py-3 font-semibold text-foreground">{record.total12h}</td>
-                  <td className="px-3 py-3 font-semibold text-foreground">{record.total24h}</td>
+                  <td className="px-3 py-2 font-semibold text-foreground">{record.parameter}</td>
+                  {record.hourly.map((value, index) => <td className="px-3 py-2 text-foreground" key={`${record.parameter}-${index}`}>{value}</td>)}
+                  <td className="px-3 py-2 font-semibold text-foreground">{record.total12h}</td>
+                  <td className="px-3 py-2 font-semibold text-foreground">{record.total24h}</td>
                 </tr>
               ))}
             </tbody>
@@ -1041,7 +1041,7 @@ export function DrainAddPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="sticky bottom-0 z-20 -mx-4 mt-4 border-t border-border bg-background/92 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+      <div className="sticky bottom-0 z-20 -mx-4 mt-4 border-t border-border bg-background/92 px-3 py-2 backdrop-blur md:-mx-6 md:px-6">
         <div className="flex justify-end gap-2">
           <Button asChild variant="outline"><Link href="/icu-monitoring/drains">Cancel</Link></Button>
           <Button onClick={() => { toast.success(`${selectedType.label} entry saved`); router.push("/icu-monitoring/drains"); }}><Save className="h-4 w-4" />Save</Button>
@@ -1292,7 +1292,7 @@ export function LineDeviceAddPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="sticky bottom-0 z-20 -mx-4 mt-4 border-t border-border bg-background/92 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+      <div className="sticky bottom-0 z-20 -mx-4 mt-4 border-t border-border bg-background/92 px-3 py-2 backdrop-blur md:-mx-6 md:px-6">
         <div className="flex justify-end gap-2"><Button asChild variant="outline"><Link href="/icu-monitoring/lines-devices">Cancel</Link></Button><Button onClick={() => { toast.success(`${selectedType.fullName} entry saved`); router.push("/icu-monitoring/lines-devices"); }}><Save className="h-4 w-4" />Save</Button></div>
       </div>
       <MobileIcuBottomNav dashboardHref="/icu-monitoring/lines-devices" alertsHref="/icu-monitoring/lines-devices/alerts" />

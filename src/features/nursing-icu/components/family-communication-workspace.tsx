@@ -321,7 +321,7 @@ export function FamilyCommunicationWorkspace() {
       <CenterModal open={Boolean(followUpEditor)} onOpenChange={(open) => !open && setFollowUpEditor(null)} title="Update follow-up" description={followUpEditor?.id}>
         {followUpEditor ? (
           <div className="space-y-4">
-            <FormField label="Issue / question"><textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm" value={followUpEditor.issue} onChange={(event) => setFollowUpEditor({ ...followUpEditor, issue: event.target.value })} /></FormField>
+            <FormField label="Issue / question"><textarea className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm" value={followUpEditor.issue} onChange={(event) => setFollowUpEditor({ ...followUpEditor, issue: event.target.value })} /></FormField>
             <div className="grid gap-3 sm:grid-cols-2">
               <FormField label="Assigned to"><input className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={followUpEditor.assignedTo} onChange={(event) => setFollowUpEditor({ ...followUpEditor, assignedTo: event.target.value })} /></FormField>
               <FormField label="Status"><FilterSelect ariaLabel="Follow-up status" value={followUpEditor.status} onChange={(value) => setFollowUpEditor({ ...followUpEditor, status: value as FollowUp["status"] })} options={["Pending", "In Progress", "Completed", "Overdue", "Escalated"]} /></FormField>

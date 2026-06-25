@@ -105,7 +105,7 @@ function PatientHeaderStrip({ patient, selectedPatientId, onPatientChange }: { p
 
   return (
     <Card className="overflow-hidden">
-      <CardContent className="space-y-3 p-4">
+      {/* <CardContent className="space-y-3 p-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Clinical examination workspace</div>
@@ -168,7 +168,7 @@ function PatientHeaderStrip({ patient, selectedPatientId, onPatientChange }: { p
           <Badge tone="info">Autosave every 20 sec</Badge>
           <Badge tone="muted">Keyboard shortcuts ready</Badge>
         </div>
-      </CardContent>
+      </CardContent> */}
     </Card>
   );
 }
@@ -917,10 +917,20 @@ function ActionPatientContext({ patient }: { patient: ClinicalPatientContext }) 
   );
 }
 
-export function ClinicalExaminationPage() {
+type ClinicalExaminationPageProps = {
+  embedded?: boolean;
+  initialPatientId?: string;
+};
+
+export function ClinicalExaminationPage({ embedded = false, initialPatientId }: ClinicalExaminationPageProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedPatientId = searchParams.get("patientId") ?? mockPatients[0]?.id;
+  const [embeddedPatientId, setEmbeddedPatientId] = React.useState(initialPatientId);
+  React.useEffect(() => {
+    setEmbeddedPatientId(initialPatientId);
+  }, [initialPatientId]);
+
+  const requestedPatientId = embedded ? (embeddedPatientId ?? mockPatients[0]?.id) : (searchParams.get("patientId") ?? initialPatientId ?? mockPatients[0]?.id);
   const selectedPatientRecord = mockPatients.find((patient) => patient.id === requestedPatientId) ?? mockPatients[0];
   const selectedPatient = clinicalPatientFromRecord(selectedPatientRecord);
   const [specialty, setSpecialty] = React.useState<SpecialtyId>("cvs");
@@ -931,9 +941,13 @@ export function ClinicalExaminationPage() {
   const inlineExamRef = React.useRef<HTMLDivElement | null>(null);
   const selectPatient = React.useCallback(
     (patientId: string) => {
+      if (embedded) {
+        setEmbeddedPatientId(patientId);
+        return;
+      }
       router.push(`/clinical-examination?patientId=${patientId}`);
     },
-    [router],
+    [embedded, router],
   );
   const openSpecialty = (id: SpecialtyId) => {
     setSpecialty(id);
@@ -984,7 +998,16 @@ export function ClinicalExaminationPage() {
       <div className="fixed inset-x-3 bottom-3 z-30 flex gap-2 rounded-xl border border-border bg-white/95 p-2 shadow-[0_16px_40px_rgba(39,37,54,0.18)] backdrop-blur md:hidden">
         {["Exam", "Scores", "Notes", "Save"].map((item, index) => <Button className="flex-1" key={item} size="sm" variant={index === 3 ? "default" : "outline"}>{item}</Button>)}
       </div>
-      <StickyActionBar onSave={() => toast.success("Clinical examination saved as draft")} saveLabel="Final submit" />
+      {embedded ? (
+        <div className="sticky bottom-3 z-20 flex justify-end rounded-xl border border-border bg-white/95 p-2 shadow-sm backdrop-blur">
+          <Button onClick={() => toast.success("Clinical examination saved as draft")}>
+            <Save className="h-4 w-4" />
+            Final submit
+          </Button>
+        </div>
+      ) : (
+        <StickyActionBar onSave={() => toast.success("Clinical examination saved as draft")} saveLabel="Final submit" />
+      )}
     </PageMotion>
   );
 }

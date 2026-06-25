@@ -4,12 +4,9 @@ import * as Dialog from "@radix-ui/react-dialog";
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  AlertTriangle,
   BarChart3,
   ChevronDown,
   Droplets,
-  FileSearch,
-  ListFilter,
   Plus,
   RefreshCcw,
   Search,
@@ -22,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 import type { StatusTone } from "@/types";
 import {
@@ -220,7 +216,6 @@ function IntakeOutputWorkspaceInner({
 
   const buckets = React.useMemo(() => buildBuckets(view, selectedDate, scopedRows), [scopedRows, selectedDate, view]);
   const totals = React.useMemo(() => summarizeRows(scopedRows), [scopedRows]);
-  const currentDayRows = React.useMemo(() => allRows.filter((row) => row.patientId === selectedPatient.id && row.date === selectedDate), [allRows, selectedDate, selectedPatient.id]);
   const previousRows = React.useMemo(() => allRows.filter((row) => row.patientId === selectedPatient.id && row.date < selectedDate), [allRows, selectedDate, selectedPatient.id]);
   const previousBalance = React.useMemo(() => summarizeRows(previousRows).balance, [previousRows]);
   const alerts = React.useMemo(() => buildFluidAlerts(scopedRows, totals.balance), [scopedRows, totals.balance]);
@@ -300,7 +295,7 @@ function IntakeOutputWorkspaceInner({
         <div className="p-3">
           <div className="space-y-3">
             <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-              {/* <FieldBlock label="Patient / bed">
+              <FieldBlock label="Patient / bed">
                 {lockedPatientId ? (
                   <div className="flex h-10 items-center justify-between gap-2 rounded-md border border-slate-300 bg-slate-100 px-3 text-sm text-slate-950">
                     <span className="truncate">{selectedPatient.bedNo} - {selectedPatient.patientName}</span>
@@ -313,7 +308,7 @@ function IntakeOutputWorkspaceInner({
                     ))}
                   </select>
                 )}
-              </FieldBlock> */}
+              </FieldBlock>
               <FieldBlock label="View">
                 <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={view} onChange={(event) => setView(event.target.value as IoView)}>
                   {(["Hourly", "12 Hours", "24 Hours", "Cumulative"] satisfies IoView[]).map((option) => <option key={option}>{option}</option>)}
@@ -370,10 +365,7 @@ function IntakeOutputWorkspaceInner({
                 <div className="flex h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white p-1">
                   {(["Table", "Graph"] satisfies IoMode[]).map((option) => (
                     <button
-                      className={cn(
-                        "flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg bg-transparent px-2 text-xs font-bold text-slate-600 transition hover:bg-white/70 hover:text-slate-900",
-                        mode === option && "bg-white text-primary shadow-sm hover:bg-white hover:text-primary",
-                      )}
+                      className={cn("flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded px-2 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
                       key={option}
                       type="button"
                       onClick={() => setMode(option)}
@@ -409,10 +401,7 @@ function IntakeOutputWorkspaceInner({
         )}
 
         {!isFluidBalanceView ? (
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-            <FluidLedger rows={scopedRows} />
-            <RunningTotalPanel rows={currentDayRows} alerts={alerts} activeCell={activeCell} />
-          </div>
+          <FluidLedger rows={scopedRows} />
         ) : null}
       </div>
 
@@ -492,9 +481,9 @@ function FluidBalanceMatrix({ buckets, rows, activeCell, onSelectCell }: { bucke
           <table className="w-full min-w-[1180px] border-collapse text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="sticky left-0 z-10 w-44 border-b border-r border-slate-200 bg-slate-50 px-3 py-3 text-left text-xs font-bold uppercase text-slate-600">Component</th>
+                <th className="sticky left-0 z-10 w-44 border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-bold uppercase text-slate-600">Component</th>
                 {buckets.map((bucket) => (
-                  <th className="border-b border-r border-slate-200 px-3 py-3 text-center text-xs font-bold uppercase text-slate-600" key={bucket.key}>
+                  <th className="border-b border-r border-slate-200 px-3 py-2 text-center text-xs font-bold uppercase text-slate-600" key={bucket.key}>
                     <span className="block">{bucket.label}</span>
                     {bucket.sublabel ? <span className="mt-0.5 block text-[10px] font-medium normal-case text-slate-400">{bucket.sublabel}</span> : null}
                   </th>
@@ -503,13 +492,13 @@ function FluidBalanceMatrix({ buckets, rows, activeCell, onSelectCell }: { bucke
             </thead>
             <tbody>
               {matrixRows.map((row) => (
-                <tr className={cn(row.type === "section" ? "bg-sky-700 text-white" : row.type === "group" ? "bg-sky-100 font-bold text-sky-950" : row.type === "total" || row.type === "net" ? "bg-slate-100 font-bold" : "bg-white", "border-b border-slate-100")} key={`${row.type}-${row.label}`}>
-                  <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", row.type === "section" ? "bg-sky-700 text-white" : row.type === "group" ? "bg-sky-100 text-sky-950" : row.type === "total" || row.type === "net" ? "bg-slate-100 text-slate-950" : row.kind === "Intake" ? "bg-sky-50 text-slate-900" : "bg-blue-50 text-slate-900", row.subRow ? "pl-7 text-sm" : "")}>
-                    {row.subRow ? <span className="mr-2 text-sky-500">-</span> : null}{row.label}
+                <tr className={cn(row.type === "section" ? "bg-slate-100 font-bold text-slate-900" : row.type === "group" ? "bg-slate-50 font-bold text-slate-800" : row.type === "total" || row.type === "net" ? "bg-slate-100 font-bold" : "bg-white", "border-b border-slate-100")} key={`${row.type}-${row.label}`}>
+                  <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", row.type === "section" ? "bg-slate-100 text-slate-900" : row.type === "group" ? "bg-slate-50 text-slate-800" : row.type === "total" || row.type === "net" ? "bg-slate-100 text-slate-950" : "bg-white text-slate-900", row.subRow ? "pl-7 text-sm" : "")}>
+                    {row.subRow ? <span className="mr-2 text-slate-400">-</span> : null}{row.label}
                   </td>
                   {buckets.map((bucket) => {
-                    if (row.type === "section") return <td className="border-r border-sky-600 bg-sky-700 px-3 py-2" key={bucket.key} />;
-                    if (row.type === "group") return <td className="border-r border-sky-200 bg-sky-100 px-3 py-2" key={bucket.key} />;
+                    if (row.type === "section") return <td className="border-r border-slate-200 bg-slate-100 px-3 py-2" key={bucket.key} />;
+                    if (row.type === "group") return <td className="border-r border-slate-200 bg-slate-50 px-3 py-2" key={bucket.key} />;
                     const cellRows = getCellRows(rows, row, bucket);
                     const value = sumCellRows(cellRows, row.type);
                     return (
@@ -537,8 +526,8 @@ function FluidBalanceMatrix({ buckets, rows, activeCell, onSelectCell }: { bucke
 
 function IoQuantityCell({ bucket, row, rows, value, active, onSelect }: { bucket: Bucket; row: MatrixRow; rows: IcuIntakeOutput[]; value: number; active: boolean; onSelect: () => void }) {
   const title = rows.length ? rows.map((entry) => `${entry.component}: ${entry.quantityMl} ml at ${entry.time} | ${entry.source} | ${entry.note}`).join("\n") : "No entry";
-  const tone = row.type === "net" ? balanceTextClass(value) : row.kind === "Intake" ? "text-sky-800" : "text-blue-800";
-  const surface = rows.length ? row.kind === "Intake" ? "bg-sky-50 border-sky-200 hover:bg-sky-100" : row.kind === "Output" ? "bg-blue-50 border-blue-200 hover:bg-blue-100" : "bg-slate-50 border-slate-200 hover:bg-slate-100" : "bg-white border-transparent text-slate-300";
+  const tone = row.type === "net" ? balanceTextClass(value) : "text-slate-800";
+  const surface = rows.length ? "bg-white border-slate-200 hover:bg-slate-50" : "bg-white border-transparent text-slate-300";
 
   return (
     <button
@@ -705,20 +694,17 @@ function FluidLedger({ rows }: { rows: IcuIntakeOutput[] }) {
   return (
     <Card className="border-slate-200">
       <CardHeader className="border-b border-slate-100 bg-white">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <CardTitle>Source Ledger</CardTitle>
-            <CardDescription>Medication, blood, assessment, drain, pump, and manual bedside entries.</CardDescription>
-          </div>
-          <StatusPill tone="info">{rows.length} visible</StatusPill>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle>Source Ledger</CardTitle>
+          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{rows.length} visible</span>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-sm">
+          <table className="w-full min-w-[760px] border-collapse text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
-                {["Time", "Type", "Component", "Quantity", "Source", "Status", "Nurse", "Comment"].map((heading) => (
+                {["Time", "Entry", "Quantity", "Status", "Recorded by"].map((heading) => (
                   <th className="border-b border-slate-200 px-3 py-2 text-left" key={heading}>{heading}</th>
                 ))}
               </tr>
@@ -726,22 +712,27 @@ function FluidLedger({ rows }: { rows: IcuIntakeOutput[] }) {
             <tbody>
               {rows.map((row) => (
                 <tr className="border-b border-slate-100 last:border-0" key={row.id}>
-                  <td className="px-3 py-2 font-semibold text-slate-900">{row.date} {row.time}</td>
-                  <td className="px-3 py-2"><Badge tone={row.kind === "Intake" ? "info" : "success"}>{row.kind}</Badge></td>
+                  <td className="px-3 py-2 font-semibold text-slate-900">
+                    <span className="block">{row.time}</span>
+                    <span className="text-xs font-medium text-slate-500">{row.date}</span>
+                  </td>
                   <td className="px-3 py-2">
                     <div className="font-semibold text-slate-900">{row.component}</div>
-                    <div className="text-xs text-slate-500">{row.category} | {row.route}</div>
+                    <div className="text-xs text-slate-500">{row.kind} | {row.category} | {row.route}</div>
                   </td>
-                  <td className={cn("px-3 py-2 font-bold", row.kind === "Intake" ? "text-sky-700" : "text-emerald-700")}>{row.quantityMl} ml</td>
-                  <td className="px-3 py-2">{row.source}</td>
-                  <td className="px-3 py-2"><Badge tone={statusTone(row.status)}>{row.status}</Badge></td>
-                  <td className="px-3 py-2">{row.nurse}</td>
-                  <td className="px-3 py-2 text-slate-600">{row.note}</td>
+                  <td className="px-3 py-2 font-bold text-slate-900">{row.quantityMl} ml</td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600">{row.status}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="font-semibold text-slate-900">{row.nurse}</div>
+                    <div className="text-xs text-slate-500">{row.source}</div>
+                  </td>
                 </tr>
               ))}
               {!rows.length ? (
                 <tr>
-                  <td className="px-3 py-8 text-center text-sm text-slate-500" colSpan={8}>No intake/output records found for the selected filters.</td>
+                  <td className="px-3 py-4 text-center text-sm text-slate-500" colSpan={5}>No intake/output records found for the selected filters.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -835,7 +826,7 @@ function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoD
           <Input value={draft.route} onChange={(event) => onChange({ ...draft, route: event.target.value })} />
         </FieldBlock>
         <FieldBlock className="md:col-span-2" label="Comment">
-          <textarea className="min-h-20 w-full rounded-md border border-slate-300 bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.comment} onChange={(event) => onChange({ ...draft, comment: event.target.value })} />
+          <textarea className="min-h-16 w-full rounded-md border border-slate-300 bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.comment} onChange={(event) => onChange({ ...draft, comment: event.target.value })} />
         </FieldBlock>
       </div>
       <div className="flex justify-end border-t border-slate-200 pt-4">
@@ -928,86 +919,6 @@ function normalizeIoCategoryName(kind: IcuIntakeOutput["kind"], category: string
   if (text.includes("drain")) return "Abdominal Drain";
   if (text.includes("blood loss") || text.includes("blood")) return "Blood Loss";
   return outputCategories.includes(category) ? category : "Other Output";
-}
-
-function RunningTotalPanel({ rows, alerts, activeCell }: { rows: IcuIntakeOutput[]; alerts: Array<{ title: string; detail: string; tone: StatusTone }>; activeCell: ActiveCell }) {
-  const sourceStats = buildSourceStats(rows);
-  const totals = summarizeRows(rows);
-
-  return (
-    <div className="space-y-4">
-      <Card className="border-slate-200">
-        <CardHeader className="border-b border-slate-100 bg-white">
-          <CardTitle>Running Total</CardTitle>
-          <CardDescription>Current day source totals and review status.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 p-4">
-          <TotalLine label="Intake" value={`${totals.intake} ml`} tone="info" />
-          <TotalLine label="Output" value={`${totals.output} ml`} tone="success" />
-          <TotalLine label="Net balance" value={formatSignedMl(totals.balance)} tone={balanceTone(totals.balance)} />
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-slate-500">
-              <ListFilter className="h-4 w-4" />Source sync
-            </div>
-            <div className="space-y-2">
-              {sourceStats.map((stat) => (
-                <div className="flex items-center justify-between gap-2 text-sm" key={stat.source}>
-                  <span className="text-slate-700">{stat.source}</span>
-                  <span className="font-bold text-slate-950">{stat.quantity} ml</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-slate-200">
-        <CardHeader className="border-b border-slate-100 bg-white">
-          <CardTitle>Review Panel</CardTitle>
-          <CardDescription>Alerts and selected cell details.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 p-4">
-          {alerts.map((alert) => (
-            <div className={cn("rounded-md border border-l-4 p-3 shadow-sm", metricToneClass(alert.tone))} key={alert.title}>
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4" />
-                <div>
-                  <div className="text-sm font-bold text-slate-950">{alert.title}</div>
-                  <div className="mt-1 text-xs text-slate-600">{alert.detail}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-          {!alerts.length ? (
-            <div className="rounded-md border border-l-4 border-slate-200 border-l-sky-500 bg-white p-3 text-sm font-semibold text-slate-700 shadow-sm">Fluid balance is within review limits.</div>
-          ) : null}
-
-          <div className="rounded-md border border-slate-200 bg-white p-3">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-slate-500">
-              <FileSearch className="h-4 w-4" />Cell details
-            </div>
-            {activeCell?.rows.length ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-bold text-slate-950">{activeCell.title} / {activeCell.bucket}</span>
-                  <Badge tone={activeCell.total >= 0 ? "info" : "danger"}>{formatSignedMl(activeCell.total)}</Badge>
-                </div>
-                {activeCell.rows.map((row) => (
-                  <div className="rounded-md bg-slate-50 p-2 text-xs text-slate-700" key={row.id}>
-                    <div className="font-semibold text-slate-950">{row.component} - {row.quantityMl} ml</div>
-                    <div>{row.time} | {row.source} | {row.nurse}</div>
-                    <div className="mt-1 text-slate-500">{row.note}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-slate-500">Select a chart cell to view component-level details.</div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
 }
 
 function TotalLine({ label, value, tone }: { label: string; value: string; tone: StatusTone }) {
@@ -1172,10 +1083,4 @@ function metricToneClass(tone: StatusTone) {
   if (tone === "success") return "border-slate-200 border-l-sky-500 bg-white text-sky-700";
   if (tone === "info") return "border-slate-200 border-l-sky-500 bg-white text-sky-700";
   return "border-slate-200 border-l-slate-300 bg-white text-slate-700";
-}
-
-function statusTone(status: IcuIntakeOutput["status"]): StatusTone {
-  if (status === "Auto synced" || status === "Signed") return "success";
-  if (status === "Pending review") return "warning";
-  return "info";
 }

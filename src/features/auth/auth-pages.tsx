@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, Cross, Eye, EyeOff, KeyRound, Loader2, LockKeyhole, Mail, Moon, ShieldCheck, Smartphone, Stethoscope, UserRound } from "lucide-react";
+import { AlertCircle, CheckCircle2, Cross, Eye, EyeOff, KeyRound, Loader2, LockKeyhole, Mail, Moon, ShieldCheck, Smartphone, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { useUiPreference } from "@/components/providers/ui-preference-provider";
@@ -18,12 +18,24 @@ import { themePresets } from "@/config/theme";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/types";
 
-const validUser = "doctor@hospital.com";
-const validPassword = "doctor123";
 const authStorageKey = "hk-general-auth";
 const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
-type LoginScope = "doctor-ipd" | "admin";
+
+const loginCredentials = [
+  {
+    email: "doctor@hospital.com",
+    password: "doctor123",
+    role: "Doctor IPD" as Role,
+    scope: "doctor-ipd",
+  },
+  {
+    email: "admin@hospital.com",
+    password: "admin123",
+    role: "Hospital Admin" as Role,
+    scope: "admin",
+  },
+] as const;
 
 function getRoleRoute(role: Role) {
   return roleRoutes[role] ?? "/dashboard";
@@ -109,9 +121,7 @@ export function LoginPage() {
   const [password, setPassword] = React.useState("");
   const [remember, setRemember] = React.useState(true);
   const [transitioning, setTransitioning] = React.useState(false);
-  const [loginScope, setLoginScope] = React.useState<LoginScope>("admin");
   const router = useRouter();
-  const loginRole: Role = loginScope === "doctor-ipd" ? "Doctor IPD" : "Hospital Admin";
 
   React.useEffect(() => {
     if (window.localStorage.getItem(authStorageKey) === "true") {
@@ -131,77 +141,46 @@ export function LoginPage() {
     setError("");
     setLoading(true);
     window.setTimeout(() => {
-      if (username.trim().toLowerCase() !== validUser || password !== validPassword) {
+      const credential = loginCredentials.find((item) => item.email === username.trim().toLowerCase() && item.password === password);
+      if (!credential) {
         setLoading(false);
         setError("Invalid username or password");
         return;
       }
       window.localStorage.setItem(authStorageKey, "true");
-      window.localStorage.setItem(accessScopeKey, loginScope);
-      window.localStorage.setItem("plasmit-role", loginRole);
+      window.localStorage.setItem(accessScopeKey, credential.scope);
+      window.localStorage.setItem("plasmit-role", credential.role);
       window.localStorage.setItem("hk-general-remember", remember ? "true" : "false");
       window.dispatchEvent(new Event(roleChangeEvent));
       setTransitioning(true);
       toast.success("Access granted");
       window.setTimeout(() => {
-        router.push(getRoleRoute(loginRole));
+        router.push(getRoleRoute(credential.role));
       }, 320);
     }, 1000);
   }
 
   return (
     <main className="min-h-dvh bg-[#f4f7fb] px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100dvh-3rem)] w-full max-w-6xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)] lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,0.78fr)]">
-        <section className="hidden min-h-full flex-col justify-between border-r border-slate-200 bg-[#f8fafc] p-8 lg:flex xl:p-10">
-          <div>
+      <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-md flex-col items-center justify-center">
+        <div className="w-full">
+            <div className="mb-7 flex justify-center">
             <Image
               src="/plasmit-sidebar-logo.webp"
               alt="Plasmit Healthcare IT Vector logo"
-              width={218}
-              height={88}
+              width={230}
+              height={94}
               priority
-              className="h-auto w-[205px] object-contain"
+              className="h-auto w-[220px] object-contain"
             />
-            <div className="mt-10 max-w-xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                Enterprise HMS access
-              </div>
-              <h1 className="mt-5 text-3xl font-black leading-tight tracking-tight text-slate-950">
-                Secure hospital workspace for every clinical role.
-              </h1>
-              <p className="mt-4 text-sm font-medium leading-6 text-slate-600">
-                Sign in once, choose your assigned role, and continue to the correct dashboard with protected session handling.
-              </p>
-            </div>
           </div>
-
-          <div className="grid gap-3">
-            <LoginTrustRow icon={ShieldCheck} title="Role-based access" detail="Routes open according to the selected hospital role." />
-            <LoginTrustRow icon={Stethoscope} title="Clinical workflow ready" detail="Doctor, nursing, ICU, diagnostics, billing, and admin workspaces supported." />
-            <LoginTrustRow icon={Smartphone} title="Audit-friendly session" detail="Remember device and MFA flows are prepared for backend integration." />
-          </div>
-        </section>
-
-        <section className="flex min-w-0 items-center justify-center p-5 sm:p-8 lg:p-10">
-          <div className="w-full max-w-md">
-            <div className="mb-7 lg:hidden">
-              <Image
-                src="/plasmit-sidebar-logo.webp"
-                alt="Plasmit Healthcare IT Vector logo"
-                width={200}
-                height={82}
-                priority
-                className="h-auto w-[190px] object-contain"
-              />
-            </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-2xl font-black tracking-tight text-slate-950">Sign in</h2>
-                    <p className="mt-1 text-sm font-medium text-slate-500">Choose access type, then open your HMS workspace.</p>
+                    <p className="mt-1 text-sm font-medium text-slate-500">Enter assigned credentials to open your HMS workspace.</p>
                   </div>
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
                     <LockKeyhole className="h-5 w-5" />
@@ -231,32 +210,6 @@ export function LoginPage() {
                     />
                   </div>
                 </label>
-
-                <div className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">Access type</span>
-                  <div className="grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-slate-50 p-1">
-                    <button
-                      className={cn(
-                        "h-10 rounded-md text-sm font-bold transition",
-                        loginScope === "doctor-ipd" ? "bg-white text-[#2563eb] shadow-sm" : "text-slate-600 hover:bg-white/70",
-                      )}
-                      type="button"
-                      onClick={() => setLoginScope("doctor-ipd")}
-                    >
-                      Doctor IPD
-                    </button>
-                    <button
-                      className={cn(
-                        "h-10 rounded-md text-sm font-bold transition",
-                        loginScope === "admin" ? "bg-white text-[#2563eb] shadow-sm" : "text-slate-600 hover:bg-white/70",
-                      )}
-                      type="button"
-                      onClick={() => setLoginScope("admin")}
-                    >
-                      Admin
-                    </button>
-                  </div>
-                </div>
 
                 <label className="block space-y-2 text-sm">
                   <span className="font-semibold text-slate-700">Password</span>
@@ -307,8 +260,9 @@ export function LoginPage() {
                 </button>
               </form>
 
-              <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                Demo access: doctor@hospital.com / doctor123
+              <div className="mt-5 space-y-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+                <div>Doctor IPD: doctor@hospital.com / doctor123</div>
+                <div>Admin: admin@hospital.com / admin123</div>
               </div>
             </div>
 
@@ -316,25 +270,10 @@ export function LoginPage() {
               Support: securitydesk@plasmit.care | +91 20 4000 2211
             </div>
           </div>
-        </section>
       </div>
 
       {transitioning ? <div className="fixed inset-0 z-50 animate-[dashboardReveal_420ms_ease_both] bg-white" /> : null}
     </main>
-  );
-}
-
-function LoginTrustRow({ detail, icon: Icon, title }: { detail: string; icon: typeof ShieldCheck; title: string }) {
-  return (
-    <div className="flex gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-700">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div>
-        <div className="text-sm font-bold text-slate-950">{title}</div>
-        <div className="mt-0.5 text-xs font-medium leading-5 text-slate-500">{detail}</div>
-      </div>
-    </div>
   );
 }
 

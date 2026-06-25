@@ -486,7 +486,7 @@ function ShiftHandover() {
         </CardHeader>
       </Card>
       <Card className="bg-primary text-primary-foreground">
-        <CardContent className="space-y-3 p-5">
+        <CardContent className="space-y-3 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <div className="text-lg font-bold">Responsibility Transfer</div>
@@ -680,7 +680,7 @@ function ClinicalServicesPanel() {
 function PatientCard({ patient, compact = false }: { patient: IcuPatient; compact?: boolean }) {
   return (
     <Card className={cn(patient.critical && "border-red-300 bg-red-50")}>
-      <CardHeader className={cn("gap-2", compact && "px-3 py-3")}>
+      <CardHeader className={cn("gap-2", compact && "px-3 py-2")}>
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xl font-bold text-primary">{patient.bed}</span>

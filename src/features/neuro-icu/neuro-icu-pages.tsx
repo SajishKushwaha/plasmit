@@ -459,12 +459,12 @@ function OverviewSection({
           <CardContent className="p-0">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#f2f6fb] text-[#667085]">
-                <tr>{["Time", "Type", "Value", "Clinical note"].map((header) => <th className="px-4 py-3 font-bold" key={header}>{header}</th>)}</tr>
+                <tr>{["Time", "Type", "Value", "Clinical note"].map((header) => <th className="px-3 py-2 font-bold" key={header}>{header}</th>)}</tr>
               </thead>
               <tbody>
                 {recentEvents.map((row) => (
                   <tr className="border-t border-[#eef2f7]" key={`${row[0]}-${row[1]}`}>
-                    {row.map((cell) => <td className={cn("px-4 py-3 font-semibold text-[#344054]", /above|review|moderate/i.test(cell) && "text-[#b42318]")} key={cell}>{cell}</td>)}
+                    {row.map((cell) => <td className={cn("px-3 py-2 font-semibold text-[#344054]", /above|review|moderate/i.test(cell) && "text-[#b42318]")} key={cell}>{cell}</td>)}
                   </tr>
                 ))}
               </tbody>
@@ -790,7 +790,7 @@ function ClinicalField({ label, value = "", onChange }: { label: string; value?:
 }
 
 function ClinicalTextarea({ defaultValue }: { defaultValue: string }) {
-  return <textarea className="mt-3 min-h-20 w-full resize-none rounded-lg border border-[#d0d5dd] bg-white px-3 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-[#155eef]/20" defaultValue={defaultValue} />;
+  return <textarea className="mt-3 min-h-16 w-full resize-none rounded-lg border border-[#d0d5dd] bg-white px-3 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-[#155eef]/20" defaultValue={defaultValue} />;
 }
 
 function LogTable({ title, headers, rows, search, onSearch }: { title: string; headers: string[]; rows: string[][]; search: string; onSearch: (value: string) => void }) {

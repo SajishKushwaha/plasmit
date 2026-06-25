@@ -74,10 +74,12 @@ import {
   toneForPriority,
   toneForStatus,
   transfusionRows,
+  type DoctorInstruction,
   type IcuMedication,
   type IcuIntakeOutput,
   type IcuPatient,
   type IcuPriority,
+  type IcuTask,
   type IcuVital,
 } from "./nursing-icu-data";
 
@@ -359,15 +361,7 @@ const nursingIcuTabGroups: Array<{
   },
 ];
 
-export function NursingIcuModulePage({
-  initialEscalatedCaseId,
-  initialExecutiveFocus,
-  initialExecutiveUnitId,
-  initialRiskFocus,
-  initialRiskPatientId,
-  initialTeleIcuPatientId,
-  page,
-}: {
+type NursingIcuModulePageProps = {
   page: NursingIcuPageId;
   initialEscalatedCaseId?: string;
   initialExecutiveFocus?: string;
@@ -375,7 +369,34 @@ export function NursingIcuModulePage({
   initialRiskFocus?: string;
   initialRiskPatientId?: string;
   initialTeleIcuPatientId?: string;
-}) {
+};
+
+export function NursingIcuModulePage(props: NursingIcuModulePageProps) {
+  return (
+    <React.Suspense fallback={<NursingIcuModulePageLoading />}>
+      <NursingIcuModulePageInner {...props} />
+    </React.Suspense>
+  );
+}
+
+function NursingIcuModulePageLoading() {
+  return (
+    <div className="space-y-4 p-4">
+      <div className="h-12 rounded-md border border-slate-200 bg-white" />
+      <div className="h-64 rounded-md border border-slate-200 bg-white" />
+    </div>
+  );
+}
+
+function NursingIcuModulePageInner({
+  initialEscalatedCaseId,
+  initialExecutiveFocus,
+  initialExecutiveUnitId,
+  initialRiskFocus,
+  initialRiskPatientId,
+  initialTeleIcuPatientId,
+  page,
+}: NursingIcuModulePageProps) {
   const meta = pageMeta[page];
   const chromeLessPage = page === "transfer-discharge";
   const cleanCommandPages: NursingIcuPageId[] = ["operational-analytics", "clinical-analytics", "device-analytics", "pilot-outcome", "adoption-analytics", "users-roles", "configuration", "audit-logs"];
@@ -514,46 +535,57 @@ export function NursingIcuModulePage({
 
 export function IcuCommandCenterPatientPage({
   patientId,
+  initialEventFocus,
   initialTab = "overview",
   initialMonitoringTab = "monitoring-overview",
   initialOrdersSubTab = "medication-overview",
   initialResultType,
+  initialShiftFocus,
 }: {
   patientId: string;
+  initialEventFocus?: string;
   initialTab?: string;
   initialMonitoringTab?: string;
   initialOrdersSubTab?: string;
   initialResultType?: string;
+  initialShiftFocus?: string;
 }) {
   const patient = icuPatients.find((item) => item.id === patientId) ?? null;
+  const activeInitialEventFocus = normalizeIcuEventFocus(initialEventFocus);
   const activeInitialTab = normalizeIcuPatientDetailTab(initialTab);
   const activeInitialMonitoringTab = normalizeIcuMonitoringSubTab(initialMonitoringTab);
   const activeInitialOrdersSubTab = normalizeMedicationOrdersSubTab(initialOrdersSubTab);
-  const title = patient ? `${patient.bedNo} - ${patient.patientName}` : "ICU patient detail";
-  const description = patient
-    ? `${patient.mrn} | ${patient.ageGender} | ${patient.unit}`
-    : "Selected ICU patient was not found.";
-
+  const activeInitialShiftFocus = normalizeIcuShiftFocus(initialShiftFocus);
   return (
-    <div className="min-w-0 max-w-full space-y-4 pb-8">
-      <section className="flex min-w-0 flex-col gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <h1 className="truncate text-sm font-black text-slate-950">{title}</h1>
-          <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{description}</p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <Link className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/icu-command-center">
-            Back
-          </Link>
-          {patient ? (
-            <Link className="inline-flex h-8 items-center justify-center rounded-md border border-sky-300 bg-sky-50 px-3 text-xs font-semibold text-sky-700 hover:bg-sky-100" href={icuPatientDailyChartHref(patient.id)}>
+    <div className="min-w-0 max-w-full space-y-2 pb-8">
+      {patient ? (
+        <section className="overflow-x-auto rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 px-3 py-2 text-white shadow-sm">
+          <div className="flex min-w-max items-center gap-4 text-sm font-bold">
+            <span className="text-base">{patient.patientName}</span>
+            <span className="rounded-full border border-white/30 bg-red-500 px-3 py-1 text-xs uppercase tracking-wide text-white shadow-sm">
+              {patient.criticalityScore >= 8 ? "Urgent" : patient.currentStatus}
+            </span>
+            <span>MR: {patient.mrn}</span>
+            <span>Age/Sex: {patient.ageGender}</span>
+            <span>Bed: {patient.bedNo}</span>
+            <span>Unit: {patient.unit}</span>
+            <span>Doctor: {patient.admittingDoctor}</span>
+            <span>Nurse: {patient.assignedWardNurse}</span>
+            <Link className="inline-flex h-9 items-center justify-center rounded-full border border-white/40 bg-white/15 px-4 text-xs font-bold text-white hover:bg-white/25" href="/icu-command-center">
+              Back
+            </Link>
+            <Link className="inline-flex h-9 items-center justify-center rounded-full border border-white/40 bg-white px-4 text-xs font-bold text-violet-600 hover:bg-white/90" href={icuPatientDailyChartHref(patient.id)}>
               ICU Daily Chart
             </Link>
-          ) : null}
-        </div>
-      </section>
+          </div>
+        </section>
+      ) : (
+        <section className="rounded-md border border-dashed border-border bg-white p-4 text-sm text-muted-foreground">
+          Selected ICU patient was not found.
+        </section>
+      )}
 
-      <IcuPatientCommandProfile initialMonitoringTab={activeInitialMonitoringTab} initialOrdersSubTab={activeInitialOrdersSubTab} initialResultType={initialResultType} initialTab={activeInitialTab} patient={patient} />
+      <IcuPatientCommandProfile initialEventFocus={activeInitialEventFocus} initialMonitoringTab={activeInitialMonitoringTab} initialOrdersSubTab={activeInitialOrdersSubTab} initialResultType={initialResultType} initialShiftFocus={activeInitialShiftFocus} initialTab={activeInitialTab} patient={patient} />
     </div>
   );
 }
@@ -581,7 +613,7 @@ export function IcuDailyChartPage({ patientId }: { patientId: string }) {
           description="Selected ICU patient was not found."
           actions={<Link className="inline-flex h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="/icu-command-center">Back to dashboard</Link>}
         />
-        <div className="rounded-md border border-dashed border-border bg-surface p-6 text-center text-sm text-muted-foreground">
+        <div className="rounded-md border border-dashed border-border bg-surface p-4 text-center text-sm text-muted-foreground">
           Open a valid patient from Patient Overview to view the daily ICU chart.
         </div>
       </div>
@@ -1079,7 +1111,7 @@ function IcuDailyInvestigationTable({ patient, rows }: { patient: IcuPatient; ro
             })}
             {!filteredRows.length ? (
               <tr>
-                <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={9}>No investigation matched selected filters.</td>
+                <td className="px-3 py-4 text-center text-sm text-muted-foreground" colSpan={9}>No investigation matched selected filters.</td>
               </tr>
             ) : null}
           </tbody>
@@ -1192,7 +1224,7 @@ function IcuDailyMedicationTable({ rows }: { rows: typeof medicationRows }) {
               ))}
             </React.Fragment>
           )) : (
-            <tr><td className="px-3 py-6 text-center text-sm text-muted-foreground" colSpan={11}>No medication rows.</td></tr>
+            <tr><td className="px-3 py-4 text-center text-sm text-muted-foreground" colSpan={11}>No medication rows.</td></tr>
           )}
         </tbody>
       </table>
@@ -1482,7 +1514,7 @@ function IcuDailyTransfusionTable({ rows }: { rows: typeof transfusionRows }) {
               <td className="px-3 py-2"><StatusPill tone={toneForStatus(row.status)}>{row.status}</StatusPill></td>
             </tr>
           )) : (
-            <tr><td className="px-3 py-6 text-center text-sm text-muted-foreground" colSpan={12}>No transfusion row for this patient.</td></tr>
+            <tr><td className="px-3 py-4 text-center text-sm text-muted-foreground" colSpan={12}>No transfusion row for this patient.</td></tr>
           )}
         </tbody>
       </table>
@@ -1796,7 +1828,7 @@ function IcuDailyNursingRecordTable({ vitals, tasks, instructions }: { vitals: t
               <td className="px-3 py-2">{row.implementation}</td>
             </tr>
           )) : (
-            <tr><td className="px-3 py-6 text-center text-sm text-muted-foreground" colSpan={3}>No nursing record row for this patient.</td></tr>
+            <tr><td className="px-3 py-4 text-center text-sm text-muted-foreground" colSpan={3}>No nursing record row for this patient.</td></tr>
           )}
         </tbody>
       </table>
@@ -2015,12 +2047,35 @@ type ExecutiveDashboardRow = {
 type ExecutiveActionKind = "unit" | "occupancy" | "critical" | "ventilator" | "alerts" | "medication" | "documentation" | "device" | "transfer";
 type ExecutiveDashboardScenarioMode = "documentation" | "owner" | "action";
 type ExecutiveDashboardDrilldownFocus = ExecutiveActionKind | "owner" | "action";
+type ExecutiveDocumentationStatus = "Overdue" | "Pending" | "In review" | "Signed";
 
 const executiveDrilldownFocuses: ExecutiveDashboardDrilldownFocus[] = ["unit", "occupancy", "critical", "ventilator", "alerts", "medication", "documentation", "device", "transfer", "owner", "action"];
 
 type ExecutiveDashboardAction = {
   row: ExecutiveDashboardRow;
   kind: ExecutiveActionKind;
+};
+
+type ExecutiveDocumentationRow = {
+  id: string;
+  unit: string;
+  unitId: string;
+  patientId: string;
+  bedNo: string;
+  patientName: string;
+  mrn: string;
+  ageGender: string;
+  category: string;
+  item: string;
+  owner: string;
+  due: string;
+  status: ExecutiveDocumentationStatus;
+  tone: DashboardCellTone;
+  evidence: string;
+  source: string;
+  action: string;
+  href: string;
+  sortRank: number;
 };
 
 function ExecutiveDashboard() {
@@ -2057,7 +2112,7 @@ function ExecutiveDashboard() {
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       <CollapsibleCommandPanel summary={filterSummary} title="Executive metrics & filters">
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           {metrics.map((metric) => <DashboardCommandMetric key={metric.label} label={metric.label} value={metric.value} tone={metric.tone} />)}
         </div>
 
@@ -2079,12 +2134,6 @@ function ExecutiveDashboard() {
         <ExecutiveLeadershipPanel rows={visibleRows} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <ExecutivePerformancePanel rows={visibleRows} />
-        <ExecutiveUtilizationPanel rows={visibleRows} />
-        <ExecutiveQualityPanel rows={visibleRows} />
-      </div>
-
       <ExecutiveDashboardActionDialog action={activeAction} onComplete={completeAction} onOpenChange={(open) => !open && setActiveAction(null)} />
     </div>
   );
@@ -2102,7 +2151,7 @@ function ExecutiveDashboardMatrix({ rows, onAction }: { rows: ExecutiveDashboard
         <table className="w-full min-w-[1640px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white">
             <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-3 text-left">ICU unit</th>
+              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-2 text-left">ICU unit</th>
               {columns.map((column) => <th className={cn("px-2 py-3 text-center", column === "Action" ? "min-w-[250px]" : "min-w-[130px]")} key={column}>{column}</th>)}
             </tr>
           </thead>
@@ -2110,25 +2159,25 @@ function ExecutiveDashboardMatrix({ rows, onAction }: { rows: ExecutiveDashboard
             {pagination.pageRows.map((row) => (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
                 <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
-                  <Link className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={executiveDrilldownHref(row, "unit")}>
+                  <Link className="relative block min-h-16 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={executiveDashboardHref(row, "unit")}>
                     <span className={cn("block text-sm font-bold", dashboardToneTextClass(row.tone))}>{row.unit}</span>
                     <span className="mt-1 block text-xs font-semibold text-slate-700">{row.occupied}/{row.capacity} occupied</span>
                   </Link>
                 </td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "occupancy")} icon={BedDouble} title={`${executiveOccupancyPercent(row)}%`} detail={`${row.available} open beds`} tone={executiveOccupancyTone(row)} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "critical")} icon={ShieldAlert} title={`${row.critical}`} detail="Critical patients" tone={row.critical ? "critical" : "success"} showDetail={false} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "ventilator")} icon={Activity} title={`${row.ventilated}`} detail="Vent/O2 support" tone={row.ventilated ? "purple" : "success"} showDetail={false} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "alerts")} icon={AlertTriangle} title={`${row.openAlerts}`} detail="Open alerts" tone={row.openAlerts ? "danger" : "success"} showDetail={false} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "medication")} icon={Pill} title={`${row.medCompliance}%`} detail="Medication" tone={row.medCompliance >= 85 ? "success" : row.medCompliance >= 70 ? "warning" : "danger"} showDetail={false} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "documentation")} icon={ClipboardCheck} title={`${row.docCompliance}%`} detail="Documentation" tone={row.docCompliance >= 85 ? "success" : row.docCompliance >= 70 ? "warning" : "danger"} showDetail={false} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "device")} icon={Activity} title={`${row.deviceUptime}%`} detail="Device uptime" tone={row.deviceUptime >= 95 ? "success" : row.deviceUptime >= 90 ? "warning" : "danger"} showDetail={false} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "transfer")} icon={ArrowRightLeft} title={`${row.transferReady}`} detail="Ready/ordered" tone={row.transferReady ? "info" : "success"} showDetail={false} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDrilldownHref(row, "owner")} icon={UserRound} title={row.owner.replace("Dr. ", "")} detail={row.nurseCoverage} tone="info" /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDashboardHref(row, "occupancy")} icon={BedDouble} title={`${executiveOccupancyPercent(row)}%`} detail={`${row.available} open beds`} tone={executiveOccupancyTone(row)} /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDashboardHref(row, "critical")} icon={ShieldAlert} title={`${row.critical}`} detail="Critical patients" tone={row.critical ? "critical" : "success"} showDetail={false} /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDashboardHref(row, "ventilator")} icon={Activity} title={`${row.ventilated}`} detail="Vent/O2 support" tone={row.ventilated ? "purple" : "success"} showDetail={false} /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDashboardHref(row, "alerts")} icon={AlertTriangle} title={`${row.openAlerts}`} detail="Open alerts" tone={row.openAlerts ? "danger" : "success"} showDetail={false} /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDashboardHref(row, "medication")} icon={Pill} title={`${row.medCompliance}%`} detail="Medication" tone={row.medCompliance >= 85 ? "success" : row.medCompliance >= 70 ? "warning" : "danger"} showDetail={false} /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDashboardHref(row, "documentation")} icon={ClipboardCheck} title={`${row.docCompliance}%`} detail="Documentation" tone={row.docCompliance >= 85 ? "success" : row.docCompliance >= 70 ? "warning" : "danger"} showDetail={false} /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDashboardHref(row, "device")} icon={Activity} title={`${row.deviceUptime}%`} detail="Device uptime" tone={row.deviceUptime >= 95 ? "success" : row.deviceUptime >= 90 ? "warning" : "danger"} showDetail={false} /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveDashboardHref(row, "transfer")} icon={ArrowRightLeft} title={`${row.transferReady}`} detail="Ready/ordered" tone={row.transferReady ? "info" : "success"} showDetail={false} /></td>
+                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell href={executiveScenarioHref("owner", row.id)} icon={UserRound} title={row.owner.replace("Dr. ", "")} detail={row.nurseCoverage} tone="info" /></td>
                 <td className="min-w-[250px] px-3 py-2 align-middle">
                   <div className="grid min-w-[220px] grid-cols-3 gap-2">
-                    <Button asChild className="h-9 px-2 text-xs" size="sm" variant="outline"><Link href={executiveDrilldownHref(row, "unit")}>Review</Link></Button>
-                    <Button asChild className="h-9 px-2 text-xs" size="sm" variant={row.openAlerts || row.critical ? "danger" : "outline"}><Link href={executiveDrilldownHref(row, row.openAlerts ? "alerts" : row.critical ? "critical" : "unit")}>Focus</Link></Button>
-                    <Button asChild className="h-9 px-2 text-xs" size="sm"><Link href={executiveDrilldownHref(row, "action")}>Plan</Link></Button>
+                    <Button asChild className="h-9 px-2 text-xs" size="sm" variant="outline"><Link href={executiveDashboardHref(row, "unit")}>Review</Link></Button>
+                    <Button asChild className="h-9 px-2 text-xs" size="sm" variant={row.openAlerts || row.critical ? "danger" : "outline"}><Link href={executiveDashboardHref(row, row.openAlerts ? "alerts" : row.critical ? "critical" : "unit")}>Focus</Link></Button>
+                    <Button asChild className="h-9 px-2 text-xs" size="sm"><Link href={executiveScenarioHref("action", row.id)}>Plan</Link></Button>
                   </div>
                 </td>
               </tr>
@@ -2162,7 +2211,7 @@ function ExecutiveLeadershipPanel({ rows }: { rows: ExecutiveDashboardRow[] }) {
         </div>
         <div className="mt-4 space-y-2">
           {focusRows.map((row) => (
-            <Link className="block w-full rounded-md border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md" href={executiveDrilldownHref(row, row.openAlerts ? "alerts" : row.deviceUptime < 92 ? "device" : "unit")} key={row.id}>
+            <Link className="block w-full rounded-md border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md" href={executiveDashboardHref(row, row.openAlerts ? "alerts" : row.deviceUptime < 92 ? "device" : "unit")} key={row.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-bold text-slate-950">{row.unit}</p>
@@ -2172,77 +2221,11 @@ function ExecutiveLeadershipPanel({ rows }: { rows: ExecutiveDashboardRow[] }) {
               <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {row.occupied}/{row.capacity} occupied | {row.openAlerts} alert(s)</p>
             </Link>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">All executive focus items are clear.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-600">All executive focus items are clear.</div> : null}
         </div>
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">Board narrative</p>
-        <div className="mt-3 space-y-2">
-          {[
-            "Prioritize critical and ventilated patients before routine rounds.",
-            "Use transfer-ready count to release ICU beds safely.",
-            "Medication and documentation compliance are visible by unit.",
-            "Device uptime highlights biomedical risk before data gaps affect care.",
-          ].map((item) => (
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item}>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              {item}
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
-  );
-}
-
-function ExecutivePerformancePanel({ rows }: { rows: ExecutiveDashboardRow[] }) {
-  const metrics = executiveDashboardMetrics(rows);
-  const med = executiveAverage(rows.map((row) => row.medCompliance));
-  const doc = executiveAverage(rows.map((row) => row.docCompliance));
-  const device = executiveAverage(rows.map((row) => row.deviceUptime));
-  return (
-    <CommandSection title="Performance snapshot" description="Quality, response, and reliability indicators for selected units.">
-      <MetricBar label="Medication compliance" value={med} tone={med >= 85 ? "success" : "warning"} />
-      <MetricBar label="Documentation completion" value={doc} tone={doc >= 85 ? "success" : "warning"} />
-      <MetricBar label="Alert response readiness" value={Math.max(0, 100 - Number(metrics.find((metric) => metric.label === "Open alerts")?.value ?? 0) * 8)} tone="warning" />
-      <MetricBar label="Device uptime" value={device} tone={device >= 94 ? "success" : "warning"} />
-    </CommandSection>
-  );
-}
-
-function ExecutiveUtilizationPanel({ rows }: { rows: ExecutiveDashboardRow[] }) {
-  const capacity = rows.reduce((sum, row) => sum + row.capacity, 0);
-  const occupied = rows.reduce((sum, row) => sum + row.occupied, 0);
-  const available = rows.reduce((sum, row) => sum + row.available, 0);
-  const transferReady = rows.reduce((sum, row) => sum + row.transferReady, 0);
-  return (
-    <CommandSection title="Utilization and throughput" description="Bed pressure, discharges, admissions, and operational movement.">
-      <InfoLine label="Occupied beds" value={`${occupied} of ${capacity}`} />
-      <InfoLine label="Available beds" value={available} />
-      <InfoLine label="Pending transfer/discharge" value={transferReady} />
-      <InfoLine label="Expected admissions" value="3 in next 6 hours" />
-      <InfoLine label="Average ICU LOS" value={rows.length ? `${executiveAverage(rows.map((row) => Number(row.avgLos.replace(" days", ""))))} days` : "-"} />
-    </CommandSection>
-  );
-}
-
-function ExecutiveQualityPanel({ rows }: { rows: ExecutiveDashboardRow[] }) {
-  const topRisk = [...rows].sort((left, right) => executiveRowRank(right) - executiveRowRank(left)).slice(0, 4);
-  return (
-    <CommandSection title="Quality watch" description="Unit-level quality risks that need leadership follow-up.">
-      {topRisk.map((row) => (
-        <Link className={cn("block w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(row.tone))} href={executiveDrilldownHref(row, "action")} key={row.id}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold text-slate-950">{row.unit}</p>
-              <p className="mt-1 text-xs text-slate-600">{row.bottleneck}</p>
-            </div>
-            <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(row.tone))}>{executiveRowRank(row)}</span>
-          </div>
-        </Link>
-      ))}
-    </CommandSection>
   );
 }
 
@@ -2273,7 +2256,7 @@ function ExecutiveDashboardActionDialogContent({ action, onComplete }: { action:
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(920px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className={cn("border-b border-slate-200 px-4 py-3 text-white", dashboardToneSolidClass(copy.tone))}>
+        <div className={cn("border-b border-slate-200 px-3 py-2 text-white", dashboardToneSolidClass(copy.tone))}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{copy.title}</Dialog.Title>
@@ -2324,7 +2307,7 @@ function ExecutiveDashboardActionDialogContent({ action, onComplete }: { action:
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
           <Button variant={selectedAction.includes("Escalate") ? "danger" : "default"} onClick={() => onComplete(action, `${note} | ${selectedAction} | Owner: ${owner} | ${review}`)}>
             <CheckCircle2 className="h-4 w-4" />Save action
@@ -2404,7 +2387,7 @@ function NotificationsTasks() {
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       <CollapsibleCommandPanel summary={filterSummary} title="Queue search & filters">
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           {notificationMetrics(visibleRows).map((metric) => <DashboardCommandMetric key={metric.label} label={metric.label} value={metric.value} tone={metric.tone} />)}
         </div>
         <div className="grid items-end gap-3 p-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.35fr)_repeat(5,minmax(135px,1fr))_112px]">
@@ -2443,17 +2426,17 @@ function NotificationsTasks() {
 
 function NotificationsTasksMatrix({ rows, onAction }: { rows: NotificationCommandRow[]; onAction: (action: NotificationWorkflowAction) => void }) {
   const pagination = useIcuCommandPagination(rows);
-  const columns = ["Source", "Priority", "SLA", "Owner", "Status", "Action"];
+  const columns = ["Source", "SLA", "Assigned To", "Status", "Action"];
   return (
     <div className="overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
       <div className="flex justify-end border-b border-slate-200 bg-white px-3 py-2">
         <IcuLegend />
       </div>
       <div className="max-h-[670px] overflow-auto">
-        <table className="w-full min-w-[1080px] border-collapse bg-white text-sm">
+        <table className="w-full min-w-[940px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white">
             <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-3 text-left">Patient / notification</th>
+              <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-2 text-left">Patient / notification</th>
               {columns.map((column) => <th className="min-w-[120px] px-2 py-3 text-center" key={column}>{column}</th>)}
             </tr>
           </thead>
@@ -2464,11 +2447,9 @@ function NotificationsTasksMatrix({ rows, onAction }: { rows: NotificationComman
                   <button className="block min-h-14 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => onAction({ row, kind: "open" })}>
                     <span className={cn("block truncate text-sm font-bold", dashboardToneTextClass(row.tone))}>{row.patient}</span>
                     <span className="mt-0.5 block truncate text-xs font-semibold text-slate-700">{row.unit} | {row.createdAt}</span>
-                    <span className="mt-0.5 block truncate text-xs font-bold text-slate-950">{row.title}</span>
                   </button>
                 </td>
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={notificationSourceIcon(row.source)} title={row.source} detail={row.type} tone={notificationSourceTone(row.source)} showDetail={false} onClick={() => onAction({ row, kind: "open" })} /></td>
-                <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={ShieldAlert} title={row.priority} detail={row.details} tone={notificationPriorityTone(row.priority)} showDetail={false} onClick={() => onAction({ row, kind: row.priority === "Critical" ? "escalate" : "open" })} /></td>
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={Clock3} title={notificationSlaLabel(row)} detail={row.dueLabel} tone={notificationSlaTone(row)} showDetail={false} onClick={() => onAction({ row, kind: notificationSlaBreached(row) ? "escalate" : "open" })} /></td>
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={UserRound} title={row.owner.replace("Ward Nurse ", "").replace("Unit Nurse ", "")} detail={row.routeTo} tone="info" showDetail={false} onClick={() => onAction({ row, kind: "assign" })} /></td>
                 <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={ClipboardCheck} title={row.status} detail={row.waitingMinutes ? `${row.waitingMinutes} min wait` : "Current"} tone={notificationStatusTone(row.status)} showDetail={false} onClick={() => onAction({ row, kind: "start" })} /></td>
@@ -2496,7 +2477,6 @@ function NotificationsTasksMatrix({ rows, onAction }: { rows: NotificationComman
 
 function NotificationsTasksSidePanel({ rows, onAction }: { rows: NotificationCommandRow[]; onAction: (action: NotificationWorkflowAction) => void }) {
   const focusRows = rows.filter((row) => row.priority === "Critical" || notificationSlaBreached(row) || row.status === "Escalated").slice(0, 5);
-  const ownerLoad = Array.from(new Set(rows.map((row) => row.owner))).map((owner) => ({ owner, count: rows.filter((row) => row.owner === owner).length })).sort((left, right) => right.count - left.count).slice(0, 5);
   return (
     <div className="space-y-4">
       <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
@@ -2519,31 +2499,7 @@ function NotificationsTasksSidePanel({ rows, onAction }: { rows: NotificationCom
               <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {notificationSlaLabel(row)}</p>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No critical queue item in selected view.</div> : null}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">Owner load</p>
-        <div className="mt-3 space-y-2">
-          {ownerLoad.map((item) => (
-            <div className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item.owner}>
-              <span>{item.owner}</span>
-              <Badge tone={item.count >= 4 ? "warning" : "info"}>{item.count}</Badge>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">SLA rules</p>
-        <div className="mt-3 space-y-2">
-          {["Critical: acknowledge now and escalate if no response", "Medication late: route to nurse and pharmacy", "Doctor instruction: owner must document outcome", "Device issue: biomedical owner with clinical fallback", "Resolve only after patient impact is reviewed"].map((item) => (
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item}>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              {item}
-            </div>
-          ))}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-600">No critical queue item in selected view.</div> : null}
         </div>
       </div>
     </div>
@@ -2577,7 +2533,7 @@ function NotificationWorkflowActionDialogContent({ action, onComplete }: { actio
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(920px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className={cn("border-b border-slate-200 px-4 py-3 text-white", dashboardToneSolidClass(copy.tone))}>
+        <div className={cn("border-b border-slate-200 px-3 py-2 text-white", dashboardToneSolidClass(copy.tone))}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{copy.title}</Dialog.Title>
@@ -2628,7 +2584,7 @@ function NotificationWorkflowActionDialogContent({ action, onComplete }: { actio
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
           {action.row.patientId ? <Button variant="outline" asChild><Link href={icuPatientDetailHref(action.row.patientId, "overview")}>Open patient</Link></Button> : null}
           <Button variant={selectedAction.includes("Escalate") ? "danger" : "default"} onClick={() => onComplete(action, `${note} | ${selectedAction} | Owner: ${owner} | ${review}`)}>
@@ -2642,20 +2598,38 @@ function NotificationWorkflowActionDialogContent({ action, onComplete }: { actio
 
 function ExecutiveDashboardScenarioCommand({ mode, unitId }: { mode: ExecutiveDashboardScenarioMode; unitId?: string }) {
   const allRows = React.useMemo(() => buildExecutiveDashboardRows(new Set()), []);
+  const [documentationQuery, setDocumentationQuery] = React.useState("");
+  const [documentationStatus, setDocumentationStatus] = React.useState("All status");
+  const [documentationCategory, setDocumentationCategory] = React.useState("All charting");
   const selectedUnit = unitId ? allRows.find((row) => row.id === unitId) : undefined;
   const rows = selectedUnit ? [selectedUnit] : allRows;
   const pagination = useIcuCommandPagination(rows);
+  const documentationRows = React.useMemo(() => buildExecutiveDocumentationRows(rows), [rows]);
+  const documentationCategories = React.useMemo(() => ["All charting", ...Array.from(new Set(documentationRows.map((row) => row.category)))], [documentationRows]);
+  const visibleDocumentationRows = React.useMemo(() => {
+    const query = documentationQuery.trim().toLowerCase();
+    return documentationRows.filter((row) => {
+      const matchesQuery = !query || [row.patientName, row.bedNo, row.mrn, row.unit, row.category, row.item, row.owner, row.status].some((value) => value.toLowerCase().includes(query));
+      const matchesStatus = documentationStatus === "All status" || row.status === documentationStatus;
+      const matchesCategory = documentationCategory === "All charting" || row.category === documentationCategory;
+      return matchesQuery && matchesStatus && matchesCategory;
+    });
+  }, [documentationCategory, documentationQuery, documentationRows, documentationStatus]);
+  const documentationPagination = useIcuCommandPagination(visibleDocumentationRows);
   const criticalRows = rows.filter((row) => row.critical);
   const documentationRisk = rows.filter((row) => row.docCompliance < 85);
   const actionRows = rows.filter((row) => row.critical || row.openAlerts || row.deviceUptime < 92 || row.medCompliance < 85 || row.docCompliance < 85 || row.transferReady);
+  const pendingDocumentationRows = documentationRows.filter((row) => row.status !== "Signed");
+  const overdueDocumentationRows = documentationRows.filter((row) => row.status === "Overdue");
+  const signedDocumentationRows = documentationRows.filter((row) => row.status === "Signed");
 
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       <CollapsibleCommandPanel
-        summary={`${selectedUnit?.unit ?? "All ICU units"} | ${rows.length} unit(s)`}
+        summary={mode === "documentation" ? `${selectedUnit?.unit ?? "All ICU units"} | ${visibleDocumentationRows.length} documentation row(s)` : `${selectedUnit?.unit ?? "All ICU units"} | ${rows.length} unit(s)`}
         title={`${executiveScenarioShortLabel(mode)} summary`}
       >
-        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-base font-black text-slate-950">{executiveScenarioTitle(mode)}</p>
             <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-500">{executiveScenarioDescription(mode)}</p>
@@ -2671,14 +2645,42 @@ function ExecutiveDashboardScenarioCommand({ mode, unitId }: { mode: ExecutiveDa
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 px-3 py-3 md:flex md:flex-wrap md:items-center">
-          <DashboardCommandMetric label="Units" value={rows.length} tone="info" />
-          <DashboardCommandMetric label="Critical" value={criticalRows.length} tone={criticalRows.length ? "critical" : "success"} />
-          <DashboardCommandMetric label="Documentation risk" value={documentationRisk.length} tone={documentationRisk.length ? "warning" : "success"} />
-          <DashboardCommandMetric label="Action items" value={actionRows.length} tone={actionRows.length ? "danger" : "success"} />
-          <DashboardCommandMetric label="Avg documentation" value={`${executiveAverage(rows.map((row) => row.docCompliance))}%`} tone={documentationRisk.length ? "warning" : "success"} />
-          <DashboardCommandMetric label="Avg device uptime" value={`${executiveAverage(rows.map((row) => row.deviceUptime))}%`} tone="info" />
-        </div>
+        {mode === "documentation" ? (
+          <>
+            <div className="grid grid-cols-2 gap-2 px-3 py-2 md:flex md:flex-wrap md:items-center">
+              <DashboardCommandMetric label="Patients" value={new Set(documentationRows.map((row) => row.patientId)).size} tone="info" />
+              <DashboardCommandMetric label="Open charting" value={pendingDocumentationRows.length} tone={pendingDocumentationRows.length ? "warning" : "success"} />
+              <DashboardCommandMetric label="Overdue" value={overdueDocumentationRows.length} tone={overdueDocumentationRows.length ? "danger" : "success"} />
+              <DashboardCommandMetric label="Signed" value={signedDocumentationRows.length} tone="success" />
+              <DashboardCommandMetric label="Avg documentation" value={`${executiveAverage(rows.map((row) => row.docCompliance))}%`} tone={documentationRisk.length ? "warning" : "success"} />
+            </div>
+            <div className="grid items-end gap-3 border-t border-slate-200 p-3 lg:grid-cols-[minmax(240px,1fr)_220px_240px_auto]">
+              <label className="space-y-1 text-sm">
+                <span className="text-xs font-bold uppercase text-slate-500">Search documentation</span>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input className="h-10 pl-9" value={documentationQuery} onChange={(event) => setDocumentationQuery(event.target.value)} placeholder="Patient, bed, chart, owner..." />
+                </div>
+              </label>
+              <IcuOperationsFilterSelect label="Status" value={documentationStatus} onChange={setDocumentationStatus} options={["All status", "Overdue", "Pending", "In review", "Signed"]} />
+              <IcuOperationsFilterSelect label="Charting section" value={documentationCategory} onChange={setDocumentationCategory} options={documentationCategories} />
+              <Button className="h-10" variant="outline" onClick={() => {
+                setDocumentationQuery("");
+                setDocumentationStatus("All status");
+                setDocumentationCategory("All charting");
+              }}>Reset</Button>
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 px-3 py-2 md:flex md:flex-wrap md:items-center">
+            <DashboardCommandMetric label="Units" value={rows.length} tone="info" />
+            <DashboardCommandMetric label="Critical" value={criticalRows.length} tone={criticalRows.length ? "critical" : "success"} />
+            <DashboardCommandMetric label="Documentation risk" value={documentationRisk.length} tone={documentationRisk.length ? "warning" : "success"} />
+            <DashboardCommandMetric label="Action items" value={actionRows.length} tone={actionRows.length ? "danger" : "success"} />
+            <DashboardCommandMetric label="Avg documentation" value={`${executiveAverage(rows.map((row) => row.docCompliance))}%`} tone={documentationRisk.length ? "warning" : "success"} />
+            <DashboardCommandMetric label="Avg device uptime" value={`${executiveAverage(rows.map((row) => row.deviceUptime))}%`} tone="info" />
+          </div>
+        )}
       </CollapsibleCommandPanel>
 
       <div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap">
@@ -2696,43 +2698,46 @@ function ExecutiveDashboardScenarioCommand({ mode, unitId }: { mode: ExecutiveDa
         ))}
       </div>
 
+      {mode === "documentation" ? (
+        <ExecutiveDocumentationBoard pagination={documentationPagination} />
+      ) : (
       <TeleIcuTableShell description={executiveScenarioTableDescription(mode)} title={`${executiveScenarioShortLabel(mode)} view`}>
         <table className="w-full min-w-[1380px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
             <tr className="border-b border-slate-300">
               {["Unit", "Occupancy", "Critical / ventilator", "Medication", "Documentation", "Device", "Owner chain", "Action plan", "Open"].map((column) => (
-                <th className="px-3 py-3 text-left" key={column}>{column}</th>
+                <th className="px-3 py-2 text-left" key={column}>{column}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {pagination.pageRows.map((row) => (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
-                <td className="px-3 py-3">
+                <td className="px-3 py-2">
                   <Link className="block rounded-md border border-transparent p-1 transition hover:border-sky-300 hover:bg-sky-50" href={executiveDrilldownHref(row, "unit")}>
                     <span className="block text-sm font-black text-slate-950">{row.unit}</span>
                     <span className="mt-1 block text-xs text-slate-500">{row.avgLos} avg LOS | {row.nurseCoverage}</span>
                   </Link>
                 </td>
-                <td className="px-3 py-3"><TeleIcuScorePill detail={`${row.occupied}/${row.capacity} beds | ${row.available} open`} tone={executiveOccupancyTone(row)} value={`${executiveOccupancyPercent(row)}%`} /></td>
-                <td className="px-3 py-3 text-xs text-slate-700">
+                <td className="px-3 py-2"><TeleIcuScorePill detail={`${row.occupied}/${row.capacity} beds | ${row.available} open`} tone={executiveOccupancyTone(row)} value={`${executiveOccupancyPercent(row)}%`} /></td>
+                <td className="px-3 py-2 text-xs text-slate-700">
                   <TeleIcuPlainLink href={executiveDrilldownHref(row, row.critical ? "critical" : "ventilator")} label={`${row.critical} critical / ${row.ventilated} ventilated`} detail="Open clinical risk" />
                 </td>
-                <td className="px-3 py-3"><TeleIcuScorePill detail="Medication compliance" tone={row.medCompliance >= 85 ? "success" : row.medCompliance >= 70 ? "warning" : "danger"} value={`${row.medCompliance}%`} /></td>
-                <td className={cn("px-3 py-3", mode === "documentation" && "bg-sky-50")}>
+                <td className="px-3 py-2"><TeleIcuScorePill detail="Medication compliance" tone={row.medCompliance >= 85 ? "success" : row.medCompliance >= 70 ? "warning" : "danger"} value={`${row.medCompliance}%`} /></td>
+                <td className="px-3 py-2">
                   <TeleIcuScorePill detail="Notes, task closure, orders" tone={row.docCompliance >= 85 ? "success" : row.docCompliance >= 70 ? "warning" : "danger"} value={`${row.docCompliance}%`} />
                 </td>
-                <td className="px-3 py-3"><TeleIcuScorePill detail="Device uptime" tone={row.deviceUptime >= 95 ? "success" : row.deviceUptime >= 90 ? "warning" : "danger"} value={`${row.deviceUptime}%`} /></td>
-                <td className={cn("px-3 py-3 text-xs text-slate-700", mode === "owner" && "bg-sky-50")}>
+                <td className="px-3 py-2"><TeleIcuScorePill detail="Device uptime" tone={row.deviceUptime >= 95 ? "success" : row.deviceUptime >= 90 ? "warning" : "danger"} value={`${row.deviceUptime}%`} /></td>
+                <td className={cn("px-3 py-2 text-xs text-slate-700", mode === "owner" && "bg-sky-50")}>
                   <p className="font-bold text-slate-950">{row.owner}</p>
                   <p className="mt-1">Head nurse / unit nurse handoff required for bottlenecks.</p>
                   <p className="mt-1 text-slate-500">{row.nurseCoverage}</p>
                 </td>
-                <td className={cn("px-3 py-3 text-xs text-slate-700", mode === "action" && "bg-sky-50")}>
+                <td className={cn("px-3 py-2 text-xs text-slate-700", mode === "action" && "bg-sky-50")}>
                   <p className="font-bold text-slate-950">{row.bottleneck}</p>
                   <p className="mt-1">{executiveSuggestedAction(row)}</p>
                 </td>
-                <td className="px-3 py-3"><ExecutiveOpenLinks row={row} /></td>
+                <td className="px-3 py-2"><ExecutiveOpenLinks row={row} /></td>
               </tr>
             ))}
             {!rows.length ? (
@@ -2744,7 +2749,66 @@ function ExecutiveDashboardScenarioCommand({ mode, unitId }: { mode: ExecutiveDa
         </table>
         <IcuCommandPaginationControls {...pagination} />
       </TeleIcuTableShell>
+      )}
     </div>
+  );
+}
+
+function ExecutiveDocumentationBoard({ pagination }: { pagination: ReturnType<typeof useIcuCommandPagination<ExecutiveDocumentationRow>> }) {
+  return (
+    <TeleIcuTableShell description="" title="Patient documentation">
+      <table className="w-full min-w-[1420px] border-collapse bg-white text-sm">
+        <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
+          <tr className="border-b border-slate-300">
+            <th className="sticky left-0 z-40 min-w-[240px] bg-white px-3 py-2 text-left">Patient</th>
+            <th className="min-w-[220px] px-3 py-2 text-left">Documentation item</th>
+            <th className="min-w-[170px] px-3 py-2 text-left">Section</th>
+            <th className="min-w-[170px] px-3 py-2 text-left">Assigned to</th>
+            <th className="min-w-[130px] px-3 py-2 text-left">Due / SLA</th>
+            <th className="min-w-[130px] px-3 py-2 text-left">Status</th>
+            <th className="min-w-[270px] px-3 py-2 text-left">Evidence</th>
+            <th className="min-w-[160px] px-3 py-2 text-left">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pagination.pageRows.map((row) => (
+            <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
+              <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
+                <Link className="block rounded-md border border-transparent p-1 transition hover:border-sky-300 hover:bg-sky-50" href={icuPatientDetailHref(row.patientId, "overview")}>
+                  <span className="block text-sm font-black text-slate-950">{row.patientName}</span>
+                  <span className="mt-1 block text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</span>
+                  <span className="mt-1 block text-xs text-slate-500">{row.mrn} | {row.ageGender}</span>
+                </Link>
+              </td>
+              <td className="px-3 py-2 align-middle">
+                <p className="font-bold text-slate-950">{row.item}</p>
+                <p className="mt-1 text-xs text-slate-500">{row.source}</p>
+              </td>
+              <td className="px-3 py-2 align-middle">
+                <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-800">{row.category}</span>
+              </td>
+              <td className="px-3 py-2 align-middle text-sm font-semibold text-slate-800">{row.owner}</td>
+              <td className="px-3 py-2 align-middle text-sm font-bold text-slate-950">{row.due}</td>
+              <td className="px-3 py-2 align-middle">
+                <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(row.tone))}>{row.status}</span>
+              </td>
+              <td className="px-3 py-2 align-middle text-xs leading-5 text-slate-600">{row.evidence}</td>
+              <td className="px-3 py-2 align-middle">
+                <Button asChild className="h-9 px-3 text-xs" size="sm" variant={row.status === "Signed" ? "outline" : "default"}>
+                  <Link href={row.href}>{row.action}</Link>
+                </Button>
+              </td>
+            </tr>
+          ))}
+          {!pagination.totalRows ? (
+            <tr>
+              <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={8}>No documentation item matched the selected filters.</td>
+            </tr>
+          ) : null}
+        </tbody>
+      </table>
+      <IcuCommandPaginationControls {...pagination} />
+    </TeleIcuTableShell>
   );
 }
 
@@ -2761,7 +2825,7 @@ function ExecutiveDashboardDrilldown({ focus, unitId }: { focus?: string; unitId
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       <CollapsibleCommandPanel summary={drilldownSummary} title="Executive drilldown filters">
-        <div className="grid grid-cols-2 gap-2 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 px-3 py-2 md:flex md:flex-wrap md:items-center">
           {metrics.map((metric) => <DashboardCommandMetric key={metric.label} label={metric.label} value={metric.value} tone={metric.tone} />)}
           <DashboardCommandMetric label="Medication" value={`${executiveAverage(rows.map((row) => row.medCompliance))}%`} tone={executiveAverage(rows.map((row) => row.medCompliance)) >= 85 ? "success" : "warning"} />
           <DashboardCommandMetric label="Documentation" value={`${executiveAverage(rows.map((row) => row.docCompliance))}%`} tone={executiveAverage(rows.map((row) => row.docCompliance)) >= 85 ? "success" : "warning"} />
@@ -2772,7 +2836,7 @@ function ExecutiveDashboardDrilldown({ focus, unitId }: { focus?: string; unitId
         <table className="w-full min-w-[1500px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
             <tr className="border-b border-slate-300">
-              <th className={cn("sticky left-0 z-40 min-w-[220px] bg-white px-3 py-3 text-left", activeFocus === "unit" && "bg-sky-50")}>ICU unit</th>
+              <th className={cn("sticky left-0 z-40 min-w-[220px] bg-white px-3 py-2 text-left", activeFocus === "unit" && "bg-sky-50")}>ICU unit</th>
               {[
                 ["occupancy", "Occupancy"],
                 ["critical", "Critical"],
@@ -2785,14 +2849,14 @@ function ExecutiveDashboardDrilldown({ focus, unitId }: { focus?: string; unitId
                 ["owner", "Owner"],
                 ["action", "Action"],
               ].map(([key, label]) => (
-                <th className={cn("min-w-[130px] px-3 py-3 text-left", activeFocus === key && "bg-sky-50 text-sky-900")} key={key}>{label}</th>
+                <th className={cn("min-w-[130px] px-3 py-2 text-left", activeFocus === key && "bg-sky-50 text-sky-900")} key={key}>{label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {pagination.pageRows.map((row) => (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
-                <td className={cn("sticky left-0 z-10 bg-white px-3 py-3 align-top shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]", activeFocus === "unit" && "bg-sky-50")}>
+                <td className={cn("sticky left-0 z-10 bg-white px-3 py-2 align-top shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]", activeFocus === "unit" && "bg-sky-50")}>
                   <Link className="block rounded-md border border-transparent p-1 transition hover:border-sky-300 hover:bg-white" href={executiveSourceModuleHref(row, "unit")}>
                     <span className="block text-sm font-black text-slate-950">{row.unit}</span>
                     <span className="mt-1 block text-xs text-slate-500">{row.avgLos} avg LOS | {row.nurseCoverage}</span>
@@ -2912,7 +2976,7 @@ function executiveDrilldownDescription(focus: ExecutiveDashboardDrilldownFocus) 
 }
 
 function executiveDrilldownColumnClass(activeFocus: ExecutiveDashboardDrilldownFocus, columnFocus: ExecutiveDashboardDrilldownFocus) {
-  return cn("px-3 py-3 align-top", activeFocus === columnFocus && "bg-sky-50 ring-1 ring-inset ring-sky-200");
+  return cn("px-3 py-2 align-top", activeFocus === columnFocus && "bg-sky-50 ring-1 ring-inset ring-sky-200");
 }
 
 function executiveDrilldownInsight(row: ExecutiveDashboardRow, focus: ExecutiveDashboardDrilldownFocus): { title: string; detail: string; tone: DashboardCellTone } {
@@ -2994,6 +3058,246 @@ function executiveSuggestedAction(row: ExecutiveDashboardRow) {
   if (row.docCompliance < 85) return "Close pending documentation and order acknowledgement gaps.";
   if (row.transferReady) return "Open discharge/transfer board and release eligible beds.";
   return "Continue routine executive monitoring.";
+}
+
+function buildExecutiveDocumentationRows(rows: ExecutiveDashboardRow[]): ExecutiveDocumentationRow[] {
+  const unitByName = new Map(rows.map((row) => [row.unit, row]));
+  return icuPatients
+    .filter((patient) => unitByName.has(patient.unit))
+    .flatMap((patient) => buildExecutivePatientDocumentationRows(patient, unitByName.get(patient.unit)!))
+    .sort((left, right) => left.sortRank - right.sortRank || left.unit.localeCompare(right.unit) || left.bedNo.localeCompare(right.bedNo));
+}
+
+function buildExecutivePatientDocumentationRows(patient: IcuPatient, unitRow: ExecutiveDashboardRow): ExecutiveDocumentationRow[] {
+  const rows: ExecutiveDocumentationRow[] = [];
+  const latestVital = [...icuVitals].reverse().find((row) => row.patientId === patient.id);
+  const patientAlerts = icuAlerts.filter((row) => row.patientId === patient.id && row.status !== "Resolved");
+  const patientInstructions = doctorInstructions.filter((row) => row.patientId === patient.id && row.status !== "Completed");
+  const patientTasks = icuTasks.filter((row) => row.patientId === patient.id && row.status !== "Completed");
+  const dueMeds = medicationRows.filter((row) => row.patientId === patient.id && ["Due", "Late"].includes(row.status));
+  const pendingIoRows = intakeOutputRows.filter((row) => row.patientId === patient.id && row.status === "Pending review");
+  const hasClinicalWatch = Boolean(patientAlerts.length || patient.criticalityScore >= 8 || latestVital?.abnormal);
+
+  rows.push(executiveDocumentationRow({
+    action: latestVital?.abnormal ? "Open chart" : "Review chart",
+    category: "Nursing observation",
+    due: latestVital?.abnormal ? "Now" : "Current shift",
+    evidence: latestVital
+      ? `${latestVital.time} vitals: SpO2 ${latestVital.spo2}%, BP ${latestVital.bp}, RR ${latestVital.respiratoryRate}/min.`
+      : "No current shift vitals captured.",
+    href: icuPatientDetailHref(patient.id, "monitoring", "24h-chart"),
+    item: "24h observation chart",
+    owner: latestVital?.nurse ?? patient.assignedWardNurse,
+    patient,
+    source: "Vitals and nurse observation",
+    status: latestVital?.abnormal ? "In review" : "Signed",
+    unitRow,
+  }));
+
+  patientInstructions.slice(0, 2).forEach((instruction) => {
+    rows.push(executiveDocumentationRow({
+      action: "Open orders",
+      category: "Doctor orders",
+      due: instruction.dueTime,
+      evidence: `${instruction.doctor}: ${instruction.instruction}`,
+      href: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=pending-work"),
+      item: `${instruction.instructionType} acknowledgement`,
+      owner: instruction.assignedNurse,
+      patient,
+      source: `Instruction ${instruction.id}`,
+      status: executiveDocumentationStatusFromClinicalStatus(instruction.status),
+      unitRow,
+    }));
+  });
+
+  dueMeds.slice(0, 2).forEach((medication) => {
+    rows.push(executiveDocumentationRow({
+      action: "Open MAR",
+      category: "Medication / MAR",
+      due: medication.scheduledTime,
+      evidence: `${medication.medication} ${medication.dose} | ${medication.route} | ${medication.reason}`,
+      href: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=medication-overview"),
+      item: "Medication administration record",
+      owner: medication.administeredBy === "-" ? patient.assignedWardNurse : medication.administeredBy,
+      patient,
+      source: `MAR ${medication.id}`,
+      status: medication.status === "Late" ? "Overdue" : "Pending",
+      unitRow,
+    }));
+  });
+
+  pendingIoRows.slice(0, 2).forEach((ioRow) => {
+    rows.push(executiveDocumentationRow({
+      action: "Open I/O",
+      category: "Intake / Output",
+      due: ioRow.capturedAt,
+      evidence: `${ioRow.kind}: ${ioRow.component} ${ioRow.quantityMl} ml | ${ioRow.note}`,
+      href: icuPatientDetailHref(patient.id, "monitoring", "intake-output"),
+      item: "I/O verification",
+      owner: ioRow.verifiedBy ?? patient.assignedUnitNurse,
+      patient,
+      source: `I/O ${ioRow.id}`,
+      status: "In review",
+      unitRow,
+    }));
+  });
+
+  patientTasks.slice(0, 2).forEach((task) => {
+    rows.push(executiveDocumentationRow({
+      action: "Open task",
+      category: "Task closure",
+      due: task.dueTime,
+      evidence: `${task.title} | ${task.remarks}`,
+      href: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=pending-work"),
+      item: `${task.taskType} note`,
+      owner: task.assignedTo,
+      patient,
+      source: `Task ${task.id}`,
+      status: executiveDocumentationStatusFromTask(task),
+      unitRow,
+    }));
+  });
+
+  if (patient.pendingTasks || hasClinicalWatch) {
+    rows.push(executiveDocumentationRow({
+      action: "Open handover",
+      category: "Shift handover",
+      due: "Shift end",
+      evidence: `${patient.pendingTasks} pending item(s), ${patientAlerts.length} alert(s), handover from ${patient.assignedWardNurse}.`,
+      href: icuPatientDetailHref(patient.id, "shift-summary", undefined, patient.pendingTasks ? "shiftFocus=pending" : "shiftFocus=critical"),
+      item: "Shift handover sign-off",
+      owner: patient.assignedUnitNurse,
+      patient,
+      source: "Handover summary",
+      status: patient.pendingTasks ? "Pending" : "In review",
+      unitRow,
+    }));
+  }
+
+  if (hasClinicalWatch) {
+    rows.push(executiveDocumentationRow({
+      action: "Open note",
+      category: "Family communication",
+      due: "Before next update",
+      evidence: patientAlerts[0]?.message ?? patient.currentStatus,
+      href: icuPatientDetailHref(patient.id, "collaborate"),
+      item: "Family update documentation",
+      owner: patient.dutyDoctor,
+      patient,
+      source: "Clinical status update",
+      status: "Pending",
+      unitRow,
+    }));
+  }
+
+  if (patient.currentStatus === "Ready for transfer" || patient.currentStatus === "Discharge ordered") {
+    rows.push(executiveDocumentationRow({
+      action: "Open clearance",
+      category: "Transfer / discharge",
+      due: "Before bed release",
+      evidence: `${patient.currentStatus} | destination readiness and nursing clearance required.`,
+      href: `/icu-command-center/patients/discharges?unit=${encodeURIComponent(patient.unit)}&focus=transfer`,
+      item: "Transfer documentation clearance",
+      owner: patient.assignedUnitNurse,
+      patient,
+      source: "Bed release workflow",
+      status: "Pending",
+      unitRow,
+    }));
+  }
+
+  if (!rows.some((row) => row.status !== "Signed")) {
+    rows.push(executiveDocumentationRow({
+      action: "Open patient",
+      category: "Daily chart",
+      due: "Current shift",
+      evidence: "Core ICU documentation is signed for current patient view.",
+      href: icuPatientDetailHref(patient.id, "overview"),
+      item: "Daily documentation set",
+      owner: patient.assignedUnitNurse,
+      patient,
+      source: "Patient chart",
+      status: "Signed",
+      unitRow,
+    }));
+  }
+
+  return rows;
+}
+
+function executiveDocumentationRow({
+  action,
+  category,
+  due,
+  evidence,
+  href,
+  item,
+  owner,
+  patient,
+  source,
+  status,
+  unitRow,
+}: {
+  action: string;
+  category: string;
+  due: string;
+  evidence: string;
+  href: string;
+  item: string;
+  owner: string;
+  patient: IcuPatient;
+  source: string;
+  status: ExecutiveDocumentationStatus;
+  unitRow: ExecutiveDashboardRow;
+}): ExecutiveDocumentationRow {
+  const tone = executiveDocumentationTone(status);
+  return {
+    action,
+    ageGender: patient.ageGender,
+    bedNo: patient.bedNo,
+    category,
+    due,
+    evidence,
+    href,
+    id: `${patient.id}-${category}-${item}-${source}`.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    item,
+    mrn: patient.mrn,
+    owner,
+    patientId: patient.id,
+    patientName: patient.patientName,
+    sortRank: executiveDocumentationStatusRank(status),
+    source,
+    status,
+    tone,
+    unit: patient.unit,
+    unitId: unitRow.id,
+  };
+}
+
+function executiveDocumentationStatusFromClinicalStatus(status: DoctorInstruction["status"]): ExecutiveDocumentationStatus {
+  if (status === "Escalated") return "Overdue";
+  if (status === "In progress") return "In review";
+  return "Pending";
+}
+
+function executiveDocumentationStatusFromTask(task: IcuTask): ExecutiveDocumentationStatus {
+  if (task.status === "Overdue" || task.status === "Escalated") return "Overdue";
+  if (task.status === "In progress" || task.status === "Accepted") return "In review";
+  return "Pending";
+}
+
+function executiveDocumentationTone(status: ExecutiveDocumentationStatus): DashboardCellTone {
+  if (status === "Overdue") return "danger";
+  if (status === "Pending") return "warning";
+  if (status === "In review") return "info";
+  return "success";
+}
+
+function executiveDocumentationStatusRank(status: ExecutiveDocumentationStatus) {
+  if (status === "Overdue") return 1;
+  if (status === "Pending") return 2;
+  if (status === "In review") return 3;
+  return 4;
 }
 
 function buildExecutiveDashboardRows(resolvedUnits: Set<string>): ExecutiveDashboardRow[] {
@@ -3826,6 +4130,18 @@ function smartBedPatientRoute(row: SmartBedInventoryRow, kind: SmartBedCellKind)
   return icuPatientDetailHref(row.patient.id, "overview");
 }
 
+function smartBedAssignedToLabel(row: SmartBedInventoryRow) {
+  if (!row.patient) {
+    if (row.status === "Cleaning") return "Housekeeping";
+    if (row.status === "Maintenance") return "Biomedical";
+    if (row.status === "Blocked") return "Infection Control";
+    return "Bed Coordinator";
+  }
+  if (row.alertCount > 0 || row.patient.criticalityScore >= 8) return row.patient.dutyDoctor;
+  if (row.taskCount > 0 || row.dueMedicationCount > 0) return row.patient.assignedWardNurse;
+  return row.patient.assignedUnitNurse;
+}
+
 function smartBedCell(row: SmartBedInventoryRow, kind: SmartBedCellKind): DashboardCell {
   if (kind === "status") {
     return {
@@ -3878,7 +4194,7 @@ function smartBedCell(row: SmartBedInventoryRow, kind: SmartBedCellKind): Dashbo
   if (kind === "work") {
     const openCount = row.alertCount + row.taskCount + row.dueMedicationCount;
     return {
-      title: openCount ? `${openCount} open` : "Clear",
+      title: openCount ? `${openCount} pending` : "No pending",
       detail: `${row.alertCount} alert | ${row.taskCount} task | ${row.dueMedicationCount} med`,
       tone: smartBedDashboardTone(row, kind),
       icon: AlertTriangle,
@@ -3886,8 +4202,8 @@ function smartBedCell(row: SmartBedInventoryRow, kind: SmartBedCellKind): Dashbo
   }
   if (kind === "team") {
     return {
-      title: row.patient ? "Assigned" : "Assign",
-      detail: row.patient ? row.patient.assignedWardNurse : row.nurseStation,
+      title: smartBedAssignedToLabel(row),
+      detail: row.patient ? `${row.patient.assignedWardNurse} | ${row.patient.dutyDoctor}` : row.nurseStation,
       tone: smartBedDashboardTone(row, kind),
       icon: UserRound,
     };
@@ -3925,7 +4241,7 @@ function SmartBedCommandCell({
   const actionCell = ["device", "work", "team", "flow"].includes(kind);
   const content = actionCell
     ? <SmartBedActionCircleCell cell={cell} kind={kind} />
-    : <VitalTrafficPill cell={cell} icon={cell.icon} />;
+    : <span className="flex min-h-[72px] w-full items-center justify-center pt-8"><VitalTrafficPill cell={cell} icon={cell.icon} /></span>;
 
   if (route) {
     return (
@@ -3958,12 +4274,12 @@ function SmartBedActionCircleCell({ cell, kind }: { cell: DashboardCell; kind: S
             : "bg-slate-700 hover:bg-slate-800";
 
   return (
-    <span className="grid min-h-20 w-full min-w-24 grid-rows-[40px_18px_14px] place-items-center">
+    <span className="flex min-h-[72px] w-full min-w-28 flex-col items-center justify-center gap-1.5 py-1">
       <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition", actionClass)}>
         <Icon className="h-4 w-4" />
       </span>
-      <span className="block max-w-24 truncate whitespace-nowrap text-center text-xs font-bold leading-none text-slate-800">{cell.title}</span>
-      <span className={cn("block max-w-28 truncate whitespace-nowrap text-center text-[11px] leading-none text-slate-500", hideDetail && "invisible")} aria-hidden={hideDetail}>
+      <span className="block w-full max-w-32 truncate whitespace-nowrap text-center text-xs font-bold leading-tight text-slate-800" title={cell.title}>{cell.title}</span>
+      <span className={cn("block w-full max-w-32 truncate whitespace-nowrap text-center text-[11px] leading-tight text-slate-500", hideDetail && "hidden")} aria-hidden={hideDetail}>
         {cell.detail || "-"}
       </span>
     </span>
@@ -4014,7 +4330,7 @@ function SmartBedViewCommand() {
         summary={`${unit} | ${bedStatus} | ${clinical} | ${rows.length} bed(s)`}
         title="Smart bed metrics & filters"
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 sm:flex sm:flex-wrap sm:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 sm:flex sm:flex-wrap sm:items-center">
           <DashboardCommandMetric label="Total beds" value={inventory.length} tone="info" />
           <DashboardCommandMetric label="Occupied" value={occupied} tone="info" />
           <DashboardCommandMetric label="Available" value={available} tone="success" />
@@ -4053,28 +4369,24 @@ function SmartBedViewCommand() {
       </CollapsibleCommandPanel>
 
       <div className="overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
-        <div className="flex flex-col gap-2 border-b border-slate-200 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Smart bed command matrix</p>
-            <p className="mt-0.5 text-xs text-slate-500">{rows.length} beds visible. Patient click opens only that patient&apos;s ICU workspace.</p>
-          </div>
+        <div className="flex flex-col gap-2 border-b border-slate-200 px-3 py-2 sm:flex-row sm:items-center sm:justify-end">
           <IcuLegend />
         </div>
 
         <div className="max-h-[650px] overflow-auto">
-          <table className="w-full min-w-[1480px] border-collapse bg-white text-sm">
+          <table className="w-full min-w-[1420px] border-collapse bg-white text-sm">
             <thead className="sticky top-0 z-20 bg-white">
               <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Bed / patient</th>
-                <th className="min-w-[230px] px-3 py-3 text-left">Bed context</th>
+                <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-2 text-left">Patient context</th>
+                <th className="min-w-[260px] px-3 py-2 text-left">Bed context</th>
                 <th className="min-w-[120px] px-2 py-3 text-center">Status</th>
                 <th className="min-w-[120px] px-2 py-3 text-center">Risk</th>
                 <th className="min-w-[130px] px-2 py-3 text-center">Monitoring</th>
                 <th className="min-w-[130px] px-2 py-3 text-center">Ventilation</th>
                 <th className="min-w-[120px] px-2 py-3 text-center">Device</th>
-                <th className="min-w-[110px] px-2 py-3 text-center">Work</th>
-                <th className="min-w-[110px] px-2 py-3 text-center">Care team</th>
-                <th className="min-w-[110px] px-2 py-3 text-center">Flow</th>
+                <th className="min-w-[130px] px-2 py-3 text-center">Pending work</th>
+                <th className="min-w-[130px] px-2 py-3 text-center">Assigned team</th>
+                <th className="min-w-[130px] px-2 py-3 text-center">Bed flow</th>
               </tr>
             </thead>
             <tbody>
@@ -4082,24 +4394,23 @@ function SmartBedViewCommand() {
                 <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
                   <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
                     {row.patient ? (
-                      <Link className="block min-h-16 rounded-md px-2 py-2 transition hover:bg-sky-50" href={icuPatientDetailHref(row.patient.id, "overview")}>
+                      <Link className="block rounded-md px-2 py-2 transition hover:bg-sky-50" href={icuPatientDetailHref(row.patient.id, "overview")}>
                         <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(smartBedDashboardTone(row, "risk")))}>{row.patient.patientName}</p>
-                        <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</p>
-                        <p className="mt-0.5 truncate text-xs text-slate-500">{row.patient.mrn} | {row.patient.ageGender}</p>
+                        <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit} | {row.patient.mrn}</p>
                       </Link>
                     ) : (
-                      <button className="block min-h-16 w-full rounded-md px-2 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveBedAction({ id: row.id, kind: "status" })}>
+                      <button className="block w-full rounded-md px-2 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveBedAction({ id: row.id, kind: "status" })}>
                         <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(smartBedDashboardTone(row, "status")))}>No patient assigned</p>
-                        <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit}</p>
-                        <p className="mt-0.5 truncate text-xs text-slate-500">{row.status}</p>
+                        <p className="mt-1 truncate text-xs font-semibold text-slate-700">{row.bedNo} | {row.unit} | {row.status}</p>
                       </button>
                     )}
                   </td>
                   <td className="px-4 py-2 align-middle">
-                    <div className="flex min-h-20 flex-col justify-center">
-                      <p className="truncate whitespace-nowrap text-sm font-bold text-slate-950">{row.patient?.diagnosis ?? row.unit}</p>
-                      <p className="mt-1 truncate whitespace-nowrap text-xs text-slate-500">{row.unit} | {row.nurseStation}</p>
-                      <p className="mt-1 truncate whitespace-nowrap text-xs font-semibold text-slate-700">{row.capability}</p>
+                    <div className="flex min-h-[72px] flex-col justify-center gap-1">
+                      <p className="truncate whitespace-nowrap text-sm font-bold text-slate-950" title={row.capability}>{row.capability}</p>
+                      <p className="truncate whitespace-nowrap text-xs font-semibold text-slate-700" title={`${row.status} | ${row.isolation} | ${row.flowStatus}`}>
+                        {row.status} | {row.isolation} | {row.flowStatus}
+                      </p>
                     </div>
                   </td>
                   {(["status", "risk", "monitoring", "ventilation", "device", "work", "team", "flow"] as SmartBedCellKind[]).map((kind) => (
@@ -4119,29 +4430,6 @@ function SmartBedViewCommand() {
         </div>
         <IcuCommandPaginationControls {...pagination} />
       </div>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <CommandSection title="Admission pressure queue" description="Patients waiting for an appropriate ICU bed.">
-          <div className="grid gap-2 md:grid-cols-3">
-            {smartBedWaitingAdmissions.map((item, index) => (
-              <div className="rounded-md border border-slate-200 border-l-amber-500 bg-white p-3 shadow-sm" key={item}>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-bold text-slate-950">Priority {index + 1}</p>
-                  <Badge tone={index === 0 ? "critical" : "warning"}>{index === 0 ? "Immediate" : "Waiting"}</Badge>
-                </div>
-                <p className="mt-2 text-xs text-slate-600">{item}</p>
-              </div>
-            ))}
-          </div>
-        </CommandSection>
-        <CommandSection title="Turnaround ownership" description="Nonclinical work blocking bed availability.">
-          <InfoLine label="Housekeeping" value={`${inventory.filter((row) => row.status === "Cleaning").length} beds`} />
-          <InfoLine label="Biomedical" value={`${inventory.filter((row) => row.status === "Maintenance").length} bed`} />
-          <InfoLine label="Infection control" value={`${inventory.filter((row) => row.status === "Blocked").length} bed`} />
-          <InfoLine label="Reserved transfer" value={`${inventory.filter((row) => row.status === "Reserved").length} bed`} />
-        </CommandSection>
-      </div>
-
       <SmartBedActionDialog
         actionKind={activeBedAction?.kind ?? "status"}
         bed={activeBed}
@@ -4161,9 +4449,9 @@ function SmartBedViewCommand() {
 function smartBedActionTitle(kind: SmartBedCellKind, bed: SmartBedInventoryRow) {
   if (kind === "ventilation") return [`${bed.bedNo} ventilation workflow`, "Respiratory support, ventilator mode, oxygen settings, ABG readiness, suction, and bundle review."] as const;
   if (kind === "device") return [`${bed.bedNo} device workflow`, "Monitor, ventilator, pump, gateway, signal, biomedical owner, and downtime action."] as const;
-  if (kind === "work") return [`${bed.bedNo} active work`, "Alerts, nursing tasks, due medication, owner, acknowledgement, and escalation action."] as const;
-  if (kind === "team") return [`${bed.bedNo} care team`, "Ward nurse, unit nurse, duty doctor, biomedical owner, notification and escalation."] as const;
-  if (kind === "flow") return [`${bed.bedNo} bed flow`, "Admission, transfer, cleaning, reservation, maintenance, and turnaround workflow."] as const;
+  if (kind === "work") return [`${bed.bedNo} pending work`, "Open alerts, due medicines, nursing tasks, acknowledgement status, and next escalation step."] as const;
+  if (kind === "team") return [`${bed.bedNo} assigned team`, "Ward nurse, unit nurse, duty doctor, and support team responsible for this bed."] as const;
+  if (kind === "flow") return [`${bed.bedNo} bed flow`, "Current bed movement: admission, active stay, transfer, cleaning, reservation, maintenance, or release."] as const;
   return [`${bed.bedNo} bed status`, "Bed availability, capability, isolation, owner, and operational readiness."] as const;
 }
 
@@ -4180,7 +4468,7 @@ function smartBedDefaultOwner(bed: SmartBedInventoryRow, kind: SmartBedCellKind)
 function smartBedPrimaryLabel(bed: SmartBedInventoryRow, kind: SmartBedCellKind) {
   if (kind === "ventilation") return "Save ventilation review";
   if (kind === "device") return smartBedDeviceLabel(bed) === "Online" ? "Mark checked" : "Assign biomedical";
-  if (kind === "work") return bed.alertCount ? "Acknowledge work" : "Save work note";
+  if (kind === "work") return bed.alertCount ? "Acknowledge pending work" : "Save work note";
   if (kind === "team") return "Notify team";
   if (kind === "flow" && bed.patient) return bed.patient.currentStatus === "Ready for transfer" ? "Start transfer" : "Save flow note";
   if (bed.status === "Available") return "Reserve bed";
@@ -4242,13 +4530,51 @@ function SmartBedActionDialog({
         : bed.status;
   const primaryLabel = smartBedPrimaryLabel(bed, actionKind);
   const shouldUpdateBedStatus = actionKind === "status" || (actionKind === "flow" && !bed.patient);
+  const pendingWorkRows = bed.patient ? [
+    ...patientAlerts.map((row) => ({
+      category: "Alert",
+      item: row.message,
+      assignedTo: row.owner || bed.patient?.dutyDoctor || "Duty Doctor",
+      status: row.status,
+      tone: row.severity === "Critical" ? "danger" as StatusTone : "warning" as StatusTone,
+    })),
+    ...patientTasks.map((row) => ({
+      category: "Task",
+      item: `${row.dueTime}: ${row.title}`,
+      assignedTo: row.assignedTo || bed.patient?.assignedWardNurse || "Ward Nurse",
+      status: row.status,
+      tone: row.status === "Overdue" ? "danger" as StatusTone : "info" as StatusTone,
+    })),
+    ...patientMeds.map((row) => ({
+      category: "Medication",
+      item: `${row.scheduledTime}: ${row.medication}`,
+      assignedTo: row.administeredBy === "-" ? bed.patient?.assignedWardNurse || "Ward Nurse" : row.administeredBy,
+      status: row.status,
+      tone: row.status === "Late" ? "danger" as StatusTone : "warning" as StatusTone,
+    })),
+  ] : [
+    {
+      category: "Bed",
+      item: bed.status === "Available" ? "Bed ready for allocation" : bed.flowStatus,
+      assignedTo: smartBedAssignedToLabel(bed),
+      status: bed.status,
+      tone: smartBedStatusTone(bed.status),
+    },
+    ...(bed.status === "Cleaning" || bed.status === "Maintenance" || bed.status === "Blocked" ? [{
+      category: "Operations",
+      item: bed.turnaround,
+      assignedTo: smartBedDefaultOwner(bed, actionKind),
+      status: "Pending",
+      tone: "warning" as StatusTone,
+    }] : []),
+  ];
 
   return (
     <Dialog.Root open={Boolean(bed)} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-soft outline-none">
-          <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-sky-700 px-4 py-3 text-white">
+          <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-sky-700 px-3 py-2 text-white">
             <div>
               <Dialog.Title className="text-base font-bold">{dialogTitle}</Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-sky-100">{dialogDescription}</Dialog.Description>
@@ -4261,7 +4587,7 @@ function SmartBedActionDialog({
               <MiniMetric label="Bed status" value={bed.status} tone={smartBedStatusTone(bed.status)} />
               <MiniMetric label="Patient" value={bed.patient?.patientName ?? "Unassigned"} tone={bed.patient ? "info" : "success"} />
               <MiniMetric label={actionKind === "ventilation" ? "Support" : "Device"} value={actionKind === "ventilation" ? ventilationSupport : smartBedDeviceLabel(bed)} tone={actionKind === "ventilation" ? smartBedStatusToneFromDashboard(smartBedDashboardTone(bed, "ventilation")) : smartBedDeviceLabel(bed) === "Online" ? "success" : "warning"} />
-              <MiniMetric label={actionKind === "work" ? "Open work" : "Turnaround"} value={actionKind === "work" ? bed.alertCount + bed.taskCount + bed.dueMedicationCount : bed.turnaround} tone={actionKind === "work" && (bed.alertCount || bed.taskCount || bed.dueMedicationCount) ? "warning" : bed.status === "Available" ? "success" : "warning"} />
+              <MiniMetric label={actionKind === "work" ? "Pending work" : "Turnaround"} value={actionKind === "work" ? bed.alertCount + bed.taskCount + bed.dueMedicationCount : bed.turnaround} tone={actionKind === "work" && (bed.alertCount || bed.taskCount || bed.dueMedicationCount) ? "warning" : bed.status === "Available" ? "success" : "warning"} />
             </div>
 
             {actionKind === "ventilation" ? (
@@ -4308,10 +4634,39 @@ function SmartBedActionDialog({
             ) : null}
 
             {actionKind === "work" ? (
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                <MiniList title="Alerts" rows={patientAlerts.map((row) => `${row.severity}: ${row.message}`)} empty="No open alerts" />
-                <MiniList title="Tasks" rows={patientTasks.map((row) => `${row.dueTime}: ${row.title}`)} empty="No open tasks" />
-                <MiniList title="Due medication" rows={patientMeds.map((row) => `${row.scheduledTime}: ${row.medication} ${row.status}`)} empty="No due medication" />
+              <div className="mt-4 space-y-3">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <MiniMetric label="Alerts" value={patientAlerts.length} tone={patientAlerts.length ? "danger" : "success"} />
+                  <MiniMetric label="Tasks" value={patientTasks.length} tone={patientTasks.length ? "warning" : "success"} />
+                  <MiniMetric label="Medication due" value={patientMeds.length} tone={patientMeds.length ? "warning" : "success"} />
+                </div>
+                <div className="overflow-hidden rounded-md border border-slate-200">
+                  <table className="w-full min-w-[620px] text-sm">
+                    <thead className="bg-slate-50 text-left text-[11px] uppercase text-slate-500">
+                      <tr>
+                        <th className="px-3 py-2">Type</th>
+                        <th className="px-3 py-2">Pending item</th>
+                        <th className="px-3 py-2">Assigned to</th>
+                        <th className="px-3 py-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {pendingWorkRows.map((row, index) => (
+                        <tr className="bg-white" key={`${row.category}-${row.item}-${index}`}>
+                          <td className="px-3 py-2 font-semibold text-slate-700">{row.category}</td>
+                          <td className="px-3 py-2 text-slate-950">{row.item}</td>
+                          <td className="px-3 py-2 font-semibold text-slate-800">{row.assignedTo}</td>
+                          <td className="px-3 py-2"><Badge tone={row.tone}>{row.status}</Badge></td>
+                        </tr>
+                      ))}
+                      {!pendingWorkRows.length ? (
+                        <tr>
+                          <td className="px-3 py-4 text-center text-sm text-slate-500" colSpan={4}>No pending work for this bed.</td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : null}
 
@@ -4322,13 +4677,13 @@ function SmartBedActionDialog({
                   <InfoLine label="Unit nurse" value={bed.patient?.assignedUnitNurse ?? bed.nurseStation} />
                   <InfoLine label="Duty doctor" value={bed.patient?.dutyDoctor ?? "Assign after patient allocation"} />
                 </div>
-                <MiniList title="Notify options" rows={["Notify ward nurse", "Notify unit nurse", "Notify duty doctor", "Escalate to head nurse"]} />
+                <MiniList title="Team actions" rows={["Notify ward nurse", "Notify unit nurse", "Notify duty doctor", "Escalate to head nurse"]} />
               </div>
             ) : null}
 
             {actionKind === "flow" ? (
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <MiniList title="Flow context" rows={[
+                <MiniList title="Bed flow context" rows={[
                   `Current: ${bed.flowStatus}`,
                   `Reservation: ${bed.reservation}`,
                   `Turnaround: ${bed.turnaround}`,
@@ -4356,7 +4711,7 @@ function SmartBedActionDialog({
                 </div>
               )}
               <label className="space-y-1 text-sm">
-                <span className="font-semibold text-slate-800">Responsible owner</span>
+                <span className="font-semibold text-slate-800">Assigned to</span>
                 <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3" value={owner} onChange={(event) => setOwner(event.target.value)}>
                   {["ICU Bed Coordinator", "Head Nurse Sana", "Housekeeping Team A", "Biomedical Raj", "Infection Control Team"].map((item) => <option key={item}>{item}</option>)}
                 </select>
@@ -4379,12 +4734,12 @@ function SmartBedActionDialog({
 
             <label className="mt-4 block space-y-1 text-sm">
               <span className="font-semibold text-slate-800">Operational note</span>
-              <textarea className="min-h-24 w-full rounded-md border border-slate-300 bg-white p-3 outline-none focus:ring-2 focus:ring-sky-200" placeholder="Document allocation, cleaning, maintenance, or escalation note..." value={note} onChange={(event) => setNote(event.target.value)} />
+              <textarea className="min-h-16 w-full rounded-md border border-slate-300 bg-white p-3 outline-none focus:ring-2 focus:ring-sky-200" placeholder="Document allocation, cleaning, maintenance, or escalation note..." value={note} onChange={(event) => setNote(event.target.value)} />
             </label>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-xs text-slate-500">Owner: {owner}</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="text-xs text-slate-500">Assigned to: {owner}</p>
             <div className="flex gap-2">
               <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
               {bed.patient ? <Button variant="outline" asChild><Link href={icuPatientDetailHref(bed.patient.id, "overview")}>Open patient</Link></Button> : null}
@@ -4455,7 +4810,7 @@ function IcuOperationsCommand() {
         summary={`${unit} | ${shift} | ${bedStatus} | ${filteredRows.length} bed(s)`}
         title="ICU operations metrics & filters"
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Beds" value={operationRows.length} tone="info" />
           <DashboardCommandMetric label="Occupied" value={occupied} tone={occupied ? "info" : "muted"} />
           <DashboardCommandMetric label="Available" value={available} tone={available ? "success" : "warning"} />
@@ -4506,8 +4861,8 @@ function IcuOperationsCommand() {
           <table className="w-full min-w-[1460px] border-collapse bg-white text-sm">
             <thead className="sticky top-0 z-20 bg-white">
               <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Bed / Unit</th>
-                <th className="min-w-[250px] px-3 py-3 text-left">Patient</th>
+                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-2 text-left">Bed / Unit</th>
+                <th className="min-w-[250px] px-3 py-2 text-left">Patient</th>
                 <th className="min-w-[150px] px-2 py-3 text-center">Admission / Discharge</th>
                 <th className="min-w-[140px] px-2 py-3 text-center">Bed readiness</th>
                 <th className="min-w-[140px] px-2 py-3 text-center">Staffing</th>
@@ -4521,15 +4876,14 @@ function IcuOperationsCommand() {
               {pagination.pageRows.map((row) => (
                 <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
                   <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
-                    <button className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveAction({ row, kind: "bed" })}>
-                      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(row.tone))} />
-                      <p className="text-xs font-bold text-sky-700">{row.bedNo}</p>
-                      <p className="mt-1 truncate whitespace-nowrap text-sm font-bold text-slate-950">{row.unit}</p>
+                    <button className="block min-h-16 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveAction({ row, kind: "bed" })}>
+                      <p className={cn("truncate whitespace-nowrap text-sm font-bold", dashboardToneTextClass(row.tone))}>{row.unit}</p>
+                      <p className="mt-1 text-xs font-bold text-slate-700">{row.bedNo}</p>
                       <p className="mt-1 truncate whitespace-nowrap text-xs text-slate-500">{row.bedStatus} | {row.nurseStation}</p>
                     </button>
                   </td>
                   <td className="px-4 py-2 align-middle">
-                    <div className="flex min-h-20 flex-col justify-center">
+                    <div className="flex min-h-16 flex-col justify-center">
                       <p className="truncate whitespace-nowrap text-sm font-bold text-slate-950">{row.patientName}</p>
                       <p className="mt-1 truncate whitespace-nowrap text-xs text-slate-500">{row.mrn || row.capability}</p>
                     </div>
@@ -4547,7 +4901,7 @@ function IcuOperationsCommand() {
                     <IcuOpsMatrixCell icon={Activity} title={row.deviceStatus} detail={row.deviceDetail} tone={row.deviceTone} showDetail={false} onClick={() => setActiveAction({ row, kind: "device" })} />
                   </td>
                   <td className="px-2 py-2 text-center align-middle">
-                    <button className={cn("mx-auto flex min-h-20 w-full min-w-36 flex-col items-center justify-center rounded-md border p-2 transition hover:brightness-95", dashboardToneSurfaceClass(row.tone))} type="button" onClick={() => setActiveAction({ row, kind: "blocker" })}>
+                    <button className={cn("mx-auto flex min-h-16 w-full min-w-36 flex-col items-center justify-center rounded-md border p-2 transition hover:brightness-95", dashboardToneSurfaceClass(row.tone))} type="button" onClick={() => setActiveAction({ row, kind: "blocker" })}>
                       <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(row.tone))}>{row.ownerGroup}</span>
                       <span className="mt-1 block max-w-36 truncate whitespace-nowrap text-center text-xs font-bold text-slate-800">{row.blocker}</span>
                       <span aria-hidden className="invisible mt-0.5 block max-w-36 truncate whitespace-nowrap text-center text-[11px] text-slate-500">{row.owner}</span>
@@ -4580,7 +4934,6 @@ function IcuOperationsCommand() {
       <div className="grid gap-4 xl:grid-cols-3">
         <IcuOperationsQueuePanel
           title="Admission pressure queue"
-          description="Patients waiting for ICU bed allocation."
           rows={icuOperationAdmissionQueue.map((row) => ({
             id: row.id,
             title: `${row.source} - ${row.patient}`,
@@ -4595,7 +4948,6 @@ function IcuOperationsCommand() {
         />
         <IcuOperationsQueuePanel
           title="Transfer / discharge queue"
-          description="Movements that can release ICU capacity."
           rows={operationRows.filter((row) => row.movementType !== "Active ICU care" && row.movementType !== "Closed").map((row) => ({
             id: row.id,
             title: `${row.bedNo} - ${row.patientName}`,
@@ -4610,7 +4962,6 @@ function IcuOperationsCommand() {
         />
         <IcuOperationsQueuePanel
           title="Turnaround ownership"
-          description="Nonclinical work blocking bed availability."
           rows={operationRows.filter((row) => row.bedStatus !== "Occupied" && row.bedStatus !== "Available").map((row) => ({
             id: row.id,
             title: `${row.bedNo} - ${row.bedStatus}`,
@@ -4626,7 +4977,7 @@ function IcuOperationsCommand() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <CommandSection title="Staff load by nurse" description="Shows who is carrying critical patients, pending tasks, and open alerts.">
+        <CommandSection title="Staff load by nurse">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {buildIcuStaffCoverageRows(operationRows).map((row) => (
               <button className={cn("rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(row.tone))} key={row.nurse} type="button" onClick={() => toast.info(`${row.nurse}: ${row.patients} patients, ${row.tasks} tasks, ${row.alerts} alerts`)}>
@@ -4646,7 +4997,7 @@ function IcuOperationsCommand() {
             ))}
           </div>
         </CommandSection>
-        <CommandSection title="Command ownership" description="Who acts when ICU flow is blocked.">
+        <CommandSection title="Command ownership">
           <InfoLine label="ICU head" value="Dr. Aman Verma" />
           <InfoLine label="Head nurse" value="Head Nurse Sana" />
           <InfoLine label="Admission desk" value={`${pendingAdmissions} pending admission(s)`} />
@@ -5055,18 +5406,18 @@ function IcuOpsMatrixCell({
 }) {
   const content = (
     <>
-      <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", dashboardToneSolidClass(tone))}>
-        <Icon className="h-4 w-4" />
+      <span className={cn("inline-flex h-8 min-w-20 items-center justify-center gap-1 rounded-full px-2.5 text-[11px] font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.24)]", dashboardToneSolidClass(tone))}>
+        <Icon className="h-3.5 w-3.5" />
         <span className="max-w-24 truncate whitespace-nowrap">{title}</span>
       </span>
-      <span className={cn("mt-1 block max-w-32 truncate whitespace-nowrap text-center text-[11px] font-semibold leading-tight text-slate-600", !showDetail && "invisible")} aria-hidden={!showDetail}>
+      <span className={cn("mt-0.5 block max-w-32 truncate whitespace-nowrap text-center text-[11px] font-semibold leading-tight text-slate-600", !showDetail && "invisible")} aria-hidden={!showDetail}>
         {detail || "-"}
       </span>
     </>
   );
   const shellClass = cn(
-    "flex w-full min-w-24 flex-col items-center justify-center rounded-md outline-none transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring/30",
-    "min-h-20",
+    "flex w-full min-w-20 flex-col items-center justify-center rounded-md outline-none transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring/30",
+    "min-h-16",
   );
 
   if (href) {
@@ -5091,16 +5442,16 @@ function IcuOperationsQueuePanel({
   onOpen,
 }: {
   title: string;
-  description: string;
+  description?: string;
   rows: Array<{ id: string; title: string; detail: string; meta: string; tone: DashboardCellTone }>;
   onOpen: (id: string) => void;
 }) {
   return (
     <div className="rounded-md border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-3">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-2">
         <div>
           <p className="text-sm font-bold text-slate-950">{title}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+          {description ? <p className="mt-0.5 text-xs text-slate-500">{description}</p> : null}
         </div>
         <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(rows.length ? "warning" : "success"))}>{rows.length}</span>
       </div>
@@ -5841,7 +6192,7 @@ function ClinicalAlertsCommand() {
         summary={`${unit} | ${severity} | ${status} | ${filteredRows.length} alert(s)`}
         title="Alert metrics & filters"
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Active alerts" value={rows.length - resolved} tone={open ? "warning" : "success"} />
           <DashboardCommandMetric label="Critical" value={critical} tone={critical ? "critical" : "success"} />
           <DashboardCommandMetric label="High" value={high} tone={high ? "danger" : "success"} />
@@ -5883,8 +6234,8 @@ function ClinicalAlertsCommand() {
           <table className="w-full min-w-[1480px] border-collapse bg-white text-sm">
             <thead className="sticky top-0 z-20 bg-white">
               <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Patient</th>
-                <th className="min-w-[240px] px-3 py-3 text-left">Trigger</th>
+                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-2 text-left">Patient</th>
+                <th className="min-w-[240px] px-3 py-2 text-left">Trigger</th>
                 <th className="min-w-[130px] px-2 py-3 text-center">Severity</th>
                 <th className="min-w-[150px] px-2 py-3 text-center">Source</th>
                 <th className="min-w-[140px] px-2 py-3 text-center">Owner</th>
@@ -5898,15 +6249,14 @@ function ClinicalAlertsCommand() {
               {pagination.pageRows.map((row) => (
                 <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
                   <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
-                    <button className="relative block min-h-24 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveAction({ row, kind: "patient" })}>
-                      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(row.patientTone))} />
-                      <p className="text-xs font-bold text-sky-700">{row.bedNo}</p>
-                      <p className="mt-1 truncate whitespace-nowrap text-sm font-bold text-slate-950">{row.patientName}</p>
+                    <button className="block min-h-16 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveAction({ row, kind: "patient" })}>
+                      <p className={cn("truncate whitespace-nowrap text-sm font-bold", dashboardToneTextClass(row.patientTone))}>{row.patientName}</p>
+                      <p className="mt-1 text-xs font-bold text-slate-700">{row.bedNo}</p>
                       <p className="mt-1 truncate whitespace-nowrap text-xs text-slate-500">{row.unit}</p>
                     </button>
                   </td>
                   <td className="px-3 py-2 align-middle">
-                    <button className="min-h-20 w-full rounded-md p-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveAction({ row, kind: "trigger" })}>
+                    <button className="min-h-16 w-full rounded-md p-2 text-left transition hover:bg-sky-50" type="button" onClick={() => setActiveAction({ row, kind: "trigger" })}>
                       <p className="text-sm font-bold text-slate-950">{row.category}</p>
                       <p className="mt-1 text-xs leading-relaxed text-slate-600">{row.trigger}</p>
                       <p className="mt-1 text-[11px] font-semibold text-slate-500">{row.createdAt}</p>
@@ -5938,19 +6288,6 @@ function ClinicalAlertsCommand() {
         </div>
         <IcuCommandPaginationControls {...pagination} />
       </div>
-
-      <div className="grid gap-4 xl:grid-cols-3">
-        <CommandSection title="Alert Coverage" description="Clinical alert categories monitored by the command center.">
-          <MiniList title="Alert scenarios" rows={["Abnormal vitals", "Respiratory deterioration", "Medication overdue", "Blood transfusion", "Transplant drug level", "Transfer clearance"]} />
-        </CommandSection>
-        <CommandSection title="SLA rule" description="How alert urgency is interpreted.">
-          <MiniList title="SLA thresholds" rows={["Critical: immediate / now", "High: 15 min follow-up", "Medium: 30 min follow-up", "Info: shift review"]} />
-        </CommandSection>
-        <CommandSection title="Closure rule" description="When alert can be resolved.">
-          <MiniList title="Resolution checks" rows={["Owner acknowledged", "Patient impact reviewed", "Action note documented", "Repeat value or follow-up task created"]} />
-        </CommandSection>
-      </div>
-
       <ClinicalAlertActionDialog
         action={activeAction}
         onOpenChange={(open) => !open && setActiveAction(null)}
@@ -6288,21 +6625,21 @@ function EscalationCenterCommand() {
           summary={`${unit} | ${severity} | ${source} | ${visibleRows.length} escalation(s)`}
           title="Escalation metrics & filters"
         >
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-2 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-base font-black text-slate-950">Escalation command center</p>
               <p className="mt-1 text-xs text-slate-500">Clinical alerts, overdue tasks, doctor orders, and medication delays routed by SLA and owner.</p>
             </div>
             <IcuLegend />
           </div>
-          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 sm:grid-cols-2 xl:grid-cols-5">
             <DashboardCommandMetric label="Open queue" value={visibleRows.length} tone={visibleRows.length ? "danger" : "success"} />
             <DashboardCommandMetric label="Critical" value={criticalRows.length} tone={criticalRows.length ? "critical" : "success"} />
             <DashboardCommandMetric label="SLA breach" value={breachedRows.length} tone={breachedRows.length ? "warning" : "success"} />
             <DashboardCommandMetric label="Unassigned" value={unassignedRows.length} tone={unassignedRows.length ? "warning" : "success"} />
             <DashboardCommandMetric label="Owners" value={ownerLoad.length} tone="info" />
           </div>
-          <div className="grid min-w-0 gap-3 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(180px,1.25fr)_repeat(4,minmax(115px,0.8fr))_104px] xl:items-end">
+          <div className="grid min-w-0 gap-3 px-3 py-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(180px,1.25fr)_repeat(4,minmax(115px,0.8fr))_104px] xl:items-end">
             <label className="min-w-0 space-y-1 text-sm">
               <span className="font-medium text-slate-700">Search escalation</span>
               <div className="relative">
@@ -6323,14 +6660,14 @@ function EscalationCenterCommand() {
             <table className="w-full min-w-[1280px] border-collapse bg-white text-sm">
               <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700 shadow-[0_1px_0_rgba(148,163,184,0.45)]">
                 <tr>
-                  <th className="sticky left-0 z-40 min-w-[210px] bg-white px-3 py-3 text-left">Patient</th>
-                  <th className="min-w-[122px] px-3 py-3 text-center">Priority</th>
-                  <th className="min-w-[150px] px-3 py-3 text-center">Trigger</th>
-                  <th className="min-w-[130px] px-3 py-3 text-center">Source</th>
-                  <th className="min-w-[145px] px-3 py-3 text-center">Assigned To</th>
-                  <th className="min-w-[125px] px-3 py-3 text-center">SLA</th>
-                  <th className="min-w-[130px] px-3 py-3 text-center">Status</th>
-                  <th className="min-w-[130px] px-3 py-3 text-center">Review</th>
+                  <th className="sticky left-0 z-40 min-w-[210px] bg-white px-3 py-2 text-left">Patient</th>
+                  <th className="min-w-[122px] px-3 py-2 text-center">Priority</th>
+                  <th className="min-w-[150px] px-3 py-2 text-center">Trigger</th>
+                  <th className="min-w-[130px] px-3 py-2 text-center">Source</th>
+                  <th className="min-w-[145px] px-3 py-2 text-center">Assigned To</th>
+                  <th className="min-w-[125px] px-3 py-2 text-center">SLA</th>
+                  <th className="min-w-[130px] px-3 py-2 text-center">Status</th>
+                  <th className="min-w-[130px] px-3 py-2 text-center">Review</th>
                 </tr>
               </thead>
               <tbody>
@@ -6477,7 +6814,7 @@ function EscalationPatientCell({ group }: { group: EscalationPatientGroup }) {
   const row = group.top;
 
   return (
-    <div className="flex min-h-20 items-center rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:border-sky-300 hover:shadow-sm">
+    <div className="flex min-h-16 items-center rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:border-sky-300 hover:shadow-sm">
       <Link className="block w-full text-left" href={icuPatientDetailHref(row.patientId, "overview")}>
         <p className={cn("text-sm font-black", dashboardToneTextClass(group.patientTone))}>{patient?.patientName ?? row.patient}</p>
         <p className="mt-1 text-xs font-semibold text-slate-700">{row.bedNo}</p>
@@ -6796,7 +7133,7 @@ function EscalationSidePanel({
 }) {
   return (
     <div className="rounded-sm border border-slate-300 bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-3">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-2">
         <p className="text-sm font-black text-slate-950">{title}</p>
         <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(tone))}>{badge}</span>
       </div>
@@ -7028,10 +7365,10 @@ function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
       key: "alerts",
       label: "Alerts / Events",
       icon: AlertTriangle,
-      title: activeAlerts.length ? `${activeAlerts.length} open` : "Clear",
+      title: activeAlerts.length ? `${activeAlerts.length} alert${activeAlerts.length === 1 ? "" : "s"}` : "No alert",
       detail: activeAlerts[0]?.message ?? "No active event",
       tone: activeAlerts.length ? "critical" as DashboardCellTone : "success" as DashboardCellTone,
-      href: icuPatientDetailHref(patient.id, "events"),
+      href: icuPatientDetailHref(patient.id, "events", undefined, "eventFocus=open-alerts"),
     },
     {
       key: "tasks",
@@ -7040,7 +7377,7 @@ function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
       title: `${activeTasks.length + patientInstructions.length} pending`,
       detail: activeTasks[0]?.title ?? patientInstructions[0]?.instruction ?? "No pending item",
       tone: activeTasks.length + patientInstructions.length ? "warning" as DashboardCellTone : "success" as DashboardCellTone,
-      href: icuPatientDetailHref(patient.id, "orders"),
+      href: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=pending-work"),
     },
     {
       key: "timeline",
@@ -7049,7 +7386,7 @@ function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
       title: `${timeline.length} events`,
       detail: timeline[0]?.title ?? "No recent activity",
       tone: timeline.some((row) => row.tone === "danger") ? "warning" as DashboardCellTone : "info" as DashboardCellTone,
-      href: icuPatientDetailHref(patient.id, "events"),
+      href: icuPatientDetailHref(patient.id, "events", undefined, "eventFocus=action-needed"),
     },
   ];
 
@@ -7109,7 +7446,7 @@ function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
             <table className="w-full min-w-[1180px] border-collapse bg-white text-sm">
               <thead className="bg-slate-50 text-[11px] uppercase text-sky-700">
                 <tr>
-                  <th className="min-w-[180px] px-3 py-3 text-left">Patient</th>
+                  <th className="min-w-[180px] px-3 py-2 text-left">Patient</th>
                   {matrixItems.map((item) => (
                     <th className="min-w-[120px] px-2 py-3 text-center" key={item.key}>{item.label}</th>
                   ))}
@@ -7117,11 +7454,11 @@ function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
               </thead>
               <tbody>
                 <tr className="border-t border-slate-200">
-                  <td className="bg-white px-3 py-3 align-middle">
+                  <td className="bg-white px-3 py-2 align-middle">
                     <Link className="block rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-sky-300 hover:bg-sky-50" href={icuPatientDetailHref(patient.id, "overview")}>
-                      <p className="text-xs font-black text-slate-950">{patient.bedNo}</p>
-                      <p className="mt-1 text-sm font-black text-slate-950">{patient.patientName}</p>
-                      <p className="mt-1 text-xs text-slate-500">{patient.mrn} | {patient.ageGender}</p>
+                      <p className={cn("truncate text-sm font-black", dashboardToneTextClass(patientDashboardTone(patient)))}>{patient.patientName}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-700">{patient.bedNo} | {patient.mrn}</p>
+                      <p className="mt-1 text-xs text-slate-500">{patient.ageGender} | {patient.unit}</p>
                     </Link>
                   </td>
                   {matrixItems.map((item) => (
@@ -7497,6 +7834,7 @@ function OrdersCarePlansCommand() {
           order: `${row.medication} ${row.dose} ${row.route}`,
           frequency: row.frequency,
           owner: row.administeredBy || patient.assignedWardNurse,
+          orderedBy: patient.admittingDoctor,
           status: orderStatusOverrides[row.id] ?? mapOrderStatus(row.status),
           safety: row.doubleVerification,
           priority: row.status === "Late" ? "High" as IcuPriority : "Medium" as IcuPriority,
@@ -7510,6 +7848,7 @@ function OrdersCarePlansCommand() {
           order: row.instruction,
           frequency: row.dueTime,
           owner: row.assignedNurse,
+          orderedBy: row.doctor,
           status: orderStatusOverrides[row.id] ?? mapOrderStatus(row.status),
           safety: row.priority,
           priority: row.priority,
@@ -7651,46 +7990,53 @@ function OrdersCarePlansCommand() {
     ...medicationRows.filter((row) => row.patientId === patientId).map(() => "Medication"),
     ...doctorInstructions.filter((row) => row.patientId === patientId).map((row) => row.instructionType),
   ]))];
-  const carePlanTabs: Array<{ id: CarePlanWorkspaceTab; label: string; icon: typeof UserRound; badge: string; tone: StatusTone }> = [
-    { id: "context", label: "Patient Context", icon: UserRound, badge: String(patient.alerts.length), tone: patient.alerts.length ? "warning" : "success" },
-    { id: "orders", label: "Order", icon: ClipboardCheck, badge: String(openOrders), tone: openOrders ? "warning" : "success" },
-    { id: "care-plan", label: "Care Plan", icon: FileText, badge: planStatus, tone: planStatus === "Active" ? "success" : "info" },
-    { id: "tasks", label: "Tasks", icon: ListChecks, badge: String(pendingTasks), tone: pendingTasks ? "warning" : "success" },
-    { id: "review", label: "Review", icon: CheckCircle2, badge: String(generatedTaskCount + patientClinicalActions.length), tone: generatedTaskCount || patientClinicalActions.length ? "success" : "muted" },
+  const carePlanTabs: Array<{ id: CarePlanWorkspaceTab; label: string; icon: typeof UserRound }> = [
+    { id: "context", label: "Patient Context", icon: UserRound },
+    { id: "orders", label: "Doctor Orders", icon: ClipboardCheck },
+    { id: "care-plan", label: "Care Plan", icon: FileText },
+    { id: "tasks", label: "Nursing Tasks", icon: ListChecks },
+    { id: "review", label: "Review & Sign-off", icon: CheckCircle2 },
   ];
 
   return (
     <div className="space-y-4">
+      <div className="overflow-x-auto rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 px-3 py-2.5 text-white shadow-sm">
+        <div className="flex min-w-max items-center gap-4 text-sm font-bold">
+          <span className="text-base">{patient.patientName}</span>
+          <span className="rounded-full border border-white/30 bg-red-500 px-3 py-1 text-xs uppercase tracking-wide text-white shadow-sm">
+            {patient.criticalityScore >= 8 ? "Urgent" : patient.currentStatus}
+          </span>
+          <span>MR: {patient.mrn}</span>
+          <span>Age/Sex: {patient.ageGender}</span>
+          <span>Bed: {patient.bedNo}</span>
+          <span>Unit: {patient.unit}</span>
+          <span>Doctor: {patient.admittingDoctor}</span>
+          <span>Nurse: {patient.assignedWardNurse}</span>
+        </div>
+      </div>
+
       <CollapsibleCommandPanel
         summary={`${patient.bedNo} - ${patient.patientName} | ${planStatus} | ${openOrders} order(s) | ${pendingTasks} task(s)`}
-        title="Patient details & filters"
+        title="Search & filters"
       >
         <div className="space-y-3 p-3">
-          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1.4fr)_minmax(220px,1fr)_220px] lg:items-end">
+          <div className="grid gap-3 md:grid-cols-3 md:items-end">
             <PatientSelect label="Patient" value={patientId} onChange={selectPatient} patients={icuPatients} />
             <NativeSelect label="Care plan scenario" value={templateLabel} onChange={selectTemplate} options={carePlanTemplates.map((template) => template.label)} />
             <NativeSelect label="Order type" value={orderFilter} onChange={setOrderFilter} options={orderTypes} />
           </div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <MiniMetric label="Patient" value={`${patient.bedNo} - ${patient.patientName}`} tone="info" />
-            <MiniMetric label="Diagnosis" value={patient.diagnosis} tone={toneForStatus(patient.currentStatus)} />
-            <MiniMetric label="Open orders" value={openOrders} tone={openOrders ? "warning" : "success"} />
-            <MiniMetric label="Open tasks" value={pendingTasks} tone={pendingTasks ? "warning" : "success"} />
-            <MiniMetric label="Assigned nurse" value={draft.assignedNurse} tone="success" />
-          </div>
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="overflow-x-auto rounded-md border border-border bg-white p-1">
-        <div className="flex min-w-max gap-1">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-sm">
+        <div className="flex min-w-max items-center gap-3">
           {carePlanTabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 className={cn(
-                  "flex h-10 min-w-36 items-center justify-center gap-2 rounded px-3 text-sm font-semibold transition",
-                  activeTab === tab.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                  "flex h-12 min-w-44 items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold transition",
+                  activeTab === tab.id ? "bg-white text-violet-600 shadow-sm" : "text-slate-600 hover:bg-white/70 hover:text-slate-900",
                 )}
                 key={tab.id}
                 type="button"
@@ -7698,7 +8044,6 @@ function OrdersCarePlansCommand() {
               >
                 <Icon className="h-4 w-4 shrink-0" />
                 <span>{tab.label}</span>
-                <Badge tone={tab.tone}>{tab.badge}</Badge>
               </button>
             );
           })}
@@ -7709,66 +8054,102 @@ function OrdersCarePlansCommand() {
 
         {activeTab === "context" ? (
           <CommandSection title="Patient Context">
-            <PatientMiniCard patient={patient} />
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <MiniMetric label="Status" value={patient.currentStatus} tone={toneForStatus(patient.currentStatus)} />
-              <MiniMetric label="Ventilator" value={patient.ventilatorStatus} tone={patient.ventilatorStatus === "Room air" ? "success" : "warning"} />
-              <MiniMetric label="Doctor" value={patient.admittingDoctor} tone="info" />
-              <MiniMetric label="Nurse" value={patient.assignedWardNurse} tone="success" />
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-full text-sm">
+                <tbody className="divide-y divide-border bg-white">
+                  {[
+                    ["Diagnosis", patient.diagnosis],
+                    ["Current status", patient.currentStatus],
+                    ["Ventilation", patient.ventilatorStatus],
+                    ["Admission source", patient.admissionSource],
+                    ["Admitting doctor", patient.admittingDoctor],
+                    ["Duty doctor", patient.dutyDoctor],
+                    ["Ward nurse", patient.assignedWardNurse],
+                    ["Unit nurse", patient.assignedUnitNurse],
+                  ].map(([label, value]) => (
+                    <tr key={label}>
+                      <th className="w-56 bg-white px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">{label}</th>
+                      <td className="px-3 py-2 font-medium text-foreground">{value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="grid gap-3 lg:grid-cols-2">
-              <InfoPanel title="Clinical context" rows={[
-                ["Diagnosis", patient.diagnosis],
-                ["MRN", patient.mrn],
-                ["Unit", patient.unit],
-                ["Admission source", patient.admissionSource],
-              ]} />
-              <MiniList title="Patient alerts" rows={patient.alerts} empty="No active alerts" />
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-full text-sm">
+                <thead className="bg-white">
+                  <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted-foreground">
+                    <th className="px-3 py-2">Active alert</th>
+                    <th className="px-3 py-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border bg-white">
+                  {patient.alerts.length ? patient.alerts.map((alert) => (
+                    <tr key={alert}>
+                      <td className="px-3 py-2 font-medium text-foreground">{alert}</td>
+                      <td className="px-3 py-2 text-muted-foreground">Review during order execution</td>
+                    </tr>
+                  )) : (
+                    <tr><td className="px-3 py-2.5 text-muted-foreground" colSpan={2}>No active alerts.</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </CommandSection>
         ) : null}
 
         {activeTab === "orders" ? (
-          <CommandSection title="Clinical Order Queue">
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-9" value={`${patient.bedNo} - ${patient.patientName}`} readOnly />
-              </div>
-              <NativeSelect label="Order type" value={orderFilter} onChange={setOrderFilter} options={orderTypes} />
-            </div>
-            <div className="space-y-2">
+          <CommandSection title="Doctor Orders">
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-[1060px] text-sm">
+                <thead className="bg-white">
+                  <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted-foreground">
+                    <th className="px-3 py-2">Order time</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Order details</th>
+                    <th className="px-3 py-2">Ordered by</th>
+                    <th className="px-3 py-2">Assigned to</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border bg-white">
               {patientOrderRows.map((row) => (
-                <OrderCarePlanCard
-                  key={row.id}
-                  owner={row.owner}
-                  priority={row.priority}
-                  status={row.status}
-                  subtitle={`${row.orderType} | ${row.frequency} | Safety: ${row.safety}`}
-                  title={row.order}
-                  actionNotes={carePlanActionNotes[`order:${row.id}`]}
-                  onAccept={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted" })}
-                  onComplete={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed" })}
-                  onEscalate={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Escalated" })}
-                  onStart={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress" })}
-                />
+                <tr key={row.id}>
+                  <td className="px-3 py-2 font-medium text-foreground">{row.frequency}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.orderType}</td>
+                  <td className="px-3 py-2">
+                    <p className="font-semibold text-foreground">{row.order}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Safety check: {row.safety}</p>
+                    {carePlanActionNotes[`order:${row.id}`]?.[0] ? <p className="mt-1 text-xs text-muted-foreground">{carePlanActionNotes[`order:${row.id}`][0]}</p> : null}
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.orderedBy}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.owner}</td>
+                  <td className="px-3 py-2"><StatusPill tone={carePlanTaskTone(row.status)}>{row.status}</StatusPill></td>
+                  <td className="px-3 py-2">
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted" })} disabled={row.status !== "Pending acknowledgement"}>Ack</Button>
+                      <Button size="sm" variant="outline" onClick={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress" })} disabled={row.status === "Completed"}>Start</Button>
+                      <Button size="sm" onClick={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed" })}>Done</Button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-              {!patientOrderRows.length ? <EmptyCarePlanPanel title="No orders for selected filter" /> : null}
+              {!patientOrderRows.length ? <tr><td className="px-3 py-2.5 text-muted-foreground" colSpan={7}>No orders for selected filter.</td></tr> : null}
+                </tbody>
+              </table>
             </div>
           </CommandSection>
         ) : null}
 
         {activeTab === "care-plan" ? (
-          <CommandSection title="Nursing Care Plan Sheet">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
+          <CommandSection title="Care Plan">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
               <NativeSelect label="Scenario template" value={templateLabel} onChange={selectTemplate} options={carePlanTemplates.map((template) => template.label)} />
-              <StatusPill tone={planStatus === "Active" ? "success" : "warning"}>{planStatus}</StatusPill>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <MiniMetric label="Priority" value={selectedTemplate.priority} tone={toneForPriority(selectedTemplate.priority)} />
-              <MiniMetric label="Due time" value={selectedTemplate.dueTime} tone="info" />
-              <MiniMetric label="Assigned nurse" value={draft.assignedNurse} tone="success" />
-              <MiniMetric label="Patient risk" value={`Score ${patient.criticalityScore}`} tone={patient.criticalityScore >= 8 ? "critical" : "warning"} />
+              <div className="rounded-md border border-border bg-white px-3 py-2 text-sm">
+                <span className="text-muted-foreground">Status</span>
+                <p className="font-semibold text-foreground">{planStatus}</p>
+              </div>
             </div>
 
             <CarePlanSheetMatrix
@@ -7792,7 +8173,7 @@ function OrdersCarePlansCommand() {
               <CarePlanTextArea label="Patient / family education" value={draft.patientFamilyEducation} onChange={(value) => setDraft((current) => ({ ...current, patientFamilyEducation: value }))} />
             </div>
 
-            <div className="rounded-md border border-border bg-background p-3">
+            <div className="rounded-md border border-border bg-white p-3">
               <div className="mb-3">
                 <p className="text-sm font-semibold text-foreground">Nurse confirmation</p>
               </div>
@@ -7830,50 +8211,76 @@ function OrdersCarePlansCommand() {
         ) : null}
 
         {activeTab === "tasks" ? (
-          <CommandSection title="Nursing Task Queue">
-            <div className="space-y-2">
+          <CommandSection title="Nursing Tasks">
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-[1060px] text-sm">
+                <thead className="bg-white">
+                  <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted-foreground">
+                    <th className="px-3 py-2">Task</th>
+                    <th className="px-3 py-2">Linked order</th>
+                    <th className="px-3 py-2">Due time</th>
+                    <th className="px-3 py-2">Assigned to</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Remarks</th>
+                    <th className="px-3 py-2 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border bg-white">
               {patientTaskRows.map((row) => (
-                <OrderCarePlanCard
-                  key={row.id}
-                  owner={row.owner}
-                  priority={row.priority}
-                  status={row.status}
-                  subtitle={`${row.source} | Due ${row.dueTime}`}
-                  title={row.task}
-                  detail={row.escalation}
-                  actionNotes={carePlanActionNotes[`task:${row.id}`]}
-                  onAccept={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted", detail: row.escalation })}
-                  onComplete={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed", detail: row.escalation })}
-                  onEscalate={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Escalated", detail: row.escalation })}
-                  onStart={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress", detail: row.escalation })}
-                />
+                <tr key={row.id}>
+                  <td className="px-3 py-2 font-semibold text-foreground">{row.task}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.source}</td>
+                  <td className="px-3 py-2 font-medium text-foreground">{row.dueTime}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.owner}</td>
+                  <td className="px-3 py-2"><StatusPill tone={carePlanTaskTone(row.status)}>{row.status}</StatusPill></td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {carePlanActionNotes[`task:${row.id}`]?.[0] ?? row.escalation}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted", detail: row.escalation })} disabled={row.status !== "Pending acknowledgement"}>Ack</Button>
+                      <Button size="sm" variant="outline" onClick={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress", detail: row.escalation })} disabled={row.status === "Completed"}>Start</Button>
+                      <Button size="sm" onClick={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed", detail: row.escalation })}>Done</Button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-              {!patientTaskRows.length ? <EmptyCarePlanPanel title="No nursing tasks" /> : null}
+              {!patientTaskRows.length ? <tr><td className="px-3 py-2.5 text-muted-foreground" colSpan={7}>No nursing tasks.</td></tr> : null}
+                </tbody>
+              </table>
             </div>
           </CommandSection>
         ) : null}
 
         {activeTab === "review" ? (
-          <CommandSection title="Review Care Plan">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <MiniMetric label="Open orders" value={openOrders} tone={openOrders ? "warning" : "success"} />
-              <MiniMetric label="Open tasks" value={pendingTasks} tone={pendingTasks ? "warning" : "success"} />
-              <MiniMetric label="Care plan" value={generatedTaskCount} tone={generatedTaskCount ? "success" : "muted"} />
-              <MiniMetric label="Priority" value={selectedTemplate.priority} tone={toneForPriority(selectedTemplate.priority)} />
+          <CommandSection title="Review & Sign-off">
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-full text-sm">
+                <tbody className="divide-y divide-border bg-white">
+                  {[
+                    ["Open orders", String(openOrders)],
+                    ["Open tasks", String(pendingTasks)],
+                    ["Generated care-plan tasks", String(generatedTaskCount)],
+                    ["Scenario", selectedTemplate.label],
+                    ["Plan status", planStatus],
+                    ["Due time", selectedTemplate.dueTime],
+                    ["Assigned nurse", draft.assignedNurse],
+                    ["Handed over to", draft.handedOverTo],
+                    ["Clock / sign", `${draft.clockNo} / ${draft.nurseSign}`],
+                    ["Date / time", draft.signedAt],
+                  ].map(([label, value]) => (
+                    <tr key={label}>
+                      <th className="w-64 bg-white px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">{label}</th>
+                      <td className="px-3 py-2 font-medium text-foreground">{value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             <div className="grid gap-3 lg:grid-cols-2">
               <MiniList title="Care plan summary" rows={[draft.goal, draft.actionPlan, draft.intervention, draft.outcome]} />
-              <InfoPanel title="Current plan" rows={[
-                ["Scenario", selectedTemplate.label],
-                ["Plan status", planStatus],
-                ["Due time", selectedTemplate.dueTime],
-                ["Assigned nurse", draft.assignedNurse],
-                ["Handed over to", draft.handedOverTo],
-                ["Clock / sign", `${draft.clockNo} / ${draft.nurseSign}`],
-                ["Date / time", draft.signedAt],
-              ]} />
+              <ClinicalActionLog actions={patientClinicalActions} compact />
             </div>
-            <ClinicalActionLog actions={patientClinicalActions} />
             <div className="grid gap-2 sm:grid-cols-3">
               <Button variant="outline" onClick={() => setActiveTab("orders")}>Review orders</Button>
               <Button variant="outline" onClick={() => setActiveTab("care-plan")}>Edit plan</Button>
@@ -7920,12 +8327,12 @@ function CarePlanSheetMatrix({
   onChange: (key: "goal" | "actionPlan" | "intervention" | "outcome", value: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-background">
-      <div className="grid bg-slate-900 text-xs font-bold uppercase tracking-wide text-white md:grid-cols-4">
-        <div className="border-b border-white/10 px-3 py-3 md:border-b-0 md:border-r md:border-white/10">Goal</div>
-        <div className="border-b border-white/10 px-3 py-3 md:border-b-0 md:border-r md:border-white/10">Action Plan</div>
-        <div className="border-b border-white/10 px-3 py-3 md:border-b-0 md:border-r md:border-white/10">Intervention</div>
-        <div className="px-3 py-3">Outcome</div>
+    <div className="overflow-hidden rounded-md border border-border bg-white">
+      <div className="grid border-b border-border bg-white text-xs font-bold uppercase tracking-wide text-muted-foreground md:grid-cols-4">
+        <div className="border-b border-border px-3 py-2 md:border-b-0 md:border-r">Goal</div>
+        <div className="border-b border-border px-3 py-2 md:border-b-0 md:border-r">Action Plan</div>
+        <div className="border-b border-border px-3 py-2 md:border-b-0 md:border-r">Intervention</div>
+        <div className="px-3 py-2">Outcome</div>
       </div>
       <div className="grid md:grid-cols-4">
         <CarePlanSheetCell
@@ -7958,7 +8365,7 @@ function CarePlanSheetCell({ help, value, onChange }: { help: string; value: str
     <label className="min-h-[260px] border-b border-border p-3 text-sm md:border-b-0 md:border-r md:last:border-r-0">
       <span className="mb-2 block text-xs leading-5 text-muted-foreground">{help}</span>
       <textarea
-        className="min-h-52 w-full resize-y rounded-md border border-input bg-surface p-3 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/20"
+        className="min-h-52 w-full resize-y rounded-md border border-input bg-white p-3 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/20"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
@@ -8047,7 +8454,7 @@ function ClinicalActionModal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(820px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
-          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-3 py-2">
             <div>
               <Dialog.Title className="text-base font-semibold text-foreground">{actionType} Workflow</Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
@@ -8137,7 +8544,7 @@ function ClinicalActionModal({
             <CarePlanTextArea label="Plan / action" value={plan} onChange={setPlan} />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-3 py-2">
             <p className="text-xs text-muted-foreground">
               {actionType === "Ventilator" ? `${completedVentilatorChecks}/${ventilatorCheckLabels.length} ventilator safety checks selected.` : createTask ? "Saving will also add this to nursing task queue." : "Saving updates clinical workspace only."}
             </p>
@@ -8234,7 +8641,7 @@ function CarePlanActionDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
-          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-3 py-2">
             <div>
               <Dialog.Title className="text-base font-semibold text-foreground">{request.nextStatus} {request.kind === "order" ? "order" : "task"}</Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
@@ -8300,7 +8707,7 @@ function CarePlanActionDialog({
             <label className="space-y-1 text-sm">
               <span className="font-medium text-foreground">Action note</span>
               <textarea
-                className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
                 placeholder="Capture patient condition, communication, result, handover note, blocker, or completion evidence..."
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
@@ -8308,7 +8715,7 @@ function CarePlanActionDialog({
             </label>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-3 py-2">
             <p className="text-xs text-muted-foreground">{allChecksComplete ? "Checklist complete" : `${checkLabels.filter((label) => checks[label]).length}/${checkLabels.length} checks complete`}</p>
             <div className="flex gap-2">
               <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
@@ -8610,7 +9017,7 @@ function CarePlanTextArea({ label, value, onChange }: { label: string; value: st
     <label className="space-y-1 text-sm">
       <span className="font-medium text-foreground">{label}</span>
       <textarea
-        className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+        className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
@@ -8676,7 +9083,7 @@ function OrderCarePlanCard({
 
 function EmptyCarePlanPanel({ title, detail }: { title: string; detail?: string }) {
   return (
-    <div className="rounded-md border border-dashed border-border bg-surface-muted p-5 text-center">
+    <div className="rounded-md border border-dashed border-border bg-surface-muted p-4 text-center">
       <p className="text-sm font-semibold text-foreground">{title}</p>
       {detail ? <p className="mt-1 text-xs text-muted-foreground">{detail}</p> : null}
     </div>
@@ -8739,7 +9146,7 @@ function RemoteCommandCenterCommand() {
         summary={`${hospital} | ${unit} | ${priority} | ${visibleRows.length} case(s)`}
         title="Remote command metrics & filters"
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Visible cases" value={visibleRows.length} tone="info" />
           <DashboardCommandMetric label="Critical" value={visibleRows.filter((row) => row.priority === "Critical").length} tone={visibleRows.some((row) => row.priority === "Critical") ? "critical" : "success"} />
           <DashboardCommandMetric label="Ready" value={visibleRows.filter((row) => row.status === "Ready for review").length} tone="success" />
@@ -8841,7 +9248,7 @@ function RemoteHospitalStrip({ rows }: { rows: RemoteCommandRow[] }) {
         );
       })}
       {!hospitals.length ? (
-        <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-500">
+        <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-500">
           No hospital matched the selected remote command filters.
         </div>
       ) : null}
@@ -8861,10 +9268,10 @@ function RemoteCommandMatrix({ rows, onAction }: { rows: RemoteCommandRow[]; onA
         <table className="w-full min-w-[1360px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20">
             <tr className="border-b border-slate-300 bg-white text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-3 text-left">Patient</th>
-              <th className="min-w-[220px] px-3 py-3 text-left">Remote reason</th>
+              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-2 text-left">Patient</th>
+              <th className="min-w-[220px] px-3 py-2 text-left">Remote reason</th>
               {columns.map((column) => (
-                <th className="min-w-[120px] px-3 py-3 text-center" key={column}>{column}</th>
+                <th className="min-w-[120px] px-3 py-2 text-center" key={column}>{column}</th>
               ))}
             </tr>
           </thead>
@@ -8921,7 +9328,7 @@ function RemotePatientCell({ row }: { row: RemoteCommandRow }) {
 
 function RemoteMatrixCell({ detail, href, icon: Icon, onClick, title, tone }: { detail: string; href?: string; icon: typeof Activity; onClick?: () => void; title: string; tone: DashboardCellTone }) {
   const content = (
-    <span className="flex min-h-20 w-full min-w-24 flex-col items-center justify-center">
+    <span className="flex min-h-16 w-full min-w-24 flex-col items-center justify-center">
       <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", dashboardToneSolidClass(tone))}>
         <Icon className="h-3.5 w-3.5" />
         <span className="max-w-24 truncate whitespace-nowrap">{title}</span>
@@ -9007,19 +9414,7 @@ function RemoteCommandSidePanel({ rows, onAction }: { rows: RemoteCommandRow[]; 
               </div>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent remote action in selected view.</div> : null}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">Remote readiness checklist</p>
-        <div className="mt-3 space-y-2">
-          {["Camera/audio ready", "Latest vitals attached", "Diagnostics visible", "Local doctor and nurse owner mapped", "Recommendation documented and acknowledged"].map((item) => (
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item}>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              {item}
-            </div>
-          ))}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-600">No urgent remote action in selected view.</div> : null}
         </div>
       </div>
     </div>
@@ -9054,7 +9449,7 @@ function RemoteCommandActionDialogContent({ action, onConfirm }: { action: Remot
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(900px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className="border-b border-slate-200 bg-sky-700 px-4 py-3 text-white">
+        <div className="border-b border-slate-200 bg-sky-700 px-3 py-2 text-white">
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{remoteActionLabel(action.kind)}</Dialog.Title>
@@ -9111,7 +9506,7 @@ function RemoteCommandActionDialogContent({ action, onConfirm }: { action: Remot
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild>
             <Button variant="outline">Cancel</Button>
           </Dialog.Close>
@@ -9314,7 +9709,7 @@ function TeleIcuScenarioCommand({ mode, patientId }: { mode: TeleIcuScenarioMode
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-base font-black text-slate-950">{title}</p>
             <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-500">{description}</p>
@@ -9331,7 +9726,7 @@ function TeleIcuScenarioCommand({ mode, patientId }: { mode: TeleIcuScenarioMode
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Cases" value={rows.length} tone="info" />
           <DashboardCommandMetric label="Ready" value={readyRows.length} tone={readyRows.length ? "success" : "muted"} />
           <DashboardCommandMetric label="Partial" value={partialRows.length} tone={partialRows.length ? "warning" : "success"} />
@@ -9370,7 +9765,7 @@ function TeleIcuReadinessTable({ consultByPatient, rows }: { consultByPatient: M
       <table className="w-full min-w-[1420px] border-collapse bg-white text-sm">
         <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
           <tr className="border-b border-slate-300">
-            {["Patient", "Readiness", "Video", "Vitals", "Diagnostics", "Ventilator", "Local team", "Remote MD", "SLA", "Open"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+            {["Patient", "Readiness", "Video", "Vitals", "Diagnostics", "Ventilator", "Local team", "Remote MD", "SLA", "Open"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -9378,16 +9773,16 @@ function TeleIcuReadinessTable({ consultByPatient, rows }: { consultByPatient: M
             const consult = consultByPatient.get(row.patientId);
             return (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
-                <td className="px-3 py-3"><TeleIcuPatientLink row={row} /></td>
-                <td className="px-3 py-3"><TeleIcuScorePill value={`${row.readinessScore}%`} tone={remoteReadinessTone(row)} detail={row.videoStatus} /></td>
-                <td className="px-3 py-3 text-xs text-slate-700">{row.videoStatus}</td>
-                <td className="px-3 py-3"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "monitoring", "24h-chart")} label={row.vitals} detail="24h chart" /></td>
-                <td className="px-3 py-3"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "results")} label={row.diagnostics} detail={consult?.documents ?? "Results"} /></td>
-                <td className="px-3 py-3"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "monitoring", "device-snapshot")} label={row.ventilator} detail="Device snapshot" /></td>
-                <td className="px-3 py-3 text-xs text-slate-700"><p className="font-semibold text-slate-900">{row.localDoctor}</p><p>{row.wardNurse}</p></td>
-                <td className="px-3 py-3 text-xs text-slate-700"><p className="font-semibold text-slate-900">{row.remoteIntensivist}</p><p>{consult?.specialty ?? row.status}</p></td>
-                <td className="px-3 py-3"><TeleIcuScorePill value={remoteSlaLabel(row)} tone={remoteSlaTone(row)} detail={`${row.waitingMinutes} min wait`} /></td>
-                <td className="px-3 py-3"><TeleIcuOpenLinks patientId={row.patientId} /></td>
+                <td className="px-3 py-2"><TeleIcuPatientLink row={row} /></td>
+                <td className="px-3 py-2"><TeleIcuScorePill value={`${row.readinessScore}%`} tone={remoteReadinessTone(row)} detail={row.videoStatus} /></td>
+                <td className="px-3 py-2 text-xs text-slate-700">{row.videoStatus}</td>
+                <td className="px-3 py-2"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "monitoring", "24h-chart")} label={row.vitals} detail="24h chart" /></td>
+                <td className="px-3 py-2"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "results")} label={row.diagnostics} detail={consult?.documents ?? "Results"} /></td>
+                <td className="px-3 py-2"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "monitoring", "device-snapshot")} label={row.ventilator} detail="Device snapshot" /></td>
+                <td className="px-3 py-2 text-xs text-slate-700"><p className="font-semibold text-slate-900">{row.localDoctor}</p><p>{row.wardNurse}</p></td>
+                <td className="px-3 py-2 text-xs text-slate-700"><p className="font-semibold text-slate-900">{row.remoteIntensivist}</p><p>{consult?.specialty ?? row.status}</p></td>
+                <td className="px-3 py-2"><TeleIcuScorePill value={remoteSlaLabel(row)} tone={remoteSlaTone(row)} detail={`${row.waitingMinutes} min wait`} /></td>
+                <td className="px-3 py-2"><TeleIcuOpenLinks patientId={row.patientId} /></td>
               </tr>
             );
           })}
@@ -9404,7 +9799,7 @@ function TeleIcuLocalTeamTable({ consultByPatient, rows }: { consultByPatient: M
       <table className="w-full min-w-[1180px] border-collapse bg-white text-sm">
         <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
           <tr className="border-b border-slate-300">
-            {["Patient", "Unit", "Local doctor", "Ward nurse", "Remote MD", "Current status", "Next action", "Open"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+            {["Patient", "Unit", "Local doctor", "Ward nurse", "Remote MD", "Current status", "Next action", "Open"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -9412,14 +9807,14 @@ function TeleIcuLocalTeamTable({ consultByPatient, rows }: { consultByPatient: M
             const consult = consultByPatient.get(row.patientId);
             return (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
-                <td className="px-3 py-3"><TeleIcuPatientLink row={row} /></td>
-                <td className="px-3 py-3 text-xs font-semibold text-slate-700">{row.unit}</td>
-                <td className="px-3 py-3 text-sm font-bold text-slate-950">{row.localDoctor}</td>
-                <td className="px-3 py-3 text-sm font-bold text-slate-950">{row.wardNurse}</td>
-                <td className="px-3 py-3"><TeleIcuPlainLink href={teleIcuScenarioHref("remote-md", row.patientId)} label={row.remoteIntensivist} detail={consult?.specialty ?? "Remote ICU"} /></td>
-                <td className="px-3 py-3"><TeleIcuScorePill value={row.status} tone={remoteStatusTone(row.status)} detail={row.lastAction} /></td>
-                <td className="px-3 py-3 text-xs text-slate-700">{row.status === "Waiting diagnostics" ? "Upload reports and alert remote MD" : row.recommendation}</td>
-                <td className="px-3 py-3"><TeleIcuOpenLinks patientId={row.patientId} /></td>
+                <td className="px-3 py-2"><TeleIcuPatientLink row={row} /></td>
+                <td className="px-3 py-2 text-xs font-semibold text-slate-700">{row.unit}</td>
+                <td className="px-3 py-2 text-sm font-bold text-slate-950">{row.localDoctor}</td>
+                <td className="px-3 py-2 text-sm font-bold text-slate-950">{row.wardNurse}</td>
+                <td className="px-3 py-2"><TeleIcuPlainLink href={teleIcuScenarioHref("remote-md", row.patientId)} label={row.remoteIntensivist} detail={consult?.specialty ?? "Remote ICU"} /></td>
+                <td className="px-3 py-2"><TeleIcuScorePill value={row.status} tone={remoteStatusTone(row.status)} detail={row.lastAction} /></td>
+                <td className="px-3 py-2 text-xs text-slate-700">{row.status === "Waiting diagnostics" ? "Upload reports and alert remote MD" : row.recommendation}</td>
+                <td className="px-3 py-2"><TeleIcuOpenLinks patientId={row.patientId} /></td>
               </tr>
             );
           })}
@@ -9436,7 +9831,7 @@ function TeleIcuRemoteMdTable({ consultByPatient, rows }: { consultByPatient: Ma
       <table className="w-full min-w-[1240px] border-collapse bg-white text-sm">
         <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
           <tr className="border-b border-slate-300">
-            {["Remote MD", "Patient", "Specialty", "Reason", "Status", "SLA", "Recommendation", "Open"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+            {["Remote MD", "Patient", "Specialty", "Reason", "Status", "SLA", "Recommendation", "Open"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -9444,14 +9839,14 @@ function TeleIcuRemoteMdTable({ consultByPatient, rows }: { consultByPatient: Ma
             const consult = consultByPatient.get(row.patientId);
             return (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
-                <td className="px-3 py-3 text-sm font-black text-slate-950">{row.remoteIntensivist}</td>
-                <td className="px-3 py-3"><TeleIcuPatientLink row={row} /></td>
-                <td className="px-3 py-3"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(remoteConsultSpecialtyTone(consult?.specialty ?? "Critical care")))}>{consult?.specialty ?? "Critical care"}</span></td>
-                <td className="px-3 py-3 text-xs text-slate-700">{consult?.reason ?? row.reason}</td>
-                <td className="px-3 py-3"><TeleIcuScorePill value={consult?.status ?? row.status} tone={consult ? remoteConsultStatusTone(consult.status) : remoteStatusTone(row.status)} detail={row.lastAction} /></td>
-                <td className="px-3 py-3"><TeleIcuScorePill value={remoteSlaLabel(row)} tone={remoteSlaTone(row)} detail={`${row.waitingMinutes}/${row.slaMinutes} min`} /></td>
-                <td className="px-3 py-3 text-xs text-slate-700">{consult?.recommendation ?? row.recommendation}</td>
-                <td className="px-3 py-3"><TeleIcuOpenLinks patientId={row.patientId} /></td>
+                <td className="px-3 py-2 text-sm font-black text-slate-950">{row.remoteIntensivist}</td>
+                <td className="px-3 py-2"><TeleIcuPatientLink row={row} /></td>
+                <td className="px-3 py-2"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(remoteConsultSpecialtyTone(consult?.specialty ?? "Critical care")))}>{consult?.specialty ?? "Critical care"}</span></td>
+                <td className="px-3 py-2 text-xs text-slate-700">{consult?.reason ?? row.reason}</td>
+                <td className="px-3 py-2"><TeleIcuScorePill value={consult?.status ?? row.status} tone={consult ? remoteConsultStatusTone(consult.status) : remoteStatusTone(row.status)} detail={row.lastAction} /></td>
+                <td className="px-3 py-2"><TeleIcuScorePill value={remoteSlaLabel(row)} tone={remoteSlaTone(row)} detail={`${row.waitingMinutes}/${row.slaMinutes} min`} /></td>
+                <td className="px-3 py-2 text-xs text-slate-700">{consult?.recommendation ?? row.recommendation}</td>
+                <td className="px-3 py-2"><TeleIcuOpenLinks patientId={row.patientId} /></td>
               </tr>
             );
           })}
@@ -9468,7 +9863,7 @@ function TeleIcuSlaTable({ consultByPatient, rows }: { consultByPatient: Map<str
       <table className="w-full min-w-[1220px] border-collapse bg-white text-sm">
         <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
           <tr className="border-b border-slate-300">
-            {["Patient", "Priority", "Status", "Waiting", "Allowed", "SLA", "Owner", "Escalation route", "Open"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+            {["Patient", "Priority", "Status", "Waiting", "Allowed", "SLA", "Owner", "Escalation route", "Open"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -9476,15 +9871,15 @@ function TeleIcuSlaTable({ consultByPatient, rows }: { consultByPatient: Map<str
             const consult = consultByPatient.get(row.patientId);
             return (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
-                <td className="px-3 py-3"><TeleIcuPatientLink row={row} /></td>
-                <td className="px-3 py-3"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(remotePriorityTone(row.priority)))}>{row.priority}</span></td>
-                <td className="px-3 py-3"><TeleIcuScorePill value={row.status} tone={remoteStatusTone(row.status)} detail={consult?.status ?? "Command status"} /></td>
-                <td className="px-3 py-3 text-sm font-bold text-slate-950">{row.waitingMinutes} min</td>
-                <td className="px-3 py-3 text-sm font-bold text-slate-950">{row.slaMinutes} min</td>
-                <td className="px-3 py-3"><TeleIcuScorePill value={remoteSlaLabel(row)} tone={remoteSlaTone(row)} detail={remoteSlaBreached(row) ? "Escalate now" : "Within SLA"} /></td>
-                <td className="px-3 py-3 text-xs text-slate-700"><p className="font-semibold text-slate-900">{row.remoteIntensivist}</p><p>{row.localDoctor}</p></td>
-                <td className="px-3 py-3"><TeleIcuPlainLink href="/icu-command-center/tele-icu/escalated-cases" label={remoteSlaBreached(row) ? "Escalated cases" : "Remote command"} detail={remoteSlaBreached(row) ? "Open breach queue" : row.lastAction} /></td>
-                <td className="px-3 py-3"><TeleIcuOpenLinks patientId={row.patientId} /></td>
+                <td className="px-3 py-2"><TeleIcuPatientLink row={row} /></td>
+                <td className="px-3 py-2"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(remotePriorityTone(row.priority)))}>{row.priority}</span></td>
+                <td className="px-3 py-2"><TeleIcuScorePill value={row.status} tone={remoteStatusTone(row.status)} detail={consult?.status ?? "Command status"} /></td>
+                <td className="px-3 py-2 text-sm font-bold text-slate-950">{row.waitingMinutes} min</td>
+                <td className="px-3 py-2 text-sm font-bold text-slate-950">{row.slaMinutes} min</td>
+                <td className="px-3 py-2"><TeleIcuScorePill value={remoteSlaLabel(row)} tone={remoteSlaTone(row)} detail={remoteSlaBreached(row) ? "Escalate now" : "Within SLA"} /></td>
+                <td className="px-3 py-2 text-xs text-slate-700"><p className="font-semibold text-slate-900">{row.remoteIntensivist}</p><p>{row.localDoctor}</p></td>
+                <td className="px-3 py-2"><TeleIcuPlainLink href="/icu-command-center/tele-icu/escalated-cases" label={remoteSlaBreached(row) ? "Escalated cases" : "Remote command"} detail={remoteSlaBreached(row) ? "Open breach queue" : row.lastAction} /></td>
+                <td className="px-3 py-2"><TeleIcuOpenLinks patientId={row.patientId} /></td>
               </tr>
             );
           })}
@@ -9633,7 +10028,7 @@ function RemoteConsultationsCommand() {
         summary={`${specialty} | ${status} | ${priority} | ${visibleRows.length} consult(s)`}
         title="Remote consultation metrics & filters"
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Consults" value={visibleRows.length} tone="info" />
           <DashboardCommandMetric label="Urgent" value={visibleRows.filter((row) => row.priority === "Critical" || row.priority === "High").length} tone={visibleRows.some((row) => row.priority === "Critical") ? "critical" : "warning"} />
           <DashboardCommandMetric label="In review" value={visibleRows.filter((row) => row.status === "In review").length} tone="info" />
@@ -9732,9 +10127,9 @@ function RemoteConsultationMatrix({
         <table className="w-full min-w-[1360px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20">
             <tr className="border-b border-slate-300 bg-white text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-3 text-left">Patient</th>
-              <th className="min-w-[220px] px-3 py-3 text-left">Consult reason</th>
-              {columns.map((column) => <th className="min-w-[120px] px-3 py-3 text-center" key={column}>{column}</th>)}
+              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-2 text-left">Patient</th>
+              <th className="min-w-[220px] px-3 py-2 text-left">Consult reason</th>
+              {columns.map((column) => <th className="min-w-[120px] px-3 py-2 text-center" key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -9800,7 +10195,6 @@ function RemoteConsultActionButtons({ row, onAction }: { row: RemoteConsultation
 
 function RemoteConsultationSidePanel({ rows, onAction }: { rows: RemoteConsultationRow[]; onAction: (action: RemoteConsultationActiveAction) => void }) {
   const focusRows = rows.filter((row) => row.priority === "Critical" || row.missingDocuments.length || remoteConsultSlaBreached(row)).slice(0, 5);
-  const specialtyCounts = Array.from(new Set(rows.map((row) => row.specialty))).map((specialty) => ({ specialty, count: rows.filter((row) => row.specialty === specialty).length }));
   return (
     <div className="space-y-4">
       <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
@@ -9823,31 +10217,7 @@ function RemoteConsultationSidePanel({ rows, onAction }: { rows: RemoteConsultat
               </div>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent consult in selected view.</div> : null}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">Specialty load</p>
-        <div className="mt-3 space-y-2">
-          {specialtyCounts.map((item) => (
-            <div className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item.specialty}>
-              <span>{item.specialty}</span>
-              <Badge tone="info">{item.count}</Badge>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">Consult safety checklist</p>
-        <div className="mt-3 space-y-2">
-          {["Patient context verified", "Vitals and trend attached", "Lab/radiology documents checked", "Remote advice written clearly", "Follow-up task assigned to local team"].map((item) => (
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item}>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              {item}
-            </div>
-          ))}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-600">No urgent consult in selected view.</div> : null}
         </div>
       </div>
     </div>
@@ -9871,7 +10241,7 @@ function RemoteConsultationCellDialogContent({ cell }: { cell: RemoteConsultatio
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(860px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className={cn("border-b border-slate-200 px-4 py-3 text-white", dashboardToneSolidClass(tone))}>
+        <div className={cn("border-b border-slate-200 px-3 py-2 text-white", dashboardToneSolidClass(tone))}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{remoteConsultCellTitle(cell.kind)}</Dialog.Title>
@@ -9910,7 +10280,7 @@ function RemoteConsultationCellDialogContent({ cell }: { cell: RemoteConsultatio
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild>
             <Button>Done</Button>
           </Dialog.Close>
@@ -9948,7 +10318,7 @@ function RemoteConsultationActionDialogContent({ action, onConfirm }: { action: 
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(900px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className="border-b border-slate-200 bg-sky-700 px-4 py-3 text-white">
+        <div className="border-b border-slate-200 bg-sky-700 px-3 py-2 text-white">
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{remoteConsultActionLabel(action.kind)}</Dialog.Title>
@@ -10005,7 +10375,7 @@ function RemoteConsultationActionDialogContent({ action, onConfirm }: { action: 
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild>
             <Button variant="outline">Cancel</Button>
           </Dialog.Close>
@@ -10357,7 +10727,7 @@ function EscalatedCasesCommand() {
         summary={`${source} | ${severity} | ${status} | ${visibleRows.length} case(s)`}
         title="Escalated case metrics & filters"
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Visible" value={visibleRows.length} tone="info" />
           <DashboardCommandMetric label="Critical" value={visibleRows.filter((row) => row.severity === "Critical").length} tone={visibleRows.some((row) => row.severity === "Critical") ? "critical" : "success"} />
           <DashboardCommandMetric label="Breached" value={visibleRows.filter(escalatedCaseSlaBreached).length} tone={visibleRows.some(escalatedCaseSlaBreached) ? "danger" : "success"} />
@@ -10456,8 +10826,8 @@ function EscalatedCasesMatrix({
         <table className="w-full min-w-[1420px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20">
             <tr className="border-b border-slate-300 bg-white text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-3 text-left">Patient / case</th>
-              {columns.map((column) => <th className="min-w-[135px] px-3 py-3 text-center" key={column}>{column}</th>)}
+              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-2 text-left">Patient / case</th>
+              {columns.map((column) => <th className="min-w-[135px] px-3 py-2 text-center" key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -10546,31 +10916,7 @@ function EscalatedCasesSidePanel({ rows, onAction }: { rows: EscalatedCaseRow[];
               </div>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent escalation in selected view.</div> : null}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">Source load</p>
-        <div className="mt-3 space-y-2">
-          {sourceCounts.map((item) => (
-            <div className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item.source}>
-              <span>{item.source}</span>
-              <Badge tone="info">{item.count}</Badge>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">Closure rules</p>
-        <div className="mt-3 space-y-2">
-          {["Owner acknowledged", "SLA reviewed", "Action outcome documented", "Patient/device impact reassessed", "Close only after responsible owner confirms"].map((item) => (
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item}>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              {item}
-            </div>
-          ))}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-600">No urgent escalation in selected view.</div> : null}
         </div>
       </div>
     </div>
@@ -10591,7 +10937,7 @@ function EscalatedCaseCellDialogContent({ cell }: { cell: EscalatedCaseCellActio
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(860px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className={cn("border-b border-slate-200 px-4 py-3 text-white", dashboardToneSolidClass(tone))}>
+        <div className={cn("border-b border-slate-200 px-3 py-2 text-white", dashboardToneSolidClass(tone))}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{escalatedCaseCellTitle(cell.kind)}</Dialog.Title>
@@ -10630,7 +10976,7 @@ function EscalatedCaseCellDialogContent({ cell }: { cell: EscalatedCaseCellActio
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild>
             <Button>Done</Button>
           </Dialog.Close>
@@ -10669,7 +11015,7 @@ function EscalatedCaseActionDialogContent({ action, onConfirm }: { action: Escal
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(900px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className="border-b border-slate-200 bg-sky-700 px-4 py-3 text-white">
+        <div className="border-b border-slate-200 bg-sky-700 px-3 py-2 text-white">
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{escalatedCaseActionLabel(action.kind)}</Dialog.Title>
@@ -10726,7 +11072,7 @@ function EscalatedCaseActionDialogContent({ action, onConfirm }: { action: Escal
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild>
             <Button variant="outline">Cancel</Button>
           </Dialog.Close>
@@ -10752,7 +11098,7 @@ function EscalatedCaseScenarioCommand({ caseId, mode }: { caseId?: string; mode:
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-base font-black text-slate-950">{escalatedCaseScenarioTitle(mode)}</p>
             <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-500">{escalatedCaseScenarioDescription(mode)}</p>
@@ -10768,7 +11114,7 @@ function EscalatedCaseScenarioCommand({ caseId, mode }: { caseId?: string; mode:
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Cases" value={rows.length} tone="info" />
           <DashboardCommandMetric label="Critical" value={criticalRows.length} tone={criticalRows.length ? "critical" : "success"} />
           <DashboardCommandMetric label="SLA breach" value={breachedRows.length} tone={breachedRows.length ? "danger" : "success"} />
@@ -10798,43 +11144,43 @@ function EscalatedCaseScenarioCommand({ caseId, mode }: { caseId?: string; mode:
           <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
             <tr className="border-b border-slate-300">
               {["Case", "Trigger", "Severity", "Source trace", "Owner chain", "SLA", "Current action", "Outcome", "Open"].map((column) => (
-                <th className="px-3 py-3 text-left" key={column}>{column}</th>
+                <th className="px-3 py-2 text-left" key={column}>{column}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {pagination.pageRows.map((row) => (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={row.id}>
-                <td className="px-3 py-3"><EscalatedCaseInlineCase row={row} /></td>
-                <td className={cn("px-3 py-3 text-xs text-slate-700", mode === "trigger" && "bg-sky-50")}>
+                <td className="px-3 py-2"><EscalatedCaseInlineCase row={row} /></td>
+                <td className={cn("px-3 py-2 text-xs text-slate-700", mode === "trigger" && "bg-sky-50")}>
                   <p className="font-bold text-slate-950">{row.trigger}</p>
                   <p className="mt-1">{row.openedAt} | {row.lastUpdate}</p>
                 </td>
-                <td className={cn("px-3 py-3", mode === "severity" && "bg-sky-50")}>
+                <td className={cn("px-3 py-2", mode === "severity" && "bg-sky-50")}>
                   <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(escalatedCaseSeverityTone(row.severity)))}>{row.severity}</span>
                   <p className="mt-2 text-xs text-slate-500">{row.status}</p>
                 </td>
-                <td className={cn("px-3 py-3", mode === "source" && "bg-sky-50")}>
+                <td className={cn("px-3 py-2", mode === "source" && "bg-sky-50")}>
                   <TeleIcuPlainLink href={escalatedCaseSourceHref(row)} label={row.source} detail="Open source module" />
                 </td>
-                <td className={cn("px-3 py-3 text-xs text-slate-700", mode === "owner-chain" && "bg-sky-50")}>
+                <td className={cn("px-3 py-2 text-xs text-slate-700", mode === "owner-chain" && "bg-sky-50")}>
                   <p className="font-bold text-slate-950">{row.primaryOwner}</p>
                   <p className="mt-1">{row.ownerChain.join(" -> ")}</p>
                   <p className="mt-1 text-slate-500">Escalated to: {row.escalatedTo}</p>
                 </td>
-                <td className={cn("px-3 py-3", mode === "sla" && "bg-sky-50")}>
+                <td className={cn("px-3 py-2", mode === "sla" && "bg-sky-50")}>
                   <TeleIcuScorePill detail={`${row.waitingMinutes}/${row.slaMinutes} min`} tone={escalatedCaseSlaTone(row)} value={escalatedCaseSlaLabel(row)} />
                 </td>
-                <td className={cn("px-3 py-3 text-xs text-slate-700", mode === "current-action" && "bg-sky-50")}>
+                <td className={cn("px-3 py-2 text-xs text-slate-700", mode === "current-action" && "bg-sky-50")}>
                   <p className="font-bold text-slate-950">{row.status}</p>
                   <p className="mt-1">{row.currentAction}</p>
                   <p className="mt-1 text-slate-500">Next: {row.nextStep}</p>
                 </td>
-                <td className={cn("px-3 py-3 text-xs text-slate-700", mode === "outcome" && "bg-sky-50")}>
+                <td className={cn("px-3 py-2 text-xs text-slate-700", mode === "outcome" && "bg-sky-50")}>
                   <p className="font-bold text-slate-950">{row.outcome}</p>
                   <p className="mt-1 text-slate-500">{row.status === "Closed" || row.status === "Resolved" ? "Closure evidence available" : "Closure evidence pending"}</p>
                 </td>
-                <td className="px-3 py-3"><EscalatedCaseOpenLinks row={row} /></td>
+                <td className="px-3 py-2"><EscalatedCaseOpenLinks row={row} /></td>
               </tr>
             ))}
             {!rows.length ? (
@@ -11308,7 +11654,7 @@ function DeviceMonitoringCommand() {
         summary={`${unit} | ${deviceType} | ${status} | ${filteredRows.length} bed(s)`}
         title={queryFocus === "ventilator" ? "Ventilator metrics & filters" : "Device metrics & filters"}
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Beds mapped" value={rows.length} tone="info" />
           <DashboardCommandMetric label="Online" value={rows.length - offline} tone="success" />
           <DashboardCommandMetric label="Offline" value={offline} tone={offline ? "danger" : "success"} />
@@ -11359,7 +11705,7 @@ function DeviceMonitoringCommand() {
           <table className="w-full min-w-[1480px] border-collapse bg-white text-sm">
             <thead className="sticky top-0 z-20 bg-white">
               <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Bed / Patient</th>
+                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-2 text-left">Bed / Patient</th>
                 <th className="min-w-[130px] px-2 py-3 text-center">Monitor</th>
                 <th className="min-w-[140px] px-2 py-3 text-center">Ventilator</th>
                 <th className="min-w-[130px] px-2 py-3 text-center">Pump</th>
@@ -11399,7 +11745,7 @@ function DeviceMonitoringCommand() {
                     <IcuOpsMatrixCell icon={Clock3} title={row.lastData} detail={`${row.uptime}% uptime`} tone={row.dataTone} showDetail={false} onClick={() => setActiveAction({ row, kind: "last-data" })} />
                   </td>
                   <td className="px-2 py-2 text-center align-middle">
-                    <button className={cn("mx-auto flex min-h-20 w-full min-w-40 flex-col items-center justify-center rounded-md border p-2 transition hover:brightness-95", dashboardToneSurfaceClass(row.tone))} type="button" onClick={() => setActiveAction({ row, kind: "issue" })}>
+                    <button className={cn("mx-auto flex min-h-16 w-full min-w-40 flex-col items-center justify-center rounded-md border p-2 transition hover:brightness-95", dashboardToneSurfaceClass(row.tone))} type="button" onClick={() => setActiveAction({ row, kind: "issue" })}>
                       <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(row.tone))}>{row.issue}</span>
                       <span className="mt-1 block max-w-40 truncate whitespace-nowrap text-center text-xs font-bold text-slate-800">{row.owner}</span>
                       <span aria-hidden className="invisible mt-0.5 block text-center text-[11px] text-slate-500">{row.sla}</span>
@@ -12001,7 +12347,7 @@ function DeviceOperationsCommand({ mode }: { mode: DeviceOperationsMode }) {
         summary={`${unit} | ${status} | ${owner} | ${filteredRows.length} device row(s)`}
         title={`${config.title} filters`}
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           {deviceOpsMetrics(mode, rows).map((metric) => (
             <DashboardCommandMetric key={metric.label} label={metric.label} value={metric.value} tone={metric.tone} />
           ))}
@@ -12103,7 +12449,7 @@ function DeviceOpsMatrix({
         <table className="w-full min-w-[1320px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white">
             <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-3 text-left">Bed / Patient</th>
+              <th className="sticky left-0 z-40 min-w-[220px] bg-white px-3 py-2 text-left">Bed / Patient</th>
               {columns.map((column) => <th className="min-w-[135px] px-2 py-3 text-center" key={column}>{column}</th>)}
               <th className="min-w-[230px] px-2 py-3 text-center">Action</th>
             </tr>
@@ -12240,7 +12586,7 @@ function DeviceOpsSidePanel({
               </div>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent device work in selected view.</div> : null}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-600">No urgent device work in selected view.</div> : null}
         </div>
       </div>
 
@@ -12333,7 +12679,7 @@ function DeviceOpsActionDialogContent({ action, onComplete }: { action: DeviceOp
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(900px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className={cn("border-b border-slate-200 px-4 py-3 text-white", dashboardToneSolidClass(copy.tone))}>
+        <div className={cn("border-b border-slate-200 px-3 py-2 text-white", dashboardToneSolidClass(copy.tone))}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{copy.title}</Dialog.Title>
@@ -12373,7 +12719,7 @@ function DeviceOpsActionDialogContent({ action, onComplete }: { action: DeviceOp
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
           {action.row.patientId ? <Button variant="outline" asChild><Link href={icuPatientDetailHref(action.row.patientId, "monitoring", "device-snapshot")}>Open patient monitoring</Link></Button> : null}
           <Button variant={selectedAction.includes("Escalate") ? "danger" : "default"} onClick={() => onComplete(action, `${note} | ${selectedAction} | Owner: ${owner} | ${sla}`)}>
@@ -12784,7 +13130,7 @@ function PatientRiskDrilldownCommand({ focus, patientId }: { focus?: string; pat
   const deviceRow = row ? getCommandDeviceRows().find((item) => item.bedNo === row.bedNo) : undefined;
 
   if (!row) {
-    return <div className="rounded-md border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-500">No patient risk data available.</div>;
+    return <div className="rounded-md border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-500">No patient risk data available.</div>;
   }
 
   const scoreBreakdown = patientRiskScoreBreakdown(row, patient);
@@ -12792,7 +13138,7 @@ function PatientRiskDrilldownCommand({ focus, patientId }: { focus?: string; pat
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-base font-black text-slate-950">Patient Risk Detail - {row.bedNo}</p>
             <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-500">
@@ -12810,7 +13156,7 @@ function PatientRiskDrilldownCommand({ focus, patientId }: { focus?: string; pat
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DashboardCommandMetric label="Risk score" value={row.score} tone={riskLevelTone(row.riskLevel)} />
           <DashboardCommandMetric label="Vitals" value={row.abnormalVital ? "Abnormal" : "Stable"} tone={row.abnormalVital ? "danger" : "success"} />
           <DashboardCommandMetric label="Ventilation" value={row.ventilationScore} tone={row.ventilationScore >= 7 ? "purple" : "success"} />
@@ -12942,7 +13288,7 @@ function RiskAndEwsCommand({ mode }: { mode: RiskCommandMode }) {
         summary={`${unit} | ${risk} | ${owner} | ${visibleRows.length} patient(s)`}
         title={mode === "risk" ? "Critical risk metrics & filters" : "EWS metrics & filters"}
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 md:flex md:flex-wrap md:items-center">
           {riskCommandMetrics(mode, visibleRows).map((metric) => (
             <DashboardCommandMetric key={metric.label} label={metric.label} value={metric.value} tone={metric.tone} />
           ))}
@@ -13020,7 +13366,7 @@ function RiskCommandMatrix({
         <table className="w-full min-w-[1320px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white">
             <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-3 text-left">Patient</th>
+              <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-2 text-left">Patient</th>
               {columns.map((column) => <th className="min-w-[135px] px-2 py-3 text-center" key={column}>{column}</th>)}
               <th className="min-w-[230px] px-2 py-3 text-center">Action</th>
             </tr>
@@ -13062,14 +13408,14 @@ function RiskPatientCell({ href, onOpen, row }: { row: PatientRiskRow; href?: st
 
   if (href) {
     return (
-      <Link className="block min-h-20 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={href}>
+      <Link className="block min-h-16 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={href}>
         {content}
       </Link>
     );
   }
 
   return (
-    <button className="block min-h-20 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={onOpen}>
+    <button className="block min-h-16 w-full rounded-md px-3 py-2 text-left transition hover:bg-sky-50" type="button" onClick={onOpen}>
       {content}
     </button>
   );
@@ -13133,21 +13479,21 @@ function PatientRiskDrilldownOverview({ activeFocus, row }: { activeFocus: Patie
         <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
           <tr className="border-b border-slate-300">
             {["Signal", "Current value", "Why this matters", "Rule / source", "Open"].map((column) => (
-              <th className="px-3 py-3 text-left" key={column}>{column}</th>
+              <th className="px-3 py-2 text-left" key={column}>{column}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {patientRiskDrilldownItems(row).map((item) => (
             <tr className={cn("border-b border-slate-200 last:border-b-0", item.focus === activeFocus && "bg-sky-50")} key={item.focus}>
-              <td className="px-3 py-3">
+              <td className="px-3 py-2">
                 <p className="text-sm font-black text-slate-950">{item.label}</p>
                 {item.focus === activeFocus ? <span className="mt-1 inline-flex rounded-full border border-sky-300 bg-white px-2 py-0.5 text-[11px] font-bold text-sky-800">Current focus</span> : null}
               </td>
-              <td className="px-3 py-3"><TeleIcuScorePill detail={item.detail} tone={item.tone} value={item.value} /></td>
-              <td className="px-3 py-3 text-xs leading-5 text-slate-600">{item.why}</td>
-              <td className="px-3 py-3 text-xs leading-5 text-slate-600">{item.rule}</td>
-              <td className="px-3 py-3">
+              <td className="px-3 py-2"><TeleIcuScorePill detail={item.detail} tone={item.tone} value={item.value} /></td>
+              <td className="px-3 py-2 text-xs leading-5 text-slate-600">{item.why}</td>
+              <td className="px-3 py-2 text-xs leading-5 text-slate-600">{item.rule}</td>
+              <td className="px-3 py-2">
                 <Link className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50" href={patientRiskDrilldownHref(row, item.focus)}>
                   Detail
                 </Link>
@@ -13198,23 +13544,23 @@ function PatientRiskScoreDetail({ row, scoreBreakdown }: { row: PatientRiskRow; 
       <table className="w-full min-w-[900px] border-collapse bg-white text-sm">
         <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
           <tr className="border-b border-slate-300">
-            {["Score factor", "Points", "Reason", "Patient value"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+            {["Score factor", "Points", "Reason", "Patient value"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
           </tr>
         </thead>
         <tbody>
           {scoreBreakdown.map((item) => (
             <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={item.label}>
-              <td className="px-3 py-3 font-bold text-slate-950">{item.label}</td>
-              <td className="px-3 py-3"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-black", dashboardTonePillClass(item.points ? item.tone : "muted"))}>+{item.points}</span></td>
-              <td className="px-3 py-3 text-xs leading-5 text-slate-600">{item.reason}</td>
-              <td className="px-3 py-3 text-xs font-semibold text-slate-700">{item.value}</td>
+              <td className="px-3 py-2 font-bold text-slate-950">{item.label}</td>
+              <td className="px-3 py-2"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-black", dashboardTonePillClass(item.points ? item.tone : "muted"))}>+{item.points}</span></td>
+              <td className="px-3 py-2 text-xs leading-5 text-slate-600">{item.reason}</td>
+              <td className="px-3 py-2 text-xs font-semibold text-slate-700">{item.value}</td>
             </tr>
           ))}
           <tr className="bg-slate-50">
-            <td className="px-3 py-3 font-black text-slate-950">Total risk score</td>
-            <td className="px-3 py-3"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-black", dashboardTonePillClass(riskLevelTone(row.riskLevel)))}>{row.score}</span></td>
-            <td className="px-3 py-3 text-xs leading-5 text-slate-600">Score level: {row.riskLevel}</td>
-            <td className="px-3 py-3 text-xs font-semibold text-slate-700">{row.trendReason}</td>
+            <td className="px-3 py-2 font-black text-slate-950">Total risk score</td>
+            <td className="px-3 py-2"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-black", dashboardTonePillClass(riskLevelTone(row.riskLevel)))}>{row.score}</span></td>
+            <td className="px-3 py-2 text-xs leading-5 text-slate-600">Score level: {row.riskLevel}</td>
+            <td className="px-3 py-2 text-xs font-semibold text-slate-700">{row.trendReason}</td>
           </tr>
         </tbody>
       </table>
@@ -13229,16 +13575,16 @@ function PatientRiskVitalsDetail({ latestVital, patientVitals, row }: { latestVi
         <table className="w-full min-w-[900px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
             <tr className="border-b border-slate-300">
-              {["Metric", "Latest value", "Rule", "Status"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+              {["Metric", "Latest value", "Rule", "Status"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
             {patientRiskVitalRules(latestVital).map((item) => (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={item.label}>
-                <td className="px-3 py-3 font-bold text-slate-950">{item.label}</td>
-                <td className="px-3 py-3 text-xs font-semibold text-slate-700">{item.value}</td>
-                <td className="px-3 py-3 text-xs leading-5 text-slate-600">{item.rule}</td>
-                <td className="px-3 py-3"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(item.tone))}>{item.met ? "Triggered" : "Within range"}</span></td>
+                <td className="px-3 py-2 font-bold text-slate-950">{item.label}</td>
+                <td className="px-3 py-2 text-xs font-semibold text-slate-700">{item.value}</td>
+                <td className="px-3 py-2 text-xs leading-5 text-slate-600">{item.rule}</td>
+                <td className="px-3 py-2"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(item.tone))}>{item.met ? "Triggered" : "Within range"}</span></td>
               </tr>
             ))}
           </tbody>
@@ -13261,15 +13607,15 @@ function PatientRiskVentilationDetail({ latestVital, patient, row }: { latestVit
         <table className="w-full min-w-[760px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
             <tr className="border-b border-slate-300">
-              {["Rule", "Score", "Reason"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+              {["Rule", "Score", "Reason"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
             {rules.map((item) => (
               <tr className={cn("border-b border-slate-200 last:border-b-0", item.score === row.ventilationScore && "bg-sky-50")} key={item.label}>
-                <td className="px-3 py-3 font-bold text-slate-950">{item.label}</td>
-                <td className="px-3 py-3"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-black", dashboardTonePillClass(item.score >= 7 ? "purple" : item.score >= 6 ? "warning" : "success"))}>{item.score}</span></td>
-                <td className="px-3 py-3 text-xs leading-5 text-slate-600">{item.detail}</td>
+                <td className="px-3 py-2 font-bold text-slate-950">{item.label}</td>
+                <td className="px-3 py-2"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-black", dashboardTonePillClass(item.score >= 7 ? "purple" : item.score >= 6 ? "warning" : "success"))}>{item.score}</span></td>
+                <td className="px-3 py-2 text-xs leading-5 text-slate-600">{item.detail}</td>
               </tr>
             ))}
           </tbody>
@@ -13314,7 +13660,7 @@ function PatientRiskMedicationDetail({ riskCount, rows }: { riskCount: number; r
       <table className="w-full min-w-[980px] border-collapse bg-white text-sm">
         <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
           <tr className="border-b border-slate-300">
-            {["Medication", "Dose / route", "Schedule", "Status", "Verification", "Reason"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+            {["Medication", "Dose / route", "Schedule", "Status", "Verification", "Reason"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -13322,12 +13668,12 @@ function PatientRiskMedicationDetail({ riskCount, rows }: { riskCount: number; r
             const risk = item.status === "Late" || item.doubleVerification === "Required";
             return (
               <tr className={cn("border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40", risk && "bg-amber-50")} key={item.id}>
-                <td className="px-3 py-3 font-bold text-slate-950">{item.medication}</td>
-                <td className="px-3 py-3 text-xs text-slate-600">{item.dose} | {item.route}</td>
-                <td className="px-3 py-3 text-xs text-slate-600">{item.scheduledTime} scheduled | {item.actualTime || "Not given"}</td>
-                <td className="px-3 py-3"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(patientRiskMedicationTone(item)))}>{item.status}</span></td>
-                <td className="px-3 py-3 text-xs font-semibold text-slate-700">{item.doubleVerification}</td>
-                <td className="px-3 py-3 text-xs leading-5 text-slate-600">{item.reason}</td>
+                <td className="px-3 py-2 font-bold text-slate-950">{item.medication}</td>
+                <td className="px-3 py-2 text-xs text-slate-600">{item.dose} | {item.route}</td>
+                <td className="px-3 py-2 text-xs text-slate-600">{item.scheduledTime} scheduled | {item.actualTime || "Not given"}</td>
+                <td className="px-3 py-2"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(patientRiskMedicationTone(item)))}>{item.status}</span></td>
+                <td className="px-3 py-2 text-xs font-semibold text-slate-700">{item.doubleVerification}</td>
+                <td className="px-3 py-2 text-xs leading-5 text-slate-600">{item.reason}</td>
               </tr>
             );
           })}
@@ -13351,7 +13697,7 @@ function PatientRiskDeviceDetail({ deviceRow, row }: { deviceRow?: ReturnType<ty
         <table className="w-full min-w-[860px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
             <tr className="border-b border-slate-300">
-              {["Device", "Value", "Status", "Risk rule"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+              {["Device", "Value", "Status", "Risk rule"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -13363,10 +13709,10 @@ function PatientRiskDeviceDetail({ deviceRow, row }: { deviceRow?: ReturnType<ty
               ["Last data", deviceRow.lastData, `${deviceRow.uptime}% uptime`, "Delayed data requires bedside validation."],
             ].map(([label, value, status, rule]) => (
               <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={label}>
-                <td className="px-3 py-3 font-bold text-slate-950">{label}</td>
-                <td className="px-3 py-3 text-xs font-semibold text-slate-700">{value}</td>
-                <td className="px-3 py-3 text-xs text-slate-600">{status}</td>
-                <td className="px-3 py-3 text-xs leading-5 text-slate-600">{rule}</td>
+                <td className="px-3 py-2 font-bold text-slate-950">{label}</td>
+                <td className="px-3 py-2 text-xs font-semibold text-slate-700">{value}</td>
+                <td className="px-3 py-2 text-xs text-slate-600">{status}</td>
+                <td className="px-3 py-2 text-xs leading-5 text-slate-600">{rule}</td>
               </tr>
             ))}
           </tbody>
@@ -13390,7 +13736,7 @@ function PatientRiskTasksDetail({ alerts, row, rows }: { alerts: Array<(typeof i
         <table className="w-full min-w-[980px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
             <tr className="border-b border-slate-300">
-              {["Task", "Priority", "Due", "Status", "Owner", "Remarks"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+              {["Task", "Priority", "Due", "Status", "Owner", "Remarks"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -13398,15 +13744,15 @@ function PatientRiskTasksDetail({ alerts, row, rows }: { alerts: Array<(typeof i
               const pending = item.status !== "Completed";
               return (
                 <tr className={cn("border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40", pending && "bg-amber-50")} key={item.id}>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <p className="font-bold text-slate-950">{item.title}</p>
                     <p className="mt-1 text-xs text-slate-500">{item.taskType}</p>
                   </td>
-                  <td className="px-3 py-3"><Badge tone={toneForPriority(item.priority)}>{item.priority}</Badge></td>
-                  <td className="px-3 py-3 text-xs text-slate-600">{item.dueTime}</td>
-                  <td className="px-3 py-3"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(patientRiskTaskTone(item.status)))}>{item.status}</span></td>
-                  <td className="px-3 py-3 text-xs text-slate-600">{item.assignedTo}</td>
-                  <td className="px-3 py-3 text-xs leading-5 text-slate-600">{item.remarks}</td>
+                  <td className="px-3 py-2"><Badge tone={toneForPriority(item.priority)}>{item.priority}</Badge></td>
+                  <td className="px-3 py-2 text-xs text-slate-600">{item.dueTime}</td>
+                  <td className="px-3 py-2"><span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(patientRiskTaskTone(item.status)))}>{item.status}</span></td>
+                  <td className="px-3 py-2 text-xs text-slate-600">{item.assignedTo}</td>
+                  <td className="px-3 py-2 text-xs leading-5 text-slate-600">{item.remarks}</td>
                 </tr>
               );
             })}
@@ -13420,20 +13766,20 @@ function PatientRiskTasksDetail({ alerts, row, rows }: { alerts: Array<(typeof i
         <table className="w-full min-w-[860px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
             <tr className="border-b border-slate-300">
-              {["Alert", "Severity", "Source", "Status", "Owner"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+              {["Alert", "Severity", "Source", "Status", "Owner"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
             </tr>
           </thead>
           <tbody>
             {alerts.map((item) => (
               <tr className={cn("border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40", item.status !== "Resolved" && "bg-red-50")} key={item.id}>
-                <td className="px-3 py-3">
+                <td className="px-3 py-2">
                   <p className="font-bold text-slate-950">{item.type}</p>
                   <p className="mt-1 text-xs text-slate-500">{item.message}</p>
                 </td>
-                <td className="px-3 py-3"><Badge tone={toneForPriority(item.severity === "Info" ? "Routine" : item.severity)}>{item.severity}</Badge></td>
-                <td className="px-3 py-3 text-xs text-slate-600">{item.source}</td>
-                <td className="px-3 py-3 text-xs text-slate-600">{item.status}</td>
-                <td className="px-3 py-3 text-xs text-slate-600">{item.owner}</td>
+                <td className="px-3 py-2"><Badge tone={toneForPriority(item.severity === "Info" ? "Routine" : item.severity)}>{item.severity}</Badge></td>
+                <td className="px-3 py-2 text-xs text-slate-600">{item.source}</td>
+                <td className="px-3 py-2 text-xs text-slate-600">{item.status}</td>
+                <td className="px-3 py-2 text-xs text-slate-600">{item.owner}</td>
               </tr>
             ))}
             {!alerts.length ? (
@@ -13452,20 +13798,20 @@ function PatientRiskRecentVitalsTable({ row, rows }: { row: PatientRiskRow; rows
       <table className="w-full min-w-[980px] border-collapse bg-white text-sm">
         <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700">
           <tr className="border-b border-slate-300">
-            {["Time", "BP", "SpO2", "RR", "Pulse", "GCS", "Urine", "Nurse / note"].map((column) => <th className="px-3 py-3 text-left" key={column}>{column}</th>)}
+            {["Time", "BP", "SpO2", "RR", "Pulse", "GCS", "Urine", "Nurse / note"].map((column) => <th className="px-3 py-2 text-left" key={column}>{column}</th>)}
           </tr>
         </thead>
         <tbody>
           {rows.map((item) => (
             <tr className={cn("border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40", item.abnormal && "bg-red-50")} key={item.id}>
-              <td className="px-3 py-3 text-xs font-bold text-slate-700">{item.time}</td>
-              <td className="px-3 py-3 text-xs text-slate-600">{item.bp}</td>
-              <td className="px-3 py-3 text-xs text-slate-600">{item.spo2}%</td>
-              <td className="px-3 py-3 text-xs text-slate-600">{item.respiratoryRate}/min</td>
-              <td className="px-3 py-3 text-xs text-slate-600">{item.pulse}/min</td>
-              <td className="px-3 py-3 text-xs text-slate-600">{item.gcs}</td>
-              <td className="px-3 py-3 text-xs text-slate-600">{item.urineOutput} ml/hr</td>
-              <td className="px-3 py-3 text-xs leading-5 text-slate-600">{item.nurse} - {item.note}</td>
+              <td className="px-3 py-2 text-xs font-bold text-slate-700">{item.time}</td>
+              <td className="px-3 py-2 text-xs text-slate-600">{item.bp}</td>
+              <td className="px-3 py-2 text-xs text-slate-600">{item.spo2}%</td>
+              <td className="px-3 py-2 text-xs text-slate-600">{item.respiratoryRate}/min</td>
+              <td className="px-3 py-2 text-xs text-slate-600">{item.pulse}/min</td>
+              <td className="px-3 py-2 text-xs text-slate-600">{item.gcs}</td>
+              <td className="px-3 py-2 text-xs text-slate-600">{item.urineOutput} ml/hr</td>
+              <td className="px-3 py-2 text-xs leading-5 text-slate-600">{item.nurse} - {item.note}</td>
             </tr>
           ))}
           {!rows.length ? (
@@ -13648,22 +13994,7 @@ function RiskCommandSidePanel({ mode, onAction, rows }: { mode: RiskCommandMode;
               <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {mode === "ews" ? observationFrequency(row.score) : `Score ${row.score}`}</p>
             </button>
           ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent patient in selected view.</div> : null}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-slate-950">{mode === "ews" ? "EWS rules" : "Risk input rules"}</p>
-        <div className="mt-3 space-y-2">
-          {(mode === "ews"
-            ? ["Score >= 10: immediate doctor review", "Score 7-9: 30 min observation", "Score 5-6: 2 hourly watch", "Track SpO2, BP, pulse, RR, GCS, urine, pain", "Acknowledge only after next observation plan"]
-            : ["Criticality + abnormal vitals", "Open alerts and overdue tasks", "Medication late/double verification", "Ventilator or oxygen support", "Device signal/data freshness", "Infection or organ support burden"]
-          ).map((item) => (
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" key={item}>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              {item}
-            </div>
-          ))}
+          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-600">No urgent patient in selected view.</div> : null}
         </div>
       </div>
     </div>
@@ -13697,7 +14028,7 @@ function RiskWorkflowActionDialogContent({ action, onComplete }: { action: RiskW
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(920px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-        <div className={cn("border-b border-slate-200 px-4 py-3 text-white", dashboardToneSolidClass(copy.tone))}>
+        <div className={cn("border-b border-slate-200 px-3 py-2 text-white", dashboardToneSolidClass(copy.tone))}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-bold">{copy.title}</Dialog.Title>
@@ -13740,7 +14071,7 @@ function RiskWorkflowActionDialogContent({ action, onComplete }: { action: RiskW
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
           <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
           <Button variant="outline" asChild><Link href={icuPatientDetailHref(action.row.patientId, "graph")}>Open vital graph</Link></Button>
           <Button variant={selectedAction.includes("Escalate") ? "danger" : "default"} onClick={() => onComplete(action, `${note} | ${selectedAction} | Owner: ${owner} | ${reviewWindow}`)}>
@@ -14504,7 +14835,7 @@ function MiniList({ title, rows, empty = "No active item" }: { title: string; ro
       <div className="mt-2 space-y-2">
         {rows.length ? rows.slice(0, 4).map((row) => (
           <div className="rounded-md border border-border bg-surface-muted px-3 py-2 text-xs text-muted-foreground" key={row}>{row}</div>
-        )) : <div className="rounded-md border border-dashed border-border bg-surface-muted px-3 py-3 text-xs text-muted-foreground">{empty}</div>}
+        )) : <div className="rounded-md border border-dashed border-border bg-surface-muted px-3 py-2 text-xs text-muted-foreground">{empty}</div>}
       </div>
     </div>
   );
@@ -14536,13 +14867,25 @@ function normalizeIcuMonitoringSubTab(subtab?: string): IcuMonitoringSubTab {
 }
 
 type DashboardCellTone = "critical" | "danger" | "warning" | "success" | "info" | "purple" | "muted";
-type MedicationOrdersSubTab = "medication-overview" | "medicine-chart" | "high-alert-measure" | "medicine-reference";
+type MedicationOrdersSubTab = "pending-work" | "medication-overview" | "medicine-chart" | "medicine-reference";
+type IcuEventFocus = "all" | "open-alerts" | "action-needed";
+type IcuShiftFocus = "all" | "pending" | "critical" | "completed";
 type TeleIcuScenarioMode = "readiness" | "local-team" | "remote-md" | "sla";
 type EscalatedCaseScenarioMode = "trigger" | "severity" | "source" | "owner-chain" | "sla" | "current-action" | "outcome";
 
 function normalizeMedicationOrdersSubTab(tab?: string): MedicationOrdersSubTab {
-  if (tab === "medicine-chart" || tab === "high-alert-measure" || tab === "medicine-reference") return tab;
+  if (tab === "pending-work" || tab === "medicine-chart" || tab === "medicine-reference") return tab;
   return "medication-overview";
+}
+
+function normalizeIcuEventFocus(focus?: string): IcuEventFocus {
+  if (focus === "open-alerts" || focus === "action-needed") return focus;
+  return "all";
+}
+
+function normalizeIcuShiftFocus(focus?: string): IcuShiftFocus {
+  if (focus === "pending" || focus === "critical" || focus === "completed") return focus;
+  return "all";
 }
 
 function teleIcuScenarioHref(mode: TeleIcuScenarioMode, patientId?: string) {
@@ -14576,27 +14919,6 @@ type DashboardCell = {
   route?: string;
 };
 
-type CommandMedicationAlertMeasure = {
-  row: IcuMedication;
-  category: string;
-  measure: number;
-  tone: DashboardCellTone;
-  status: string;
-  basis: string[];
-  monitoring: string[];
-  triggers: string[];
-};
-
-type CommandMedicationAlertScaleBand = {
-  label: string;
-  range: string;
-  min: number;
-  max: number;
-  tone: DashboardCellTone;
-  action: string;
-  reference: string;
-};
-
 type MedicineReferenceRecord = {
   id: string;
   medicine: string;
@@ -14622,47 +14944,6 @@ type MedicineReferenceRecord = {
   pharmacyLocation: string;
   sourceBasis: string[];
 };
-
-const commandHighAlertCheckpoints = ["Pre-check", "15 min", "1 hour", "Completion", "4 hourly"];
-
-const commandMedicationAlertScale: CommandMedicationAlertScaleBand[] = [
-  {
-    label: "Critical high-alert",
-    range: "80-100",
-    min: 80,
-    max: 100,
-    tone: "critical",
-    action: "Immediate doctor/pharmacy review with bedside verification.",
-    reference: "Late/due MAR risk plus high-alert class, infusion, verification, or active medication alert.",
-  },
-  {
-    label: "High alert",
-    range: "65-79",
-    min: 65,
-    max: 79,
-    tone: "danger",
-    action: "Acknowledge and close the verification or timing gap in the current round.",
-    reference: "High-alert medicine, double verification, infusion, or delayed MAR item.",
-  },
-  {
-    label: "Watch",
-    range: "40-64",
-    min: 40,
-    max: 64,
-    tone: "warning",
-    action: "Nurse/pharmacy follow-up and repeat monitoring checkpoint.",
-    reference: "Due dose, protocol medicine, or early safety signal without immediate breach.",
-  },
-  {
-    label: "Controlled",
-    range: "0-39",
-    min: 0,
-    max: 39,
-    tone: "success",
-    action: "Routine MAR monitoring.",
-    reference: "On-time medication with no active high-alert escalation factor.",
-  },
-];
 
 const medicineReferenceCatalog: MedicineReferenceRecord[] = [
   {
@@ -14917,27 +15198,6 @@ const medicineReferenceCatalog: MedicineReferenceRecord[] = [
   },
 ];
 
-function buildCommandMedicationAlertMeasures(rows: IcuMedication[], alerts: typeof icuAlerts): CommandMedicationAlertMeasure[] {
-  return rows
-    .filter((row) => isCommandHighAlertMedicine(row))
-    .map((row) => {
-      const category = commandHighAlertCategory(row) || "Timing / MAR safety alert";
-      const basis = commandMedicationAlertBasis(row, category, alerts);
-      const measure = commandMedicationAlertScore(row, category, basis);
-      return {
-        row,
-        category,
-        measure,
-        tone: commandMedicationAlertTone(measure),
-        status: commandMedicationAlertStatus(measure),
-        basis,
-        monitoring: commandMedicationMonitoringFocus(category),
-        triggers: commandMedicationEscalationTriggers(category),
-      };
-    })
-    .sort((left, right) => right.measure - left.measure);
-}
-
 function isCommandHighAlertMedicine(row: IcuMedication) {
   return row.doubleVerification !== "Not required"
     || row.status === "Late"
@@ -14959,65 +15219,6 @@ function commandHighAlertCategory(row: IcuMedication) {
   if (row.doubleVerification !== "Not required") return "Double verification medicine";
   if (row.route.toLowerCase().includes("infusion")) return "Infusion medicine";
   return "";
-}
-
-function commandMedicationAlertBasis(row: IcuMedication, category: string, alerts: typeof icuAlerts) {
-  const activeMedicationAlerts = alerts.filter((alert) => alert.patientId === row.patientId && alert.status !== "Resolved" && (alert.type.toLowerCase().includes("medication") || alert.message.toLowerCase().includes(row.medication.toLowerCase())));
-  return [
-    category ? `Category: ${category}` : "",
-    row.status === "Late" ? "MAR status: Late" : row.status === "Due" ? "MAR status: Due" : "",
-    row.doubleVerification !== "Not required" ? `Double verification: ${row.doubleVerification}` : "",
-    row.route.toLowerCase().includes("infusion") || row.frequency.toLowerCase().includes("continuous") ? "Infusion / continuous monitoring" : "",
-    activeMedicationAlerts.length ? `${activeMedicationAlerts.length} active medication alert(s)` : "",
-  ].filter(Boolean);
-}
-
-function commandMedicationAlertScore(row: IcuMedication, category: string, basis: string[]) {
-  let score = 20;
-  if (row.status === "Late") score += 35;
-  if (row.status === "Due") score += 18;
-  if (row.doubleVerification !== "Not required") score += 22;
-  if (row.route.toLowerCase().includes("infusion") || row.frequency.toLowerCase().includes("continuous")) score += 18;
-  if (category.includes("Vasopressor") || category.includes("Insulin") || category.includes("Concentrated") || category.includes("Narrow")) score += 18;
-  if (category.includes("Neuro") || category.includes("Transplant")) score += 12;
-  if (basis.some((item) => item.includes("active medication alert"))) score += 12;
-  return Math.min(100, score);
-}
-
-function commandMedicationAlertBand(measure: number) {
-  return commandMedicationAlertScale.find((band) => measure >= band.min && measure <= band.max) ?? commandMedicationAlertScale[commandMedicationAlertScale.length - 1];
-}
-
-function commandMedicationAlertRangeLabel(measure: number) {
-  return commandMedicationAlertBand(measure).range;
-}
-
-function commandMedicationAlertTone(measure: number): DashboardCellTone {
-  return commandMedicationAlertBand(measure).tone;
-}
-
-function commandMedicationAlertStatus(measure: number) {
-  return commandMedicationAlertBand(measure).label;
-}
-
-function commandMedicationMonitoringFocus(category: string) {
-  if (category.includes("Vasopressor")) return ["MAP/BP target", "Pump rate and line patency", "Urine output/perfusion"];
-  if (category.includes("Insulin")) return ["Blood glucose", "Meal/feed/NPO status", "Hypoglycemia rescue"];
-  if (category.includes("Anticoagulant")) return ["Bleeding signs", "INR/aPTT/platelets", "Drain/urine/stool blood"];
-  if (category.includes("Narrow")) return ["Drug level / toxicity", "Renal/liver status", "Dose timing"];
-  if (category.includes("Neuro")) return ["GCS/pupil trend", "Urine output", "Serum osmolarity/electrolytes"];
-  if (category.includes("Concentrated")) return ["Dilution/rate", "ECG rhythm", "IV site"];
-  if (category.includes("Transplant")) return ["Trough level", "Renal output", "Infection / immunosuppression timing"];
-  return ["Patient identity", "Allergy", "Vitals and adverse reaction"];
-}
-
-function commandMedicationEscalationTriggers(category: string) {
-  if (category.includes("Vasopressor")) return ["MAP below target", "Pump interruption", "Extravasation", "Urine output falling"];
-  if (category.includes("Insulin")) return ["Hypoglycemia", "Feed stopped", "Critical potassium", "Wrong scale suspicion"];
-  if (category.includes("Anticoagulant")) return ["Active bleeding", "Critical coagulation result", "Fall/head injury", "Fresh drain blood"];
-  if (category.includes("Neuro")) return ["GCS drop", "Urine output low", "Electrolyte/osmolality issue", "Dose delayed"];
-  if (category.includes("Transplant")) return ["Trough level pending", "Missed immunosuppression", "Falling urine output", "Fever/infection signs"];
-  return ["Late dose", "Verification pending", "Vitals abnormal", "Drug reaction"];
 }
 
 function DashboardCommandMetric({ label, value, tone }: { label: string; value: React.ReactNode; tone: DashboardCellTone }) {
@@ -15159,10 +15360,10 @@ function DashboardMatrix({ patients }: { patients: IcuPatient[] }) {
         <table className="w-full min-w-[1580px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20">
             <tr className="border-b border-slate-300 bg-white text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Patient</th>
-              <th className="min-w-[230px] px-3 py-3 text-left">Diagnosis</th>
+              <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-2 text-left">Patient</th>
+              <th className="min-w-[230px] px-3 py-2 text-left">Diagnosis</th>
               {columns.map((column) => (
-                <th className={cn("px-3 py-3 text-center", dashboardMatrixColumnClass(column))} key={column}>{icuColumnLabel(column)}</th>
+                <th className={cn("px-3 py-2 text-center", dashboardMatrixColumnClass(column))} key={column}>{icuColumnLabel(column)}</th>
               ))}
             </tr>
           </thead>
@@ -15171,18 +15372,18 @@ function DashboardMatrix({ patients }: { patients: IcuPatient[] }) {
               const rowCells = buildDashboardCells(patient);
               return (
                 <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={patient.id}>
-                  <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
+                  <td className="sticky left-0 z-10 bg-white px-2 py-1 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
                     <IcuMonitorPatientCell patient={patient} />
                   </td>
-                  <td className="px-4 py-2 align-middle">
-                    <div className="min-h-12">
-                      <p className="text-sm font-semibold text-slate-900">{patient.diagnosis}</p>
+                  <td className="px-3 py-1 align-middle">
+                    <div className="min-h-10">
+                      <p className="text-sm font-medium leading-5 text-slate-500">{patient.diagnosis}</p>
                     </div>
                   </td>
                   {columns.map((column) => {
                     const cell = rowCells[column];
                     return (
-                      <td className="px-2 py-2 align-middle text-center" key={`${patient.id}-${column}`}>
+                      <td className="px-1.5 py-1 align-middle text-center" key={`${patient.id}-${column}`}>
                         <DashboardMatrixCell cell={cell} column={column} patient={patient} onOpenRiskReference={setReferencePatient} />
                       </td>
                     );
@@ -15215,12 +15416,12 @@ function IcuMonitorPatientCell({ patient }: { patient: IcuPatient }) {
   const tone = patientDashboardTone(patient);
   return (
     <Link
-      className="block min-h-20 w-full rounded-md border border-transparent bg-white px-3 py-2 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-sm"
+      className="block min-h-14 w-full rounded-md border border-transparent bg-white px-2.5 py-1.5 text-left transition hover:border-sky-300 hover:shadow-sm"
       href={icuPatientDetailHref(patient.id, "overview")}
       title={`Show complete ICU detail for ${patient.patientName}`}
     >
       <p className={cn("truncate text-sm font-bold", dashboardToneTextClass(tone))}>{patient.patientName}</p>
-      <p className="mt-1 truncate text-xs font-semibold text-slate-700">{patient.bedNo} | {patient.unit}</p>
+      <p className="mt-0.5 truncate text-xs font-semibold text-slate-700">{patient.bedNo} | {patient.unit}</p>
     </Link>
   );
 }
@@ -15229,8 +15430,8 @@ function IcuPatientTabLink({ active, children, href }: { active: boolean; childr
   return (
     <Link
       className={cn(
-        "inline-flex min-h-10 shrink-0 items-center justify-center rounded px-3 text-xs font-medium outline-none transition hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-sky-300",
-        active ? "bg-white text-slate-950 shadow-sm" : "text-slate-600 hover:bg-white/70",
+        "inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl px-4 text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-violet-300",
+        active ? "bg-white text-violet-600 shadow-sm" : "text-slate-600 hover:bg-white/70 hover:text-slate-950",
       )}
       href={href}
     >
@@ -15240,17 +15441,21 @@ function IcuPatientTabLink({ active, children, href }: { active: boolean; childr
 }
 
 function IcuPatientCommandProfile({
+  initialEventFocus,
   patient,
   initialTab,
   initialMonitoringTab,
   initialOrdersSubTab,
   initialResultType,
+  initialShiftFocus,
 }: {
+  initialEventFocus: IcuEventFocus;
   patient: IcuPatient | null;
   initialTab: IcuPatientDetailTab;
   initialMonitoringTab: IcuMonitoringSubTab;
   initialOrdersSubTab: MedicationOrdersSubTab;
   initialResultType?: string;
+  initialShiftFocus: IcuShiftFocus;
 }) {
   const [previewResultId, setPreviewResultId] = React.useState<string | null>(null);
   const [ordersSubTab, setOrdersSubTab] = React.useState<MedicationOrdersSubTab>(initialOrdersSubTab);
@@ -15258,7 +15463,7 @@ function IcuPatientCommandProfile({
 
   if (!patient) {
     return (
-      <div className="rounded-sm border border-dashed border-slate-300 bg-white p-6 text-center text-sm font-semibold text-slate-500">
+      <div className="rounded-sm border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-500">
         Select a patient from the command matrix to view full ICU details.
       </div>
     );
@@ -15280,12 +15485,6 @@ function IcuPatientCommandProfile({
   const totalOutput = patientIoRows.reduce((sum, row) => sum + row.outputMl, 0);
   const balance = totalIntake - totalOutput;
   const dueMeds = activeMeds.filter((row) => ["Due", "Late"].includes(row.status));
-  const highAlertMedicationMeasures = buildCommandMedicationAlertMeasures(activeMeds, openAlerts);
-  const openMedicineReference = (row: IcuMedication) => {
-    const referenceId = medicineReferenceIdForMedication(row);
-    if (referenceId) setReferenceMedicineId(referenceId);
-    setOrdersSubTab("medicine-reference");
-  };
   const riskTone = patientDashboardTone(patient);
   const vitalTone: DashboardCellTone = latestVital?.abnormal || (latestVital?.spo2 ?? 100) < 94 ? "danger" : "success";
   const balanceTone: DashboardCellTone = balance > 500 ? "warning" : balance < 0 ? "info" : "success";
@@ -15314,9 +15513,9 @@ function IcuPatientCommandProfile({
   ].slice(0, 8);
 
   return (
-    <div className="overflow-hidden rounded-sm border border-sky-200 bg-white shadow-sm">
-      <Tabs className="p-4" value={initialTab}>
-        <TabsList className="grid h-auto w-full gap-1 rounded-md bg-slate-100 p-1 md:grid-cols-4 xl:grid-cols-8">
+    <div className="overflow-hidden rounded-xl border border-sky-200 bg-white shadow-sm">
+      <Tabs className="p-0" value={initialTab}>
+        <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-none border-b border-slate-200 bg-slate-100 px-4 py-2">
           <IcuPatientTabLink active={initialTab === "overview"} href={icuPatientDetailHref(patient.id, "overview")}>Patient Overview</IcuPatientTabLink>
           <IcuPatientTabLink active={initialTab === "monitoring"} href={icuPatientDetailHref(patient.id, "monitoring")}>Monitoring</IcuPatientTabLink>
           <IcuPatientTabLink active={initialTab === "results"} href={icuPatientDetailHref(patient.id, "results")}>Results</IcuPatientTabLink>
@@ -15327,7 +15526,7 @@ function IcuPatientCommandProfile({
           <IcuPatientTabLink active={initialTab === "collaborate"} href={icuPatientDetailHref(patient.id, "collaborate")}>Collaborate</IcuPatientTabLink>
         </TabsList>
 
-        <TabsContent className="mt-4 space-y-4" value="overview">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="overview">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <IcuPatientDetailMetric icon={ShieldAlert} label="Risk score" value={patient.criticalityScore} detail={patient.currentStatus} tone={riskTone} />
             <IcuPatientDetailMetric icon={HeartPulse} label="Latest vitals" value={latestVital ? `SpO2 ${latestVital.spo2}%` : "-"} detail={latestVital ? `${latestVital.bp} | P ${latestVital.pulse}` : "Chart pending"} tone={vitalTone} />
@@ -15342,9 +15541,9 @@ function IcuPatientCommandProfile({
           <IcuPatientTimeline rows={timeline} />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="monitoring">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="monitoring">
           <Tabs value={initialMonitoringTab}>
-            <TabsList className="grid h-auto w-full gap-1 rounded-md bg-slate-100 p-1 md:grid-cols-4">
+            <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl bg-slate-100 p-2">
               <IcuPatientTabLink active={initialMonitoringTab === "monitoring-overview"} href={icuPatientDetailHref(patient.id, "monitoring", "monitoring-overview")}>Monitoring Overview</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "24h-chart"} href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}>24h Chart</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "intake-output"} href={icuPatientDetailHref(patient.id, "monitoring", "intake-output")}>Intake Output</IcuPatientTabLink>
@@ -15352,46 +15551,13 @@ function IcuPatientCommandProfile({
             </TabsList>
 
             <TabsContent className="mt-4 space-y-4" value="monitoring-overview">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <IcuPatientDetailMetric icon={HeartPulse} label="Current SpO2" value={latestVital ? `${latestVital.spo2}%` : "-"} detail={latestVital ? `${latestVital.time} | ${latestVital.oxygenFlow}` : "No live entry"} tone={vitalTone} />
-                <IcuPatientDetailMetric icon={Activity} label="Respiration" value={latestVital ? `${latestVital.respiratoryRate}/min` : "-"} detail={patient.ventilatorStatus} tone={patient.ventilatorStatus === "Room air" ? "success" : "purple"} />
-                <IcuPatientDetailMetric icon={Droplets} label="Urine output" value={latestVital ? `${latestVital.urineOutput} ml/hr` : "-"} detail={`Net ${balance} ml`} tone={balanceTone} />
-                <IcuPatientDetailMetric icon={AlertTriangle} label="Live alerts" value={openAlerts.length} detail={openAlerts[0]?.message ?? "No active alert"} tone={openAlerts.length ? "warning" : "success"} />
-              </div>
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-                <IcuPatientLatestObservation latestVital={latestVital} patient={patient} />
-                <IcuPatientQueuePanel
-                  title="Live device / infusion"
-                  icon={Activity}
-                  count={patientInfusions.length}
-                  rows={patientInfusions.map((row) => ({
-                    id: row.id,
-                    title: `${row.pumpNo} - ${row.fluidName}`,
-                    detail: `${row.rate} | ${row.status} | ${row.remainingVolumeMl} ml left`,
-                    tone: row.status === "Running" ? "warning" : "success",
-                  }))}
-                  empty="No active infusion for this patient."
-                />
-              </div>
-              <IcuPatientEntryTable
-                title="Alerts and monitoring follow-up"
-                rows={[
-                  ...openAlerts.map((row) => ({
-                    id: row.id,
-                    time: row.createdAt,
-                    title: `${row.type} - ${row.severity}`,
-                    detail: `${row.message} | ${row.source} | ${row.owner}`,
-                    tone: row.severity === "Critical" ? "critical" as DashboardCellTone : "warning" as DashboardCellTone,
-                  })),
-                  ...activeTasks.map((row) => ({
-                    id: row.id,
-                    time: row.dueTime,
-                    title: `${row.taskType} - ${row.status}`,
-                    detail: `${row.title} | ${row.assignedTo} | ${row.remarks}`,
-                    tone: row.status === "Overdue" ? "danger" as DashboardCellTone : "info" as DashboardCellTone,
-                  })),
-                ]}
-                empty="No result or follow-up item for this patient."
+              <IcuPatientMonitoringOverview
+                activeTasks={activeTasks}
+                balance={balance}
+                latestVital={latestVital}
+                openAlerts={openAlerts}
+                patient={patient}
+                patientInfusions={patientInfusions}
               />
             </TabsContent>
 
@@ -15409,7 +15575,7 @@ function IcuPatientCommandProfile({
           </Tabs>
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="results">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="results">
           <IcuPatientResultsWorkspace
             initialType={initialResultType}
             patient={patient}
@@ -15419,18 +15585,26 @@ function IcuPatientCommandProfile({
           />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="graph">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="graph">
           <IcuPatientVitalGraph patient={patient} intakeOutput={patientIoRows} vitals={vitals} />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="orders">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="orders">
           <Tabs value={ordersSubTab} onValueChange={(value) => setOrdersSubTab(value as MedicationOrdersSubTab)}>
-            <TabsList className="grid h-auto w-full gap-1 rounded-md bg-slate-100 p-1 md:grid-cols-4">
-              <TabsTrigger className="min-h-10" value="medication-overview">Medication Overview</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="medicine-chart">Medicine Chart</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="high-alert-measure">High-alert Medication Measure</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="medicine-reference">Medicine Reference</TabsTrigger>
+            <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl bg-slate-100 p-2">
+              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="pending-work">Pending Work</TabsTrigger>
+              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medication-overview">Medication Overview</TabsTrigger>
+              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medicine-chart">Medicine Chart</TabsTrigger>
+              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medicine-reference">Medicine Reference</TabsTrigger>
             </TabsList>
+
+            <TabsContent className="mt-4" value="pending-work">
+              <IcuPatientPendingWorkTable
+                patient={patient}
+                patientInstructions={patientInstructions}
+                tasks={activeTasks}
+              />
+            </TabsContent>
 
             <TabsContent className="mt-4" value="medication-overview">
               <div className="grid gap-4 xl:grid-cols-2">
@@ -15489,15 +15663,6 @@ function IcuPatientCommandProfile({
               <IcuPatientMedicineChartTab patient={patient} />
             </TabsContent>
 
-            <TabsContent className="mt-4" value="high-alert-measure">
-              <IcuPatientMedicationAlertMeasurePanel
-                alerts={openAlerts}
-                measures={highAlertMedicationMeasures}
-                onOpenReference={openMedicineReference}
-                patient={patient}
-              />
-            </TabsContent>
-
             <TabsContent className="mt-4" value="medicine-reference">
               <IcuPatientMedicineReferenceWorkspace
                 onSelectReference={setReferenceMedicineId}
@@ -15509,15 +15674,15 @@ function IcuPatientCommandProfile({
           </Tabs>
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="events">
-          <IcuPatientEventsWorkspace patient={patient} results={resultRows} />
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="events">
+          <IcuPatientEventsWorkspace initialFocus={initialEventFocus} patient={patient} results={resultRows} />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="shift-summary">
-          <IcuPatientShiftSummaryWorkspace patient={patient} />
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="shift-summary">
+          <IcuPatientShiftSummaryWorkspace initialFocus={initialShiftFocus} patient={patient} />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="collaborate">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="collaborate">
           <IcuPatientCollaborateWorkspace patient={patient} />
         </TabsContent>
       </Tabs>
@@ -15528,6 +15693,249 @@ function IcuPatientCommandProfile({
         onDownload={downloadIcuPatientResult}
       />
     </div>
+  );
+}
+
+function IcuPatientPendingWorkTable({
+  patient,
+  patientInstructions,
+  tasks,
+}: {
+  patient: IcuPatient;
+  patientInstructions: DoctorInstruction[];
+  tasks: IcuTask[];
+}) {
+  const rows = [
+    ...patientInstructions.map((row) => ({
+      id: `instruction-${row.id}`,
+      type: "Doctor order",
+      item: row.instructionType,
+      detail: row.instruction,
+      due: row.dueTime,
+      assignedTo: row.assignedNurse,
+      status: row.status,
+      source: row.doctor,
+      actionLabel: "Open care plan",
+      href: `/icu-command-center/clinical-workspace/orders-care-plans?patientId=${patient.id}`,
+      tone: toneForStatus(row.status),
+    })),
+    ...tasks.map((row) => ({
+      id: `task-${row.id}`,
+      type: "Nursing task",
+      item: row.taskType,
+      detail: row.title,
+      due: row.dueTime,
+      assignedTo: row.assignedTo,
+      status: row.status,
+      source: row.createdBy,
+      actionLabel: "Open tasks",
+      href: `/icu-command-center/nursing/tasks-assessments?patientId=${patient.id}`,
+      tone: toneForStatus(row.status),
+    })),
+  ];
+  const urgentRows = rows.filter((row) => row.tone === "critical" || row.tone === "danger").length;
+
+  return (
+    <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-black text-slate-950">Pending tasks and orders</p>
+          <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
+            {patient.bedNo} | {patient.patientName}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <StatusPill tone={rows.length ? "warning" : "success"}>{rows.length} pending</StatusPill>
+          {urgentRows ? <StatusPill tone="danger">{urgentRows} urgent</StatusPill> : null}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[980px] border-collapse text-sm">
+          <thead className="bg-white text-[11px] uppercase text-sky-700">
+            <tr className="border-b border-slate-200">
+              <th className="px-3 py-2 text-left">Type</th>
+              <th className="px-3 py-2 text-left">Pending item</th>
+              <th className="px-3 py-2 text-left">Due</th>
+              <th className="px-3 py-2 text-left">Assigned to</th>
+              <th className="px-3 py-2 text-left">Source</th>
+              <th className="px-3 py-2 text-center">Status</th>
+              <th className="px-3 py-2 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {rows.map((row) => (
+              <tr className="hover:bg-sky-50/40" key={row.id}>
+                <td className="px-3 py-2 align-middle">
+                  <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{row.type}</span>
+                </td>
+                <td className="px-3 py-2 align-middle">
+                  <p className="font-black text-slate-950">{row.item}</p>
+                  <p className="mt-0.5 max-w-[360px] truncate text-xs font-semibold text-slate-500">{row.detail}</p>
+                </td>
+                <td className="px-3 py-2 align-middle font-bold text-slate-800">{row.due}</td>
+                <td className="px-3 py-2 align-middle font-semibold text-slate-700">{row.assignedTo}</td>
+                <td className="px-3 py-2 align-middle text-slate-700">{row.source}</td>
+                <td className="px-3 py-2 text-center align-middle"><StatusPill tone={row.tone}>{row.status}</StatusPill></td>
+                <td className="px-3 py-2 text-right align-middle">
+                  <Link className="inline-flex h-8 items-center justify-center rounded-md border border-sky-300 bg-sky-50 px-3 text-xs font-bold text-sky-700 hover:bg-sky-100" href={row.href}>
+                    {row.actionLabel}
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {!rows.length ? (
+              <tr>
+                <td className="px-3 py-4 text-center text-sm font-semibold text-slate-500" colSpan={7}>No pending task or order for this patient.</td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function IcuPatientMonitoringOverview({
+  activeTasks,
+  balance,
+  latestVital,
+  openAlerts,
+  patient,
+  patientInfusions,
+}: {
+  activeTasks: typeof icuTasks;
+  balance: number;
+  latestVital?: (typeof icuVitals)[number];
+  openAlerts: typeof icuAlerts;
+  patient: IcuPatient;
+  patientInfusions: typeof infusionRows;
+}) {
+  const observationRows = [
+    ["SpO2 / BP", latestVital ? `${latestVital.spo2}% / ${latestVital.bp}` : "-", latestVital?.time ?? "-", latestVital?.nurse ?? "-"],
+    ["Respiration", latestVital ? `${latestVital.respiratoryRate}/min` : "-", patient.ventilatorStatus, "Respiratory support"],
+    ["Urine output", latestVital ? `${latestVital.urineOutput} ml/hr` : "-", `Net ${balance} ml`, "Fluid balance"],
+    ["Temperature", latestVital ? `${latestVital.temperature} C` : "-", latestVital?.note ?? "No recent note", "Observation"],
+    ["GCS / Pain", latestVital ? `${latestVital.gcs} / ${latestVital.painScore}` : "-", latestVital?.oxygenFlow ?? patient.ventilatorStatus, "Neuro / pain"],
+  ];
+  const infusionRowsForTable = patientInfusions.map((row) => ({
+    action: row.alert || "Continue monitoring",
+    current: `${row.rate} | ${row.remainingVolumeMl} ml left`,
+    item: `${row.pumpNo} - ${row.fluidName}`,
+    status: row.status,
+  }));
+  const followUpRows = [
+    ...openAlerts.map((row) => ({
+      action: row.owner,
+      current: row.message,
+      item: `${row.type} - ${row.severity}`,
+      status: row.status,
+      time: row.createdAt,
+    })),
+    ...activeTasks.map((row) => ({
+      action: row.assignedTo,
+      current: row.title,
+      item: row.taskType,
+      status: row.status,
+      time: row.dueTime,
+    })),
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-white px-3 py-2">
+            <p className="text-sm font-bold text-slate-950">Observation summary</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-3 py-2">Parameter</th>
+                  <th className="px-3 py-2">Current</th>
+                  <th className="px-3 py-2">Context</th>
+                  <th className="px-3 py-2">Recorded by</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white">
+                {observationRows.map(([parameter, current, context, recordedBy]) => (
+                  <tr className="hover:bg-slate-50" key={parameter}>
+                    <td className="px-3 py-2 font-bold text-slate-900">{parameter}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-800">{current}</td>
+                    <td className="px-3 py-2 text-slate-600">{context}</td>
+                    <td className="px-3 py-2 text-slate-600">{recordedBy}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2">
+            <p className="text-sm font-bold text-slate-950">Live infusion</p>
+            <IcuNeutralBadge>{infusionRowsForTable.length}</IcuNeutralBadge>
+          </div>
+          <div className="divide-y divide-slate-200">
+            {infusionRowsForTable.map((row) => (
+              <div className="p-3" key={row.item}>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-bold text-slate-950">{row.item}</p>
+                  <IcuNeutralBadge>{row.status}</IcuNeutralBadge>
+                </div>
+                <p className="mt-1 text-xs font-semibold text-slate-600">{row.current}</p>
+                <p className="mt-1 text-xs text-slate-500">{row.action}</p>
+              </div>
+            ))}
+            {!infusionRowsForTable.length ? <div className="p-4 text-center text-sm font-semibold text-slate-500">No active infusion for this patient.</div> : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2">
+          <p className="text-sm font-bold text-slate-950">Alerts and monitoring follow-up</p>
+          <IcuNeutralBadge>{followUpRows.length}</IcuNeutralBadge>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-2">Time</th>
+                <th className="px-3 py-2">Item</th>
+                <th className="px-3 py-2">Current detail</th>
+                <th className="px-3 py-2">Assigned to</th>
+                <th className="px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {followUpRows.map((row) => (
+                <tr className="hover:bg-slate-50" key={`${row.time}-${row.item}`}>
+                  <td className="px-3 py-2 font-bold text-slate-700">{row.time}</td>
+                  <td className="px-3 py-2 font-bold text-slate-950">{row.item}</td>
+                  <td className="px-3 py-2 text-slate-600">{row.current}</td>
+                  <td className="px-3 py-2 text-slate-700">{row.action}</td>
+                  <td className="px-3 py-2"><IcuNeutralBadge>{row.status}</IcuNeutralBadge></td>
+                </tr>
+              ))}
+              {!followUpRows.length ? (
+                <tr>
+                  <td className="px-3 py-4 text-center text-sm font-semibold text-slate-500" colSpan={5}>No monitoring follow-up item for this patient.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IcuNeutralBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">
+      {children}
+    </span>
   );
 }
 
@@ -15583,8 +15991,6 @@ function IcuPatientMonitoringIntakeOutput({ patient }: { patient: IcuPatient }) 
 }
 
 function IcuPatientDeviceSnapshot({ device, patient }: { device?: ReturnType<typeof getCommandDeviceRows>[number]; patient: IcuPatient }) {
-  const signalTone: DashboardCellTone = !device ? "muted" : device.signal === "Good" ? "success" : device.signal === "Weak" ? "warning" : "danger";
-  const connectivityTone: DashboardCellTone = !device ? "muted" : device.connectivity === "Online" ? "success" : "danger";
   const dataTone: DashboardCellTone = !device ? "muted" : deviceLastDataMinutes(device.lastData) < 10 ? "success" : deviceLastDataMinutes(device.lastData) < 30 ? "warning" : "danger";
 
   if (!device) {
@@ -15597,157 +16003,117 @@ function IcuPatientDeviceSnapshot({ device, patient }: { device?: ReturnType<typ
 
   return (
     <div className="rounded-md border border-slate-200 bg-white shadow-sm">
-      <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-4">
-        <IcuPatientDetailMetric icon={Activity} label="Monitor" value={device.monitor} detail={device.connectivity} tone={connectivityTone} />
-        <IcuPatientDetailMetric icon={Activity} label="Ventilator" value={device.ventilator} detail={device.ventilator === "Room air" ? "No ventilator support" : "Respiratory device mapped"} tone={device.ventilator === "Room air" ? "success" : "purple"} />
-        <IcuPatientDetailMetric icon={Syringe} label="Pump" value={device.infusionPump} detail="Infusion pump mapping" tone={device.infusionPump === "-" ? "muted" : "info"} />
-        <IcuPatientDetailMetric icon={ShieldAlert} label="Signal" value={device.signal} detail={`Last data ${device.lastData}`} tone={signalTone} />
+      <div className="p-3">
+        <div className="overflow-hidden rounded-md border border-slate-200">
+          <div className="border-b border-slate-200 bg-white px-3 py-2">
+            <p className="text-sm font-bold text-slate-950">Device assignment</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-3 py-2">Device</th>
+                  <th className="px-3 py-2">Current</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Owner / context</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white">
+                {[
+                  ["Monitor", device.monitor, device.connectivity, device.owner],
+                  ["Ventilator", device.ventilator, device.ventilator === "Room air" ? "Not required" : "Mapped", "Respiratory support"],
+                  ["Pump", device.infusionPump, device.infusionPump === "-" ? "Not mapped" : "Mapped", "Infusion pump"],
+                  ["Gateway", device.gateway, device.signal, `${device.lastData} | ${device.uptime}% uptime`],
+                  ["Data confidence", dataTone === "success" ? "Live feed usable" : dataTone === "warning" ? "Needs review" : "Manual fallback needed", device.issue === "No issue" ? "Clear" : "Open", device.issue],
+                ].map(([label, current, status, context]) => (
+                  <tr className="hover:bg-slate-50" key={label}>
+                    <td className="px-3 py-2 font-bold text-slate-900">{label}</td>
+                    <td className="px-3 py-2 text-slate-700">{current}</td>
+                    <td className="px-3 py-2"><IcuNeutralBadge>{status}</IcuNeutralBadge></td>
+                    <td className="px-3 py-2 text-slate-600">{context}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <div className="grid gap-3 border-t border-slate-100 p-3 md:grid-cols-2 xl:grid-cols-4">
-        <InfoLine label="Gateway" value={device.gateway} />
-        <InfoLine label="Last data status" value={`${device.lastData} | ${device.uptime}% uptime`} />
-        <InfoLine label="Owner" value={device.owner} />
-        <InfoLine label="Data confidence" value={dataTone === "success" ? "Live feed usable" : dataTone === "warning" ? "Needs review" : "Manual fallback needed"} />
-      </div>
-      <div className="grid gap-3 border-t border-slate-100 p-3 md:grid-cols-3">
-        <MiniList
-          title="Normal monitoring"
-          rows={[
-            "Live feed usable for vitals review",
-            "Monitor, pump, and gateway mapped to selected bed",
-            "Nurse can continue routine observation",
-          ]}
-        />
-        <MiniList
-          title="Issue scenario"
-          rows={device.issue === "No issue" ? [
-            "No active device issue",
-            "Continue shift device check",
-            "Revalidate mapping if patient/bed changes",
-          ] : [
-            device.issue,
-            device.signal === "Weak" ? "Repeat bedside probe/cable check" : "Check gateway and network path",
-            "Notify BioMed owner if trend continues",
-          ]}
-        />
-        <MiniList
-          title="Fallback action"
-          rows={[
-            dataTone === "danger" ? "Use manual charting until feed returns" : "Live feed can support patient monitoring",
-            "Document device issue in monitoring note",
-            "Escalate if ventilator/monitor data is unavailable",
-          ]}
-        />
-      </div>
-      <IcuPatientDeviceStatusRules device={device} />
+      <IcuPatientDeviceStatusTable device={device} />
     </div>
   );
 }
 
-function IcuPatientDeviceStatusRules({ device }: { device: ReturnType<typeof getCommandDeviceRows>[number] }) {
+function IcuPatientDeviceStatusTable({ device }: { device: ReturnType<typeof getCommandDeviceRows>[number] }) {
   const lastDataMinutes = deviceLastDataMinutes(device.lastData);
-  const overallTone = deviceOverallStatusTone(device);
-  const overallLabel = deviceStatusRuleLabel(overallTone);
-  const overallAction = deviceOverallAction(device, overallTone);
-  const rules = [
+  const issue = device.issue.toLowerCase();
+  const rows: Array<{ action: string; check: string; current: string; status: string; tone: DashboardCellTone }> = [
     {
-      metric: "Connectivity",
+      action: device.connectivity === "Online" ? "Continue live monitoring" : "Use manual charting and inform BioMed",
+      check: "Connectivity",
       current: device.connectivity,
-      green: "Online",
-      warning: "Degraded/manual review",
-      critical: "Offline",
-      tone: device.connectivity === "Online" ? "success" as DashboardCellTone : "danger" as DashboardCellTone,
-      action: device.connectivity === "Online" ? "Continue routine device observation" : "Escalate to BioMed/IT and use manual charting fallback",
+      status: device.connectivity === "Online" ? "Online" : "Offline",
+      tone: device.connectivity === "Online" ? "success" : "danger",
     },
     {
-      metric: "Signal",
+      action: device.signal === "Good" ? "No action required" : device.signal === "Weak" ? "Check probe, lead, and cable placement" : "Treat feed as unavailable",
+      check: "Signal quality",
       current: device.signal,
-      green: "Good",
-      warning: "Weak",
-      critical: "No signal",
-      tone: device.signal === "Good" ? "success" as DashboardCellTone : device.signal === "Weak" ? "warning" as DashboardCellTone : "danger" as DashboardCellTone,
-      action: device.signal === "Good" ? "No immediate action" : device.signal === "Weak" ? "Check probe, cable, lead placement, and repeat validation" : "Treat live feed as unavailable and escalate",
+      status: device.signal === "Good" ? "Normal" : device.signal === "Weak" ? "Review" : "Critical",
+      tone: device.signal === "Good" ? "success" : device.signal === "Weak" ? "warning" : "danger",
     },
     {
-      metric: "Last data",
+      action: lastDataMinutes < 10 ? "Live trend can be used" : lastDataMinutes < 30 ? "Validate bedside reading" : "Switch to manual entry until feed returns",
+      check: "Last data",
       current: device.lastData,
-      green: "< 10 min",
-      warning: "10-29 min",
-      critical: ">= 30 min",
-      tone: lastDataMinutes < 10 ? "success" as DashboardCellTone : lastDataMinutes < 30 ? "warning" as DashboardCellTone : "danger" as DashboardCellTone,
-      action: lastDataMinutes < 10 ? "Live feed is fresh" : lastDataMinutes < 30 ? "Validate bedside reading and watch feed delay" : "Start manual documentation and troubleshoot gateway/device",
+      status: lastDataMinutes < 10 ? "Fresh" : lastDataMinutes < 30 ? "Delayed" : "Stale",
+      tone: lastDataMinutes < 10 ? "success" : lastDataMinutes < 30 ? "warning" : "danger",
     },
     {
-      metric: "Uptime ratio",
+      action: device.uptime >= 95 ? "Acceptable for shift review" : device.uptime >= 85 ? "Review device stability" : "BioMed review required",
+      check: "Uptime",
       current: `${device.uptime}%`,
-      green: ">= 95%",
-      warning: "85-94%",
-      critical: "< 85%",
-      tone: device.uptime >= 95 ? "success" as DashboardCellTone : device.uptime >= 85 ? "warning" as DashboardCellTone : "danger" as DashboardCellTone,
-      action: device.uptime >= 95 ? "Acceptable uptime" : device.uptime >= 85 ? "Review device stability during shift" : "BioMed review required before relying on trend",
+      status: device.uptime >= 95 ? "Stable" : device.uptime >= 85 ? "Watch" : "Unstable",
+      tone: device.uptime >= 95 ? "success" : device.uptime >= 85 ? "warning" : "danger",
     },
     {
-      metric: "Issue",
+      action: device.issue === "No issue" ? "No device issue open" : issue.includes("offline") || issue.includes("lost") ? "Escalate now and document fallback" : "Assign owner and recheck after correction",
+      check: "Open issue",
       current: device.issue,
-      green: "No issue",
-      warning: "Intermittent signal / weak probe",
-      critical: "Gateway offline / communication lost",
-      tone: device.issue === "No issue" ? "success" as DashboardCellTone : device.issue.toLowerCase().includes("offline") || device.issue.toLowerCase().includes("lost") ? "danger" as DashboardCellTone : "warning" as DashboardCellTone,
-      action: device.issue === "No issue" ? "No issue action needed" : device.issue.toLowerCase().includes("offline") || device.issue.toLowerCase().includes("lost") ? "Immediate BioMed escalation and manual fallback" : "Assign owner and recheck after correction",
+      status: device.issue === "No issue" ? "Clear" : issue.includes("offline") || issue.includes("lost") ? "Escalate" : "Open",
+      tone: device.issue === "No issue" ? "success" : issue.includes("offline") || issue.includes("lost") ? "danger" : "warning",
     },
     {
-      metric: "Ventilator mapping",
+      action: device.ventilator === "Room air" ? "No ventilator device action" : "Confirm respiratory device readings",
+      check: "Ventilator mapping",
       current: device.ventilator,
-      green: "Room air / oxygen only",
-      warning: "NIV / oxygen support",
-      critical: "Ventilator communication lost",
-      tone: device.issue.toLowerCase().includes("ventilator") && device.issue.toLowerCase().includes("lost") ? "danger" as DashboardCellTone : device.ventilator === "Room air" ? "success" as DashboardCellTone : "purple" as DashboardCellTone,
-      action: device.issue.toLowerCase().includes("ventilator") && device.issue.toLowerCase().includes("lost") ? "Respiratory/BioMed escalation now" : device.ventilator === "Room air" ? "No ventilator action" : "Confirm respiratory device mapping and live readings",
+      status: device.ventilator === "Room air" ? "Not required" : "Mapped",
+      tone: device.ventilator === "Room air" ? "success" : "purple",
     },
   ];
 
   return (
     <div className="border-t border-slate-100 p-3">
-      <div className="rounded-md border border-slate-200 bg-slate-50">
-        <div className="flex flex-col gap-1 border-b border-slate-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Color & status rules</p>
-            <p className="mt-0.5 text-xs text-slate-500">Current device color changes from these thresholds and ratios.</p>
-          </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(overallTone))}>Overall: {overallLabel}</span>
-        </div>
-        <div className="border-b border-slate-200 bg-white px-3 py-3">
-          <div className="grid gap-3 md:grid-cols-3">
-            <InfoLine label="Overall status" value={overallLabel} />
-            <InfoLine label="Current action" value={overallAction} />
-            <InfoLine label="Rule priority" value="Critical overrides warning, warning overrides normal" />
-          </div>
+      <div className="overflow-hidden rounded-md border border-slate-200">
+        <div className="border-b border-slate-200 bg-white px-3 py-2">
+          <p className="text-sm font-bold text-slate-950">Device status review</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-white text-[11px] uppercase text-slate-500">
-                <th className="px-3 py-2 text-left">Metric</th>
-                <th className="px-3 py-2 text-left">Current</th>
-                <th className="px-3 py-2 text-left">Green</th>
-                <th className="px-3 py-2 text-left">Warning</th>
-                <th className="px-3 py-2 text-left">Critical</th>
-                <th className="px-3 py-2 text-left">Action suggestion</th>
-                <th className="px-3 py-2 text-center">Status</th>
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-2">Check</th>
+                <th className="px-3 py-2">Current</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {rules.map((rule) => (
-                <tr key={rule.metric}>
-                  <td className="px-3 py-2 font-bold text-slate-900">{rule.metric}</td>
-                  <td className="px-3 py-2 text-slate-700">{rule.current}</td>
-                  <td className="px-3 py-2 text-emerald-700">{rule.green}</td>
-                  <td className="px-3 py-2 text-amber-700">{rule.warning}</td>
-                  <td className="px-3 py-2 text-rose-700">{rule.critical}</td>
-                  <td className="px-3 py-2 text-slate-700">{rule.action}</td>
-                  <td className="px-3 py-2 text-center">
-                    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(rule.tone))}>{deviceStatusRuleLabel(rule.tone)}</span>
-                  </td>
+              {rows.map((row) => (
+                <tr key={row.check}>
+                  <td className="px-3 py-2 font-bold text-slate-900">{row.check}</td>
+                  <td className="px-3 py-2 text-slate-700">{row.current}</td>
+                  <td className="px-3 py-2"><IcuNeutralBadge>{row.status}</IcuNeutralBadge></td>
+                  <td className="px-3 py-2 text-slate-700">{row.action}</td>
                 </tr>
               ))}
             </tbody>
@@ -15756,38 +16122,6 @@ function IcuPatientDeviceStatusRules({ device }: { device: ReturnType<typeof get
       </div>
     </div>
   );
-}
-
-function deviceOverallStatusTone(device: ReturnType<typeof getCommandDeviceRows>[number]): DashboardCellTone {
-  const issue = device.issue.toLowerCase();
-  const lastDataMinutes = deviceLastDataMinutes(device.lastData);
-  if (device.connectivity === "Offline") return "danger";
-  if (device.signal === "No signal") return "danger";
-  if (lastDataMinutes >= 30) return "danger";
-  if (device.uptime < 85) return "danger";
-  if (issue.includes("offline") || issue.includes("lost") || issue.includes("communication")) return "danger";
-  if (device.signal === "Weak") return "warning";
-  if (lastDataMinutes >= 10) return "warning";
-  if (device.uptime < 95) return "warning";
-  if (device.issue !== "No issue") return "warning";
-  return "success";
-}
-
-function deviceOverallAction(device: ReturnType<typeof getCommandDeviceRows>[number], tone: DashboardCellTone) {
-  if (tone === "danger" || tone === "critical") {
-    if (device.ventilator !== "Room air") return "BioMed + respiratory escalation, manual charting fallback";
-    return "BioMed/IT escalation, manual charting fallback";
-  }
-  if (tone === "warning") return "Bedside recheck, assign owner, review again within 30 min";
-  return "Continue routine monitoring";
-}
-
-function deviceStatusRuleLabel(tone: DashboardCellTone) {
-  if (tone === "success") return "Green";
-  if (tone === "warning") return "Warning";
-  if (tone === "danger" || tone === "critical") return "Critical";
-  if (tone === "purple") return "Ventilator";
-  return "Mapped";
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -16079,7 +16413,7 @@ function IcuPatientEntryTable({
       </div>
       <div className="divide-y divide-slate-200">
         {rows.map((row) => (
-          <div className="grid gap-2 px-3 py-3 md:grid-cols-[120px_minmax(0,1fr)_120px] md:items-center" key={row.id}>
+          <div className="grid gap-2 px-3 py-2 md:grid-cols-[120px_minmax(0,1fr)_120px] md:items-center" key={row.id}>
             <span className="text-xs font-bold text-slate-500">{row.time}</span>
             <div>
               <p className="text-sm font-bold text-slate-950">{row.title}</p>
@@ -16088,7 +16422,7 @@ function IcuPatientEntryTable({
             <span className={cn("rounded-full border px-2.5 py-1 text-center text-xs font-bold", dashboardTonePillClass(row.tone))}>{row.tone}</span>
           </div>
         ))}
-        {!rows.length ? <div className="p-5 text-center text-sm font-semibold text-slate-500">{empty}</div> : null}
+        {!rows.length ? <div className="p-4 text-center text-sm font-semibold text-slate-500">{empty}</div> : null}
       </div>
     </div>
   );
@@ -16144,63 +16478,75 @@ function IcuPatientResultsWorkspace({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <IcuPatientDetailMetric icon={TestTube2} label="Available reports" value={available} detail="Pathology, ABG, radiology" tone={available ? "info" : "muted"} />
-        <IcuPatientDetailMetric icon={AlertTriangle} label="Critical results" value={critical} detail="Doctor review required" tone={critical ? "critical" : "success"} />
-        <IcuPatientDetailMetric icon={Clock3} label="Pending reports" value={pending} detail="Sample/report awaited" tone={pending ? "warning" : "success"} />
-        <IcuPatientDetailMetric icon={ClipboardCheck} label="Review pending" value={unreviewed} detail="Clinical sign-off queue" tone={unreviewed ? "warning" : "success"} />
-      </div>
+      <CollapsibleCommandPanel
+        summary={`${filteredRows.length} result(s) | ${critical} critical | ${pending} pending | ${unreviewed} review pending`}
+        title="Result filters"
+      >
+        <div className="space-y-3 p-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <IcuPatientDetailMetric icon={TestTube2} label="Available reports" value={available} detail="Ready for review" tone={available ? "info" : "muted"} />
+            <IcuPatientDetailMetric icon={AlertTriangle} label="Critical results" value={critical} detail="Needs attention" tone={critical ? "critical" : "success"} />
+            <IcuPatientDetailMetric icon={Clock3} label="Pending reports" value={pending} detail="Awaiting result" tone={pending ? "warning" : "success"} />
+            <IcuPatientDetailMetric icon={ClipboardCheck} label="Review pending" value={unreviewed} detail="Sign-off queue" tone={unreviewed ? "warning" : "success"} />
+          </div>
 
-      <div className="rounded-md border border-slate-200 bg-white">
-        <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-3 py-3 lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto] lg:items-end">
-          <label className="space-y-1 text-sm">
-            <span className="font-semibold text-slate-800">Search report</span>
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search report, source, summary..." />
-          </label>
-          <NativeSelect label="Category" value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />
-          <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
-          <Button variant="outline" onClick={() => {
-            setQuery("");
-            setCategoryFilter("All categories");
-            setStatusFilter("All status");
-          }}>Reset</Button>
+          <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto] lg:items-end">
+            <label className="space-y-1 text-sm">
+              <span className="font-semibold text-slate-800">Search report</span>
+              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search report, source, summary..." />
+            </label>
+            <NativeSelect label="Category" value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />
+            <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
+            <Button variant="outline" onClick={() => {
+              setQuery("");
+              setCategoryFilter("All categories");
+              setStatusFilter("All status");
+            }}>Reset</Button>
+          </div>
         </div>
+      </CollapsibleCommandPanel>
+
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <table className="w-full min-w-[900px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-3">Report</th>
-                <th className="px-3 py-3">Type</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Time</th>
-                <th className="px-3 py-3">Summary</th>
-                <th className="px-3 py-3 text-right">Action</th>
+                <th className="px-3 py-2">Report</th>
+                <th className="px-3 py-2">Type</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Time</th>
+                <th className="px-3 py-2">Summary</th>
+                <th className="px-3 py-2 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {pagination.pageRows.map((row) => {
-                const disabled = row.status === "Pending";
+                const downloadDisabled = row.status === "Pending";
                 return (
-                  <tr className={cn(disabled ? "bg-slate-50/70" : "bg-white")} key={row.id}>
-                    <td className="px-3 py-3">
+                  <tr className="bg-white transition hover:bg-slate-50" key={row.id}>
+                    <td className="px-3 py-2">
                       <p className="font-bold text-slate-950">{row.reportName}</p>
                       <p className="mt-1 text-xs text-slate-500">{row.source}</p>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-2">
                       <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{row.category}</span>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-2">
                       <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(toneForPatientResult(row.status)))}>{row.status}</span>
                     </td>
-                    <td className="px-3 py-3 text-xs text-slate-600">
+                    <td className="px-3 py-2 text-xs text-slate-600">
                       <p><span className="font-bold">Ordered:</span> {row.orderedAt}</p>
                       <p className="mt-1"><span className="font-bold">Reported:</span> {row.reportedAt}</p>
                     </td>
-                    <td className="max-w-[300px] px-3 py-3 text-xs text-slate-600">{row.summary}</td>
-                    <td className="px-3 py-3">
+                    <td className="max-w-[340px] px-3 py-2 text-xs leading-relaxed text-slate-600">{row.summary}</td>
+                    <td className="px-3 py-2">
                       <div className="flex justify-end gap-2">
-                        <Button disabled={disabled} size="sm" variant="outline" onClick={() => onPreview(row.id)}>Preview</Button>
-                        <Button disabled={disabled} size="sm" onClick={() => onDownload(row)}>Download</Button>
+                        <Button className="h-9 rounded-md px-3 text-xs" size="sm" variant="outline" onClick={() => onPreview(row.id)}>
+                          <FileText className="h-4 w-4" />Preview
+                        </Button>
+                        <Button className="h-9 rounded-md px-3 text-xs" disabled={downloadDisabled} size="sm" title={downloadDisabled ? "Report is pending" : "Download report"} onClick={() => onDownload(row)}>
+                          <Download className="h-4 w-4" />Download
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -16210,7 +16556,7 @@ function IcuPatientResultsWorkspace({
           </table>
         </div>
         <IcuCommandPaginationControls {...pagination} />
-        {!filteredRows.length ? <div className="p-6 text-center text-sm font-semibold text-slate-500">No diagnostic result matched the selected filters.</div> : null}
+        {!filteredRows.length ? <div className="p-4 text-center text-sm font-semibold text-slate-500">No diagnostic result matched the selected filters.</div> : null}
       </div>
     </div>
   );
@@ -16244,7 +16590,7 @@ function IcuPatientResultPreviewDialog({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(860px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft outline-none">
           {result ? (
             <>
-              <div className="border-b border-slate-200 bg-sky-700 px-4 py-3 text-white">
+              <div className="border-b border-slate-200 bg-sky-700 px-3 py-2 text-white">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <Dialog.Title className="text-base font-bold">{result.reportName}</Dialog.Title>
@@ -16296,16 +16642,18 @@ type IcuPatientEventRow = {
   time: string;
   classification: string;
   severity: "Critical" | "High" | "Medium" | "Normal" | "Info";
+  status: string;
   title: string;
   detail: string;
   owner: string;
+  action: string;
   tone: DashboardCellTone;
 };
 
-function IcuPatientEventsWorkspace({ patient, results }: { patient: IcuPatient; results: IcuPatientResultRow[] }) {
+function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initialFocus: IcuEventFocus; patient: IcuPatient; results: IcuPatientResultRow[] }) {
   const events = React.useMemo(() => buildIcuPatientEvents(patient, results), [patient, results]);
-  const [typeFilter, setTypeFilter] = React.useState("All events");
-  const [severityFilter, setSeverityFilter] = React.useState("All severity");
+  const [typeFilter, setTypeFilter] = React.useState(() => initialFocus === "open-alerts" ? "Alert" : "All events");
+  const [severityFilter, setSeverityFilter] = React.useState(() => initialFocus === "open-alerts" || initialFocus === "action-needed" ? "Action needed" : "All severity");
   const typeOptions = ["All events", ...Array.from(new Set(events.map((event) => event.type)))];
   const severityOptions = ["All severity", "Critical", "High", "Medium", "Normal", "Info", "Action needed"];
   const filteredEvents = events.filter((event) => {
@@ -16315,14 +16663,16 @@ function IcuPatientEventsWorkspace({ patient, results }: { patient: IcuPatient; 
     return (typeFilter === "All events" || event.type === typeFilter) && severityMatch;
   });
   const actionNeeded = filteredEvents.filter((event) => event.tone === "critical" || event.tone === "danger" || event.tone === "warning").length;
+  const openAlertEvents = events.filter((event) => event.type === "Alert" && event.status !== "Resolved");
+  const criticalHighEvents = filteredEvents.filter((event) => event.severity === "Critical" || event.severity === "High").length;
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <IcuPatientDetailMetric icon={Activity} label="Total events" value={filteredEvents.length} detail={`${events.length} patient events`} tone="info" />
-        <IcuPatientDetailMetric icon={AlertTriangle} label="Action needed" value={actionNeeded} detail="Critical, late, pending" tone={actionNeeded ? "warning" : "success"} />
-        <IcuPatientDetailMetric icon={TestTube2} label="Result events" value={events.filter((event) => event.type === "Result").length} detail="Lab and radiology" tone="info" />
-        <IcuPatientDetailMetric icon={ClipboardCheck} label="Task events" value={events.filter((event) => event.type === "Task").length} detail="Nurse task movement" tone="info" />
+        <IcuPatientDetailMetric icon={AlertTriangle} label="Active alerts" value={openAlertEvents.length} detail={openAlertEvents[0]?.title ?? "No active alert"} tone={openAlertEvents.length ? "warning" : "success"} />
+        <IcuPatientDetailMetric icon={Activity} label="Shown events" value={filteredEvents.length} detail={`${typeFilter} | ${severityFilter}`} tone="info" />
+        <IcuPatientDetailMetric icon={ShieldAlert} label="Critical / high" value={criticalHighEvents} detail={criticalHighEvents ? "Needs review" : "No high severity"} tone={criticalHighEvents ? "danger" : "success"} />
+        <IcuPatientDetailMetric icon={ClipboardCheck} label="Action needed" value={actionNeeded} detail={actionNeeded ? "See action column" : "No open action"} tone={actionNeeded ? "warning" : "success"} />
       </div>
 
       <div className="rounded-md border border-slate-200 bg-white">
@@ -16336,38 +16686,44 @@ function IcuPatientEventsWorkspace({ patient, results }: { patient: IcuPatient; 
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
             <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-3">Time</th>
-                <th className="px-3 py-3">Event Type</th>
-                <th className="px-3 py-3">Classification</th>
-                <th className="px-3 py-3">Severity</th>
-                <th className="px-3 py-3">Event</th>
-                <th className="px-3 py-3">Details</th>
-                <th className="px-3 py-3">Owner</th>
+                <th className="px-3 py-2">Time</th>
+                <th className="px-3 py-2">Event Type</th>
+                <th className="px-3 py-2">Classification</th>
+                <th className="px-3 py-2">Severity</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Event</th>
+                <th className="px-3 py-2">Details</th>
+                <th className="px-3 py-2">Owner</th>
+                <th className="px-3 py-2">Next Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredEvents.map((event) => (
                 <tr className="border-b border-slate-200 align-top last:border-b-0 hover:bg-slate-50" key={event.id}>
-                  <td className="whitespace-nowrap px-3 py-3 text-sm font-bold text-slate-800">{event.time}</td>
-                  <td className="px-3 py-3">
+                  <td className="whitespace-nowrap px-3 py-2 text-sm font-bold text-slate-800">{event.time}</td>
+                  <td className="px-3 py-2">
                     <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(event.tone))}>{event.type}</span>
                   </td>
-                  <td className="px-3 py-3 text-sm font-semibold text-slate-800">{event.classification}</td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2 text-sm font-semibold text-slate-800">{event.classification}</td>
+                  <td className="px-3 py-2">
                     <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(icuPatientEventSeverityTone(event.severity)))}>{event.severity}</span>
                   </td>
-                  <td className="px-3 py-3 text-sm font-bold text-slate-950">{event.title}</td>
-                  <td className="px-3 py-3 text-xs leading-5 text-slate-500">{event.detail}</td>
-                  <td className="px-3 py-3 text-xs font-semibold text-slate-600">{event.owner}</td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{event.status}</span>
+                  </td>
+                  <td className="px-3 py-2 text-sm font-bold text-slate-950">{event.title}</td>
+                  <td className="px-3 py-2 text-xs leading-5 text-slate-500">{event.detail}</td>
+                  <td className="px-3 py-2 text-xs font-semibold text-slate-600">{event.owner}</td>
+                  <td className="px-3 py-2 text-xs font-bold text-slate-800">{event.action}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {!filteredEvents.length ? <div className="p-6 text-center text-sm font-semibold text-slate-500">No patient event matched selected filters.</div> : null}
+        {!filteredEvents.length ? <div className="p-4 text-center text-sm font-semibold text-slate-500">No patient event matched selected filters.</div> : null}
       </div>
     </div>
   );
@@ -16389,8 +16745,6 @@ function icuPatientEventSeverityFromPriority(priority: string): IcuPatientEventR
   return "Info";
 }
 
-type IcuShiftFocus = "all" | "pending" | "critical" | "completed";
-
 type IcuShiftHandoverRow = {
   id: string;
   type: "Alert" | "Medication" | "Task" | "Doctor order" | "I/O" | "Vitals" | "Completed";
@@ -16404,10 +16758,10 @@ type IcuShiftHandoverRow = {
   focus: Exclude<IcuShiftFocus, "all">;
 };
 
-function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
+function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFocus: IcuShiftFocus; patient: IcuPatient }) {
   const shiftOptions = React.useMemo(() => icuShiftSummaryScenarios(), []);
   const [shift, setShift] = React.useState(shiftOptions[0]?.label ?? "Morning shift (07:00-15:00)");
-  const [focus, setFocus] = React.useState<IcuShiftFocus>("all");
+  const [focus, setFocus] = React.useState<IcuShiftFocus>(initialFocus);
   const activeShift = shiftOptions.find((option) => option.label === shift) ?? shiftOptions[0];
   const patientHistoryDates = React.useMemo(() => {
     const dates = intakeOutputRows.filter((row) => row.patientId === patient.id).map((row) => row.date);
@@ -16439,8 +16793,8 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
   return (
     <div className="space-y-4">
       <CollapsibleCommandPanel
-        title="Filters"
-        summary={`${formatIcuShiftHistoryDate(historyDate)} | ${activeShift?.time ?? shift} | ${outgoingNurse} to ${incomingNurse}`}
+        title="Shift handover controls"
+        summary={`${formatIcuShiftHistoryDate(historyDate)} | ${activeShift?.time ?? shift} | ${focus === "all" ? "All items" : focus}`}
       >
         <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-5">
           <label className="space-y-1 text-sm">
@@ -16457,14 +16811,15 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
           <NativeSelect label="Outgoing ward nurse" value={outgoingNurse} onChange={setOutgoingNurse} options={wardNurseOptions} />
           <NativeSelect label="Incoming ward nurse" value={incomingNurse} onChange={setIncomingNurse} options={wardNurseOptions} />
           <NativeSelect label="Unit nurse reviewer" value={unitReviewer} onChange={setUnitReviewer} options={unitNurseOptions} />
+          <NativeSelect label="Focus" value={focus} onChange={(value) => setFocus(normalizeIcuShiftFocus(value))} options={["all", "pending", "critical", "completed"]} />
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_48px_minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_44px_minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch">
         <IcuShiftNurseRoleCard
           label="Outgoing ward nurse"
           name={outgoingNurse}
-          tone="warning"
+          tone="muted"
         />
         <div className="hidden items-center justify-center lg:flex">
           <ArrowRightLeft className="h-5 w-5 text-slate-400" />
@@ -16477,25 +16832,19 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
         <IcuShiftNurseRoleCard
           label="Unit nurse reviewer"
           name={unitReviewer}
-          tone="success"
+          tone="muted"
         />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {summary.metrics.map((metric) => (
-          <IcuPatientDetailMetric
-            detail={metric.detail}
-            icon={metric.label === "Medication" ? Pill : metric.label === "I/O balance" ? Droplets : metric.label === "Open items" ? AlertTriangle : HeartPulse}
-            key={metric.label}
-            label={metric.label}
-            tone={metric.tone === "danger" ? "danger" : metric.tone === "warning" ? "warning" : metric.tone === "success" ? "success" : "info"}
-            value={metric.value}
-          />
-        ))}
+        <IcuPatientDetailMetric icon={AlertTriangle} label="Critical watch" value={criticalRows.length} detail={criticalRows[0]?.item ?? "No critical item"} tone={criticalRows.length ? "danger" : "success"} />
+        <IcuPatientDetailMetric icon={ClipboardCheck} label="Pending handover" value={pendingRows.length} detail={pendingRows[0]?.item ?? "No pending item"} tone={pendingRows.length ? "warning" : "success"} />
+        <IcuPatientDetailMetric icon={CheckCircle2} label="Completed" value={completedRows.length} detail={completedRows[0]?.item ?? "No completed item"} tone="success" />
+        <IcuPatientDetailMetric icon={UserRound} label="Handover route" value={incomingNurse} detail={`Reviewer: ${unitReviewer}`} tone="info" />
       </div>
 
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-black text-slate-950">Handover queue</p>
             <p className="mt-0.5 text-xs font-semibold text-slate-500">{patient.bedNo} | {patient.patientName} | {activeShift?.time ?? shift}</p>
@@ -16520,34 +16869,34 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
           <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-3">Type</th>
-                <th className="px-3 py-3">Handover Item</th>
-                <th className="px-3 py-3">Time</th>
-                <th className="px-3 py-3">Assigned To</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Source</th>
-                <th className="px-3 py-3">Next Action</th>
+                <th className="px-3 py-2">Type</th>
+                <th className="px-3 py-2">Handover Item</th>
+                <th className="px-3 py-2">Time</th>
+                <th className="px-3 py-2">Assigned To</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Source</th>
+                <th className="px-3 py-2">Next Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {visibleRows.map((row) => (
                 <tr className="align-middle hover:bg-slate-50" key={row.id}>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{row.type}</span>
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <p className="font-semibold leading-5 text-slate-700">{row.item}</p>
                   </td>
-                  <td className="px-3 py-3 font-bold text-slate-800">{row.time}</td>
-                  <td className="px-3 py-3 font-semibold text-slate-700">{row.assignedTo}</td>
-                  <td className="px-3 py-3"><StatusPill tone={smartBedStatusToneFromDashboard(row.tone)}>{row.status}</StatusPill></td>
-                  <td className="px-3 py-3 text-xs font-semibold text-slate-600">{row.source}</td>
-                  <td className="px-3 py-3 text-xs font-bold text-slate-800">{row.nextAction}</td>
+                  <td className="px-3 py-2 font-bold text-slate-800">{row.time}</td>
+                  <td className="px-3 py-2 font-semibold text-slate-700">{row.assignedTo}</td>
+                  <td className="px-3 py-2"><StatusPill tone={smartBedStatusToneFromDashboard(row.tone)}>{row.status}</StatusPill></td>
+                  <td className="px-3 py-2 text-xs font-semibold text-slate-600">{row.source}</td>
+                  <td className="px-3 py-2 text-xs font-bold text-slate-800">{row.nextAction}</td>
                 </tr>
               ))}
               {!visibleRows.length ? (
                 <tr>
-                  <td className="px-3 py-8 text-center text-sm font-semibold text-slate-500" colSpan={7}>No handover item for selected focus.</td>
+                  <td className="px-3 py-4 text-center text-sm font-semibold text-slate-500" colSpan={7}>No handover item for selected focus.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -16557,16 +16906,13 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
 
       <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 lg:grid-cols-2">
         <InfoLine label="Active issues" value={summary.suggested.issues} />
-        <InfoLine label="Pending tests" value={summary.suggested.pendingTests} />
         <InfoLine label="Pending medication" value={summary.suggested.pendingMeds} />
+        <InfoLine label="Pending tests" value={summary.suggested.pendingTests} />
         <InfoLine label="Escalation risks" value={summary.suggested.risks} />
-        <div className="lg:col-span-2">
-          <InfoLine label="To-do list" value={summary.suggested.todos} />
-        </div>
       </div>
 
       <div className="rounded-md border border-slate-200 bg-white">
-        <div className="flex flex-col gap-2 border-b border-slate-200 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-2 border-b border-slate-200 px-3 py-2 sm:flex-row sm:items-start sm:justify-between">
           <p className="text-sm font-bold text-slate-950">Past shift history</p>
           <span className="rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">{historyRows.length} shifts</span>
         </div>
@@ -16591,15 +16937,6 @@ function IcuPatientShiftSummaryWorkspace({ patient }: { patient: IcuPatient }) {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function IcuShiftNurseRoleCard({ label, name, tone }: { label: string; name: string; tone: DashboardCellTone }) {
-  return (
-    <div className={cn("rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm", patientDetailAccentClass(tone))}>
-      <p className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 truncate text-sm font-black text-slate-950">{name}</p>
     </div>
   );
 }
@@ -16747,6 +17084,15 @@ function buildIcuShiftHandoverRows(patient: IcuPatient): IcuShiftHandoverRow[] {
   return rows.sort((left, right) => priority[left.focus] - priority[right.focus] || left.time.localeCompare(right.time));
 }
 
+function IcuShiftNurseRoleCard({ label, name, tone }: { label: string; name: string; tone: DashboardCellTone }) {
+  return (
+    <div className={cn("rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm", patientDetailAccentClass(tone))}>
+      <p className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 truncate text-sm font-black text-slate-950">{name}</p>
+    </div>
+  );
+}
+
 function icuShiftSummaryScenarios() {
   return [
     {
@@ -16858,62 +17204,292 @@ function IcuPatientShiftSummaryList({ title, items, tone }: { title: string; ite
   );
 }
 
+type IcuCollaborateIssue = {
+  action: string;
+  detail: string;
+  reason: string;
+  recipient: string;
+  source: string;
+  title: string;
+  tone: DashboardCellTone;
+};
+
+type IcuCollaborateLogRow = {
+  id: string;
+  action: string;
+  by: string;
+  status: string;
+  target: string;
+  time: string;
+  topic: string;
+  tone: DashboardCellTone;
+};
+
 function IcuPatientCollaborateWorkspace({ patient }: { patient: IcuPatient }) {
-  const [recipient, setRecipient] = React.useState(patient.dutyDoctor);
-  const [reason, setReason] = React.useState("Clinical update");
-  const [note, setNote] = React.useState(`${patient.bedNo} - ${patient.patientName}: ${patient.currentStatus}. Please review current ICU status.`);
-  const recipients = [patient.dutyDoctor, patient.admittingDoctor, patient.assignedWardNurse, patient.assignedUnitNurse, "Head Nurse Sana", "Pharmacy", "Lab / Radiology", "Family Coordinator"];
-  const actionRows = buildIcuPatientEvents(patient, buildIcuPatientResultRows(patient)).filter((event) => ["Alert", "Result", "Doctor", "Task"].includes(event.type)).slice(0, 5);
+  const results = React.useMemo(() => buildIcuPatientResultRows(patient), [patient]);
+  const currentIssue = React.useMemo(() => buildIcuCollaborateIssue(patient, results), [patient, results]);
+  const actionRows = React.useMemo(
+    () => buildIcuPatientEvents(patient, results).filter((event) => ["Alert", "Result", "Doctor", "Task", "Medication"].includes(event.type)).slice(0, 6),
+    [patient, results],
+  );
+  const logRows = React.useMemo(() => buildIcuCollaborateLogRows(patient, currentIssue, actionRows), [actionRows, currentIssue, patient]);
+  const [selectedDirectAction, setSelectedDirectAction] = React.useState("Notify Duty Doctor");
+  const [message, setMessage] = React.useState(() => buildIcuCollaborateMessage(patient, currentIssue, "Notify Duty Doctor"));
+
+  React.useEffect(() => {
+    setSelectedDirectAction("Notify Duty Doctor");
+    setMessage(buildIcuCollaborateMessage(patient, currentIssue, "Notify Duty Doctor"));
+  }, [currentIssue, patient]);
+
+  const directActions = [
+    { label: "Notify Duty Doctor", icon: Stethoscope, target: patient.dutyDoctor, variant: "default" as const },
+    { label: "Notify Ward Nurse", icon: UserRound, target: patient.assignedWardNurse, variant: "outline" as const },
+    { label: "Add Team Note", icon: FileText, target: "Team note", variant: "outline" as const },
+    { label: "Escalate", icon: ArrowRightLeft, target: "Escalation center", variant: "outline" as const },
+  ];
+  const selectedDirectActionRow = directActions.find((item) => item.label === selectedDirectAction) ?? directActions[0];
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="space-y-4">
-        <div className="rounded-md border border-slate-200 bg-white p-3">
-          <div className="grid gap-3 md:grid-cols-2">
-            <NativeSelect label="Notify" value={recipient} onChange={setRecipient} options={recipients} />
-            <NativeSelect label="Reason" value={reason} onChange={setReason} options={["Clinical update", "Critical alert", "Medication issue", "Result review", "Radiology follow-up", "Family update", "Escalation"]} />
-            <label className="space-y-1 text-sm md:col-span-2">
-              <span className="font-semibold text-slate-800">Message</span>
-              <textarea className="min-h-28 w-full rounded-md border border-slate-300 bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={note} onChange={(event) => setNote(event.target.value)} />
-            </label>
-            <div className="flex flex-wrap gap-2 md:col-span-2">
-              <Button onClick={() => toast.success(`${recipient} notified for ${patient.bedNo}`)}><UserRound className="h-4 w-4" />Notify</Button>
-              <Button variant="outline" onClick={() => toast.success(`Team note added for ${patient.bedNo}`)}><FileText className="h-4 w-4" />Add team note</Button>
-              <Button variant="outline" onClick={() => toast.info(`Escalation draft opened for ${patient.bedNo}`)}><ArrowRightLeft className="h-4 w-4" />Escalate</Button>
+    <div className="space-y-4">
+      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(currentIssue.tone))}>{currentIssue.reason}</span>
+              <span className="text-xs font-semibold text-slate-500">{patient.bedNo} | {patient.patientName}</span>
             </div>
+            <p className="mt-2 text-base font-black text-slate-950">{currentIssue.title}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-600">{currentIssue.detail}</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[520px]">
+            <InfoLine label="Notify" value={selectedDirectActionRow.target} />
+            <InfoLine label="Source" value={currentIssue.source} />
+            <InfoLine label="Action" value={selectedDirectAction} />
+          </div>
+        </div>
+
+        <div className="grid gap-4 p-3 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="space-y-3">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-sm">
+              <div className="flex min-w-max items-center gap-3">
+              {directActions.map((item) => {
+                const Icon = item.icon;
+                const active = selectedDirectAction === item.label;
+                return (
+                  <button
+                    className={cn(
+                      "inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300",
+                      active
+                        ? "bg-white text-violet-600 shadow-sm"
+                        : "text-slate-600 hover:bg-white/70 hover:text-slate-950",
+                    )}
+                    key={item.label}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDirectAction(item.label);
+                      setMessage(buildIcuCollaborateMessage(patient, currentIssue, item.label));
+                      if (item.label === "Add Team Note") toast.success(`Team note added for ${patient.bedNo}`);
+                      else if (item.label === "Escalate") toast.info(`Escalation draft opened for ${patient.bedNo}`);
+                      else toast.success(`${item.target} notified for ${patient.bedNo}`);
+                    }}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </button>
+                );
+              })}
+              </div>
+            </div>
+
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold text-slate-800">Message</span>
+              <textarea
+                className="min-h-28 w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-200"
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm font-bold text-slate-950">Routing</p>
+            <div className="mt-3 space-y-2">
+              <InfoLine label="Duty doctor" value={patient.dutyDoctor} />
+              <InfoLine label="Admitting doctor" value={patient.admittingDoctor} />
+              <InfoLine label="Ward nurse" value={patient.assignedWardNurse} />
+              <InfoLine label="Unit nurse" value={patient.assignedUnitNurse} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="text-sm font-black text-slate-950">Team Communication History</p>
+            <span className="rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">{logRows.length} entries</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-white text-xs uppercase text-sky-700">
+                <tr>
+                  <th className="px-3 py-2">Time</th>
+                  <th className="px-3 py-2">Communication / Issue</th>
+                  <th className="px-3 py-2">Sent To</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Recorded By</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {logRows.map((row) => (
+                  <tr className="hover:bg-sky-50/40" key={row.id}>
+                    <td className="px-3 py-2 font-bold text-slate-800">{row.time}</td>
+                    <td className="px-3 py-2">
+                      <p className="font-black text-slate-950">{row.topic}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">{row.action}</p>
+                    </td>
+                    <td className="px-3 py-2 font-semibold text-slate-700">{row.target}</td>
+                    <td className="px-3 py-2">
+                      <span className={cn("inline-flex max-w-40 items-center rounded-full border px-2.5 py-1 text-xs font-bold leading-none", collaborateStatusBadgeClass(row.tone))}>
+                        <span className="truncate">{row.status}</span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-xs font-semibold text-slate-600">{row.by}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
         <IcuPatientQueuePanel
-          title="Collaboration context"
+          title="Active context"
           icon={Stethoscope}
           count={actionRows.length}
           rows={actionRows.map((row) => ({
             id: row.id,
             title: `${row.type} - ${row.title}`,
-            detail: `${row.detail} | Owner: ${row.owner}`,
+            detail: `${row.status} | ${row.owner}`,
             tone: row.tone,
           }))}
-          empty="No active collaboration context for this patient."
+          empty="No active context for this patient."
         />
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-        <p className="text-sm font-bold text-slate-950">Patient communication map</p>
-        <div className="mt-3 space-y-2">
-          {[
-            ["Duty doctor", patient.dutyDoctor],
-            ["Admitting consultant", patient.admittingDoctor],
-            ["Ward nurse", patient.assignedWardNurse],
-            ["Unit nurse", patient.assignedUnitNurse],
-            ["Primary reason", patient.diagnosis],
-          ].map(([label, value]) => (
-            <InfoLine key={label} label={label} value={value} />
-          ))}
-        </div>
       </div>
     </div>
   );
+}
+
+function buildIcuCollaborateIssue(patient: IcuPatient, results: IcuPatientResultRow[]): IcuCollaborateIssue {
+  const openAlerts = icuAlerts.filter((row) => row.patientId === patient.id && row.status !== "Resolved");
+  const topAlert = openAlerts.find((row) => row.severity === "Critical") ?? openAlerts.find((row) => row.severity === "High") ?? openAlerts[0];
+  if (topAlert) {
+    const critical = topAlert.severity === "Critical" || topAlert.severity === "High";
+    return {
+      action: critical ? "Immediate review" : "Acknowledge and close",
+      detail: topAlert.message,
+      reason: critical ? "Critical alert" : "Alert follow-up",
+      recipient: topAlert.owner || patient.dutyDoctor,
+      source: topAlert.source,
+      title: topAlert.type,
+      tone: critical ? "danger" : "warning",
+    };
+  }
+
+  const lateMedication = medicationRows.find((row) => row.patientId === patient.id && row.status === "Late");
+  if (lateMedication) {
+    return {
+      action: "Give now or document hold reason",
+      detail: `${lateMedication.medication} ${lateMedication.dose} is late from ${lateMedication.scheduledTime}. ${lateMedication.reason}`,
+      reason: "Medication issue",
+      recipient: lateMedication.administeredBy === "-" ? patient.assignedWardNurse : lateMedication.administeredBy,
+      source: "MAR",
+      title: "Medication late",
+      tone: "danger",
+    };
+  }
+
+  const criticalResult = results.find((row) => row.status === "Critical" || row.status === "Pending");
+  if (criticalResult) {
+    return {
+      action: criticalResult.status === "Critical" ? "Doctor review" : "Follow report",
+      detail: criticalResult.summary,
+      reason: "Result review",
+      recipient: patient.dutyDoctor,
+      source: criticalResult.source,
+      title: criticalResult.reportName,
+      tone: criticalResult.status === "Critical" ? "danger" : "warning",
+    };
+  }
+
+  const pendingTask = icuTasks.find((row) => row.patientId === patient.id && row.status !== "Completed");
+  if (pendingTask) {
+    return {
+      action: pendingTask.status === "Overdue" ? "Escalate task" : "Complete task",
+      detail: pendingTask.title,
+      reason: "Task follow-up",
+      recipient: pendingTask.assignedTo,
+      source: pendingTask.createdBy,
+      title: pendingTask.taskType,
+      tone: pendingTask.status === "Overdue" || pendingTask.priority === "Critical" ? "danger" : "warning",
+    };
+  }
+
+  return {
+    action: "Routine update",
+    detail: `${patient.currentStatus} | ${patient.diagnosis}`,
+    reason: "Clinical update",
+    recipient: patient.dutyDoctor,
+    source: "Patient summary",
+    title: "No active escalation",
+    tone: "success",
+  };
+}
+
+function buildIcuCollaborateMessage(patient: IcuPatient, issue: IcuCollaborateIssue, action = "Notify Duty Doctor") {
+  const context = `${patient.bedNo} ${patient.patientName}: ${issue.reason}. ${issue.title} - ${issue.detail}.`;
+  if (action === "Notify Ward Nurse") {
+    return `${context} Ward nurse to review bedside status, document response, and update pending care actions.`;
+  }
+  if (action === "Add Team Note") {
+    return `Team note for ${patient.bedNo} ${patient.patientName}: ${issue.title} reviewed. ${issue.detail}. Next action: ${issue.action}.`;
+  }
+  if (action === "Escalate") {
+    return `Escalation request for ${patient.bedNo} ${patient.patientName}: ${issue.title}. ${issue.detail}. Escalate to command team for immediate follow-up.`;
+  }
+  return `${context} Action: ${issue.action}.`;
+}
+
+function buildIcuCollaborateLogRows(patient: IcuPatient, issue: IcuCollaborateIssue, actionRows: IcuPatientEventRow[]): IcuCollaborateLogRow[] {
+  const current: IcuCollaborateLogRow = {
+    id: `collab-current-${patient.id}`,
+    action: issue.action,
+    by: "Current workspace",
+    status: "Draft ready",
+    target: issue.recipient,
+    time: "Now",
+    topic: issue.title,
+    tone: issue.tone,
+  };
+
+  const rows = actionRows.slice(0, 5).map((row): IcuCollaborateLogRow => ({
+    id: `collab-${row.id}`,
+    action: row.action,
+    by: row.owner,
+    status: row.status,
+    target: row.owner,
+    time: row.time,
+    topic: row.title,
+    tone: row.tone,
+  }));
+
+  return [current, ...rows];
+}
+
+function collaborateStatusBadgeClass(tone: DashboardCellTone) {
+  if (tone === "critical" || tone === "danger") return "border-red-200 bg-red-50 text-red-700";
+  if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-700";
+  if (tone === "success") return "border-sky-200 bg-sky-50 text-sky-700";
+  return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
 function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow[]): IcuPatientEventRow[] {
@@ -16925,9 +17501,11 @@ function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow
       time: row.time,
       classification: row.abnormal ? "Abnormal vital trend" : "Routine vital observation",
       severity: row.abnormal ? "High" as const : "Normal" as const,
+      status: row.abnormal ? "Abnormal" : "Recorded",
       title: `Vitals recorded: SpO2 ${row.spo2}%, BP ${row.bp}`,
       detail: `${row.oxygenFlow} | RR ${row.respiratoryRate}/min | ${row.note}`,
       owner: row.nurse,
+      action: row.abnormal ? "Repeat vitals and inform duty doctor" : "No action",
       tone: row.abnormal ? "danger" as DashboardCellTone : "success" as DashboardCellTone,
     }));
   const alerts = icuAlerts
@@ -16938,9 +17516,11 @@ function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow
       time: row.createdAt,
       classification: `${row.source} alert`,
       severity: icuPatientEventSeverityFromPriority(row.severity),
+      status: row.status,
       title: `${row.severity} alert: ${row.type}`,
       detail: `${row.message} | Source: ${row.source} | Status: ${row.status}`,
       owner: row.owner,
+      action: row.status === "Open" ? "Acknowledge and assign closure" : row.status === "Acknowledged" ? "Track closure" : "Closed",
       tone: row.severity === "Critical" ? "critical" as DashboardCellTone : row.severity === "High" ? "danger" as DashboardCellTone : "warning" as DashboardCellTone,
     }));
   const meds = medicationRows
@@ -16951,9 +17531,11 @@ function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow
       time: row.scheduledTime,
       classification: row.status === "Late" || row.status === "Due" ? "Medication timing" : "Medication administration",
       severity: row.status === "Late" ? "High" as const : row.status === "Due" ? "Medium" as const : "Normal" as const,
+      status: row.status,
       title: `${row.medication} ${row.dose} - ${row.status}`,
       detail: `${row.route} | ${row.frequency} | ${row.reason}`,
       owner: row.administeredBy,
+      action: row.status === "Late" ? "Administer or document hold reason" : row.status === "Due" ? "Administer due dose" : "No action",
       tone: row.status === "Late" ? "danger" as DashboardCellTone : row.status === "Due" ? "warning" as DashboardCellTone : "success" as DashboardCellTone,
     }));
   const tasks = icuTasks
@@ -16964,9 +17546,11 @@ function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow
       time: row.dueTime,
       classification: "Nursing task",
       severity: row.status === "Overdue" || row.status === "Escalated" ? "High" as const : row.status === "Completed" ? "Normal" as const : icuPatientEventSeverityFromPriority(row.priority),
+      status: row.status,
       title: `${row.taskType}: ${row.title}`,
       detail: `${row.status} | ${row.remarks}`,
       owner: row.assignedTo,
+      action: row.status === "Completed" ? "Closed" : row.status === "Overdue" || row.status === "Escalated" ? "Escalate task" : "Complete task",
       tone: row.status === "Overdue" || row.status === "Escalated" ? "danger" as DashboardCellTone : row.status === "Completed" ? "success" as DashboardCellTone : "warning" as DashboardCellTone,
     }));
   const resultEvents = results.map((row) => ({
@@ -16975,9 +17559,11 @@ function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow
     time: row.reportedAt,
     classification: `${row.category} result`,
     severity: row.status === "Critical" ? "Critical" as const : row.status === "Pending" ? "Medium" as const : row.status === "Reviewed" ? "Normal" as const : "Info" as const,
+    status: row.status,
     title: `${row.category}: ${row.reportName}`,
     detail: `${row.status} | ${row.summary}`,
     owner: row.reviewedBy,
+    action: row.status === "Critical" ? "Doctor review required" : row.status === "Pending" ? "Follow report" : "Filed",
     tone: toneForPatientResult(row.status),
   }));
   const ioEvents = intakeOutputRows
@@ -16988,9 +17574,11 @@ function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow
       time: row.time,
       classification: row.kind === "Output" ? "Fluid output" : "Fluid intake",
       severity: row.status === "Pending review" || row.quantityMl < 30 ? "Medium" as const : Math.abs(row.balanceMl) >= 100 ? "Info" as const : "Normal" as const,
+      status: row.status,
       title: `${row.kind}: ${row.component} ${row.quantityMl} ml`,
       detail: `${row.category} | ${row.status} | ${row.note}`,
       owner: row.nurse,
+      action: row.status === "Pending review" || row.quantityMl < 30 ? "Review fluid plan" : "Monitor",
       tone: row.status === "Pending review" || row.quantityMl < 30 ? "warning" as DashboardCellTone : "info" as DashboardCellTone,
     }));
   const doctorEvents = doctorInstructions
@@ -17001,9 +17589,11 @@ function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow
       time: row.dueTime,
       classification: "Doctor instruction",
       severity: icuPatientEventSeverityFromPriority(row.priority),
+      status: row.status,
       title: `${row.instructionType} - ${row.priority}`,
       detail: `${row.instruction} | ${row.remarks}`,
       owner: row.doctor,
+      action: row.status === "Completed" ? "Closed" : "Nurse acknowledgement / execution",
       tone: row.priority === "Critical" ? "critical" as DashboardCellTone : row.priority === "High" ? "warning" as DashboardCellTone : "info" as DashboardCellTone,
     }));
   const handoverEvent = {
@@ -17012,9 +17602,11 @@ function buildIcuPatientEvents(patient: IcuPatient, results: IcuPatientResultRow
     time: patient.lastVitalsTime,
     classification: "Shift handover",
     severity: patient.pendingTasks ? "Medium" as const : "Normal" as const,
+    status: "Available",
     title: "Shift handover summary available",
     detail: `${patient.assignedWardNurse} to ${patient.assignedUnitNurse} | ${patient.currentStatus}`,
     owner: patient.assignedWardNurse,
+    action: patient.pendingTasks ? "Review pending items" : "No action",
     tone: patient.pendingTasks ? "warning" as DashboardCellTone : "success" as DashboardCellTone,
   };
 
@@ -18128,7 +18720,6 @@ function IcuPatientTimeline({ rows }: { rows: Array<{ id: string; label: string;
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-bold text-slate-950">Patient timeline</p>
-          <p className="mt-1 text-xs text-slate-500">Recent vitals, medication, and alert context for this patient only.</p>
         </div>
         <span className="rounded-full border border-slate-300 px-2 py-0.5 text-xs font-bold text-slate-600">{rows.length}</span>
       </div>
@@ -18143,7 +18734,7 @@ function IcuPatientTimeline({ rows }: { rows: Array<{ id: string; label: string;
             <p className="mt-1 text-xs text-slate-500">{row.detail}</p>
           </div>
         ))}
-        {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm font-semibold text-slate-500">No timeline activity found.</div> : null}
+        {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm font-semibold text-slate-500">No timeline activity found.</div> : null}
       </div>
     </div>
   );
@@ -18273,7 +18864,7 @@ function PatientMedicationChart() {
 
   if (!selectedPatient) {
     return (
-      <div className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-center text-sm font-semibold text-slate-500">
+      <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-500">
         No ICU patient available for medication chart.
       </div>
     );
@@ -18286,7 +18877,7 @@ function PatientMedicationChart() {
           summary={`${selectedPatient.bedNo} - ${selectedPatient.patientName} | ${chartDate} | ${slotFilter}`}
           title="Patient medication chart filters"
         >
-          <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 xl:flex-row xl:items-start xl:justify-between">
             <div>
               <p className="text-sm font-black text-slate-950">Patient medication chart</p>
               <p className="mt-1 text-xs text-slate-500">{selectedPatient.bedNo} - {selectedPatient.patientName}. Nurse can record scheduled time, actual given time, held/missed reason, verifier, and remarks.</p>
@@ -18310,7 +18901,7 @@ function PatientMedicationChart() {
             </div>
           </div>
 
-          <div className="grid gap-3 border-b border-slate-200 px-4 py-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-3 border-b border-slate-200 px-3 py-2 sm:grid-cols-2 xl:grid-cols-5">
             <IcuPatientDetailMetric icon={Pill} label="Scheduled" value={patientRows.length} detail="Medication rows" tone="info" />
             <IcuPatientDetailMetric icon={CheckCircle2} label="Given" value={givenRows.length} detail="Dose administered" tone={givenRows.length ? "success" : "muted"} />
             <IcuPatientDetailMetric icon={Clock3} label="Due / late" value={dueRows.length} detail="Needs nurse action" tone={dueRows.length ? "warning" : "success"} />
@@ -18318,7 +18909,7 @@ function PatientMedicationChart() {
             <IcuPatientDetailMetric icon={ShieldAlert} label="High-alert" value={highAlertRows.length} detail="Verification required" tone={highAlertRows.length ? "critical" : "success"} />
           </div>
 
-          <div className="flex gap-2 overflow-x-auto border-b border-slate-200 px-4 py-3">
+          <div className="flex gap-2 overflow-x-auto border-b border-slate-200 px-3 py-2">
             {weekDays.map((day) => (
               <button
                 className={cn(
@@ -18340,39 +18931,39 @@ function PatientMedicationChart() {
           <table className="w-full min-w-[1240px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-3">Slot</th>
-                <th className="px-3 py-3">Medication</th>
-                <th className="px-3 py-3">Order</th>
-                <th className="px-3 py-3">Scheduled</th>
-                <th className="px-3 py-3">Given time</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Nurse</th>
-                <th className="px-3 py-3">Verifier</th>
-                <th className="px-3 py-3">Remarks</th>
-                <th className="px-3 py-3">Action</th>
+                <th className="px-3 py-2">Slot</th>
+                <th className="px-3 py-2">Medication</th>
+                <th className="px-3 py-2">Order</th>
+                <th className="px-3 py-2">Scheduled</th>
+                <th className="px-3 py-2">Given time</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Nurse</th>
+                <th className="px-3 py-2">Verifier</th>
+                <th className="px-3 py-2">Remarks</th>
+                <th className="px-3 py-2">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {patientRows.map((row) => (
                 <tr className="bg-white align-top hover:bg-sky-50/40" key={row.id}>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <span className="rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{row.slot}</span>
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <p className="font-bold text-slate-950">{row.medication}</p>
                     <p className="mt-1 text-xs text-slate-500">{row.highAlert ? "High-alert / double check" : "Routine medication"}</p>
                   </td>
-                  <td className="px-3 py-3 text-xs text-slate-600">
+                  <td className="px-3 py-2 text-xs text-slate-600">
                     <p>{row.dose} | {row.route}</p>
                     <p className="mt-1">{row.frequency}</p>
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <Input className="w-28" type="time" value={row.scheduledTime} onChange={(event) => updateRow(row.id, { scheduledTime: event.target.value })} />
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <Input className="w-28" type="time" value={row.givenTime} onChange={(event) => updateRow(row.id, { givenTime: event.target.value })} />
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <select
                       className="h-9 w-32 rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200"
                       value={row.status}
@@ -18382,16 +18973,16 @@ function PatientMedicationChart() {
                     </select>
                     <span className={cn("mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(patientMedicationStatusTone(row.status)))}>{row.status}</span>
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <Input className="w-40" value={row.nurse} onChange={(event) => updateRow(row.id, { nurse: event.target.value })} />
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <Input className="w-40" placeholder={row.highAlert ? "Required" : "Optional"} value={row.verifier} onChange={(event) => updateRow(row.id, { verifier: event.target.value })} />
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <Input className="min-w-56" placeholder="Reaction, hold reason, patient response..." value={row.remarks} onChange={(event) => updateRow(row.id, { remarks: event.target.value })} />
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" onClick={() => markGiven(row)} disabled={row.status === "Given"}><CheckCircle2 className="h-4 w-4" />Given</Button>
                       <Button size="sm" variant="outline" onClick={() => updateRow(row.id, { status: "Held", remarks: row.remarks || "Held, doctor informed." })}>Hold</Button>
@@ -18578,171 +19169,84 @@ function IcuPatientMedicineChartTab({ patient }: { patient: IcuPatient }) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-sm">
-            <tbody>
-              <tr>
-                <th className="w-36 border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Patient</th>
-                <td className="border border-slate-300 px-3 py-2 font-bold text-slate-950">{patient.patientName}</td>
-                <th className="w-28 border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Bed</th>
-                <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-800">{patient.bedNo}</td>
-                <th className="w-28 border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">MRN</th>
-                <td className="border border-slate-300 px-3 py-2 text-slate-700">{patient.mrn}</td>
-                <th className="w-32 border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Mode</th>
-                <td className="border border-slate-300 px-3 py-2">
-                  <span className="rounded-full border border-slate-400 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">Read only</span>
-                </td>
-              </tr>
-              <tr>
-                <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Doctor</th>
-                <td className="border border-slate-300 px-3 py-2 text-slate-700">{patient.dutyDoctor}</td>
-                <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Nurse</th>
-                <td className="border border-slate-300 px-3 py-2 text-slate-700">{patient.assignedWardNurse}</td>
-                <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Window</th>
-                <td className="border border-slate-300 px-3 py-2 text-slate-700">{timeWindow}</td>
-                <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Rows</th>
-                <td className="border border-slate-300 px-3 py-2 font-bold text-slate-950">{filteredRows.length}</td>
-              </tr>
-            </tbody>
-          </table>
+      <CollapsibleCommandPanel
+        summary={`${timeWindow} | ${scenarioFilter} | ${statusFilter} | ${filteredRows.length} row(s)`}
+        title="Medicine chart filters"
+      >
+        <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-6 xl:items-end">
+          <NativeSelect label="Period" value={timeWindow} onChange={setTimeWindow} options={["Last 24 hours", "Last 7 days", "All history"]} />
+          <NativeSelect label="Activity" value={scenarioFilter} onChange={setScenarioFilter} options={scenarioOptions} />
+          <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
+          <NativeSelect label="Route" value={routeFilter} onChange={setRouteFilter} options={routeOptions} />
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold text-slate-800">Search</span>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input className="h-9 pl-9" placeholder="Medicine, nurse, remarks" value={query} onChange={(event) => setQuery(event.target.value)} />
+            </div>
+          </label>
+          <div className="space-y-2">
+            <label className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800">
+              <input checked={highAlertOnly} className="h-4 w-4 accent-violet-600" type="checkbox" onChange={(event) => setHighAlertOnly(event.target.checked)} />
+              High-alert only
+            </label>
+            <Button className="w-full" variant="outline" onClick={() => {
+              setQuery("");
+              setTimeWindow("Last 24 hours");
+              setScenarioFilter("All scenarios");
+              setStatusFilter("All status");
+              setRouteFilter("All routes");
+              setHighAlertOnly(false);
+            }}>Reset</Button>
+          </div>
         </div>
-      </div>
+      </CollapsibleCommandPanel>
 
-      <div className="overflow-hidden rounded-md border border-slate-300 bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] border-collapse text-sm">
-            <thead>
+          <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
+            <thead className="bg-white text-xs uppercase text-slate-500">
               <tr>
-                <th className="border border-slate-300 bg-slate-900 px-3 py-2 text-left text-xs uppercase text-white" colSpan={6}>Medicine chart filters</th>
+                <th className="border border-slate-200 px-3 py-2">Date</th>
+                <th className="border border-slate-200 px-3 py-2">Time</th>
+                <th className="border border-slate-200 px-3 py-2">Medication</th>
+                <th className="border border-slate-200 px-3 py-2">Dose</th>
+                <th className="border border-slate-200 px-3 py-2">Route</th>
+                <th className="border border-slate-200 px-3 py-2">Frequency</th>
+                <th className="border border-slate-200 px-3 py-2">Scheduled / given</th>
+                <th className="border border-slate-200 px-3 py-2">Status</th>
+                <th className="border border-slate-200 px-3 py-2">By / verifier</th>
+                <th className="border border-slate-200 px-3 py-2">Remarks</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <NativeSelect label="Period" value={timeWindow} onChange={setTimeWindow} options={["Last 24 hours", "Last 7 days", "All history"]} />
-                </td>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <NativeSelect label="Activity" value={scenarioFilter} onChange={setScenarioFilter} options={scenarioOptions} />
-                </td>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
-                </td>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <NativeSelect label="Route" value={routeFilter} onChange={setRouteFilter} options={routeOptions} />
-                </td>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <label className="space-y-1 text-sm">
-                    <span className="font-semibold text-slate-800">Search</span>
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      <Input className="h-9 pl-9" placeholder="Medicine, nurse, remarks" value={query} onChange={(event) => setQuery(event.target.value)} />
-                    </div>
-                  </label>
-                </td>
-                <td className="w-44 border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <label className="flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800">
-                    <input checked={highAlertOnly} className="h-4 w-4 accent-red-600" type="checkbox" onChange={(event) => setHighAlertOnly(event.target.checked)} />
-                    High-alert only
-                  </label>
-                  <Button className="mt-2 w-full" variant="outline" onClick={() => {
-                    setQuery("");
-                    setTimeWindow("Last 24 hours");
-                    setScenarioFilter("All scenarios");
-                    setStatusFilter("All status");
-                    setRouteFilter("All routes");
-                    setHighAlertOnly(false);
-                  }}>Reset</Button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-md border border-slate-300 bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-center text-sm">
-            <thead className="bg-slate-100 text-xs uppercase text-slate-600">
-              <tr>
-                <th className="border border-slate-300 px-3 py-2">Visible entries</th>
-                <th className="border border-slate-300 px-3 py-2">Given</th>
-                <th className="border border-slate-300 px-3 py-2">Added</th>
-                <th className="border border-slate-300 px-3 py-2">Changed</th>
-                <th className="border border-slate-300 px-3 py-2">Held / missed</th>
-                <th className="border border-slate-300 px-3 py-2">High-alert</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="text-lg font-black text-slate-950">
-                <td className="border border-slate-300 px-3 py-2">{filteredRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-green-700">{givenRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-sky-700">{addedRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-orange-700">{changedRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-red-700">{issueRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-red-700">{highAlertRows.length}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
-            <thead className="bg-slate-900 text-xs uppercase text-white">
-              <tr>
-                <th className="border border-slate-500 px-3 py-2">Date</th>
-                <th className="border border-slate-500 px-3 py-2">Slot</th>
-                <th className="border border-slate-500 px-3 py-2">Time</th>
-                <th className="border border-slate-500 px-3 py-2">Medication</th>
-                <th className="border border-slate-500 px-3 py-2">Dose</th>
-                <th className="border border-slate-500 px-3 py-2">Route</th>
-                <th className="border border-slate-500 px-3 py-2">Frequency</th>
-                <th className="border border-slate-500 px-3 py-2">Scheduled / given</th>
-                <th className="border border-slate-500 px-3 py-2">Status</th>
-                <th className="border border-slate-500 px-3 py-2">Activity</th>
-                <th className="border border-slate-500 px-3 py-2">By / verifier</th>
-                <th className="border border-slate-500 px-3 py-2">Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableLines.map(({ dateRowSpan, row, slotRowSpan }) => (
-                <tr className="align-top odd:bg-white even:bg-slate-50/60 hover:bg-sky-50/50" key={row.id}>
+              {tableLines.map(({ dateRowSpan, row }) => (
+                <tr className="align-top odd:bg-white even:bg-slate-50/40 hover:bg-violet-50/40" key={row.id}>
                   {dateRowSpan ? (
-                    <td className="border border-slate-300 bg-slate-100 px-3 py-2 text-center font-black text-slate-950" rowSpan={dateRowSpan}>
+                    <td className="border border-slate-200 bg-slate-50 px-3 py-2 text-center font-black text-slate-950" rowSpan={dateRowSpan}>
                       {formatMedicineChartDate(row.date)}
                     </td>
                   ) : null}
-                  {slotRowSpan ? (
-                    <td className="border border-slate-300 px-3 py-2 text-center font-bold text-slate-800" rowSpan={slotRowSpan}>
-                      {row.slot}
-                    </td>
-                  ) : null}
-                  <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-800">{row.eventTime}</td>
-                  <td className="border border-slate-300 px-3 py-2">
+                  <td className="border border-slate-200 px-3 py-2 font-semibold text-slate-800">{row.eventTime}</td>
+                  <td className="border border-slate-200 px-3 py-2">
                     <p className="font-bold text-slate-950">{row.medication}</p>
                     <p className="mt-1 text-xs text-slate-500">{row.highAlert ? "High-alert medicine" : "Routine medicine"}</p>
                   </td>
-                  <td className="border border-slate-300 px-3 py-2 text-slate-700">{row.dose}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-slate-700">{row.route}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-slate-700">{row.frequency}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-xs text-slate-700">
+                  <td className="border border-slate-200 px-3 py-2 text-slate-600">{row.dose}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-slate-600">{row.route}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-slate-600">{row.frequency}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">
                     <p>Scheduled: {row.scheduledTime || "-"}</p>
                     <p className="mt-1">Given: {row.givenTime || "-"}</p>
                   </td>
-                  <td className="border border-slate-300 px-3 py-2">
+                  <td className="border border-slate-200 px-3 py-2">
                     <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(patientMedicationStatusTone(row.status)))}>{row.status}</span>
                   </td>
-                  <td className="border border-slate-300 px-3 py-2">
-                    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(medicineChartScenarioTone(row.scenario)))}>{row.scenario}</span>
-                    <p className="mt-1 text-xs text-slate-500">{row.source}</p>
-                  </td>
-                  <td className="border border-slate-300 px-3 py-2 text-xs text-slate-700">
+                  <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">
                     <p className="font-semibold text-slate-900">{row.changedBy}</p>
                     <p className="mt-1">Verifier: {row.verifier || "Not required"}</p>
                   </td>
-                  <td className="border border-slate-300 px-3 py-2 text-xs text-slate-700">
+                  <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">
                     <p className="font-semibold text-slate-800">{row.changeSummary}</p>
                     <p className="mt-1 text-slate-500">{row.remarks || "-"}</p>
                   </td>
@@ -18750,7 +19254,7 @@ function IcuPatientMedicineChartTab({ patient }: { patient: IcuPatient }) {
               ))}
               {!tableLines.length ? (
                 <tr>
-                  <td className="border border-slate-300 px-4 py-10 text-center text-sm font-semibold text-slate-500" colSpan={12}>No medication history matched selected filters.</td>
+                  <td className="border border-slate-200 px-4 py-10 text-center text-sm font-semibold text-slate-500" colSpan={10}>No medication history matched selected filters.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -18975,7 +19479,7 @@ function IcuPatientMedicineChartLineRow({
         </td>
       ) : null}
       {line.slotRowSpan ? (
-        <td className="border-r border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-700" rowSpan={line.slotRowSpan}>{line.slot}</td>
+        <td className="border-r border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700" rowSpan={line.slotRowSpan}>{line.slot}</td>
       ) : null}
       {row ? (
         <>
@@ -19024,7 +19528,7 @@ function IcuPatientMedicineChartLineRow({
           </td>
         </>
       ) : (
-        <td className="px-3 py-3 text-center text-xs font-semibold text-slate-500" colSpan={8}>
+        <td className="px-3 py-2 text-center text-xs font-semibold text-slate-500" colSpan={8}>
           <Button size="sm" variant="outline" onClick={() => onAddSlotRow(line.day.value, line.slot)}><Plus className="h-4 w-4" />Add medicine</Button>
         </td>
       )}
@@ -19051,150 +19555,6 @@ function patientMedicationDayClass(index: number) {
     "bg-cyan-100 text-cyan-950",
   ];
   return classes[index % classes.length];
-}
-
-function IcuPatientMedicationAlertMeasurePanel({
-  alerts,
-  measures,
-  onOpenReference,
-  patient,
-}: {
-  alerts: typeof icuAlerts;
-  measures: CommandMedicationAlertMeasure[];
-  onOpenReference: (row: IcuMedication) => void;
-  patient: IcuPatient;
-}) {
-  const critical = measures.filter((item) => item.tone === "critical" || item.tone === "danger").length;
-  const verificationPending = measures.filter((item) => item.row.doubleVerification !== "Not required" && item.row.status !== "Administered").length;
-  const dueOrLate = measures.filter((item) => item.row.status === "Due" || item.row.status === "Late").length;
-  const topMeasure = measures[0];
-  const pagination = useIcuCommandPagination(measures);
-
-  return (
-    <div className="rounded-md border border-slate-200 bg-white">
-      <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 lg:flex-row lg:items-center lg:justify-between">
-        <span className="text-xs font-bold text-slate-600">{patient.bedNo} - {patient.patientName}</span>
-        <div className="flex flex-wrap gap-2">
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(topMeasure?.tone ?? "success"))}>
-            Top alert {topMeasure?.measure ?? 0}
-          </span>
-          <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{measures.length} high-alert meds</span>
-        </div>
-      </div>
-
-      <div className="grid gap-3 border-b border-slate-200 px-3 py-3 sm:grid-cols-2 xl:grid-cols-4">
-        <IcuPatientDetailMetric icon={ShieldAlert} label="Critical / high" value={critical} detail="Needs immediate review" tone={critical ? "critical" : "success"} />
-        <IcuPatientDetailMetric icon={ClipboardCheck} label="Verification" value={verificationPending} detail="Double check pending/required" tone={verificationPending ? "warning" : "success"} />
-        <IcuPatientDetailMetric icon={Clock3} label="Due / late" value={dueOrLate} detail="MAR timing risk" tone={dueOrLate ? "warning" : "success"} />
-        <IcuPatientDetailMetric icon={AlertTriangle} label="Med alerts" value={alerts.filter((alert) => alert.type.toLowerCase().includes("medication")).length} detail="Open medication alert source" tone={alerts.some((alert) => alert.type.toLowerCase().includes("medication")) ? "danger" : "success"} />
-      </div>
-
-      <CommandMedicationAlertScaleReference currentMeasure={topMeasure?.measure} />
-
-      {measures.length ? (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1240px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
-              <tr>
-                <th className="px-3 py-3">Medicine</th>
-                <th className="px-3 py-3">Category</th>
-                <th className="px-3 py-3">Alert measure</th>
-                <th className="px-3 py-3">Monitoring</th>
-                <th className="px-3 py-3">Source / basis</th>
-                <th className="px-3 py-3">Escalate if</th>
-                <th className="px-3 py-3">Reference</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {pagination.pageRows.map((item) => (
-                <tr className="bg-white align-top" key={item.row.id}>
-                  <td className="px-3 py-3">
-                    <p className="font-bold text-slate-950">{item.row.medication} {item.row.dose}</p>
-                    <p className="mt-1 text-xs text-slate-500">{item.row.scheduledTime} | {item.row.route} | {item.row.frequency}</p>
-                    <p className="mt-1 text-xs text-slate-500">Status: {item.row.status}</p>
-                  </td>
-                  <td className="px-3 py-3">
-                    <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(item.tone))}>{item.category}</span>
-                    <p className="mt-2 text-xs text-slate-500">Double verification: {item.row.doubleVerification}</p>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className={cn("w-28 rounded-md border p-2 text-center", dashboardToneSurfaceClass(item.tone))}>
-                      <p className="text-xl font-black">{item.measure}</p>
-                      <p className="text-[11px] font-bold">{item.status}</p>
-                      <p className="mt-1 text-[10px] font-semibold opacity-80">Range {commandMedicationAlertRangeLabel(item.measure)}</p>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {commandHighAlertCheckpoints.map((checkpoint) => (
-                        <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700" key={checkpoint}>{checkpoint}</span>
-                      ))}
-                    </div>
-                    <div className="mt-2 space-y-1">
-                      {item.monitoring.map((row) => <p className="text-xs text-slate-500" key={row}>- {row}</p>)}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="space-y-1">
-                      {item.basis.map((basis) => <p className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600" key={basis}>{basis}</p>)}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="space-y-1">
-                      {item.triggers.slice(0, 4).map((trigger) => <p className="rounded-md border border-slate-200 border-l-rose-500 bg-white px-2 py-1 text-xs font-semibold text-slate-700" key={trigger}>{trigger}</p>)}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <Button size="sm" variant="outline" onClick={() => onOpenReference(item.row)}>
-                      Open reference
-                    </Button>
-                    <p className="mt-2 text-xs text-slate-500">Score range: {commandMedicationAlertRangeLabel(item.measure)} | {item.status}</p>
-                    <p className="mt-1 text-xs text-slate-500">Dose safety, identifiers, monitoring, and formulary.</p>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="p-5 text-center text-sm font-semibold text-slate-500">No high-alert medication risk found for this patient.</div>
-      )}
-      <IcuCommandPaginationControls {...pagination} />
-    </div>
-  );
-}
-
-function CommandMedicationAlertScaleReference({ currentMeasure }: { currentMeasure?: number }) {
-  const currentBand = typeof currentMeasure === "number" ? commandMedicationAlertBand(currentMeasure) : null;
-
-  return (
-    <div className="border-b border-slate-200 bg-white px-3 py-3">
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-        <p className="text-sm font-black text-slate-950">Medication alert score reference</p>
-        {currentBand ? (
-          <span className={cn("w-fit rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(currentBand.tone))}>
-            Current {currentMeasure} = {currentBand.label} ({currentBand.range})
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-        {commandMedicationAlertScale.map((band) => (
-          <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(band.tone), currentBand?.label === band.label ? "ring-2 ring-sky-300" : "")} key={band.label}>
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm font-black">{band.label}</p>
-              <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(band.tone))}>{band.range}</span>
-            </div>
-            <p className="mt-2 text-xs font-semibold">{band.action}</p>
-            <p className="mt-2 text-[11px] opacity-80">{band.reference}</p>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-        <p className="font-bold text-slate-950">Formula basis</p>
-        <p className="mt-1">Base 20 + Late 35 + Due 18 + double verification 22 + infusion/continuous 18 + critical class 18 + neuro/transplant 12 + active medication alert 12. Score is capped at 100.</p>
-      </div>
-    </div>
-  );
 }
 
 function IcuPatientMedicineReferenceWorkspace({
@@ -19231,61 +19591,47 @@ function IcuPatientMedicineReferenceWorkspace({
   const patientReferenceMatches = patientMeds
     .map((med) => ({ med, reference: medicineReferenceCatalog.find((item) => medicineReferenceMatchesMedication(item, med)) }))
     .filter((item): item is { med: IcuMedication; reference: MedicineReferenceRecord } => Boolean(item.reference));
-  const patientMedicationAlerts = icuAlerts.filter((row) => row.patientId === patient.id && row.status !== "Resolved");
-  const patientAlertMeasures = buildCommandMedicationAlertMeasures(patientMeds, patientMedicationAlerts);
-  const topPatientAlertMeasure = patientAlertMeasures[0];
   const highAlertCount = filteredCatalog.filter((item) => item.highAlert).length;
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
-        <CommandMedicationAlertScaleReference currentMeasure={topPatientAlertMeasure?.measure} />
-      </div>
-
-      <div className="rounded-md border border-slate-200 bg-white">
-        <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-sm font-black text-slate-950">Medicine reference library</p>
-            <p className="mt-1 text-xs text-slate-500">{patient.bedNo} - {patient.patientName}. Reference-ready catalog with global identifiers, ICU safety classification, and local formulary status.</p>
+      <div className="space-y-3">
+        <CollapsibleCommandPanel
+          summary={`${filteredCatalog.length} visible | ${highAlertCount} high-alert | ${patientReferenceMatches.length} patient match(es)`}
+          title="Filters"
+        >
+          <div className="grid gap-3 px-3 py-2 xl:grid-cols-[minmax(240px,1fr)_220px_170px_180px_auto] xl:items-end">
+            <label className="space-y-1 text-sm">
+              <span className="font-semibold text-slate-800">Search medicine</span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input className="pl-9" placeholder="Generic, brand, ATC, RxNorm, ICU use..." value={query} onChange={(event) => setQuery(event.target.value)} />
+              </div>
+            </label>
+            <NativeSelect label="Drug class" value={classFilter} onChange={setClassFilter} options={classOptions} />
+            <NativeSelect label="Safety" value={safetyFilter} onChange={setSafetyFilter} options={["All safety", "High-alert only", "Routine only"]} />
+            <NativeSelect label="Formulary" value={formularyFilter} onChange={setFormularyFilter} options={formularyOptions} />
+            <Button variant="outline" onClick={() => {
+              setQuery("");
+              setClassFilter("All classes");
+              setSafetyFilter("All safety");
+              setFormularyFilter("All formulary");
+              onSelectReference(null);
+            }}>Reset</Button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">{filteredCatalog.length} visible</span>
-            <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(highAlertCount ? "warning" : "success"))}>{highAlertCount} high-alert</span>
-            <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{patientReferenceMatches.length} patient matches</span>
-          </div>
-        </div>
+        </CollapsibleCommandPanel>
 
-        <div className="grid gap-3 border-b border-slate-200 px-3 py-3 xl:grid-cols-[minmax(240px,1fr)_220px_170px_180px_auto] xl:items-end">
-          <label className="space-y-1 text-sm">
-            <span className="font-semibold text-slate-800">Search medicine</span>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input className="pl-9" placeholder="Generic, brand, ATC, RxNorm, ICU use..." value={query} onChange={(event) => setQuery(event.target.value)} />
-            </div>
-          </label>
-          <NativeSelect label="Drug class" value={classFilter} onChange={setClassFilter} options={classOptions} />
-          <NativeSelect label="Safety" value={safetyFilter} onChange={setSafetyFilter} options={["All safety", "High-alert only", "Routine only"]} />
-          <NativeSelect label="Formulary" value={formularyFilter} onChange={setFormularyFilter} options={formularyOptions} />
-          <Button variant="outline" onClick={() => {
-            setQuery("");
-            setClassFilter("All classes");
-            setSafetyFilter("All safety");
-            setFormularyFilter("All formulary");
-            onSelectReference(null);
-          }}>Reset</Button>
-        </div>
-
-        <div className="grid gap-4 p-3 xl:grid-cols-[minmax(0,1.2fr)_420px]">
+        <div className="rounded-md border border-slate-200 bg-white">
+        <div className="grid items-start gap-4 p-3 xl:grid-cols-[minmax(0,1.2fr)_420px]">
           <div className="overflow-hidden rounded-md border border-slate-200">
             <div className="overflow-auto">
-              <table className="w-full min-w-[920px] text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
                   <tr>
-                    <th className="px-3 py-3">Medicine</th>
-                    <th className="px-3 py-3">Reference IDs</th>
-                    <th className="px-3 py-3">Safety</th>
-                    <th className="px-3 py-3">ICU monitoring</th>
-                    <th className="px-3 py-3">Formulary</th>
+                    <th className="px-3 py-2">Medicine</th>
+                    <th className="px-3 py-2">Reference IDs</th>
+                    <th className="px-3 py-2">Safety</th>
+                    <th className="px-3 py-2">Formulary</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -19293,32 +19639,27 @@ function IcuPatientMedicineReferenceWorkspace({
                     const isSelected = selected?.id === item.id;
                     const hasPatientMatch = patientMeds.some((med) => medicineReferenceMatchesMedication(item, med));
                     return (
-                      <tr className={cn("cursor-pointer bg-white align-top hover:bg-sky-50/70", isSelected ? "bg-sky-50" : "")} key={item.id} onClick={() => onSelectReference(item.id)}>
-                        <td className="px-3 py-3">
+                      <tr className={cn("cursor-pointer bg-white align-top hover:bg-slate-50", isSelected ? "bg-slate-50" : "")} key={item.id} onClick={() => onSelectReference(item.id)}>
+                        <td className="px-3 py-2">
                           <p className="font-bold text-slate-950">{item.medicine}</p>
                           <p className="mt-1 text-xs text-slate-500">{item.generic}</p>
                           <p className="mt-1 text-xs text-slate-500">{item.aliases.join(", ")}</p>
-                          {hasPatientMatch ? <span className="mt-2 inline-flex rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700">In current MAR</span> : null}
+                          {hasPatientMatch ? <span className="mt-2 inline-flex rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-700">In current MAR</span> : null}
                         </td>
-                        <td className="px-3 py-3 text-xs text-slate-600">
+                        <td className="px-3 py-2 text-xs text-slate-600">
                           <p>{item.rxNorm}</p>
                           <p className="mt-1">ATC: {item.atc}</p>
                           <p className="mt-1">{item.nlem}</p>
                         </td>
-                        <td className="px-3 py-3">
-                          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(item.highAlert ? "danger" : "success"))}>
+                        <td className="px-3 py-2">
+                          <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">
                             {item.highAlert ? "High-alert" : "Routine"}
                           </span>
                           <p className="mt-2 text-xs text-slate-500">{item.highAlertCategory}</p>
                           <p className="mt-1 text-xs text-slate-500">{item.doubleVerification}</p>
                         </td>
-                        <td className="px-3 py-3">
-                          <div className="space-y-1">
-                            {item.monitoring.slice(0, 3).map((row) => <p className="text-xs text-slate-600" key={row}>- {row}</p>)}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(medicineFormularyTone(item.formularyStatus)))}>{item.formularyStatus}</span>
+                        <td className="px-3 py-2">
+                          <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{item.formularyStatus}</span>
                           <p className="mt-2 text-xs text-slate-500">{item.pharmacyLocation}</p>
                         </td>
                       </tr>
@@ -19326,7 +19667,7 @@ function IcuPatientMedicineReferenceWorkspace({
                   })}
                   {!filteredCatalog.length ? (
                     <tr>
-                      <td className="px-3 py-8 text-center text-sm font-semibold text-slate-500" colSpan={5}>No medicine reference matched.</td>
+                      <td className="px-3 py-4 text-center text-sm font-semibold text-slate-500" colSpan={4}>No medicine reference matched.</td>
                     </tr>
                   ) : null}
                 </tbody>
@@ -19340,19 +19681,6 @@ function IcuPatientMedicineReferenceWorkspace({
           />
         </div>
       </div>
-
-      <div className="grid gap-3 lg:grid-cols-4">
-        {[
-          ["RxNorm/RxNav", "Normalized generic/brand identity and drug code mapping"],
-          ["WHO ATC/DDD", "Therapeutic classification and ATC category"],
-          ["SNOMED CT", "Clinical medicinal product interoperability"],
-          ["India NLEM/Formulary", "Essential medicine and local hospital availability"],
-        ].map(([title, detail]) => (
-          <div className="rounded-md border border-slate-200 bg-white p-3" key={title}>
-            <p className="text-sm font-bold text-slate-950">{title}</p>
-            <p className="mt-1 text-xs text-slate-500">{detail}</p>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -19366,18 +19694,18 @@ function MedicineReferenceDetailPanel({
   reference?: MedicineReferenceRecord;
 }) {
   if (!reference) {
-    return <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">No medicine selected.</div>;
+    return <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm font-semibold text-slate-500">No medicine selected.</div>;
   }
 
   return (
     <div className="space-y-3">
-      <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(reference.highAlert ? "danger" : "success"))}>
+      <div className="rounded-md border border-slate-200 bg-white p-3">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-base font-black">{reference.medicine}</p>
             <p className="mt-1 text-xs">{reference.drugClass}</p>
           </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(reference.highAlert ? "danger" : "success"))}>{reference.highAlert ? "High-alert" : "Routine"}</span>
+          <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{reference.highAlert ? "High-alert" : "Routine"}</span>
         </div>
         <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
           <InfoLine label="Generic" value={reference.generic} />
@@ -19391,9 +19719,9 @@ function MedicineReferenceDetailPanel({
 
       <IcuPatientDetailPanel title="Patient MAR match">
         {matches.map((row) => (
-          <div className={cn("rounded-md border p-2", dashboardToneSurfaceClass(row.status === "Late" ? "danger" : row.status === "Due" ? "warning" : "success"))} key={row.id}>
-            <p className="text-sm font-bold">{row.medication} {row.dose}</p>
-            <p className="mt-1 text-xs">{row.scheduledTime} | {row.route} | {row.status} | {row.doubleVerification}</p>
+          <div className="rounded-md border border-slate-200 bg-white p-2" key={row.id}>
+            <p className="text-sm font-bold text-slate-950">{row.medication} {row.dose}</p>
+            <p className="mt-1 text-xs text-slate-500">{row.scheduledTime} | {row.route} | {row.status} | {row.doubleVerification}</p>
           </div>
         ))}
         {!matches.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-3 text-xs font-semibold text-slate-500">Not currently present in this patient MAR.</div> : null}
@@ -19413,10 +19741,6 @@ function MedicineReferenceDetailPanel({
         {reference.contraindications.map((row) => <InfoLine key={row} label="Contraindication" value={row} />)}
         {reference.interactions.map((row) => <InfoLine key={row} label="Interaction" value={row} />)}
       </IcuPatientDetailPanel>
-
-      <IcuPatientDetailPanel title="Reference basis">
-        {reference.sourceBasis.map((row) => <InfoLine key={row} label="Source" value={row} />)}
-      </IcuPatientDetailPanel>
     </div>
   );
 }
@@ -19429,12 +19753,6 @@ function medicineReferenceMatchesMedication(reference: MedicineReferenceRecord, 
 
 function medicineReferenceIdForMedication(row: IcuMedication) {
   return medicineReferenceCatalog.find((item) => medicineReferenceMatchesMedication(item, row))?.id ?? null;
-}
-
-function medicineFormularyTone(status: MedicineReferenceRecord["formularyStatus"]): DashboardCellTone {
-  if (status === "Restricted" || status === "Protocol only") return "warning";
-  if (status === "Low stock") return "danger";
-  return "success";
 }
 
 function DashboardMatrixCell({
@@ -19454,7 +19772,7 @@ function DashboardMatrixCell({
   if (column === "Risk") {
     return (
       <button
-        className="inline-flex min-h-24 w-full items-center justify-center"
+        className="inline-flex min-h-16 w-full items-center justify-center"
         type="button"
         onClick={() => onOpenRiskReference?.(patient)}
         title={`Risk score and sepsis reference - ${patient.bedNo}`}
@@ -19466,7 +19784,7 @@ function DashboardMatrixCell({
 
   if (cell.route) {
     return (
-      <Link className="inline-flex min-h-24 w-full items-center justify-center" href={cell.route} title={`${icuColumnLabel(column)} - ${cell.title}`}>
+      <Link className="inline-flex min-h-16 w-full items-center justify-center" href={cell.route} title={`${icuColumnLabel(column)} - ${cell.title}`}>
         {isAction ? <IcuActionCircleButton cell={cell} column={column} icon={Icon} /> : <VitalTrafficPill cell={cell} icon={Icon} />}
       </Link>
     );
@@ -19474,7 +19792,7 @@ function DashboardMatrixCell({
 
   return (
     <button
-      className="inline-flex min-h-24 w-full items-center justify-center"
+      className="inline-flex min-h-16 w-full items-center justify-center"
       type="button"
       onClick={() => toast.info(`${cell.title} opened for ${patient.bedNo}`)}
       title={`${icuColumnLabel(column)} - ${cell.title}`}
@@ -19493,7 +19811,7 @@ function IcuCommandSepsisReferenceDialog({ patient, onOpenChange }: { patient: I
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(920px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-            <div className="border-b border-slate-200 bg-sky-700 px-4 py-3 text-white">
+            <div className="border-b border-slate-200 bg-sky-700 px-3 py-2 text-white">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <Dialog.Title className="text-base font-bold">ICU Command Risk Reference</Dialog.Title>
@@ -19518,7 +19836,7 @@ function IcuCommandSepsisReferenceDialog({ patient, onOpenChange }: { patient: I
                 <p className="mt-1">Risk cell ka score operational command score hai. qSOFA sirf sepsis screening reference ke liye add kiya gaya hai, taaki clinician ko pata chale score kis criteria se trigger ho raha hai.</p>
               </div>
             </div>
-            <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
               <Button variant="outline" asChild><Link href={icuPatientDetailHref(patient.id, "overview")}>Open patient detail</Link></Button>
               <Dialog.Close asChild><Button>Done</Button></Dialog.Close>
             </div>
@@ -19531,9 +19849,9 @@ function IcuCommandSepsisReferenceDialog({ patient, onOpenChange }: { patient: I
 
 function VitalTrafficPill({ cell, icon: Icon }: { cell: DashboardCell; icon: typeof Activity }) {
   return (
-    <span className="grid min-h-24 w-full min-w-24 grid-rows-[42px_20px_16px] place-items-center">
-      <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", dashboardToneSolidClass(cell.tone))}>
-        <Icon className="h-3.5 w-3.5" />
+    <span className="grid min-h-16 w-full min-w-20 grid-rows-[34px_14px_8px] place-items-center">
+      <span className={cn("inline-flex h-8 min-w-20 items-center justify-center gap-1 rounded-full px-2.5 text-[11px] font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.24)]", dashboardToneSolidClass(cell.tone))}>
+        <Icon className="h-3 w-3" />
         <span className="max-w-24 truncate whitespace-nowrap">{cell.title}</span>
       </span>
       <span aria-hidden className="invisible block max-w-28 truncate whitespace-nowrap text-center text-xs leading-none">-</span>
@@ -19553,11 +19871,11 @@ function IcuActionCircleButton({ cell, column, icon: Icon }: { cell: DashboardCe
           ? "bg-amber-500 hover:bg-amber-600"
           : "bg-slate-700 hover:bg-slate-800";
   return (
-    <span className="grid min-h-24 w-full min-w-24 grid-rows-[42px_22px_14px] place-items-center">
-      <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition", actionClass)}>
-        <Icon className="h-4 w-4" />
+    <span className="grid min-h-16 w-full min-w-20 grid-rows-[34px_18px_8px] place-items-center">
+      <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.24)] transition", actionClass)}>
+        <Icon className="h-3.5 w-3.5" />
       </span>
-      <span className="block max-w-24 truncate whitespace-nowrap text-center text-xs font-bold leading-tight text-slate-800">{cell.title}</span>
+      <span className="block max-w-24 truncate whitespace-nowrap text-center text-[11px] font-bold leading-tight text-slate-800">{cell.title}</span>
       <span aria-hidden className="invisible block max-w-24 truncate whitespace-nowrap text-center text-[11px] leading-none">-</span>
     </span>
   );
@@ -19598,7 +19916,7 @@ function DashboardFocusStrip({ patients }: { patients: IcuPatient[] }) {
             </div>
           </Link>
         ))}
-        {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent action in selected view.</div> : null}
+        {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-4 text-center text-sm font-semibold text-slate-600">No urgent action in selected view.</div> : null}
       </div>
     </div>
   );
@@ -19701,15 +20019,20 @@ function buildDashboardCells(patient: IcuPatient): Record<string, DashboardCell>
   const latestVital = [...icuVitals].reverse().find((row) => row.patientId === patient.id);
   const meds = medicationRows.filter((row) => row.patientId === patient.id);
   const dueMeds = meds.filter((row) => ["Due", "Late"].includes(row.status));
+  const lateMeds = dueMeds.filter((row) => row.status === "Late");
   const alerts = icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved");
-  const medicationAlertMeasures = buildCommandMedicationAlertMeasures(meds, alerts);
-  const topMedicationAlert = medicationAlertMeasures[0];
   const tasks = icuTasks.filter((task) => task.patientId === patient.id && task.status !== "Completed");
   const balance = intakeOutputRows.filter((row) => row.patientId === patient.id).reduce((sum, row) => sum + row.balanceMl, 0);
   const runningInfusion = infusionRows.find((row) => row.patientId === patient.id && row.status === "Running");
   const qsofa = buildQsofaScreen(latestVital);
   const vitalTone = latestVital?.abnormal || (latestVital?.spo2 ?? 100) < 94 || (latestVital?.pulse ?? 0) > 120 ? "danger" : "success";
   const balanceTone: DashboardCellTone = balance > 400 ? "warning" : balance < 0 ? "info" : "success";
+  const shiftRows = buildIcuShiftHandoverRows(patient);
+  const criticalShiftRows = shiftRows.filter((row) => row.focus === "critical");
+  const pendingShiftRows = shiftRows.filter((row) => row.focus === "pending");
+  const shiftFocus: IcuShiftFocus = criticalShiftRows.length ? "critical" : pendingShiftRows.length ? "pending" : "completed";
+  const primaryShiftRow = criticalShiftRows[0] ?? pendingShiftRows[0] ?? shiftRows.find((row) => row.focus === "completed");
+  const collaborateIssue = buildIcuCollaborateIssue(patient, buildIcuPatientResultRows(patient));
 
   return {
     Risk: {
@@ -19741,18 +20064,18 @@ function buildDashboardCells(patient: IcuPatient): Record<string, DashboardCell>
       route: icuPatientDetailHref(patient.id, "monitoring", "intake-output"),
     },
     Medication: {
-      title: topMedicationAlert ? `Alert ${topMedicationAlert.measure}` : dueMeds.length ? `${dueMeds.length} due` : "On time",
-      detail: topMedicationAlert ? `${topMedicationAlert.row.medication} | ${topMedicationAlert.status} | ${commandMedicationAlertRangeLabel(topMedicationAlert.measure)}` : dueMeds[0]?.medication ?? `${meds.length} active`,
-      tone: topMedicationAlert?.tone ?? (dueMeds.some((row) => row.status === "Late") ? "danger" : dueMeds.length ? "warning" : "success"),
+      title: lateMeds.length ? `${lateMeds.length} late` : dueMeds.length ? `${dueMeds.length} due` : "On time",
+      detail: dueMeds[0] ? `${dueMeds[0].medication} ${dueMeds[0].scheduledTime}` : `${meds.length} active`,
+      tone: lateMeds.length ? "danger" : dueMeds.length ? "warning" : "success",
       icon: Pill,
-      route: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=high-alert-measure"),
+      route: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=medication-overview"),
     },
     Events: {
-      title: alerts.length ? `${alerts.length} open` : "Clear",
+      title: alerts.length ? `${alerts.length} alert${alerts.length === 1 ? "" : "s"}` : "No alert",
       detail: alerts[0]?.type ?? "No active event",
       tone: alerts.some((alert) => alert.severity === "Critical") ? "critical" : alerts.length ? "warning" : "success",
       icon: AlertTriangle,
-      route: icuPatientDetailHref(patient.id, "events"),
+      route: icuPatientDetailHref(patient.id, "events", undefined, "eventFocus=open-alerts"),
     },
     Lab: {
       title: alerts.some((alert) => alert.type.toLowerCase().includes("lab")) ? "Critical" : patient.pendingTasks > 4 ? "Pending" : "Ready",
@@ -19769,16 +20092,16 @@ function buildDashboardCells(patient: IcuPatient): Record<string, DashboardCell>
       route: icuPatientDetailHref(patient.id, "results", undefined, "type=radiology"),
     },
     Shift: {
-      title: `${tasks.length} tasks`,
-      detail: patient.assignedWardNurse,
-      tone: tasks.some((task) => task.status === "Overdue") ? "danger" : tasks.length ? "warning" : "success",
+      title: criticalShiftRows.length ? `${criticalShiftRows.length} watch` : pendingShiftRows.length ? `${pendingShiftRows.length} pending` : "Ready",
+      detail: primaryShiftRow?.item ?? patient.assignedWardNurse,
+      tone: criticalShiftRows.length ? "danger" : pendingShiftRows.length ? "warning" : "success",
       icon: ClipboardCheck,
-      route: icuPatientDetailHref(patient.id, "shift-summary"),
+      route: icuPatientDetailHref(patient.id, "shift-summary", undefined, `shiftFocus=${shiftFocus}`),
     },
     Collaborate: {
-      title: patient.dutyDoctor,
-      detail: "Call / note",
-      tone: "info",
+      title: collaborateIssue.reason,
+      detail: collaborateIssue.recipient,
+      tone: collaborateIssue.tone === "success" ? "info" : collaborateIssue.tone,
       icon: Stethoscope,
       route: icuPatientDetailHref(patient.id, "collaborate"),
     },
@@ -20493,7 +20816,7 @@ function NurseVitalsEntryForm() {
             <ObservationStatusPreview riskLevel={riskLevel} />
             <label className="space-y-1 text-sm md:col-span-2 xl:col-span-4">
               <span className="font-medium text-foreground">Nurse notes</span>
-              <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue="Patient monitored. Duty doctor to be informed if SpO2, BP, GCS, or urine output worsens." />
+              <textarea className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue="Patient monitored. Duty doctor to be informed if SpO2, BP, GCS, or urine output worsens." />
             </label>
           </div>
           <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
@@ -20610,7 +20933,7 @@ function NurseReviewTable({
                 </tr>
               )) : (
                 <tr>
-                  <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={14}>No nurse review records match the selected filter.</td>
+                  <td className="px-3 py-4 text-center text-sm text-muted-foreground" colSpan={14}>No nurse review records match the selected filter.</td>
                 </tr>
               )}
             </tbody>
@@ -20710,7 +21033,7 @@ function NurseReviewDialog({
                   <label className="space-y-1 text-sm sm:col-span-2 xl:col-span-3">
                     <span className="font-medium text-foreground">Review note</span>
                     <textarea
-                      className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
                       readOnly={readOnly}
                       value={draft.note}
                       onChange={(event) => updateDraft("note", event.target.value)}
@@ -20802,7 +21125,7 @@ function IcuVitals24HourGraph({ data, patientName }: { data: IcuHourlyVital[]; p
           <StatusPill tone="warning">No data</StatusPill>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-dashed border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-md border border-dashed border-border bg-surface-muted p-4 text-center text-sm text-muted-foreground">
             Change date/time filter to view graph data.
           </div>
         </CardContent>
@@ -20938,7 +21261,7 @@ function IcuVitals24HourTable({ data }: { data: IcuHourlyVital[] }) {
       <CardContent className="space-y-3">
         <RiskLegend />
         {!data.length ? (
-          <div className="rounded-md border border-dashed border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-md border border-dashed border-border bg-surface-muted p-4 text-center text-sm text-muted-foreground">
             No observation rows match selected date/time filter.
           </div>
         ) : (
@@ -21755,7 +22078,7 @@ function DoctorRounds() {
         summary={`${mode} | ${activeDoctor} | ${roundFocus} | ${doctorPatients.length} patient(s)`}
         title="ICU rounds metrics"
       >
-        <div className="grid grid-cols-2 gap-2 px-3 py-3 md:flex md:flex-wrap md:items-center">
+        <div className="grid grid-cols-2 gap-2 px-3 py-2 md:flex md:flex-wrap md:items-center">
           <DoctorRoundFocusMetric active={roundFocus === "All focus"} label="Rounds" value={doctorPatients.length} tone="info" onClick={() => setRoundFocus("All focus")} />
           <DoctorRoundFocusMetric active={roundFocus === "Critical risk"} label="Critical first" value={roundCriticalCount} tone={roundCriticalCount ? "critical" : "success"} onClick={() => setRoundFocus("Critical risk")} />
           <DoctorRoundFocusMetric active={roundFocus === "Open alerts"} label="Open alerts" value={roundOpenAlerts} tone={roundOpenAlerts ? "warning" : "success"} onClick={() => setRoundFocus("Open alerts")} />
@@ -21769,7 +22092,7 @@ function DoctorRounds() {
         summary={`${mode} | ${activeDoctor} | ${selectedPatient?.bedNo ?? "-"} - ${selectedPatient?.patientName ?? "Patient"}`}
         title="Round mode & patient selection"
       >
-        <div className="border-l-4 border-sky-600 bg-sky-50 px-4 py-3">
+        <div className="border-l-4 border-sky-600 bg-sky-50 px-3 py-2">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -21818,7 +22141,7 @@ function DoctorRounds() {
           <RoundContextTile label="Open alerts" value={`${patientAlerts.filter((alert) => alert.status !== "Resolved").length}`} tone={patientAlerts.some((alert) => alert.severity === "Critical" && alert.status !== "Resolved") ? "critical" : "info"} />
         </div>
         {selectedPatient ? (
-          <div className="flex flex-col gap-2 border-t border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex flex-col gap-2 border-t border-slate-100 px-3 py-2 sm:flex-row sm:items-center sm:justify-end">
             <Button onClick={() => openRoundPanel(selectedPatient.id, "workspace")}>
               <Stethoscope className="h-4 w-4" />
               Round Entry
@@ -22516,7 +22839,7 @@ function DoctorRoundQueuePanel({
         <table className="w-full min-w-[2350px] border-collapse bg-white text-sm">
           <thead className="sticky top-0 z-20 bg-white">
             <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-              <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-3 text-left">Patient / Bed</th>
+              <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-2 text-left">Patient / Bed</th>
               <th className="min-w-[120px] px-2 py-3 text-center">Risk</th>
               <th className="min-w-[150px] px-2 py-3 text-center">Latest vitals</th>
               <th className="min-w-[150px] px-2 py-3 text-center">Ventilation</th>
@@ -22564,7 +22887,7 @@ function DoctorRoundQueuePanel({
             return (
               <tr className={cn("border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40", patient.id === activePatientId ? "bg-sky-50/70" : "")} key={row.id}>
                 <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
-                  <Link className="flex min-h-20 w-full flex-col justify-center rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={icuPatientDetailHref(patient.id, "overview")}>
+                  <Link className="flex min-h-16 w-full flex-col justify-center rounded-md px-3 py-2 text-left transition hover:bg-sky-50" href={icuPatientDetailHref(patient.id, "overview")}>
                     <p className={cn("text-sm font-bold", dashboardToneTextClass(rowTone))}>{patient.patientName}</p>
                     <p className="mt-1 text-xs font-semibold text-slate-700">{row.roundNo}. {patient.bedNo}</p>
                     <p className="mt-1 truncate whitespace-nowrap text-xs text-slate-500">{patient.mrn} | {patient.unit}</p>
@@ -22616,8 +22939,8 @@ function DoctorRoundQueuePanel({
                   <DoctorRoundPanelMatrixCell icon={CheckCircle2} title="Signed" detail={`${signedCount}`} tone={signedCount ? "success" : "muted"} showDetail={false} onClick={() => openPanel("signed")} />
                 </td>
                 <td className="px-2 py-2 text-center align-middle">
-                  <div className="flex min-h-20 items-center justify-center">
-                    <button className="group flex min-h-20 w-full flex-col items-center justify-center" type="button" onClick={() => openPanel("workspace")}>
+                  <div className="flex min-h-16 items-center justify-center">
+                    <button className="group flex min-h-16 w-full flex-col items-center justify-center" type="button" onClick={() => openPanel("workspace")}>
                       <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(statusTone))}>
                         <Stethoscope className="h-4 w-4" />
                         <span className="max-w-20 truncate whitespace-nowrap">Entry</span>
@@ -22658,7 +22981,7 @@ function DoctorRoundPanelMatrixCell({
   onClick: () => void;
 }) {
   return (
-    <button className="group flex min-h-20 w-full flex-col items-center justify-center" type="button" onClick={onClick}>
+    <button className="group flex min-h-16 w-full flex-col items-center justify-center" type="button" onClick={onClick}>
       <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(tone))}>
         <Icon className="h-4 w-4" />
         <span className="max-w-20 truncate whitespace-nowrap">{title}</span>
@@ -22684,7 +23007,7 @@ function DoctorRoundLinkMatrixCell({
   showDetail?: boolean;
 }) {
   return (
-    <Link className="group flex min-h-20 w-full flex-col items-center justify-center" href={href}>
+    <Link className="group flex min-h-16 w-full flex-col items-center justify-center" href={href}>
       <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(tone))}>
         <Icon className="h-4 w-4" />
         <span className="max-w-20 truncate whitespace-nowrap">{title}</span>
@@ -23153,7 +23476,7 @@ function appendDoctorRoundAdvice(current: string, advice: string) {
 
 function EmptyWorkflowState({ title, detail }: { title: string; detail: string }) {
   return (
-    <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+    <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
       <p className="text-sm font-bold text-slate-900">{title}</p>
       <p className="mt-1 text-xs text-slate-500">{detail}</p>
     </div>
@@ -23588,21 +23911,21 @@ function NursingStationCommandCenter({
           summary={`${nurse} | ${shift} | ${status} | ${filteredItems.length} item(s)`}
           title="Nursing station metrics & filters"
         >
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-2 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-base font-black text-slate-950">Nursing station command center</p>
               <p className="mt-1 text-xs text-slate-500">Head nurse view for nurse coverage, due work, safety checks, handover readiness, and escalation actions.</p>
             </div>
             <IcuLegend />
           </div>
-          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 sm:grid-cols-2 xl:grid-cols-5">
             <DashboardCommandMetric label="Patients" value={patientGroups.length} tone="info" />
             <DashboardCommandMetric label="Open work" value={openItems.length} tone={openItems.length ? "warning" : "success"} />
             <DashboardCommandMetric label="Critical" value={criticalItems.length} tone={criticalItems.length ? "critical" : "success"} />
             <DashboardCommandMetric label="Overdue" value={overdueItems.length} tone={overdueItems.length ? "danger" : "success"} />
             <DashboardCommandMetric label="Checklist" value={`${checklistPercent}%`} tone={checklistPercent >= 80 ? "success" : "warning"} />
           </div>
-          <div className="space-y-3 px-4 py-3">
+          <div className="space-y-3 px-3 py-2">
             <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_190px_170px_190px_135px_105px] lg:items-end">
               <label className="space-y-1 text-sm">
                 <span className="font-medium text-slate-700">Search station</span>
@@ -23645,16 +23968,16 @@ function NursingStationCommandCenter({
                 <table className="w-full min-w-[1540px] border-collapse bg-white text-sm">
                   <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700 shadow-[0_1px_0_rgba(148,163,184,0.45)]">
                     <tr>
-                      <th className="sticky left-0 z-40 min-w-[215px] bg-white px-3 py-3 text-left">Patient</th>
-                      <th className="min-w-[145px] px-3 py-3 text-center">Nurse cover</th>
-                      <th className="min-w-[135px] px-3 py-3 text-center">Vitals</th>
-                      <th className="min-w-[140px] px-3 py-3 text-center">Medication</th>
-                      <th className="min-w-[130px] px-3 py-3 text-center">I/O</th>
-                      <th className="min-w-[135px] px-3 py-3 text-center">Tasks</th>
-                      <th className="min-w-[135px] px-3 py-3 text-center">Alerts</th>
-                      <th className="min-w-[140px] px-3 py-3 text-center">Handover</th>
-                      <th className="min-w-[125px] px-3 py-3 text-center">Docs</th>
-                      <th className="min-w-[120px] px-3 py-3 text-center">Action</th>
+                      <th className="sticky left-0 z-40 min-w-[215px] bg-white px-3 py-2 text-left">Patient</th>
+                      <th className="min-w-[145px] px-3 py-2 text-center">Nurse cover</th>
+                      <th className="min-w-[135px] px-3 py-2 text-center">Vitals</th>
+                      <th className="min-w-[140px] px-3 py-2 text-center">Medication</th>
+                      <th className="min-w-[130px] px-3 py-2 text-center">I/O</th>
+                      <th className="min-w-[135px] px-3 py-2 text-center">Tasks</th>
+                      <th className="min-w-[135px] px-3 py-2 text-center">Alerts</th>
+                      <th className="min-w-[140px] px-3 py-2 text-center">Handover</th>
+                      <th className="min-w-[125px] px-3 py-2 text-center">Docs</th>
+                      <th className="min-w-[120px] px-3 py-2 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -24031,7 +24354,7 @@ function NursingStationMedicationDialog({
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(1120px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
-            <div className="border-b border-slate-200 bg-sky-700 px-4 py-3 text-white">
+            <div className="border-b border-slate-200 bg-sky-700 px-3 py-2 text-white">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <Dialog.Title className="text-base font-bold">Patient Medication Chart</Dialog.Title>
@@ -24088,15 +24411,15 @@ function NursingStationMedicationDialog({
                       <table className="w-full min-w-[1060px] border-collapse bg-white text-sm">
                         <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                           <tr className="border-b border-slate-200">
-                            <th className="px-3 py-3 text-left">Time</th>
-                            <th className="px-3 py-3 text-left">Shift</th>
-                            <th className="px-3 py-3 text-left">Medicine</th>
-                            <th className="px-3 py-3 text-left">Dose</th>
-                            <th className="px-3 py-3 text-left">Route</th>
-                            <th className="px-3 py-3 text-left">Frequency</th>
-                            <th className="px-3 py-3 text-left">Status</th>
-                            <th className="px-3 py-3 text-left">Verification</th>
-                            <th className="px-3 py-3 text-right">Action</th>
+                            <th className="px-3 py-2 text-left">Time</th>
+                            <th className="px-3 py-2 text-left">Shift</th>
+                            <th className="px-3 py-2 text-left">Medicine</th>
+                            <th className="px-3 py-2 text-left">Dose</th>
+                            <th className="px-3 py-2 text-left">Route</th>
+                            <th className="px-3 py-2 text-left">Frequency</th>
+                            <th className="px-3 py-2 text-left">Status</th>
+                            <th className="px-3 py-2 text-left">Verification</th>
+                            <th className="px-3 py-2 text-right">Action</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -24107,18 +24430,18 @@ function NursingStationMedicationDialog({
                             const shift = nursingMedicationShift(row.scheduledTime);
                             return (
                               <tr className="border-b border-slate-100 last:border-b-0" key={row.id}>
-                                <td className="px-3 py-3 font-semibold text-slate-900">{row.scheduledTime}</td>
-                                <td className="px-3 py-3"><Badge tone={nursingMedicationShiftTone(shift)}>{shift}</Badge></td>
-                                <td className="px-3 py-3">
+                                <td className="px-3 py-2 font-semibold text-slate-900">{row.scheduledTime}</td>
+                                <td className="px-3 py-2"><Badge tone={nursingMedicationShiftTone(shift)}>{shift}</Badge></td>
+                                <td className="px-3 py-2">
                                   <p className="font-semibold text-slate-950">{row.medication}</p>
                                   <p className="text-xs text-slate-500">{row.reason}</p>
                                 </td>
-                                <td className="px-3 py-3">{row.dose}</td>
-                                <td className="px-3 py-3">{row.route}</td>
-                                <td className="px-3 py-3">{row.frequency}</td>
-                                <td className="px-3 py-3"><Badge tone={toneForStatus(status)}>{status}</Badge></td>
-                                <td className="px-3 py-3"><Badge tone={verifyRequired ? "warning" : "success"}>{verifyRequired ? "Required" : "Ready"}</Badge></td>
-                                <td className="px-3 py-3">
+                                <td className="px-3 py-2">{row.dose}</td>
+                                <td className="px-3 py-2">{row.route}</td>
+                                <td className="px-3 py-2">{row.frequency}</td>
+                                <td className="px-3 py-2"><Badge tone={toneForStatus(status)}>{status}</Badge></td>
+                                <td className="px-3 py-2"><Badge tone={verifyRequired ? "warning" : "success"}>{verifyRequired ? "Required" : "Ready"}</Badge></td>
+                                <td className="px-3 py-2">
                                   <div className="flex flex-wrap justify-end gap-2">
                                     {pharmacyBlocked && status !== "Administered" ? <Button size="sm" variant="outline" onClick={() => onAction(row, "Received")}>Receive</Button> : null}
                                     {verifyRequired ? <Button size="sm" variant="outline" onClick={() => onAction(row, "Verified")}>Verify</Button> : null}
@@ -24143,7 +24466,7 @@ function NursingStationMedicationDialog({
               )}
             </div>
 
-            <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2">
               <Button variant="outline" asChild><Link href="/nursing-icu/medication-administration">Open full eMAR</Link></Button>
               <Dialog.Close asChild><Button>Done</Button></Dialog.Close>
             </div>
@@ -24221,29 +24544,29 @@ function NursingMedicationHistoryPanel({
             <table className="w-full min-w-[1120px] border-collapse bg-white text-sm">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                 <tr className="border-b border-slate-200">
-                  <th className="px-3 py-3 text-left">Date / Time</th>
-                  <th className="px-3 py-3 text-left">Shift</th>
-                  <th className="px-3 py-3 text-left">Medicine</th>
-                  <th className="px-3 py-3 text-left">Dose</th>
-                  <th className="px-3 py-3 text-left">Route</th>
-                  <th className="px-3 py-3 text-left">Frequency</th>
-                  <th className="px-3 py-3 text-left">Status</th>
-                  <th className="px-3 py-3 text-left">Nurse / verifier</th>
-                  <th className="px-3 py-3 text-left">Reason / note</th>
+                  <th className="px-3 py-2 text-left">Date / Time</th>
+                  <th className="px-3 py-2 text-left">Shift</th>
+                  <th className="px-3 py-2 text-left">Medicine</th>
+                  <th className="px-3 py-2 text-left">Dose</th>
+                  <th className="px-3 py-2 text-left">Route</th>
+                  <th className="px-3 py-2 text-left">Frequency</th>
+                  <th className="px-3 py-2 text-left">Status</th>
+                  <th className="px-3 py-2 text-left">Nurse / verifier</th>
+                  <th className="px-3 py-2 text-left">Reason / note</th>
                 </tr>
               </thead>
               <tbody>
                 {admissionHistory.map((row) => (
                   <tr className="border-b border-slate-100 last:border-b-0" key={row.id}>
-                    <td className="px-3 py-3 font-semibold text-slate-900">{row.date}<br /><span className="text-xs font-normal text-slate-500">{row.time}</span></td>
-                    <td className="px-3 py-3"><Badge tone={nursingMedicationShiftTone(row.shift)}>{row.shift}</Badge></td>
-                    <td className="px-3 py-3 font-semibold text-slate-950">{row.medicine}</td>
-                    <td className="px-3 py-3">{row.dose}</td>
-                    <td className="px-3 py-3">{row.route}</td>
-                    <td className="px-3 py-3">{row.frequency}</td>
-                    <td className="px-3 py-3"><Badge tone={toneForStatus(row.status)}>{row.status}</Badge></td>
-                    <td className="px-3 py-3">{row.nurse}<br /><span className="text-xs text-slate-500">{row.verifier}</span></td>
-                    <td className="px-3 py-3 text-slate-700">{row.reason}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-900">{row.date}<br /><span className="text-xs font-normal text-slate-500">{row.time}</span></td>
+                    <td className="px-3 py-2"><Badge tone={nursingMedicationShiftTone(row.shift)}>{row.shift}</Badge></td>
+                    <td className="px-3 py-2 font-semibold text-slate-950">{row.medicine}</td>
+                    <td className="px-3 py-2">{row.dose}</td>
+                    <td className="px-3 py-2">{row.route}</td>
+                    <td className="px-3 py-2">{row.frequency}</td>
+                    <td className="px-3 py-2"><Badge tone={toneForStatus(row.status)}>{row.status}</Badge></td>
+                    <td className="px-3 py-2">{row.nurse}<br /><span className="text-xs text-slate-500">{row.verifier}</span></td>
+                    <td className="px-3 py-2 text-slate-700">{row.reason}</td>
                   </tr>
                 ))}
                 {!admissionHistory.length ? (
@@ -24273,7 +24596,7 @@ function NursingMedicationHistoryPanel({
               <p className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2 text-sm text-slate-700">{row.note}</p>
             </div>
           ))}
-          {!pastMedication.length ? <div className="rounded-md border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 lg:col-span-2">No pre-admission medication found.</div> : null}
+          {!pastMedication.length ? <div className="rounded-md border border-slate-200 bg-white p-4 text-center text-sm text-slate-500 lg:col-span-2">No pre-admission medication found.</div> : null}
         </div>
       ) : null}
 
@@ -24297,7 +24620,7 @@ function NursingMedicationHistoryPanel({
               </div>
             </div>
           ))}
-          {!allergyRows.length ? <div className="rounded-md border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 lg:col-span-2">No allergy history found.</div> : null}
+          {!allergyRows.length ? <div className="rounded-md border border-slate-200 bg-white p-4 text-center text-sm text-slate-500 lg:col-span-2">No allergy history found.</div> : null}
         </div>
       ) : null}
     </div>
@@ -25398,7 +25721,7 @@ function TransferDischarge() {
         summary={`${unit} | ${destination} | ${status} | ${filteredRows.length} workflow(s)`}
         title="Transfer metrics & filters"
       >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 sm:flex sm:flex-wrap sm:items-center">
+        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-2 sm:flex sm:flex-wrap sm:items-center">
           <DashboardCommandMetric label="Workflows" value={icuDischargeRows.length} tone="info" />
           <DashboardCommandMetric label="Visible" value={filteredRows.length} tone={filteredRows.length ? "info" : "muted"} />
           <DashboardCommandMetric label="Ready / ordered" value={readyCount} tone={readyCount ? "success" : "muted"} />
@@ -25441,8 +25764,8 @@ function TransferDischarge() {
           <table className="w-full min-w-[1420px] border-collapse bg-white text-sm">
             <thead className="sticky top-0 z-20 bg-white">
               <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
-                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Patient</th>
-                <th className="min-w-[240px] px-3 py-3 text-left">ICU context</th>
+                <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-2 text-left">Patient</th>
+                <th className="min-w-[240px] px-3 py-2 text-left">ICU context</th>
                 <th className="min-w-[150px] px-2 py-3 text-center">Destination</th>
                 <th className="min-w-[130px] px-2 py-3 text-center">Readiness</th>
                 <th className="min-w-[120px] px-2 py-3 text-center">Blockers</th>
@@ -25619,7 +25942,7 @@ function IcuDischargeBoardRow({
         <IcuDischargeTrafficCell icon={BedDouble} title={dischargeBedReleaseTitle(row)} detail={row.bedRelease} tone={dischargeBedReleaseTone(row)} showDetail={false} />
       </td>
       <td className="px-2 py-2 text-center align-middle">
-        <div className="flex min-h-20 items-center justify-center gap-2">
+        <div className="flex min-h-16 items-center justify-center gap-2">
           <button className="group flex flex-col items-center justify-center" type="button" onClick={onOpen} title={`Open workflow for ${row.patient.patientName}`}>
             <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass("info"))}>
               <ListChecks className="h-4 w-4" />
@@ -25654,7 +25977,7 @@ function IcuDischargeTrafficCell({
   onClick?: () => void;
 }) {
   const content = (
-    <span className={cn("flex w-full min-w-24 flex-col items-center justify-center", showDetail ? "min-h-20" : "min-h-14")}>
+    <span className={cn("flex w-full min-w-24 flex-col items-center justify-center", showDetail ? "min-h-16" : "min-h-14")}>
       <span className={cn("inline-flex min-h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition", dashboardToneSolidClass(tone))}>
         <Icon className="h-4 w-4" />
         <span className="max-w-24 truncate">{title}</span>
@@ -25688,7 +26011,7 @@ function IcuDischargeActionCell({
   onClick?: () => void;
 }) {
   const content = (
-    <span className={cn("flex w-full min-w-24 flex-col items-center justify-center", showDetail ? "min-h-20" : "min-h-14")}>
+    <span className={cn("flex w-full min-w-24 flex-col items-center justify-center", showDetail ? "min-h-16" : "min-h-14")}>
       <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition", dashboardToneSolidClass(tone))}>
         <Icon className="h-4 w-4" />
       </span>
@@ -25820,7 +26143,7 @@ function IcuDischargeWorkflowContent({
               </div>
 
               <div className="rounded-lg border border-border bg-background">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-3 py-2">
                   <div>
                     <p className="text-sm font-semibold text-foreground">Scenario checklist</p>
                     <p className="text-xs text-muted-foreground">Doctor, nurse, destination, transport, documentation, and family readiness.</p>
@@ -25882,7 +26205,7 @@ function IcuDischargeSummaryTab({ row, destination, completion }: { row: IcuDisc
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-lg border border-primary/20 bg-background">
-        <div className="border-b border-border bg-gradient-to-r from-primary/10 via-surface to-success/10 px-4 py-4">
+        <div className="border-b border-border bg-gradient-to-r from-primary/10 via-surface to-success/10 px-3 py-2.5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -25940,7 +26263,7 @@ function IcuDischargeSummaryTab({ row, destination, completion }: { row: IcuDisc
       <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 space-y-4">
           <div className="rounded-lg border border-border bg-background">
-            <div className="border-b border-border px-4 py-3">
+            <div className="border-b border-border px-3 py-2">
               <p className="text-sm font-semibold text-foreground">Structured clinical editor</p>
               <p className="text-xs text-muted-foreground">Mapped to ICU vitals, MAR, lab/radiology, handover, bed release, and destination scenario.</p>
             </div>
@@ -26012,7 +26335,7 @@ function IcuDischargeSummaryTab({ row, destination, completion }: { row: IcuDisc
           </div>
 
           <details className="rounded-lg border border-border bg-background">
-            <summary className="flex cursor-pointer flex-col gap-3 border-b border-border px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+            <summary className="flex cursor-pointer flex-col gap-3 border-b border-border px-3 py-2 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">A4 PDF preview</p>
                 <p className="text-xs text-muted-foreground">Same discharge-summary layout, adapted for ICU transfer/discharge.</p>
@@ -26115,7 +26438,7 @@ function IcuSummaryTextArea({ label, value }: { label: string; value: string }) 
   return (
     <label className="space-y-1 text-sm">
       <span className="font-medium text-foreground">{label}</span>
-      <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue={value} />
+      <textarea className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue={value} />
     </label>
   );
 }
@@ -26219,7 +26542,7 @@ function IcuDischargeSummaryPreviewDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-[1px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[71] flex max-h-[94dvh] w-[min(920px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
-          <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-muted px-3 py-2">
             <div>
               <Dialog.Title className="text-sm font-semibold text-foreground">ICU Discharge Summary Preview</Dialog.Title>
               <Dialog.Description className="text-xs text-muted-foreground">{row.patient.patientName} | {row.patient.mrn}</Dialog.Description>
@@ -26264,51 +26587,25 @@ async function downloadIcuDischargeSummaryPdf(
   dischargeMeds: ReturnType<typeof icuDischargeMedicationRows>,
   pendingRows: ReturnType<typeof icuDischargePendingRows>,
 ) {
-  const toastId = toast.loading("Preparing ICU discharge summary print view...");
+  const toastId = toast.loading("Preparing ICU discharge summary PDF...");
   let container: HTMLDivElement | null = null;
   let root: ReturnType<typeof createRoot> | null = null;
-  let printStyle: HTMLStyleElement | null = null;
 
   try {
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import("html2canvas"),
+      import("jspdf"),
+    ]);
+
     container = document.createElement("div");
-    container.id = "icu-discharge-summary-print-root";
-    container.style.display = "none";
     container.style.position = "fixed";
-    container.style.left = "0";
+    container.style.left = "-12000px";
     container.style.top = "0";
-    container.style.width = "100%";
+    container.style.width = "826px";
     container.style.background = "#f1f5f9";
     container.style.pointerEvents = "none";
-    container.style.zIndex = "9999";
+    container.style.zIndex = "-1";
     document.body.appendChild(container);
-
-    printStyle = document.createElement("style");
-    printStyle.textContent = `
-      @media print {
-        body > *:not(#icu-discharge-summary-print-root) {
-          display: none !important;
-        }
-
-        #icu-discharge-summary-print-root {
-          display: block !important;
-          position: static !important;
-          width: 100% !important;
-          background: #ffffff !important;
-          pointer-events: auto !important;
-        }
-
-        #icu-discharge-summary-print-root [data-icu-discharge-pdf-page='true'] {
-          box-shadow: none !important;
-          margin: 0 auto !important;
-        }
-
-        @page {
-          margin: 12mm;
-          size: A4 portrait;
-        }
-      }
-    `;
-    document.head.appendChild(printStyle);
 
     root = createRoot(container);
     flushSync(() => {
@@ -26333,17 +26630,37 @@ async function downloadIcuDischargeSummaryPdf(
     const pageElements = Array.from(container.querySelectorAll<HTMLElement>("[data-icu-discharge-pdf-page='true']"));
     if (!pageElements.length) throw new Error("ICU discharge PDF page is not available.");
 
-    window.print();
-    toast.success("ICU discharge summary print dialog opened. Choose Save as PDF to download.", { id: toastId });
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    for (const [index, pageElement] of pageElements.entries()) {
+      const canvas = await html2canvas(pageElement, {
+        backgroundColor: "#ffffff",
+        logging: false,
+        scale: 2,
+        useCORS: true,
+        windowWidth: pageElement.scrollWidth,
+        windowHeight: pageElement.scrollHeight,
+      });
+      const imageData = canvas.toDataURL("image/png");
+      const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
+      const renderWidth = canvas.width * ratio;
+      const renderHeight = canvas.height * ratio;
+      const x = (pdfWidth - renderWidth) / 2;
+
+      if (index > 0) pdf.addPage();
+      pdf.addImage(imageData, "PNG", x, 0, renderWidth, renderHeight, undefined, "FAST");
+    }
+
+    pdf.save(`${icuDischargeSummaryNo(row)}.pdf`);
+    toast.success("ICU discharge summary PDF downloaded", { id: toastId });
   } catch (error) {
     console.error(error);
-    toast.error("PDF print view failed. Please use Preview PDF and print for now.", { id: toastId });
+    toast.error("PDF download failed. Please use Preview PDF and print for now.", { id: toastId });
   } finally {
-    window.setTimeout(() => {
-      root?.unmount();
-      container?.remove();
-      printStyle?.remove();
-    }, 500);
+    root?.unmount();
+    container?.remove();
   }
 }
 
@@ -26986,7 +27303,7 @@ function SmartWorkflowField({ label, value, readOnly, wide }: { label: string; v
       <label className={`space-y-1 text-sm ${wide ? "sm:col-span-2" : ""}`}>
         <span className="font-medium text-foreground">{label}</span>
         <textarea
-          className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none transition focus:ring-2 focus:ring-ring/20"
+          className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none transition focus:ring-2 focus:ring-ring/20"
           defaultValue={value}
           placeholder={label}
         />
@@ -27105,7 +27422,7 @@ function QuickAddDialog({
             </label>
             <label className="space-y-1 text-sm sm:col-span-2">
               <span className="font-medium text-foreground">Remarks</span>
-              <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue="Record created during ICU nursing workflow." />
+              <textarea className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue="Record created during ICU nursing workflow." />
             </label>
           </div>
           <DialogFooter
@@ -27166,7 +27483,7 @@ function TableActionDialog({
 
 function DialogHeader({ title, description }: { title: string; description: string }) {
   return (
-    <div className="border-b border-border bg-surface-muted px-4 py-3">
+    <div className="border-b border-border bg-surface-muted px-3 py-2">
       <Dialog.Title className="text-base font-semibold text-foreground">{title}</Dialog.Title>
       <Dialog.Description className="mt-1 text-xs text-muted-foreground">{description}</Dialog.Description>
     </div>

@@ -10,6 +10,7 @@ import {
   FlaskConical,
   ListTree,
   Pill,
+  PhoneCall,
   Printer,
 } from "lucide-react";
 
@@ -210,7 +211,7 @@ export function DoctorDashboard1Page() {
                   <HeaderCell>Progress Note</HeaderCell>
                   <HeaderCell>Radiology</HeaderCell>
                   <HeaderCell>Events</HeaderCell>
-                  <HeaderCell>Timeline</HeaderCell>
+                  <HeaderCell>Collaborate</HeaderCell>
                 </tr>
               </thead>
               <tbody>
@@ -222,7 +223,7 @@ export function DoctorDashboard1Page() {
                     <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", patientToneCellClass(tone))}>
                       <Link
                         className="block rounded-md px-1 py-0.5 transition hover:bg-white/70"
-                        href={`/doctor-dashboard1/patients/${patient.id}`}
+                        href={`/doctor-dashboard1/patients/${patient.id}?tab=clinical-examination`}
                       >
                         <div className={cn("text-sm font-extrabold", patientToneClass(tone))}>
                           {patient.name}
@@ -231,7 +232,7 @@ export function DoctorDashboard1Page() {
                       </Link>
                     </td>
                     <td className="max-w-44 px-3 py-2 text-center font-medium text-slate-800">
-                      <Link className="block rounded-md px-2 py-1 transition hover:bg-slate-100" href="/clinical-examination">
+                      <Link className="block rounded-md px-2 py-1 transition hover:bg-slate-100" href={`/doctor-dashboard1/patients/${patient.id}?tab=clinical-examination`}>
                         {patient.diagnosis}
                       </Link>
                     </td>
@@ -265,7 +266,7 @@ export function DoctorDashboard1Page() {
                       <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
                     </td>
                     <td className="px-3 py-2 text-center">
-                      <RoundActionButton icon={ListTree} tone="dark" label="Open timeline" onClick={() => setCollaboratePatient(patient)} />
+                      <RoundActionButton icon={PhoneCall} tone="dark" label={`Open collaborate for ${patient.name}`} onClick={() => setCollaboratePatient(patient)} />
                     </td>
                   </tr>
                   );
@@ -332,7 +333,7 @@ export function DoctorDashboard1Page() {
         description={collaboratePatient ? `${collaboratePatient.name} | ${collaboratePatient.bed} | ${collaboratePatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setCollaboratePatient(null)}
         open={Boolean(collaboratePatient)}
-        title="Timeline"
+        title="Collaborate"
       >
         {collaboratePatient ? <DashboardCollaborateTimeline patient={collaboratePatient} /> : null}
       </CenterModal>

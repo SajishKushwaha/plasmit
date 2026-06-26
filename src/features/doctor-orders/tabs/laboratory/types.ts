@@ -30,6 +30,7 @@ export type LaboratoryResultRow = {
 export type LaboratoryResultBlock = {
   id: string;
   name: string;
+  specimen:string;
   specialty: string;
   rows: LaboratoryResultRow[];
 };

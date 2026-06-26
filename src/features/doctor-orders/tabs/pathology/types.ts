@@ -16,6 +16,7 @@ export type PathologyGroupedTest = {
   id: string;
   name: string;
   department: string;
+  code?: string;
   selected?: boolean;
 };
 

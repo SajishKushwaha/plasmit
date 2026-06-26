@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Search, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 
 import { groupedTests, priorities, specimenSources, testList, visitProblems } from "./data";
@@ -32,7 +34,7 @@ function CheckboxRow({ label, checked, indent = false, onToggle }: { label: stri
 function SelectField({ value, onChange, options }: { value: PathologyPriority; onChange: (value: PathologyPriority) => void; options: PathologyPriority[] }) {
   return (
     <select
-      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-border focus:ring-0"
+      className="h-9 w-full rounded-md border border-input px-3 text-sm text-foreground outline-none transition focus:border-border focus:ring-0"
       value={value}
       onChange={(event) => onChange(event.target.value as PathologyPriority)}
     >
@@ -44,6 +46,16 @@ function SelectField({ value, onChange, options }: { value: PathologyPriority; o
     </select>
   );
 }
+
+type SelectedTestRow = {
+  id: string;
+  selectedTests: string;
+  type: string;
+  department: string;
+  specimenSource: string;
+  fastingStatus: boolean;
+  priority: PathologyPriority;
+};
 
 export function PathologyTestOrderTab({
   search,
@@ -283,9 +295,110 @@ export function PathologyTestOrderTab({
   ];
   const doctorSuggestions = ["Dr. Kavita Rao", "Dr. Aman Verma", "Dr. Priya Singh", "Dr. Rohit Mehta", "Dr. Neha Sharma", "Dr. Sandeep Yadav"];
   const safeProblems = problems ?? [];
+  const filteredProblems = React.useMemo(() => {
+    const query = (newProblem ?? "").trim().toLowerCase();
+    if (!query) return safeProblems;
+    return safeProblems.filter((problem) => problem.toLowerCase().includes(query));
+  }, [newProblem, safeProblems]);
   const selectedTests = filteredTests.filter((test) => selectedTestIds.includes(test.id));
   const selectedGroups = groupedTests.filter((group) => selectedGroupIds.includes(group.id));
   const getSpecimenSource = (id: string) => specimenSourceById?.[id] ?? "Blood";
+  const filteredGroupedTests = React.useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return groupedTests;
+    return groupedTests.filter((group) => `${group.name}`.toLowerCase().includes(query));
+  }, [search]);
+  const selectedTestRows = React.useMemo<SelectedTestRow[]>(
+    () => [
+      ...selectedTests.map((test) => ({
+        id: test.id,
+        selectedTests: test.name,
+        type: "Individual Test",
+        department: test.department,
+        specimenSource: getSpecimenSource(test.id),
+        fastingStatus: Boolean(fasting),
+        priority: priority ?? "Routine",
+      })),
+      ...selectedGroups.map((group) => ({
+        id: group.id,
+        selectedTests: group.name,
+        type: "Profile",
+        department: group.department,
+        specimenSource: getSpecimenSource(group.id),
+        fastingStatus: Boolean(fasting),
+        priority: priority ?? "Routine",
+      })),
+    ],
+    [fasting, getSpecimenSource, priority, selectedGroups, selectedTests],
+  );
+  const selectedTestColumns = React.useMemo<ColumnDef<SelectedTestRow>[]>(
+    () => [
+      { accessorKey: "selectedTests", header: "Selected Tests" },
+      { accessorKey: "type", header: "Type" },
+      { accessorKey: "department", header: "Department" },
+      {
+        accessorKey: "specimenSource",
+        header: "Choose Specimen Source",
+        cell: ({ row }) => (
+          <select
+            className="h-9 w-full rounded-md border border-input px-3 text-sm"
+            value={row.original.specimenSource}
+            onChange={(event) => onSpecimenSourceChange?.(row.original.id, event.target.value)}
+          >
+            {specimenSources.map((source) => (
+              <option key={source} value={source}>
+                {source}
+              </option>
+            ))}
+          </select>
+        ),
+      },
+      {
+        accessorKey: "fastingStatus",
+        header: "Choose Fasting Status",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={!row.original.fastingStatus}
+                onChange={() => onFastingChange?.(false)}
+              />
+              <span className="text-sm">Yes</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={row.original.fastingStatus}
+                onChange={() => onFastingChange?.(true)}
+              />
+              <span className="text-sm">No</span>
+            </label>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "priority",
+        header: "Choose Priority",
+        cell: ({ row }) => (
+          <select
+            className="h-9 w-full rounded-md border border-input px-3 text-sm"
+            value={row.original.priority}
+            onChange={(event) => onPriorityChange?.(event.target.value as PathologyPriority)}
+          >
+            {priorities.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        ),
+      },
+    ],
+    [onFastingChange, onPriorityChange, onSpecimenSourceChange],
+  );
   const departmentOptions = [
     "All",
     "Hematology",
@@ -316,11 +429,11 @@ export function PathologyTestOrderTab({
       ) : null}
       {/* <Card>
         <CardContent className="space-y-4 p-4"> */}
-          <div className="grid min-w-0 gap-4 overflow-x-hidden lg:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-4 overflow-x-hidden lg:grid-cols-[360px_minmax(0,1fr)]">
             {/* <Card className="min-w-0 overflow-hidden border-border">
               <CardContent className="space-y-4 p-4"> */}
                 <div className="grid gap-3 ">
-                  <div className="max-w-full overflow-hidden rounded-md border border-border bg-background p-3">
+                  <div className="max-w-full overflow-hidden rounded-md border border-border p-3">
                     <div className="flex items-center gap-2">
                       <SectionTitle>Clinical Diagnosis</SectionTitle>
                       {/* <Button type="button" size="sm" variant="outline" onClick={onAddProblem}>
@@ -358,17 +471,17 @@ export function PathologyTestOrderTab({
                           </tr>
                         </thead>
                         <tbody>
-                          {(problemListVisible ? safeProblems : []).slice(0, 4).map((problem, index) => (
-                            <tr key={problem} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
-                              <td className="border-t border-r border-border px-2 py-2 text-muted-foreground">12 May 2026</td>
-                              <td className="border-t border-r border-border px-2 py-2 text-foreground">{problem}</td>
-                              <td className="border-t border-border px-2 py-2 text-muted-foreground">-</td>
-                            </tr>
-                          ))}
-                          {problemListVisible && !safeProblems.length ? (
-                            <tr>
-                              <td colSpan={3} className="border-t border-border px-2 py-4 text-center text-muted-foreground">
-                                No problems reported
+                    {(problemListVisible ? filteredProblems : []).slice(0, 4).map((problem, index) => (
+                      <tr key={problem} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
+                        <td className="border-t border-r border-border px-2 py-2 text-muted-foreground">12 May 2026</td>
+                        <td className="border-t border-r border-border px-2 py-2 text-foreground">{problem}</td>
+                        <td className="border-t border-border px-2 py-2 text-muted-foreground">-</td>
+                      </tr>
+                    ))}
+                    {problemListVisible && !filteredProblems.length ? (
+                      <tr>
+                        <td colSpan={3} className="border-t border-border px-2 py-4 text-center text-muted-foreground">
+                          No problems reported
                               </td>
                             </tr>
                           ) : null}
@@ -378,7 +491,7 @@ export function PathologyTestOrderTab({
                     
                   </div>
 
-                  <div className="max-w-full overflow-hidden rounded-md border border-border bg-background p-3">
+                  <div className="max-w-full overflow-hidden rounded-md border border-border p-3">
                     <div className="flex items-center justify-between">
                       <SectionTitle>Reorder from previous tests</SectionTitle>
                       {/* <Button type="button" size="sm" variant="outline" onClick={() => onProblemListVisibleChange(!problemListVisible)}>
@@ -430,7 +543,7 @@ export function PathologyTestOrderTab({
                     <div className="min-w-0 overflow-hidden rounded-md border border-border bg-surface-muted">
                       <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Select grouped tests</div>
                       <div className="max-h-[360px] overflow-auto px-3">
-                        {groupedTests.map((group) => (
+                        {filteredGroupedTests.map((group) => (
                           <CheckboxRow key={group.id} label={group.name} checked={selectedGroupIds.includes(group.id)} onToggle={() => onToggleGroup?.(group.id)} />
                         ))}
                       </div>
@@ -452,124 +565,37 @@ export function PathologyTestOrderTab({
                   </div>
                 {/* </CardContent>
               </Card> */}
-
-              {/* <Card className="min-w-0">
-                <CardContent className="space-y-4 p-4"> */}
-                  <div className="min-w-0 max-w-full overflow-hidden rounded-md border border-border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-surface-muted text-xs text-muted-foreground">
-                        <tr>
-                          <th className="px-3 py-2 text-left">Selected Tests</th>
-                          <th className="px-3 py-2 text-left">LOINC Code</th>
-                          <th className="px-3 py-2 text-left">Department</th>
-                          <th className="px-3 py-2 text-left">Choose Specimen Source</th>
-                          <th className="px-3 py-2 text-left">Choose Fasting Status</th>
-                          <th className="px-3 py-2 text-left">Choose Priority</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(selectedTests.length || selectedGroups.length) ? (
-                          <>
-                            {selectedTests.map((test) => (
-                              <tr key={test.id} className="border-t">
-                                <td className="px-3 py-2 font-medium text-foreground">{test.name}</td>
-                                <td className="px-3 py-2 text-muted-foreground">{test.code || "-"}</td>
-                                <td className="px-3 py-2 text-muted-foreground">{test.department}</td>
-                                <td className="px-3 py-2">
-                                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={getSpecimenSource(test.id)} onChange={(event) => onSpecimenSourceChange?.(test.id, event.target.value)}>
-                                    {specimenSources.map((source) => <option key={source} value={source}>{source}</option>)}
-                                  </select>
-                                </td>
-                                <td className="px-3 py-2">
-                                  <label className="flex items-center gap-2">
-                                    <input type="checkbox" className="h-4 w-4 accent-primary" checked={fasting} onChange={(event) => onFastingChange?.(event.target.checked)} />
-                                    <span className="text-sm">No</span>
-                                    <input type="checkbox" className="h-4 w-4 accent-primary" checked={!fasting} onChange={(event) => onFastingChange?.(!event.target.checked)} />
-                                    <span className="text-sm">Yes</span>
-                                  </label>
-                                </td>
-                                <td className="px-3 py-2">
-                                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={priority} onChange={(event) => onPriorityChange?.(event.target.value as PathologyPriority)}>
-                                    {priorities.map((item) => <option key={item} value={item}>{item}</option>)}
-                                  </select>
-                                </td>
-                              </tr>
-                            ))}
-                            {selectedGroups.map((group) => (
-                              <tr key={group.id} className="border-t bg-surface-muted/40">
-                                <td className="px-3 py-2 font-medium text-foreground">{group.name}</td>
-                                <td className="px-3 py-2 text-muted-foreground">{group.department}</td>
-                                <td className="px-3 py-2">
-                                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={getSpecimenSource(group.id)} onChange={(event) => onSpecimenSourceChange?.(group.id, event.target.value)}>
-                                    {specimenSources.map((source) => <option key={source} value={source}>{source}</option>)}
-                                  </select>
-                                </td>
-                                <td className="px-3 py-2">
-                                  <label className="flex items-center gap-2">
-                                    <input type="checkbox" className="h-4 w-4 accent-primary" checked={fasting} onChange={(event) => onFastingChange?.(event.target.checked)} />
-                                    <span className="text-sm">No</span>
-                                    <input type="checkbox" className="h-4 w-4 accent-primary" checked={!fasting} onChange={(event) => onFastingChange?.(!event.target.checked)} />
-                                    <span className="text-sm">Yes</span>
-                                  </label>
-                                </td>
-                                <td className="px-3 py-2">
-                                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={priority} onChange={(event) => onPriorityChange?.(event.target.value as PathologyPriority)}>
-                                    {priorities.map((item) => <option key={item} value={item}>{item}</option>)}
-                                  </select>
-                                </td>
-                              </tr>
-                            ))}
-                          </>
-                        ) : (
-                          <tr>
-                            <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">No tests selected yet</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                {/* </CardContent>
-              </Card> */}
+              
             </div>
           </div>
 
-          <div className="grid min-w-0 gap-4 md:grid-cols-2">
-           
-            <label className="space-y-2">
-              <SectionTitle>Instructions</SectionTitle>
-              <textarea
-                className="min-h-[92px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-border focus:ring-0"
-                placeholder="Free text instructions for the lab"
-                value={instructionsForLab}
-                onChange={(event) => onInstructionsForLabChange?.(event.target.value)}
-              />
-            </label>
-          </div>
+        <div className="grid min-w-0 gap-4 ">
+          <DataTable data={selectedTestRows} columns={selectedTestColumns} />
+          <label className="space-y-2">
+            <SectionTitle>Instructions</SectionTitle>
+            <textarea
+              className="min-h-[92px] w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:border-border focus:ring-0"
+              placeholder="Free text instructions for the lab"
+              value={instructionsForLab}
+              onChange={(event) => onInstructionsForLabChange?.(event.target.value)}
+            />
+          </label>
+        </div>
 
-
-          <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-border bg-white p-4">
-            <div className="text-sm text-muted-foreground">{selectedTestIds.length + selectedGroupIds.length} tests selected</div>
-            
-            <div className="ml-auto flex flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={() => onDownloadAllReports?.()}>
-                Download All Reports
-              </Button>
-              <Button type="button" variant="outline" onClick={() => onOpenSummary?.()}>
-                View order summary
-              </Button>
-              <Button type="button"  onClick={() => onSave?.()}>
-                Save
-              </Button>
-              {/* <Button type="button" variant="outline" onClick={onAddToBill}>
-                Add to bill
-              </Button>
-              <Button type="button" onClick={onSaveAndBill}>
-                Save & add to bill
-              </Button> */}
-            </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-border bg-white p-4">
+          <div className="text-sm text-muted-foreground">{selectedTestIds.length + selectedGroupIds.length} tests selected</div>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenSummary?.()}>
+              View order summary
+            </Button>
+            <Button type="button" onClick={() => onSave?.()}>
+              Save
+            </Button>
           </div>
-        {/* </CardContent>
-      </Card> */}
-    </div>
+        </div>
+      </div>
   );
 }
+
+
+

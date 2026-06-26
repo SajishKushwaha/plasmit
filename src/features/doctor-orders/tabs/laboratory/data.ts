@@ -112,9 +112,9 @@ const today = new Date();
 const orderDateTime = `${today.toISOString().slice(0, 10)} ${today.toTimeString().slice(0, 5)}`;
 
 export const summaryRows: LaboratorySummaryRow[] = [
-  { id: "sum-cbc", name: "CBC", loinc: "58410-2", cpt: "85025", department: "Hematology", specimen: "Blood", priority: "Routine", status: "Ordered", orderedBy: "Dr. Kavita Rao", orderDateTime },
-  { id: "sum-kft", name: "KFT", loinc: "24362-6", cpt: "80069", department: "Biochemistry", specimen: "Blood", priority: "Routine", status: "Sample Collected", orderedBy: "Dr. Kavita Rao", orderDateTime },
-  { id: "sum-renal", name: "Renal profile", loinc: "24362-6", cpt: "80069", department: "Biochemistry", specimen: "Blood", priority: "Urgent", status: "Received", orderedBy: "Dr. Kavita Rao", orderDateTime },
+  { id: "sum-cbc", name: "CBC", loinc: "58410-2", cpt: "85027", department: "Hematology", specimen: "Blood", priority: "Routine", status: "Ordered", orderedBy: "Dr. Kavita Rao", orderDateTime },
+  { id: "sum-kft", name: "KFT", loinc: "24362-6", cpt: "80048", department: "Biochemistry", specimen: "Blood", priority: "Routine", status: "Sample Collected", orderedBy: "Dr. Kavita Rao", orderDateTime },
+  { id: "sum-renal", name: "Renal profile", loinc: "24362-6", cpt: "80053", department: "Biochemistry", specimen: "Blood", priority: "Urgent", status: "Received", orderedBy: "Dr. Kavita Rao", orderDateTime },
   { id: "sum-lft", name: "LFT", loinc: "24323-8", cpt: "80076", department: "Biochemistry", specimen: "Blood", priority: "STAT", status: "Processing", orderedBy: "Dr. Kavita Rao", orderDateTime },
 ];
 
@@ -123,6 +123,7 @@ export const resultBlocks: LaboratoryResultBlock[] = [
     id: "result-cbc",
     name: "CBC - complete blood count",
     specialty: "Hematology",
+    specimen: "Blood",
     rows: [
       { parameter: "Hemoglobin", result: "9.8", unit: "g/dL", referenceRange: "12.0 - 16.0", flag: "L" },
       { parameter: "WBC", result: "7.2", unit: "x10^3/uL", referenceRange: "4.5 - 11.0", flag: "H" },
@@ -135,6 +136,7 @@ export const resultBlocks: LaboratoryResultBlock[] = [
     id: "result-kft",
     name: "KFT - kidney function test",
     specialty: "Biochemistry",
+    specimen: "Blood",
     rows: [
       { parameter: "Serum creatinine", result: "2.1", unit: "mg/dL", referenceRange: "0.6 - 1.2", flag: "H" },
       { parameter: "Blood urea nitrogen", result: "38", unit: "mg/dL", referenceRange: "7 - 25", flag: "H" },

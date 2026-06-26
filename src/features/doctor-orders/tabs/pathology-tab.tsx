@@ -19,12 +19,98 @@ type MainTab = "test-order" | "order-summary" | "result-review" | "critical-find
 type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
 
 const selectedByDefault = ["cbc", "kft"];
+const selectedGroupDefault = ["renal"];
+
+function normalizeSelectionLabel(value: string) {
+  return value.toLowerCase().replace(/[-_]/g, " ").trim();
+}
+
+function buildPathologySnapshotRows(testIds: string[], groupIds: string[], fallbackRows: PathologySummaryRow[]) {
+  const rows: PathologySummaryRow[] = [];
+
+  for (const id of testIds) {
+    const test = testList.find((item) => item.id === id);
+    if (!test) continue;
+    rows.push({
+      id: `saved-${test.id}`,
+      name: test.name,
+      loinc: test.code ?? "-",
+      cpt: "-",
+      department: test.department,
+      specimen: "Blood",
+      priority: "Routine" as PathologySummaryRow["priority"],
+      status: "Ordered" as PathologySummaryRow["status"],
+      orderedBy: "Saved order",
+      orderDateTime: new Date().toISOString().slice(0, 16).replace("T", " "),
+    });
+  }
+
+  for (const id of groupIds) {
+    const group = groupedTests.find((item) => item.id === id);
+    if (!group) continue;
+    rows.push({
+      id: `saved-${group.id}`,
+      name: group.name,
+      loinc: "-",
+      cpt: "-",
+      department: group.department,
+      specimen: "Blood",
+      priority: "Routine" as PathologySummaryRow["priority"],
+      status: "Ordered" as PathologySummaryRow["status"],
+      orderedBy: "Saved order",
+      orderDateTime: new Date().toISOString().slice(0, 16).replace("T", " "),
+    });
+  }
+
+  return rows.length ? rows : fallbackRows;
+}
+
+function buildPathologySnapshotBlocks(testIds: string[], groupIds: string[], fallbackBlocks: PathologyResultBlock[]) {
+  const blocks: PathologyResultBlock[] = [];
+
+  for (const id of testIds) {
+    const test = testList.find((item) => item.id === id);
+    if (!test) continue;
+    blocks.push({
+      id: `saved-${test.id}`,
+      name: `${test.name} - ${test.description}`,
+      specialty: test.department,
+      rows: [{ parameter: test.name, result: "Pending", unit: "-", referenceRange: "-", flag: "N" }],
+    });
+  }
+
+  for (const id of groupIds) {
+    const group = groupedTests.find((item) => item.id === id);
+    if (!group) continue;
+    blocks.push({
+      id: `saved-${group.id}`,
+      name: `${group.name} - grouped request`,
+      specialty: group.department,
+      rows: [{ parameter: group.name, result: "Pending", unit: "-", referenceRange: "-", flag: "N" }],
+    });
+  }
+
+  return blocks.length ? blocks : fallbackBlocks;
+}
+
+function buildSavedPathologyRows(testIds: string[], groupIds: string[]) {
+  return buildPathologySnapshotRows(testIds, groupIds, initialSummaryRows);
+}
+
+function buildSavedPathologyBlocks(testIds: string[], groupIds: string[]) {
+  return buildPathologySnapshotBlocks(testIds, groupIds, initialResultBlocks);
+}
 
 export function PathologyTab() {
   const [activeTab, setActiveTab] = React.useState<MainTab>("test-order");
   const [search, setSearch] = React.useState("");
   const [selectedTestIds, setSelectedTestIds] = React.useState<string[]>(selectedByDefault);
-  const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(["renal"]);
+  const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(selectedGroupDefault);
+  const [savedTestIds, setSavedTestIds] = React.useState<string[]>(selectedByDefault);
+  const [savedGroupIds, setSavedGroupIds] = React.useState<string[]>(selectedGroupDefault);
+  const [savedSummaryRows, setSavedSummaryRows] = React.useState<PathologySummaryRow[]>(() => buildSavedPathologyRows(selectedByDefault, selectedGroupDefault));
+  const [savedResultBlocks, setSavedResultBlocks] = React.useState<PathologyResultBlock[]>(() => buildSavedPathologyBlocks(selectedByDefault, selectedGroupDefault));
+  const [savedInstructionsForLab, setSavedInstructionsForLab] = React.useState("");
   const [problemListVisible, setProblemListVisible] = React.useState(true);
   const [activeProblemView, setActiveProblemView] = React.useState<"Active" | "Find">("Active");
   const [problems, setProblems] = React.useState(["Diabetes Type 2", "Hypertension", "Fatigue"]);
@@ -37,8 +123,6 @@ export function PathologyTab() {
   const [collectionDate, setCollectionDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [collectionTime, setCollectionTime] = React.useState(new Date().toTimeString().slice(0, 5));
   const [summarySort, setSummarySort] = React.useState<{ key: SummarySortKey; direction: "asc" | "desc" }>({ key: "name", direction: "asc" });
-  const [summaryRows, setSummaryRows] = React.useState(initialSummaryRows);
-  const [resultList, setResultList] = React.useState<PathologyResultBlock[]>(initialResultBlocks);
   const [diagnosisSearch, setDiagnosisSearch] = React.useState("");
   const [diagnosisType, setDiagnosisType] = React.useState("Primary");
   const [diagnosisOpen, setDiagnosisOpen] = React.useState(false);
@@ -54,13 +138,16 @@ export function PathologyTab() {
   }, [search]);
 
   const sortedSummaryRows = React.useMemo(() => {
-    return [...summaryRows].sort((left, right) => {
+    return [...savedSummaryRows].sort((left, right) => {
       const leftValue = String(left[summarySort.key]);
       const rightValue = String(right[summarySort.key]);
       const comparison = leftValue.localeCompare(rightValue);
       return summarySort.direction === "asc" ? comparison : -comparison;
     });
-  }, [summaryRows, summarySort]);
+  }, [savedSummaryRows, summarySort]);
+
+  const selectedSummaryRows = React.useMemo(() => sortedSummaryRows, [sortedSummaryRows]);
+  const selectedResultBlocks = React.useMemo(() => savedResultBlocks, [savedResultBlocks]);
 
   const addProblem = () => {
     const value = newProblem.trim();
@@ -95,20 +182,31 @@ export function PathologyTab() {
   };
 
   const handleOpenSummary = () => {
-    const selectedRows = sortedSummaryRows.filter((row) => selectedTestIds.some((id) => row.name.toLowerCase().includes(id.replace(/-/g, " ").split(" ")[0])));
-    if (!selectedRows.length) {
+    if (!selectedSummaryRows.length) {
       toast.info("No matching summary rows found yet");
     }
     setActiveTab("order-summary");
   };
 
+  const commitSavedSelection = () => {
+    setSavedTestIds([...selectedTestIds]);
+    setSavedGroupIds([...selectedGroupIds]);
+    setSavedSummaryRows(buildSavedPathologyRows(selectedTestIds, selectedGroupIds));
+    setSavedResultBlocks(buildSavedPathologyBlocks(selectedTestIds, selectedGroupIds));
+    setSavedInstructionsForLab(instructionsForLab);
+  };
+
   const saveOrder = () => {
+    commitSavedSelection();
     setBillingNote("Pathology order saved successfully.");
+    setActiveTab("order-summary");
     toast.success("Pathology order saved");
   };
 
   const saveAndBill = () => {
+    commitSavedSelection();
     setBillingNote("Order saved and sent to billing.");
+    setActiveTab("order-summary");
     toast.success("Order saved and added to bill");
   };
 
@@ -122,7 +220,7 @@ export function PathologyTab() {
   };
 
   const editSummaryRow = (id: string) => {
-    const row = summaryRows.find((item) => item.id === id);
+    const row = savedSummaryRows.find((item) => item.id === id);
     if (!row) return;
     setSearch(row.name);
     const matchedTest = testList.find((test) => test.name.toLowerCase() === row.name.toLowerCase());
@@ -138,14 +236,16 @@ export function PathologyTab() {
   };
 
   const requestDeleteSummaryRow = (id: string) => {
-    const row = summaryRows.find((item) => item.id === id);
+    const row = savedSummaryRows.find((item) => item.id === id);
     if (!row) return;
     setDeleteTarget(row);
   };
 
   const confirmDeleteSummaryRow = () => {
     if (!deleteTarget) return;
-    setSummaryRows((current) => current.filter((row) => row.id !== deleteTarget.id));
+    setSavedSummaryRows((current) => current.filter((row) => row.id !== deleteTarget.id));
+    setSavedResultBlocks((current) => current.filter((block) => normalizeSelectionLabel(block.name) !== normalizeSelectionLabel(deleteTarget.name)));
+    setSavedTestIds((current) => current.filter((id) => normalizeSelectionLabel(testList.find((test) => test.id === id)?.name ?? "") !== normalizeSelectionLabel(deleteTarget.name)));
     toast.success(`${deleteTarget.name} deleted`);
     setDeleteTarget(null);
   };
@@ -162,7 +262,7 @@ export function PathologyTab() {
   };
 
   const removeResultBlock = (id: string) => {
-    setResultList((current) => current.filter((block) => block.id !== id));
+    setSavedResultBlocks((current) => current.filter((block) => block.id !== id));
     toast.success("Result removed");
   };
 
@@ -188,17 +288,17 @@ export function PathologyTab() {
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MainTab)} className="w-full">
         <Card>
           <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {(["test-order", "order-summary", "result-review", "critical-findings"] as const).map((tab) => (
+            <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:pb-0">
+              {(["test-order", "order-summary", "result-review"] as const).map((tab) => (
                 <Button
                   key={tab}
                   type="button"
                   size="sm"
-                  variant="outline"
+                  variant={activeTab === tab ? "default" : "outline"}
                   onClick={() => setActiveTab(tab)}
-                  className={["min-w-[132px] rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900", activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary" : ""].join(" ")}
+                  className="min-w-[132px] shrink-0"
                 >
-                  {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : tab === "result-review" ? "Result Review" : "Critical Findings"}
+                  {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : tab === "result-review" ? "Result Review" : ''}
                 </Button>
               ))}
             </div>
@@ -244,9 +344,11 @@ export function PathologyTab() {
         </TabsContent>
         <TabsContent value="order-summary" className="mt-0">
           <PathologyOrderSummaryTab
-            rows={sortedSummaryRows}
+            rows={selectedSummaryRows}
             selectedCount={selectedCount}
             billingNote={billingNote}
+            instructionsForLab={savedInstructionsForLab}
+            savedSummaryRows={selectedSummaryRows}
             onSort={updateSummarySort}
             sort={summarySort}
             onSave={saveOrder}
@@ -254,17 +356,19 @@ export function PathologyTab() {
             onSaveAndBill={saveAndBill}
             onEdit={editSummaryRow}
             onDelete={requestDeleteSummaryRow}
-            onViewAll={() => setSummaryRows(initialSummaryRows)}
+            onViewAll={() => setSavedSummaryRows(buildSavedPathologyRows(savedTestIds, savedGroupIds))}
             onBackToTestOrder={() => setActiveTab("test-order")}
           />
         </TabsContent>
         <TabsContent value="result-review" className="mt-0">
           <PathologyResultReviewTab
-            resultBlocks={resultList}
+            resultBlocks={selectedResultBlocks}
             diagnosisSearch={diagnosisSearch}
             diagnosisType={diagnosisType}
             diagnosisOpen={diagnosisOpen}
             selectedDiagnosisLabel={selectedDiagnosisLabel}
+            instructionsForLab={savedInstructionsForLab}
+            savedSummaryRows={selectedSummaryRows}
             onDiagnosisSearchChange={setDiagnosisSearch}
             onDiagnosisTypeChange={setDiagnosisType}
             onDiagnosisOpenChange={setDiagnosisOpen}
@@ -275,7 +379,7 @@ export function PathologyTab() {
           />
         </TabsContent>
         <TabsContent value="critical-findings" className="mt-0">
-          <PathologyCriticalFindingsTab resultBlocks={resultList} />
+          <PathologyCriticalFindingsTab resultBlocks={selectedResultBlocks} />
         </TabsContent>
           </CardContent>
         </Card>
@@ -290,3 +394,4 @@ export function PathologyTab() {
     </div>
   );
 }
+

@@ -18,7 +18,7 @@ import {
   timeUnits,
 } from "./data";
 import type { DoseUnit, DraftCategory, OrderDraft, TaperDose } from "./types";
-import { isAutoQtyForm, isContinuousFluid, isFormADrug, isInjectionForm, isIvRoute, routeOptionsForForm } from "./utils";
+import { categoriesForForm, isAutoQtyForm, isContinuousFluid, isInjectionForm, isIvRoute, routeOptionsForForm } from "./utils";
 
 export function FieldLabel({ children }: { children: React.ReactNode }) {
   return <span className="text-xs font-medium text-muted-foreground">{children}</span>;
@@ -27,7 +27,7 @@ export function FieldLabel({ children }: { children: React.ReactNode }) {
 export function SelectField<T extends string>({ value, options, onChange, disabled }: { value: T; options: T[]; onChange: (value: T) => void; disabled?: boolean }) {
   return (
     <select
-      className="h-9 w-full appearance-none rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-border focus:ring-0 disabled:bg-surface-muted disabled:text-muted-foreground"
+      className="h-9 w-full appearance-none rounded-md border border-input px-3 text-sm text-foreground outline-none transition focus:border-border focus:ring-0 disabled:bg-surface-muted disabled:text-muted-foreground"
       value={value}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value as T)}
@@ -133,7 +133,6 @@ export function DrugDraftFields({
   const injection = isInjectionForm(draft.form);
   const infusion = ivRoute && (draft.intermittent || draft.continuous);
   const continuous = draft.continuous || isContinuousFluid(draft.form);
-  const formA = isFormADrug(draft.form);
   const showStandaloneDosage = !infusion;
   const showFrequency = !continuous && !draft.stat && !draft.bolus;
   const showDays = !continuous && !draft.stat && !draft.bolus;
@@ -152,7 +151,7 @@ export function DrugDraftFields({
     const freqMultiplier = frequencyMultiplier[draft.dosageCalcFrequency] ?? 1;
     return `${Math.ceil(dose * weightFactor * freqMultiplier)} ${draft.dosageCalcUnit || ""}`.trim();
   })();
-  const categoryOptions: DraftCategory[] = formA ? ["Scheduled", "SOS", "STAT"] : ["Scheduled", "SOS", "STAT", "Bolus", "Diluent", "Intermittent", "Continuous"];
+  const categoryOptions = categoriesForForm(draft.form);
   const isScheduled = draft.category === "Scheduled" || !draft.category;
   const isTabletLike = ["Tablet", "Capsule", "Syrup"].includes(draft.form);
   const showScheduledFrequency = isScheduled && isTabletLike;
@@ -166,6 +165,20 @@ export function DrugDraftFields({
   const showIntermittentFields = draft.category === "Intermittent";
   const showContinuousFields = draft.category === "Continuous" || isContinuousFluid(draft.form);
   const showSOSFields = draft.category === "SOS";
+  const hideDosageCalcCard = [
+    "Tablet",
+    "Capsule",
+    "Syrup",
+    "Suspension",
+    "Cream",
+    "Ointment",
+    "Patch",
+    "Eye Drops",
+    "Ear Drops",
+    "Nasal Spray",
+    "Inhaler",
+    "Nebulizer",
+  ].includes(draft.form);
 
   const selectCategory = (category: DraftCategory) => {
     if (category === "SOS") {
@@ -191,6 +204,15 @@ export function DrugDraftFields({
 
     onChange({ category, sos: false, stat: false, bolus: false, intermittent: false, continuous: false });
   };
+
+  React.useEffect(() => {
+    const nextCategory = draft.category && categoryOptions.includes(draft.category) ? draft.category : categoryOptions[0] ?? "";
+    if (nextCategory !== draft.category) {
+      selectCategory(nextCategory);
+    }
+    // keep category aligned to the selected form only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.form, draft.category]);
 
   const updateTaperDose = (id: string, values: Partial<TaperDose>) => {
     onChange({ taperDoses: taperDoses.map((row) => (row.id === id ? { ...row, ...values } : row)) });
@@ -375,11 +397,11 @@ export function DrugDraftFields({
           <label className="space-y-2 sm:col-span-2">
             <FieldLabel>Instructions</FieldLabel>
             <Input list={instructionListId} value={draft.instructions} onChange={(event) => onChange({ instructions: event.target.value })} />
-            <datalist id={instructionListId}>
+            {/* <datalist id={instructionListId}>
               {instructions.map((instruction) => (
                 <option key={instruction} value={instruction} />
               ))}
-            </datalist>
+            </datalist> */}
           </label>
         </div>
 
@@ -417,7 +439,8 @@ export function DrugDraftFields({
         </div>
       ) : null}
 
-      <div className="grid gap-4 rounded-md border border-border bg-surface-muted p-3 sm:grid-cols-2 lg:grid-cols-5">
+      {!hideDosageCalcCard ? (
+        <div className="grid gap-4 rounded-md border border-border bg-surface-muted p-3 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <FieldLabel>Dosage Cal Dose</FieldLabel>
           <NumberInput
@@ -453,7 +476,8 @@ export function DrugDraftFields({
           <FieldLabel>Total Dosage</FieldLabel>
           <Input readOnly value={totalDosageValue} />
         </div>
-      </div>
+        </div>
+      ) : null}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">

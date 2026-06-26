@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Drawer } from "@/components/ui/drawer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
@@ -24,7 +25,7 @@ type OrderSet = {
 };
 
 const departments = ["ICU", "Medicine", "Surgery", "Emergency", "Cardiology"];
-const orderLibrary = ["Drugs", "Pathology", "Radiology", "Procedures", "Requests"];
+const orderLibrary = ["Drugs", "Pathology", "Radiology", "Procedures", "Refer/Consult"];
 const selectedItemsByModule: Record<string, string[]> = {
   Drugs: ["Paracetamol 650", "Pantoprazole", "Ceftriaxone", "NS 500 ml", "Insulin"],
   Pathology: ["CBC", "KFT", "LFT", "HbA1c"],
@@ -104,29 +105,25 @@ export function OrderSetsTab() {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {(["test-order", "order-summary"] as const).map((tab) => (
-              <Button
-                className={["rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900", activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary" : ""].join(" ")}
-                key={tab}
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab(tab)}
-              >
+              <Button key={tab} size="sm" variant={activeTab === tab ? "default" : "outline"} onClick={() => setActiveTab(tab)}>
                 {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result / Status Review"}
               </Button>
             ))}
           </div>
 
           {activeTab === "test-order" ? (
-            <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-              <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 ">
+              <div className="grid gap-4 md:grid-cols-4">
                 <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Order Set Name</div><Input value={draft.orderSetName} onChange={(e) => setDraft((d) => ({ ...d, orderSetName: e.target.value }))} /></label>
-                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Department / Specialty</div><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.department} onChange={(e) => setDraft((d) => ({ ...d, department: e.target.value }))}>{departments.map((d) => <option key={d}>{d}</option>)}</select></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Department / Specialty</div><select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={draft.department} onChange={(e) => setDraft((d) => ({ ...d, department: e.target.value }))}>{departments.map((d) => <option key={d}>{d}</option>)}</select></label>
                 <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Diagnosis / Condition</div><Input value={draft.diagnosis} onChange={(e) => setDraft((d) => ({ ...d, diagnosis: e.target.value }))} /></label>
-                <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Special Notes/ Comments</div><textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none" value={draft.instructions} onChange={(e) => setDraft((d) => ({ ...d, instructions: e.target.value }))} /></label>
-                <div className="md:col-span-2 space-y-2 rounded-xl border border-border bg-surface-muted p-4">
+                <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Special Notes/ Comments</div><textarea className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm outline-none" value={draft.instructions} onChange={(e) => setDraft((d) => ({ ...d, instructions: e.target.value }))} /></label>
+              
+              </div>
+              <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-4">
                   <div className="text-sm font-semibold text-foreground">Included Orders</div>
-                  <div className="text-xs text-muted-foreground">Use View to open module-wise selected items.</div>
-                  <div className="grid gap-3">
+                  {/* <div className="text-xs text-muted-foreground">Use View to open module-wise selected items.</div> */}
+                  <div className="grid gap-3 md:grid-cols-2">
                     {draft.includedOrders.map((item) => (
                       <div key={item.id} className="rounded-lg border border-border bg-white p-3">
                         <div className="flex items-center justify-between gap-2">
@@ -138,30 +135,19 @@ export function OrderSetsTab() {
                             View
                           </Button>
                         </div>
-                        {/* <div className="mt-2 grid gap-2 md:grid-cols-3">
-                          <Input value={item.quantity} onChange={(e) => updateIncluded(item.id, { quantity: e.target.value })} placeholder="Qty" />
-                          <Input value={item.frequency} onChange={(e) => updateIncluded(item.id, { frequency: e.target.value })} placeholder="Frequency" />
-                          <Input value={item.priority} onChange={(e) => updateIncluded(item.id, { priority: e.target.value })} placeholder="Priority" />
-                        </div> */}
                       </div>
                     ))}
                   </div>
                 </div>
+                <div className="ml-auto flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={() => setActiveTab("order-summary")}>
+                    View
+                  </Button>
+                  <Button type="button"  onClick={save}>
+                    Save
+                  </Button>
+                </div>                
               </div>
-              <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-4">
-                <div className="text-sm font-semibold text-foreground">Order Set Summary</div>
-                <div className="space-y-2 text-sm">
-                  <div className="rounded-md border border-border bg-white p-3">Name: <span className="font-semibold">{draft.orderSetName || "-"}</span></div>
-                  <div className="rounded-md border border-border bg-white p-3">Department: <span className="font-semibold">{draft.department}</span></div>
-                  <div className="rounded-md border border-border bg-white p-3">Diagnosis: <span className="font-semibold">{draft.diagnosis || "-"}</span></div>
-                  <div className="rounded-md border border-border bg-white p-3">Status: <span className="font-semibold">{draft.status}</span></div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button className="flex-1" onClick={save}><Save className="h-4 w-4" />Submit All</Button>
-                  <Button variant="outline" className="flex-1" onClick={() => setActiveTab("order-summary")}>View Summary</Button>
-                </div>
-              </div>
-            </div>
           ) : null}
 
           {activeTab === "order-summary" ? (
@@ -183,38 +169,32 @@ export function OrderSetsTab() {
         </CardContent>
       </Card>
 
-      {expandedModule ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-border bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <div>
-                <div className="text-sm font-semibold text-foreground">{expandedModule}</div>
-                <div className="text-xs text-muted-foreground">Selected items</div>
-              </div>
-              <Button type="button" variant="outline" onClick={() => setExpandedModule(null)}>
-                Close
-              </Button>
-            </div>
-            <div className="space-y-2 p-5">
-              {(selectedItemsByModule[expandedModule] ?? []).map((label) => (
-                <label key={label} className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
-                  <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-input accent-primary" />
-                  {label}
-                </label>
-              ))}
-            </div>
-            <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
-              <Button type="button" variant="outline" onClick={() => setExpandedModule(null)}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={() => { toast.success(`${expandedModule} saved`); setExpandedModule(null); }}>
-                <Save className="h-4 w-4" />
-                Save
-              </Button>
-            </div>
+      <Drawer
+        open={Boolean(expandedModule)}
+        onOpenChange={(open) => !open && setExpandedModule(null)}
+        title={expandedModule ?? "Order set"}
+        className="w-[calc(100vw-2rem)] max-w-2xl"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setExpandedModule(null)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => { toast.success(`${expandedModule} saved`); setExpandedModule(null); }}>
+              <Save className="h-4 w-4" />
+              Save
+            </Button>
           </div>
+        }
+      >
+        <div className="space-y-2">
+          {(selectedItemsByModule[expandedModule ?? ""] ?? []).map((label) => (
+            <label key={label} className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+              <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-input accent-primary" />
+              {label}
+            </label>
+          ))}
         </div>
-      ) : null}
+      </Drawer>
     </div>
   );
 }

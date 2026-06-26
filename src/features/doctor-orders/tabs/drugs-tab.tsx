@@ -40,10 +40,14 @@ export function DrugsTab() {
   const [flashIds, setFlashIds] = React.useState<Record<string, boolean>>({});
   const editorRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesScope = drugScope === "All Drugs" || order.availableQty > 0;
+  const scopedOrders =
+    drugScope === "All Drugs"
+      ? orders
+      : orders.filter((order) => order.availableQty > 0).slice(0, 5);
+
+  const filteredOrders = scopedOrders.filter((order) => {
     const matchesSearch = `${order.genericName} ${order.name} ${order.form} ${order.availableQty}`.toLowerCase().includes(search.trim().toLowerCase());
-    return matchesScope && matchesSearch;
+    return matchesSearch;
   });
   const selectableOrders = filteredOrders;
   const selectedOrders = selectedDrugIds.map((id) => orders.find((order) => order.id === id)).filter(Boolean) as DrugOrder[];

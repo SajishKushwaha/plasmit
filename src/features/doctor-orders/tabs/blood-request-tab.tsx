@@ -26,7 +26,7 @@ function FieldSelect({ value, onChange, disabled, children }: { value: string; o
       value={value}
       onChange={(event) => onChange(event.target.value)}
       disabled={disabled}
-      className="h-9 w-full appearance-none rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none transition focus:border-border focus:ring-0 disabled:bg-surface-muted disabled:text-muted-foreground"
+      className="h-9 w-full appearance-none rounded-md border border-input px-3 text-sm text-foreground shadow-sm outline-none transition focus:border-border focus:ring-0 disabled:bg-surface-muted disabled:text-muted-foreground"
     >
       {children}
     </select>
@@ -243,7 +243,6 @@ function PreviewDrawer({
       open={open}
       onOpenChange={onOpenChange}
       title="Blood Request Preview"
-      description="Read-only summary of the current blood request"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -256,14 +255,14 @@ function PreviewDrawer({
       }
     >
       <div className="space-y-4">
-        <AlertBanner icon={Info} tone="info" title="Preview mode">
+        {/* <AlertBanner icon={Info} tone="info" title="Preview mode">
           This shows the filled blood request data before submission.
-        </AlertBanner>
+        </AlertBanner> */}
 
-        <div className="overflow-auto rounded-md border border-border bg-background p-3">
+        <div className="overflow-auto rounded-md border border-border p-3">
           <table className="w-full text-sm">
             <tbody>
-              <tr className="border-t"><td className="py-2 font-medium text-muted-foreground">Patient Name</td><td className="py-2 text-foreground">{form.patientName}</td></tr>
+              <tr><td className="py-2 font-medium text-muted-foreground">Patient Name</td><td className="py-2 text-foreground">{form.patientName}</td></tr>
               <tr className="border-t"><td className="py-2 font-medium text-muted-foreground">UHID</td><td className="py-2 text-foreground">{form.uhid}</td></tr>
               <tr className="border-t"><td className="py-2 font-medium text-muted-foreground">Admission No.</td><td className="py-2 text-foreground">{form.admissionNo}</td></tr>
               <tr className="border-t"><td className="py-2 font-medium text-muted-foreground">Age / Sex</td><td className="py-2 text-foreground">{form.age} / {form.sex}</td></tr>
@@ -780,13 +779,13 @@ export function BloodRequestTab() {
                 <FieldSelect value={form.patientBloodGroup} onChange={(patientBloodGroup) => setForm((current) => ({ ...current, patientBloodGroup, bloodGroupSource: "manual" }))}>
                   {bloodGroups.map((group) => <option key={group} value={group}>{group}</option>)}
                 </FieldSelect>
-                <div className="text-xs text-muted-foreground">
+                {/* <div className="text-xs text-muted-foreground">
                   {isBloodGroupLabVerified ? "Auto-filled from verified lab result" : "Manual entry — unverified until lab confirmation"}
-                </div>
+                </div> */}
               </label>
               <div className="space-y-2">
                 <FieldLabel>Blood Group of Patient - Rh</FieldLabel>
-                <input type="text" readOnly value={form.patientRh} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm" />
+                <input type="text" readOnly value={form.patientRh} className="w-full rounded-md border border-input px-3 py-2 text-sm text-foreground shadow-sm" />
                 <div className="flex items-center gap-2">
                   {/* <Toggle
                     disabled={isRhLabVerified}
@@ -806,11 +805,11 @@ export function BloodRequestTab() {
                   </span> */}
                 </div>
 
-                <div className="text-xs text-muted-foreground">
+                {/* <div className="text-xs text-muted-foreground">
                   {isRhLabVerified
                     ? "Auto-filled from verified lab result"
                     : "Manual entry — unverified until lab confirmation"}
-                </div>
+                </div> */}
               </div>
               <label className="space-y-2"><FieldLabel>Group + Screen Done On (Date)</FieldLabel><Input type="date" max={todayIso()} value={form.groupScreenDate} onChange={(event) => setForm((current) => ({ ...current, groupScreenDate: event.target.value }))} /></label>
               <label className="space-y-2"><FieldLabel>Hemoglobin (Hb)</FieldLabel><Input readOnly={areBloodCountsLinked} value={form.hb} onChange={(event) => setForm((current) => ({ ...current, hb: event.target.value }))} placeholder="g/dL" /></label>
@@ -827,7 +826,7 @@ export function BloodRequestTab() {
                   {/* {areBloodCountsLinked ? "Values are auto-pulled from latest linked lab result." : "Manual entry allowed when lab-linked values are unavailable."} */}
                 </div>
               </label>
-              <label className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition hover:bg-surface-muted">
+              <label className="flex items-center gap-4 px-3 py-2 text-sm text-foreground ">
                 <input
                   type="checkbox"
                   className="h-4 w-4 accent-primary"
@@ -836,7 +835,7 @@ export function BloodRequestTab() {
                 />
                 <span>Group &amp; Hold</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition hover:bg-surface-muted">
+              <label className="flex items-center gap-4 px-3 py-2 text-sm text-foreground ">
                 <input
                   type="checkbox"
                   className="h-4 w-4 accent-primary"
@@ -1061,25 +1060,7 @@ export function BloodRequestTab() {
                 </FieldSelect>
               </label>
             </div>
-            {isEmergency ? (
-              <div className="grid gap-4 lg:grid-cols-2">
-                <label className="space-y-2">
-                  <FieldLabel>Nature of Emergency</FieldLabel>
-                  <Input value={form.natureOfEmergency} onChange={(event) => setForm((current) => ({ ...current, natureOfEmergency: event.target.value }))} placeholder="Required for Emergency" />
-                </label>
-                <AlertBanner icon={Clock3} tone="warning" title="Emergency workflow">
-                  Emergency request becomes mandatory and routes an urgent notification to the Blood Bank queue.
-                </AlertBanner>
-              </div>
-            ) : isRoutineLeadTimeWarning ? (
-              <AlertBanner icon={Clock3} tone="warning" title="Routine lead time warning">
-                This routine request is scheduled less than 24 hours ahead. Please confirm that this meets local policy.
-              </AlertBanner>
-            ) : (
-              <AlertBanner icon={CalendarDays} tone="info" title="Routine workflow">
-                Routine requests should be scheduled with lead time per policy.
-              </AlertBanner>
-            )}
+            
           </section>
 
           <section className="space-y-3">
@@ -1195,13 +1176,13 @@ export function BloodRequestTab() {
               ) : null}
             </div>
             
-            <div className="rounded-md border border-border bg-surface-muted p-3 text-sm text-foreground">
+            {/* <div className="rounded-md border border-border bg-surface-muted p-3 text-sm text-foreground">
               <div className="text-xs font-medium text-muted-foreground">Date & Time of Signing</div>
               <div className="mt-1 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-success" />
                 System timestamp on submit
               </div>
-            </div>
+            </div> */}
           </section>
         </CardContent>
       </Card>

@@ -1,83 +1,335 @@
-import type { PathologyOrderHistory, PathologyPriority, PathologyResultBlock, PathologySummaryRow, PathologyTest } from "./types";
+import type {
+  PathologyOrderHistory,
+  PathologyPriority,
+  PathologyResultBlock,
+  PathologySummaryRow,
+  PathologyTest,
+} from "./types";
 
-export const pathologySubTabs = ["Pathology", "Radiology", "Medications", "Nursing orders", "Diet", "IV solutions", "Rehab", "Order history"] as const;
+export const pathologySubTabs = [
+  "Pathology",
+  "Radiology",
+  "Medications",
+  "Nursing orders",
+  "Diet",
+  "IV solutions",
+  "Rehab",
+  "Order history",
+] as const;
 
-export const visitProblems = ["Diabetes Type 2", "Hypertension", "Fatigue"];
+export const visitProblems = [
+  "Anemia",
+  "Leukocytosis",
+  "Thrombocytopenia",
+  "Hematuria",
+  "Fever",
+];
 
-export const specimenSources = ["Blood", "Urine", "Stool", "CSF", "Sputum", "Wound swab", "Pleural Fluid", "Ascitic Fluid", "Biopsy"];
+export const specimenSources = [
+  "Blood",
+  "Urine",
+  "Stool",
+  "CSF",
+  "Sputum",
+  "Pleural Fluid",
+  "Ascitic Fluid",
+  "Biopsy Tissue",
+  "FNAC Sample",
+];
 
-export const priorities: PathologyPriority[] = ["Routine", "Urgent", "STAT", "ASAP"];
+export const priorities: PathologyPriority[] = [
+  "Routine",
+  "Urgent",
+  "STAT",
+  "ASAP",
+];
+
+export const pathologyDepartments = [
+  "Hematology",
+  "Clinical Pathology",
+  "Histopathology",
+  "Cytology",
+] as const;
 
 export const testList: PathologyTest[] = [
-  { id: "arthritis-profile", name: "ARTHRITIS PROFILE", description: "Inflammatory and autoimmune test bundle", department: "Serology" },
-  { id: "blood-exam", name: "BLOOD EXAM", description: "General blood screening set", department: "Hematology" },
-  { id: "cbc", name: "CBC", description: "Complete blood count", department: "Hematology", code: "58410-2" },
-  { id: "diabetic-profile", name: "DIABETIC PROFILE", description: "Diabetes monitoring bundle", department: "Biochemistry" },
-  { id: "electrolytes", name: "ELECTROLYTES", description: "Sodium, potassium, chloride, bicarbonate", department: "Biochemistry" },
-  { id: "hemogram", name: "HEMOGRAM", description: "CBC with indices and differential", department: "Hematology" },
-  { id: "hematology", name: "HEMATOLOGY", description: "Blood cell and coagulation studies", department: "Hematology" },
-  { id: "kft", name: "KFT", description: "Kidney function test", department: "Biochemistry", code: "24362-6" },
-  { id: "lft", name: "LFT", description: "Liver function test", department: "Biochemistry", code: "24323-8" },
   {
-    id: "lipid-profile",
-    name: "LIPID PROFILE",
-    description: "Cholesterol and lipoprotein panel",
-    department: "Biochemistry",
-    children: ["HDL", "LDL", "VLDL", "TOTAL CHOL", "HDL/LDL RATIO", "TOTAL CHOL/HDL"],
+    id: "cbc",
+    name: "CBC",
+    description: "Complete blood count",
+    department: "Hematology",
+    code: "58410-2",
+  },
+  {
+    id: "hemogram",
+    name: "HEMOGRAM",
+    description: "CBC with differential",
+    department: "Hematology",
+  },
+  {
+    id: "blood-exam",
+    name: "BLOOD EXAM",
+    description: "General blood examination",
+    department: "Hematology",
+  },
+  {
+    id: "esr",
+    name: "ESR",
+    description: "Erythrocyte sedimentation rate",
+    department: "Hematology",
+  },
+  {
+    id: "peripheral-smear",
+    name: "PERIPHERAL SMEAR",
+    description: "Peripheral blood smear examination",
+    department: "Hematology",
+  },
+  {
+    id: "platelet-count",
+    name: "PLATELET COUNT",
+    description: "Platelet count",
+    department: "Hematology",
+  },
+  {
+    id: "reticulocyte-count",
+    name: "RETICULOCYTE COUNT",
+    description: "Reticulocyte count",
+    department: "Hematology",
+  },
+
+  {
+    id: "urine-routine",
+    name: "URINE ROUTINE",
+    description: "Routine urine examination",
+    department: "Clinical Pathology",
+  },
+  {
+    id: "stool-routine",
+    name: "STOOL ROUTINE",
+    description: "Routine stool examination",
+    department: "Clinical Pathology",
+  },
+  {
+    id: "sputum-exam",
+    name: "SPUTUM EXAMINATION",
+    description: "Sputum microscopic examination",
+    department: "Clinical Pathology",
+  },
+  {
+    id: "body-fluid-analysis",
+    name: "BODY FLUID ANALYSIS",
+    description: "Pleural / Ascitic / CSF fluid analysis",
+    department: "Clinical Pathology",
+  },
+
+  {
+    id: "biopsy",
+    name: "BIOPSY",
+    description: "Histopathology tissue examination",
+    department: "Histopathology",
+  },
+
+  {
+    id: "fnac",
+    name: "FNAC",
+    description: "Fine needle aspiration cytology",
+    department: "Cytology",
+  },
+  {
+    id: "pap-smear",
+    name: "PAP SMEAR",
+    description: "Cervical cytology screening",
+    department: "Cytology",
   },
 ];
 
 export const groupedTests = [
-  { id: "diabetic", name: "Diabetic profile", department: "Biochemistry" },
-  { id: "arthritis", name: "Arthritis profile", department: "Serology" },
-  { id: "renal", name: "Renal profile", department: "Biochemistry" },
-  { id: "cardiac", name: "Cardiac panel", department: "Biochemistry" },
-  { id: "liver", name: "Liver panel", department: "Biochemistry" },
-  { id: "anemia", name: "Anemia panel", department: "Hematology" },
-  { id: "preop", name: "Pre-op panel", department: "Biochemistry" },
-  { id: "hormone", name: "Hormone panel", department: "Biochemistry" },
+  {
+    id: "anemia-profile",
+    name: "Anemia Profile",
+    department: "Hematology",
+  },
+  {
+    id: "hemogram-profile",
+    name: "Hemogram Profile",
+    department: "Hematology",
+  },
+  {
+    id: "bleeding-profile",
+    name: "Bleeding Profile",
+    department: "Hematology",
+  },
+  {
+    id: "urine-profile",
+    name: "Urine Profile",
+    department: "Clinical Pathology",
+  },
+  {
+    id: "stool-profile",
+    name: "Stool Profile",
+    department: "Clinical Pathology",
+  },
+  {
+    id: "fluid-analysis-profile",
+    name: "Body Fluid Analysis Profile",
+    department: "Clinical Pathology",
+  },
+  {
+    id: "histopathology-profile",
+    name: "Histopathology Profile",
+    department: "Histopathology",
+  },
+  {
+    id: "cytology-profile",
+    name: "Cytology Profile",
+    department: "Cytology",
+  },
 ];
 
 export const previousTestOrders: PathologyOrderHistory[] = [
-  { id: "hist-cbc", label: "CBC (12 Apr)", selectedTestIds: ["cbc"], selectedGroupIds: [] },
-  { id: "hist-lft", label: "LFT (02 Mar)", selectedTestIds: ["lft"], selectedGroupIds: ["liver"] },
-  { id: "hist-kft", label: "KFT (02 Mar)", selectedTestIds: ["kft"], selectedGroupIds: ["renal"] },
+  {
+    id: "hist-cbc",
+    label: "CBC (12 Apr)",
+    selectedTestIds: ["cbc"],
+    selectedGroupIds: [],
+  },
+  {
+    id: "hist-hemogram",
+    label: "Hemogram (02 Mar)",
+    selectedTestIds: ["hemogram"],
+    selectedGroupIds: ["hemogram-profile"],
+  },
+  {
+    id: "hist-urine",
+    label: "Urine Routine (18 Feb)",
+    selectedTestIds: ["urine-routine"],
+    selectedGroupIds: ["urine-profile"],
+  },
 ];
 
 const today = new Date();
-const orderDateTime = `${today.toISOString().slice(0, 10)} ${today.toTimeString().slice(0, 5)}`;
+const orderDateTime = `${today.toISOString().slice(0, 10)} ${today
+  .toTimeString()
+  .slice(0, 5)}`;
 
 export const summaryRows: PathologySummaryRow[] = [
-  { id: "sum-cbc", name: "CBC", loinc: "58410-2", cpt: "85025", department: "Hematology", specimen: "Blood", priority: "Routine", status: "Ordered", orderedBy: "Dr. Kavita Rao", orderDateTime },
-  { id: "sum-kft", name: "KFT", loinc: "24362-6", cpt: "80069", department: "Biochemistry", specimen: "Blood", priority: "Routine", status: "Sample Collected", orderedBy: "Dr. Kavita Rao", orderDateTime },
-  { id: "sum-renal", name: "Renal profile", loinc: "24362-6", cpt: "80069", department: "Biochemistry", specimen: "Blood", priority: "Urgent", status: "Received", orderedBy: "Dr. Kavita Rao", orderDateTime },
-  { id: "sum-lft", name: "LFT", loinc: "24323-8", cpt: "80076", department: "Biochemistry", specimen: "Blood", priority: "STAT", status: "Processing", orderedBy: "Dr. Kavita Rao", orderDateTime },
+  {
+    id: "sum-cbc",
+    name: "CBC",
+    loinc: "58410-2",
+    cpt: "85025",
+    department: "Hematology",
+    specimen: "Blood",
+    priority: "Routine",
+    status: "Ordered",
+    orderedBy: "Dr. Kavita Rao",
+    orderDateTime,
+  },
+  {
+    id: "sum-hemogram",
+    name: "Hemogram",
+    loinc: "85025",
+    cpt: "85027",
+    department: "Hematology",
+    specimen: "Blood",
+    priority: "Urgent",
+    status: "Sample Collected",
+    orderedBy: "Dr. Kavita Rao",
+    orderDateTime,
+  },
+  {
+    id: "sum-urine",
+    name: "Urine Routine",
+    loinc: "5804-0",
+    cpt: "81001",
+    department: "Clinical Pathology",
+    specimen: "Urine",
+    priority: "Routine",
+    status: "Received",
+    orderedBy: "Dr. Kavita Rao",
+    orderDateTime,
+  },
+  {
+    id: "sum-biopsy",
+    name: "Biopsy",
+    loinc: "22637-3",
+    cpt: "88305",
+    department: "Histopathology",
+    specimen: "Biopsy Tissue",
+    priority: "STAT",
+    status: "Processing",
+    orderedBy: "Dr. Kavita Rao",
+    orderDateTime,
+  },
 ];
 
 export const resultBlocks: PathologyResultBlock[] = [
   {
     id: "result-cbc",
-    name: "CBC - complete blood count",
+    name: "CBC - Complete Blood Count",
     specialty: "Hematology",
     rows: [
-      { parameter: "Hemoglobin", result: "17.8", unit: "g/dL", referenceRange: "12.0 - 16.0", flag: "L" },
-      { parameter: "WBC", result: "7.2", unit: "x10^3/uL", referenceRange: "4.5 - 11.0", flag: "H" },
-      { parameter: "Platelets", result: "240", unit: "x10^3/uL", referenceRange: "150 - 400", flag: "H" },
-      { parameter: "RBC", result: "3.4", unit: "x10^6/uL", referenceRange: "4.2 - 5.4", flag: "L" },
-      { parameter: "Hematocrit (PCV)", result: "30.2", unit: "%", referenceRange: "36 - 48", flag: "L" },
+      {
+        parameter: "Hemoglobin",
+        result: "9.8",
+        unit: "g/dL",
+        referenceRange: "12 - 16",
+        flag: "L",
+      },
+      {
+        parameter: "WBC",
+        result: "14.2",
+        unit: "x10³/uL",
+        referenceRange: "4.5 - 11",
+        flag: "H",
+      },
+      {
+        parameter: "Platelets",
+        result: "180",
+        unit: "x10³/uL",
+        referenceRange: "150 - 400",
+        flag: "N",
+      },
+      {
+        parameter: "RBC",
+        result: "3.4",
+        unit: "x10⁶/uL",
+        referenceRange: "4.2 - 5.4",
+        flag: "L",
+      },
     ],
   },
   {
-    id: "result-kft",
-    name: "KFT - kidney function test",
-    specialty: "Biochemistry",
+    id: "result-urine",
+    name: "Urine Routine Examination",
+    specialty: "Clinical Pathology",
     rows: [
-      { parameter: "Serum creatinine", result: "2.1", unit: "mg/dL", referenceRange: "0.6 - 1.2", flag: "H" },
-      { parameter: "Blood urea nitrogen", result: "38", unit: "mg/dL", referenceRange: "7 - 25", flag: "H" },
-      { parameter: "Uric acid", result: "5.4", unit: "mg/dL", referenceRange: "3.4 - 7.0", flag: "N" },
-      { parameter: "eGFR", result: "42", unit: "mL/min", referenceRange: "> 60", flag: "L" },
+      {
+        parameter: "Protein",
+        result: "Trace",
+        unit: "-",
+        referenceRange: "Negative",
+        flag: "H",
+      },
+      {
+        parameter: "Sugar",
+        result: "Negative",
+        unit: "-",
+        referenceRange: "Negative",
+        flag: "N",
+      },
+      {
+        parameter: "Pus Cells",
+        result: "10-12",
+        unit: "/HPF",
+        referenceRange: "0-5",
+        flag: "H",
+      },
     ],
   },
 ];
 
-export const diagnosisTypes = ["Primary", "Secondary", "Differential"];
+export const diagnosisTypes = [
+  "Primary",
+  "Secondary",
+  "Differential",
+];

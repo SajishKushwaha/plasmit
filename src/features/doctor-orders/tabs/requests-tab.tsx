@@ -171,13 +171,7 @@ export function RequestsTab() {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {(["test-order", "order-summary"] as const).map((tab) => (
-              <Button
-                className={["rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900", activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary" : ""].join(" ")}
-                key={tab}
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab(tab)}
-              >
+              <Button key={tab} size="sm" variant={activeTab === tab ? "default" : "outline"} onClick={() => setActiveTab(tab)}>
                 {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result / Status Review"}
               </Button>
             ))}

@@ -29,7 +29,6 @@ export function OrderDetailsCard({
       <CardHeader>
         <div>
           <CardTitle>Order Details</CardTitle>
-          <CardDescription>Selected drugs show as editable forms. Summary updates while you type.</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="min-w-0 space-y-4">

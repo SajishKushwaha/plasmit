@@ -55,19 +55,20 @@ export function SelectDrugsCard({
       <CardHeader>
         <div>
           <CardTitle>Select Drugs</CardTitle>
-          <CardDescription>Search and tick drugs to add them into the order summary.</CardDescription>
         </div>
         {/* <Badge tone="info">{selectedIds.length} Selected</Badge> */}
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 rounded-md bg-surface-muted p-1">
+        <div className="grid grid-cols-2 rounded-xl border border-border bg-muted p-1 shadow-sm">
           {(["All Drugs", "Available Drugs"] as DrugScope[]).map((scope) => (
             <button
               key={scope}
               type="button"
               className={[
-                "h-9 rounded px-2 text-xs font-semibold transition sm:text-sm",
-                drugScope === scope ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                "h-10 rounded-lg px-2 text-xs font-semibold transition sm:text-sm",
+                drugScope === scope
+                  ? "border border-border bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
               ].join(" ")}
               onClick={() => onDrugScopeChange(scope)}
             >
@@ -94,7 +95,7 @@ export function SelectDrugsCard({
                   inputRef.current?.blur();
                 }
               }}
-              placeholder={open ? "Search drug, generic, form, quantity..." : "Select drugs..."}
+              placeholder="Select drugs..."
             />
             <button
               type="button"
@@ -116,7 +117,7 @@ export function SelectDrugsCard({
           </div>
 
           {open ? (
-            <div className="absolute z-20 mt-2 max-h-[360px] w-full space-y-2 overflow-auto rounded-md border border-border bg-surface p-2 shadow-lg">
+            <div className="absolute z-20 mt-2 max-h-[360px] w-full space-y-2 overflow-auto rounded-xl border border-border bg-surface p-2 shadow-lg">
               {orders.length ? (
                 orders.map((order) => {
                   const checked = selectedIds.includes(order.id);

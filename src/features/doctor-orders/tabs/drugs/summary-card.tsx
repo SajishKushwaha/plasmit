@@ -106,7 +106,6 @@ export function SummaryCard({
       <CardHeader>
         <div>
           <CardTitle>Summary</CardTitle>
-          <CardDescription>Selected drug details update here in real time.</CardDescription>
         </div>
       </CardHeader>
       <CardContent>

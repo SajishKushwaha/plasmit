@@ -1,6 +1,31 @@
 import { formARoutes, frequencyMultiplier, injectionRoutes } from "./data";
 import type { DraftCategory, DrugCategory, DrugOrder, OrderDraft } from "./types";
 
+export const formWiseCategories = {
+  Tablet: ["Scheduled", "SOS", "STAT", "Discontinued"],
+  Capsule: ["Scheduled", "SOS", "STAT", "Discontinued"],
+  Syrup: ["Scheduled", "SOS", "Discontinued"],
+  Suspension: ["Scheduled", "SOS", "Discontinued"],
+  Drops: ["Scheduled", "SOS", "Discontinued"],
+  Injection: ["Scheduled", "SOS", "STAT", "Intermittent", "Bolus", "Discontinued"],
+  Infusion: ["Continuous", "Intermittent", "STAT", "Discontinued"],
+  "IV Fluid": ["Continuous", "Intermittent", "Bolus", "Diluent", "STAT", "Discontinued"],
+  Nebulizer: ["Scheduled", "SOS", "Discontinued"],
+  Inhaler: ["Scheduled", "SOS", "Discontinued"],
+  Ointment: ["Scheduled", "Discontinued"],
+  Cream: ["Scheduled", "Discontinued"],
+  Gel: ["Scheduled", "Discontinued"],
+  Patch: ["Scheduled", "Discontinued"],
+  "Eye Drops": ["Scheduled", "SOS", "Discontinued"],
+  "Ear Drops": ["Scheduled", "SOS", "Discontinued"],
+  "Nasal Spray": ["Scheduled", "SOS", "Discontinued"],
+  Suppository: ["Scheduled", "SOS", "Discontinued"],
+} as const satisfies Record<string, readonly DraftCategory[]>;
+
+export function categoriesForForm(form: string): readonly DraftCategory[] {
+  return formWiseCategories[form as keyof typeof formWiseCategories] ?? ["Scheduled", "SOS", "STAT", "Bolus", "Diluent", "Intermittent", "Continuous", "Discontinued"];
+}
+
 const continuousInfusionDrugNames = [
   "dopamine infusion",
   "noradrenaline infusion",

@@ -26,8 +26,29 @@ type ProcedureItem = {
   status: ProcedureStatus;
 };
 
-const types = ["Bedside", "Minor OT", "Endoscopy", "Intervention", "ICU"] as const;
-const departments = ["Surgery", "Nursing", "Radiology", "Cardiology", "Neurology", "Gastroenterology", "ICU", "Critical Care"] as const;
+const types = ["Bedside Procedure",
+"Diagnostic Procedure",
+"Therapeutic Procedure",
+"Surgical Procedure",
+"Interventional Procedure",
+"Endoscopy Procedure",
+"Cardiology Procedure",
+"Respiratory Procedure",
+"ICU"] as const;
+
+const departments = ["General Surgery",
+"Orthopedics",
+"Cardiology",
+"Neurology",
+"Gastroenterology",
+"Pulmonology",
+"ENT",
+"Urology",
+"Nephrology",
+"Radiology",
+"Nursing",
+"Cath Lab",
+"Operation Theatre"] as const;
 
 const initialItems: ProcedureItem[] = [
   { id: "proc-1", procedureName: "Dressing change", procedureType: "Bedside", priority: "Routine", reason: "Post-op wound care", requiredDateTime: "2026-06-08T11:00", consentRequired: false, specialInstructions: "Aseptic technique", assignedDepartment: "Nursing", status: "Ordered" },
@@ -101,31 +122,25 @@ export function ProceduresTab() {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {(["test-order", "order-summary"] as const).map((tab) => (
-              <Button
-                className={["rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900", activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary" : ""].join(" ")}
-                key={tab}
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab(tab)}
-              >
+              <Button key={tab} size="sm" variant={activeTab === tab ? "default" : "outline"} onClick={() => setActiveTab(tab)}>
                 {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result / Status Review"}
               </Button>
             ))}
           </div>
 
           {activeTab === "test-order" ? (
-            <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-              <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 ">
+              <div className="grid gap-4 md:grid-cols-3">
                 <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Procedure Name</div><Input value={draft.procedureName} onChange={(e) => setDraft((d) => ({ ...d, procedureName: e.target.value }))} /></label>
-                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Procedure Type</div><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.procedureType} onChange={(e) => setDraft((d) => ({ ...d, procedureType: e.target.value }))}>{types.map((t) => <option key={t}>{t}</option>)}</select></label>
-                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Priority</div><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.priority} onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value as ProcedurePriority }))}><option>Routine</option><option>Urgent</option><option>STAT</option></select></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Procedure Type</div><select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={draft.procedureType} onChange={(e) => setDraft((d) => ({ ...d, procedureType: e.target.value }))}>{types.map((t) => <option key={t}>{t}</option>)}</select></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Priority</div><select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={draft.priority} onChange={(e) => setDraft((d) => ({ ...d, priority: e.target.value as ProcedurePriority }))}><option>Routine</option><option>Urgent</option><option>STAT</option></select></label>
                 <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Required Date & Time</div><Input type="datetime-local" value={draft.requiredDateTime} onChange={(e) => setDraft((d) => ({ ...d, requiredDateTime: e.target.value }))} /></label>
-                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Consent Required</div><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={String(draft.consentRequired)} onChange={(e) => setDraft((d) => ({ ...d, consentRequired: e.target.value === "true" }))}><option value="true">Written Consent</option><option value="true">Verbal Consent</option><option value="false">No</option></select></label>
-                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Assigned Department</div><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.assignedDepartment} onChange={(e) => setDraft((d) => ({ ...d, assignedDepartment: e.target.value }))}>{departments.map((d) => <option key={d}>{d}</option>)}</select></label>
-                <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Reason / Diagnosis</div><textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none" value={draft.reason} onChange={(e) => setDraft((d) => ({ ...d, reason: e.target.value }))} /></label>
-                <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Special Instructions</div><textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none" value={draft.specialInstructions} onChange={(e) => setDraft((d) => ({ ...d, specialInstructions: e.target.value }))} /></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Consent Required</div><select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={String(draft.consentRequired)} onChange={(e) => setDraft((d) => ({ ...d, consentRequired: e.target.value === "true" }))}><option value="true">Written Consent</option><option value="true">Verbal Consent</option><option value="false">No</option></select></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Assigned Department</div><select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={draft.assignedDepartment} onChange={(e) => setDraft((d) => ({ ...d, assignedDepartment: e.target.value }))}>{departments.map((d) => <option key={d}>{d}</option>)}</select></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Reason / Diagnosis</div><textarea className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm outline-none" value={draft.reason} onChange={(e) => setDraft((d) => ({ ...d, reason: e.target.value }))} /></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Special Instructions</div><textarea className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm outline-none" value={draft.specialInstructions} onChange={(e) => setDraft((d) => ({ ...d, specialInstructions: e.target.value }))} /></label>
               </div>
-              <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-4">
+              {/* <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-4">
                 <div className="text-sm font-semibold text-foreground">Order Summary</div>
                 <div className="space-y-2 text-sm">
                   <div className="rounded-md border border-border bg-white p-3">Procedure: <span className="font-semibold">{draft.procedureName || "-"}</span></div>
@@ -133,11 +148,15 @@ export function ProceduresTab() {
                   <div className="rounded-md border border-border bg-white p-3">Priority: <span className="font-semibold">{draft.priority}</span></div>
                   <div className="rounded-md border border-border bg-white p-3">Status: <span className="font-semibold">{draft.status}</span></div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button className="flex-1" onClick={save}><Save className="h-4 w-4" />Submit Order</Button>
-                  <Button variant="outline" className="flex-1" onClick={() => setActiveTab("order-summary")}>View Summary</Button>
+                </div> */}
+                <div className="ml-auto flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={() => setActiveTab("order-summary")}>
+                    View 
+                  </Button>
+                  <Button type="button"  onClick={save}>
+                    Save
+                  </Button>
                 </div>
-              </div>
             </div>
           ) : null}
 

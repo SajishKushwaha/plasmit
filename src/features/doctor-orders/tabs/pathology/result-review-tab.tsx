@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { ArrowUpDown, ChevronDown, ChevronRight, Download, Eye } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, Eye, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 
 import { diagnosisTypes } from "./data";
@@ -22,12 +23,108 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${tone}`}>{status}</span>;
 }
 
+type SortKey = "loinc" | "test" | "orderDate" | "completionDate";
+type SortDirection = "asc" | "desc";
+
+const PAGE_SIZE_OPTIONS = [5, 10, 20];
+
+function compareDates(left: string, right: string) {
+  return parseReviewDate(left) - parseReviewDate(right);
+}
+
+function parseReviewDate(value: string) {
+  const [day, month, year] = value.split("/").map((part) => Number(part));
+  if (!day || !month || !year) return 0;
+  return new Date(year, month - 1, day).getTime();
+}
+
+function getSortValue(block: PathologyResultBlock, sortKey: SortKey) {
+  if (sortKey === "loinc") return block.name.toLowerCase().includes("cbc") ? "11273-0" : "28515-7";
+  if (sortKey === "test") return block.name.replace(" - complete blood count", "").replace(" - kidney function test", "");
+  if (sortKey === "orderDate") return "12/05/2021";
+  return "14/05/2021";
+}
+
+type SelectedReportRow = {
+  group?: string;
+  parameter: string;
+  result: string;
+  unit: string;
+  referenceRange: string;
+  flag: "N" | "H" | "L";
+};
+
+function getSelectedReportRows(block: PathologyResultBlock): SelectedReportRow[] {
+  const name = block.name.toLowerCase();
+  if (name.includes("cbc")) {
+    return [
+      { parameter: "Hemoglobin", result: "13.6", unit: "g/dL", referenceRange: "13.0 - 17.0", flag: "N" },
+      { parameter: "RBC Count", result: "4.6", unit: "10^6/µl", referenceRange: "4.5 - 5.5", flag: "N" },
+      { parameter: "PCV", result: "40.1", unit: "%", referenceRange: "40 - 50", flag: "N" },
+      { parameter: "MCV", result: "86.8", unit: "fL", referenceRange: "83 - 101", flag: "N" },
+      { parameter: "MCH", result: "29.5", unit: "pg", referenceRange: "27 - 32", flag: "N" },
+      { parameter: "MCHC", result: "34", unit: "g/dL", referenceRange: "31.5 - 34.5", flag: "N" },
+      { parameter: "RDW (CV)", result: "13.1", unit: "%", referenceRange: "11.6 - 14.0", flag: "N" },
+      { parameter: "RDW-SD", result: "28.5", unit: "fL", referenceRange: "35.1 - 43.9", flag: "L" },
+      { parameter: "TLC", result: "6.8", unit: "10^3/µl", referenceRange: "4 - 10", flag: "N" },
+      { parameter: "Neutrophils", result: "64", unit: "%", referenceRange: "40 - 80", flag: "N" },
+      { parameter: "Lymphocytes", result: "25", unit: "%", referenceRange: "20 - 40", flag: "N" },
+      { parameter: "Monocytes", result: "9", unit: "%", referenceRange: "2 - 10", flag: "N" },
+      { parameter: "Eosinophils", result: "2", unit: "%", referenceRange: "0 - 6", flag: "N" },
+      { parameter: "Basophils", result: "0", unit: "%", referenceRange: "0 - 1", flag: "N" },
+      { parameter: "Neutrophils, absolute", result: "4.35", unit: "10^3/µl", referenceRange: "2 - 7", flag: "N" },
+      { parameter: "Lymphocytes, absolute", result: "1.7", unit: "10^3/µl", referenceRange: "1 - 3", flag: "N" },
+      { parameter: "Monocytes, absolute", result: "0.61", unit: "10^3/µl", referenceRange: "0.2 - 1.0", flag: "N" },
+      { parameter: "Eosinophils, absolute", result: "0.14", unit: "10^3/µl", referenceRange: "0.02 - 0.5", flag: "N" },
+      { parameter: "Basophils, absolute", result: "0", unit: "10^3/µl", referenceRange: "0.02 - 0.5", flag: "L" },
+      { parameter: "Platelet Count", result: "211", unit: "10^3/µl", referenceRange: "150 - 410", flag: "N" },
+      { parameter: "MPV", result: "8.7", unit: "fL", referenceRange: "9.3 - 12.1", flag: "L" },
+      { parameter: "PCT", result: "0.2", unit: "%", referenceRange: "0.17 - 0.32", flag: "N" },
+      { parameter: "PDW", result: "14.6", unit: "fL", referenceRange: "8.3 - 25.0", flag: "N" },
+      { parameter: "P-LCR", result: "25.5", unit: "%", referenceRange: "18 - 50", flag: "N" },
+      { parameter: "P-LCC", result: "54", unit: "10^9/L", referenceRange: "44 - 140", flag: "N" },
+      { parameter: "Mentzer Index", result: "18.87", unit: "", referenceRange: "> 13", flag: "N" },
+    ];
+  }
+  if (name.includes("kft") || name.includes("kidney function")) {
+    return [
+      { parameter: "Serum Creatinine", result: "1.9", unit: "mg/dL", referenceRange: "0.6 - 1.2", flag: "H" },
+      { parameter: "Blood Urea Nitrogen", result: "22", unit: "mg/dL", referenceRange: "7 - 20", flag: "H" },
+      { parameter: "Uric Acid", result: "6.3", unit: "mg/dL", referenceRange: "2.6 - 6.0", flag: "H" },
+      { parameter: "eGFR", result: "58", unit: "mL/min/1.73m2", referenceRange: ">= 90", flag: "L" },
+    ];
+  }
+  return block.rows.map((row) => ({
+    parameter: row.parameter,
+    result: row.result,
+    unit: row.unit,
+    referenceRange: row.referenceRange,
+    flag: row.flag,
+  }));
+}
+
+function resultTone(flag: "N" | "H" | "L") {
+  if (flag === "H") return "text-danger font-semibold";
+  if (flag === "L") return "text-warning font-semibold";
+  return "text-success font-medium";
+}
+
+function cbcGroupForParameter(parameter: string) {
+  const value = parameter.toLowerCase();
+  if (["hemoglobin", "rbc", "pcv", "mcv", "mch", "mchc", "rdw"].some((item) => value.includes(item))) return "RBC Parameters";
+  if (["tlc", "wbc", "neutrophil", "lymphocyte", "monocyte", "eosinophil", "basophil"].some((item) => value.includes(item))) return "WBC Parameters";
+  if (["platelet", "mpv", "pct", "pdw", "p-lcr", "p-lcc", "mentzer"].some((item) => value.includes(item))) return "Platelet Parameters";
+  return "Main Parameters";
+}
+
 export function PathologyResultReviewTab({
   resultBlocks: allBlocks,
   diagnosisSearch,
   diagnosisType,
   diagnosisOpen,
   selectedDiagnosisLabel,
+  instructionsForLab,
+  savedSummaryRows = [],
   onDiagnosisSearchChange,
   onDiagnosisTypeChange,
   onDiagnosisOpenChange,
@@ -39,6 +136,8 @@ export function PathologyResultReviewTab({
   diagnosisType: string;
   diagnosisOpen: boolean;
   selectedDiagnosisLabel: string;
+  instructionsForLab: string;
+  savedSummaryRows?: import("./types").PathologySummaryRow[];
   onDiagnosisSearchChange: (value: string) => void;
   onDiagnosisTypeChange: (value: string) => void;
   onDiagnosisOpenChange: (value: boolean) => void;
@@ -47,7 +146,6 @@ export function PathologyResultReviewTab({
   onDeleteResult: (id: string) => void;
   onReorderResult: (name: string) => void;
 }) {
-  const [expandedBlocks, setExpandedBlocks] = React.useState<Record<string, boolean>>({});
   const diagnosisOptions = React.useMemo(
     () => [
       { conclusion: "Thrombocytopenic disorder", code: "302215000", type: "Primary" },
@@ -61,6 +159,11 @@ export function PathologyResultReviewTab({
   const [selectedDiagnosis, setSelectedDiagnosis] = React.useState<(typeof diagnosisOptions)[number] | null>(null);
   const [commentDraft, setCommentDraft] = React.useState(selectedDiagnosisLabel);
   const [confirmedDiagnoses, setConfirmedDiagnoses] = React.useState<Array<{ id: string; type: string; diagnosis: string; snomed: string; comments: string }>>([]);
+  const [sortKey, setSortKey] = React.useState<SortKey>("orderDate");
+  const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc");
+  const [pageSize, setPageSize] = React.useState(5);
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [selectedBlock, setSelectedBlock] = React.useState<PathologyResultBlock | null>(null);
 
   const visibleBlocks = React.useMemo(() => {
     const query = diagnosisSearch.trim().toLowerCase();
@@ -68,10 +171,41 @@ export function PathologyResultReviewTab({
     return allBlocks.filter((block) => `${block.name} ${block.specialty}`.toLowerCase().includes(query));
   }, [allBlocks, diagnosisSearch]);
 
+  const sortedBlocks = React.useMemo(() => {
+    const items = [...visibleBlocks];
+    items.sort((left, right) => {
+      const leftValue = getSortValue(left, sortKey);
+      const rightValue = getSortValue(right, sortKey);
+      let comparison = 0;
+
+      if (sortKey === "orderDate" || sortKey === "completionDate") {
+        comparison = compareDates(leftValue, rightValue);
+      } else {
+        comparison = leftValue.localeCompare(rightValue, undefined, { numeric: true, sensitivity: "base" });
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+    return items;
+  }, [sortDirection, sortKey, visibleBlocks]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedBlocks.length / pageSize));
+  const currentPage = Math.min(pageIndex, pageCount - 1);
+  const pagedBlocks = React.useMemo(() => {
+    const start = currentPage * pageSize;
+    return sortedBlocks.slice(start, start + pageSize);
+  }, [currentPage, pageSize, sortedBlocks]);
+
+  React.useEffect(() => {
+    setPageIndex(0);
+  }, [diagnosisSearch]);
+
+  React.useEffect(() => {
+    if (currentPage !== pageIndex) setPageIndex(currentPage);
+  }, [currentPage, pageIndex]);
+
   const downloadReport = () => {
-    const reportBlocks = allBlocks
-      .filter((block) => block.rows.every((row) => row.flag !== "N"))
-      .map((block) => ({
+    const reportBlocks = allBlocks.map((block) => ({
         testName: block.name.replace(" - complete blood count", "").replace(" - kidney function test", ""),
         department: block.specialty,
         sampleCollectedOn: "12/05/2021",
@@ -81,7 +215,7 @@ export function PathologyResultReviewTab({
         sampleType: "Blood",
         reportDate: "14/05/2021",
         interpretation: block.name.includes("CBC") ? "CBC pattern suggests anemia and low hematocrit." : "KFT indicates renal function abnormality.",
-        rows: block.rows.map((row) => ({
+        rows: getSelectedReportRows(block).map((row) => ({
           testName: block.name,
           parameter: row.parameter,
           value: row.result,
@@ -90,7 +224,7 @@ export function PathologyResultReviewTab({
           flag: row.flag,
         })),
       }));
-    downloadLaboratoryPdf(reportBlocks, "pathology-reports.pdf");
+    downloadLaboratoryPdf(reportBlocks, "pathology-reports.pdf", "PATHOLOGY REPORT");
   };
 
   const filteredDiagnosisOptions = React.useMemo(() => {
@@ -101,6 +235,16 @@ export function PathologyResultReviewTab({
       return searchMatch && typeMatch;
     });
   }, [diagnosisOptions, diagnosisSearch, diagnosisType]);
+
+  const requestSort = (nextKey: SortKey) => {
+    setPageIndex(0);
+    if (sortKey === nextKey) {
+      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortKey(nextKey);
+    setSortDirection("asc");
+  };
 
   React.useEffect(() => {
     if (!selectedDiagnosis && filteredDiagnosisOptions.length) setSelectedDiagnosis(filteredDiagnosisOptions[0]);
@@ -120,8 +264,37 @@ export function PathologyResultReviewTab({
     setCommentDraft("");
   };
 
+  const openBlockView = (block: PathologyResultBlock) => {
+    setSelectedBlock(block);
+  };
+
+  const closeBlockView = () => {
+    setSelectedBlock(null);
+  };
+
+  const selectedReportName = selectedBlock ? selectedBlock.name.replace(" - complete blood count", "").replace(" - kidney function test", "") : "";
+  const selectedReportStatus = "Final";
+  const isCbc = Boolean(selectedBlock?.name.toLowerCase().includes("cbc"));
+  const selectedSpecimen = React.useMemo(() => {
+    const normalized = selectedBlock ? selectedBlock.name.toLowerCase() : "";
+    const matched = savedSummaryRows.find((row) => row.name.toLowerCase().includes(normalized) || normalized.includes(row.name.toLowerCase()));
+    return matched?.specimen ?? "Blood";
+  }, [savedSummaryRows, selectedBlock]);
+
+  const groupedRows = React.useMemo(() => {
+    if (!selectedBlock || !isCbc) return {};
+    return getSelectedReportRows(selectedBlock).reduce<Record<string, SelectedReportRow[]>>((acc, row) => {
+      const group = cbcGroupForParameter(row.parameter);
+      acc[group] = [...(acc[group] ?? []), row];
+      return acc;
+    }, {});
+  }, [isCbc, selectedBlock]);
+
   return (
     <div className="space-y-4">
+      {/* <div className="rounded-md border border-border bg-surface-muted/40 px-3 py-2 text-sm text-muted-foreground">
+        Saved instructions: {instructionsForLab || "None"}
+      </div> */}
       {/* <div className="flex flex-wrap items-center justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={downloadReport}>
           <Download className="h-4 w-4" />
@@ -133,35 +306,46 @@ export function PathologyResultReviewTab({
         <table className="w-full min-w-[980px] border-collapse text-left text-sm">
           <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-3 py-3">LOINC Code</th>
-              <th className="px-3 py-3">Test</th>
-              {/* <th className="px-3 py-3">Units</th>
-              <th className="px-3 py-3">Results</th>
-              <th className="px-3 py-3">Range</th> */}
-              <th className="px-3 py-3">Order Date</th>
-              <th className="px-3 py-3">Order completion Date</th>
-              {/* <th className="px-3 py-3">Result Status</th> */}
-              <th className="px-3 py-3">Action</th>
-              <th>
+              <th className="w-[180px] px-3 py-3">
+                <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort("loinc")}>
+                  LOINC Code
+                  {sortKey === "loinc" ? sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
+                </button>
+              </th>
+              <th className="w-[220px] px-3 py-3">
+                <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort("test")}>
+                  Test
+                  {sortKey === "test" ? sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
+                </button>
+              </th>
+              <th className="w-[160px] px-3 py-3">
+                <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort("orderDate")}>
+                  Order Date
+                  {sortKey === "orderDate" ? sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
+                </button>
+              </th>
+              <th className="w-[160px] px-3 py-3">
+                <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort("completionDate")}>
+                  Order completion Date
+                  {sortKey === "completionDate" ? sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
+                </button>
+              </th>
+              <th className="w-[180px] px-3 py-3">Action</th>
+              <th className="w-[120px] px-3 py-3">
                 <Button type="button" variant="outline" size="sm" onClick={downloadReport}>
                   <Download className="h-4 w-4" />
-                    Download All Reports
+                  Download All Reports
                 </Button>
               </th>
             </tr>
           </thead>
           <tbody>
-            {visibleBlocks.map((block) => {
-              const expanded = Boolean(expandedBlocks[block.id]);
-              const primaryRow = block.rows[0];
-              const hasHigh = block.rows.some((item) => item.flag === "H");
-              const hasLow = block.rows.some((item) => item.flag === "L");
-              const hasPending = block.rows.some((item) => item.flag === "N");
+            {pagedBlocks.length ? pagedBlocks.map((block) => {
               return (
                 <React.Fragment key={block.id}>
                   <tr className="border-t border-border align-top">
-                    <td className="px-3 py-3 text-xs text-muted-foreground">{block.name.toLowerCase().includes("cbc") ? "11273-0" : "28515-7"}</td>
-                    <td className="px-3 py-3">
+                    <td className="w-[180px] px-3 py-3 text-xs text-muted-foreground">{block.name.toLowerCase().includes("cbc") ? "11273-0" : "28515-7"}</td>
+                    <td className="w-[220px] px-3 py-3">
                       <div className="font-medium text-foreground">{block.name.replace(" - complete blood count", "").replace(" - kidney function test", "")}</div>
                       <div className="text-xs text-muted-foreground">{block.specialty}</div>
                     </td>
@@ -172,19 +356,18 @@ export function PathologyResultReviewTab({
                       </div>
                     </td>
                     <td className="px-3 py-3 text-muted-foreground">{primaryRow?.referenceRange ?? "-"}</td> */}
-                    <td className="px-3 py-3 text-muted-foreground">12/05/2021</td>
-                    <td className="px-3 py-3 text-muted-foreground">{hasPending ? "Pending" : "14/05/2021"}</td>
+                    <td className="w-[160px] px-3 py-3 text-muted-foreground">12/05/2021</td>
+                    <td className="w-[160px] px-3 py-3 text-muted-foreground">14/05/2021</td>
                     {/* <td className="px-3 py-3">
                       <StatusPill status={hasPending ? "Pending" : hasHigh ? "High" : "Low"} />
                     </td> */}
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="w-[180px] px-3 py-3">
+              <div className="flex items-center gap-2 overflow-x-auto">
                         <Button type="button" variant="outline" size="sm" onClick={() => onReorderResult(block.name)}>
                           <ArrowUpDown className="h-4 w-4" />
                           {/* Reorder */}
                         </Button>
                         <Button type="button" variant="outline" size="sm" onClick={() => {
-                          if (block.rows.every((row) => row.flag === "N")) return;
                           downloadLaboratoryPdf([
                             {
                               testName: block.name.replace(" - complete blood count", "").replace(" - kidney function test", ""),
@@ -196,7 +379,7 @@ export function PathologyResultReviewTab({
                               sampleType: "Blood",
                               reportDate: "14/05/2021",
                               interpretation: block.name.includes("CBC") ? "CBC pattern suggests anemia and low hematocrit." : "KFT indicates renal function abnormality.",
-                              rows: block.rows.map((row) => ({
+                              rows: getSelectedReportRows(block).map((row) => ({
                                 testName: block.name,
                                 parameter: row.parameter,
                                 value: row.result,
@@ -205,66 +388,66 @@ export function PathologyResultReviewTab({
                                 flag: row.flag,
                               })),
                             },
-                          ], "pathology-report.pdf");
+                          ], "pathology-report.pdf", "PATHOLOGY REPORT");
                         }}>
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setExpandedBlocks((current) => ({ ...current, [block.id]: !expanded }))}
-                        >
+                        <Button type="button" variant="outline" size="sm" onClick={() => openBlockView(block)}>
                           <Eye className="h-4 w-4"/>
                         </Button>
                       </div>
                     </td>
                   </tr>
-                  {expanded ? (
-                    <tr className="border-t border-border bg-surface-muted/20">
-                      <td colSpan={9} className="px-3 py-3">
-                        <div className="rounded-md border border-border bg-white p-3">
-                          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                            <span className="font-semibold text-foreground">{block.name.replace(" - complete blood count", "").replace(" - kidney function test", "")}</span>
-                            <span className="text-muted-foreground">{block.specialty}</span>
-                            <span className="text-muted-foreground">Sample: Blood</span>
-                            <span className="text-muted-foreground">Collected On: 12/05/2021</span>
-                            <span className="text-muted-foreground">Completed On: 14/05/2021</span>
-                            <span className="text-muted-foreground">LOINC Code: {block.name.toLowerCase().includes("cbc") ? "11273-0" : "28515-7"}</span>
-                          </div>
-                          <div className="overflow-hidden rounded-md border border-border">
-                            <table className="w-full border-collapse text-left text-sm">
-                              <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                <tr>
-                                  <th className="px-3 py-2">Parameter</th>
-                                  <th className="px-3 py-2">Result</th>
-                                  <th className="px-3 py-2">Unit</th>
-                                  <th className="px-3 py-2">Range</th>
-                                  <th className="px-3 py-2">Flag</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {block.rows.map((row) => (
-                                  <tr key={row.parameter} className="border-t border-border">
-                                    <td className="px-3 py-2 font-medium text-foreground">{row.parameter}</td>
-                                    <td className="px-3 py-2 text-foreground">{row.result}</td>
-                                    <td className="px-3 py-2 text-muted-foreground">{row.unit}</td>
-                                    <td className="px-3 py-2 text-muted-foreground">{row.referenceRange}</td>
-                                    <td className="px-3 py-2 text-muted-foreground">{row.flag}</td>                                   
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : null}
                 </React.Fragment>
               );
-            })}
+            }) : (
+              <tr>
+                <td className="px-3 py-6 text-center text-muted-foreground" colSpan={6}>
+                  No result review records found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-border bg-white px-3 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <span>
+            {sortedBlocks.length} records - Page {currentPage + 1} of {pageCount}
+          </span>
+          <label className="flex items-center gap-2">
+            <span>Rows</span>
+            <select
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground outline-none"
+              value={pageSize}
+              onChange={(event) => {
+                setPageSize(Number(event.target.value));
+                setPageIndex(0);
+              }}
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="outline" onClick={() => setPageIndex(0)} disabled={currentPage === 0} aria-label="First page">
+            <ChevronsLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setPageIndex((current) => Math.max(0, current - 1))} disabled={currentPage === 0}>
+            Previous
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setPageIndex((current) => Math.min(pageCount - 1, current + 1))} disabled={currentPage >= pageCount - 1}>
+            Next
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setPageIndex(pageCount - 1)} disabled={currentPage >= pageCount - 1} aria-label="Last page">
+            <ChevronsRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
       <div className="flex justify-end gap-3">
         {/* <Button type="button" variant="outline" onClick={openDiagnosisDialog}>
@@ -302,107 +485,187 @@ export function PathologyResultReviewTab({
         )}
       </div>
 
-      {diagnosisOpen ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-3 sm:items-center sm:p-4">
-          <div className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-md border border-border bg-white shadow-xl sm:max-h-[calc(100vh-2rem)]">
-            <div className="border-b border-border px-4 py-3 text-sm font-semibold text-foreground">Add Diagnosis</div>
-            <div className="flex-1 space-y-4 overflow-y-auto p-4">
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
-                <div className="min-w-0">
-                  <Input value={diagnosisSearch} onChange={(event) => onDiagnosisSearchChange(event.target.value)} placeholder="Search by clinical conclusion or SNOMED code" />
-                </div>
-                <div className="min-w-0">
-                  <div className="mb-1 text-xs font-medium text-muted-foreground">Diagnosis Type</div>
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-border focus:ring-0" value={diagnosisType} onChange={(event) => onDiagnosisTypeChange(event.target.value)}>
-                    <option value="">All Types</option>
-                    {diagnosisTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="overflow-hidden rounded-md border border-border">
-                  <table className="w-full border-collapse text-sm">
-                    <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Select</th>
-                        <th className="px-3 py-2 text-left">Clinical Conclusion</th>
-                        <th className="px-3 py-2 text-left">SNOMED CT Code</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredDiagnosisOptions.map((item) => {
-                        const checked = selectedDiagnosis?.code === item.code;
-                        return (
-                          <tr key={item.code} className={checked ? "bg-primary/5" : "border-t border-border"}>
-                            <td className="px-3 py-2">
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4 accent-primary"
-                                checked={checked}
-                                onChange={(event) => {
-                                  if (event.target.checked) {
-                                    setSelectedDiagnosis(item);
-                                  } else if (selectedDiagnosis?.code === item.code) {
-                                    setSelectedDiagnosis(null);
-                                  }
-                                }}
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-foreground">{item.conclusion}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{item.code}</td>
-                          </tr>
-                        );
-                      })}
-                      {!filteredDiagnosisOptions.length ? (
+      <Drawer
+        open={Boolean(selectedBlock)}
+        onOpenChange={(open) => {
+          if (!open) closeBlockView();
+        }}
+        title={selectedBlock ? selectedReportName : "Result preview"}
+        description={selectedBlock ? `${selectedBlock.specialty} • Report status: ${selectedReportStatus} • Sample Name: ${selectedSpecimen}` : "Static result preview"}
+      >
+        {selectedBlock ? (
+          <div className="space-y-4">
+            {/* <PatientSummaryBanner /> */}
+            {/* <div className="grid gap-2 rounded-md border border-border bg-surface-muted/30 p-3 text-sm">
+              <div><span className="font-medium text-foreground">Patient Name:</span> <span className="text-muted-foreground">Meera Joshi</span></div>
+              <div><span className="font-medium text-foreground">Specimen:</span> <span className="text-muted-foreground">{selectedSpecimen}</span></div>
+              <div><span className="font-medium text-foreground">Test Name:</span> <span className="text-muted-foreground">{selectedReportName}</span></div>
+              <div><span className="font-medium text-foreground">Report Status:</span> <span className="text-muted-foreground">{selectedReportStatus}</span></div>
+            </div> */}
+            {isCbc ? (
+              <div className="space-y-4">
+                {Object.entries(groupedRows).map(([groupName, rows]) => (
+                  <div key={groupName} className="overflow-hidden rounded-md border border-border">
+                    <div className="border-b border-border bg-surface-muted px-3 py-2 text-sm font-semibold text-foreground">{groupName}</div>
+                    <table className="w-full table-fixed border-collapse text-left text-sm">
+                      <thead className="bg-surface-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         <tr>
-                          <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
-                            No diagnosis found
-                          </td>
+                          <th className="w-[240px] px-3 py-2">Test Parameter</th>
+                          <th className="w-[160px] px-3 py-2">Result</th>
+                          <th className="w-[140px] px-3 py-2">Unit</th>
+                          <th className="w-[180px] px-3 py-2">Range</th>
                         </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
-                </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="space-y-2 md:col-span-2">
-                  <div className="text-xs font-medium text-muted-foreground">Comments</div>
-                  <textarea className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border focus:ring-0" value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} placeholder="Enter comments" />
-                </label>
+                      </thead>
+                      <tbody>
+                        {rows.map((row) => (
+                          <tr key={row.parameter} className="border-t border-border">
+                            <td className="px-3 py-2 font-medium text-foreground">{row.parameter}</td>
+                            <td className={`px-3 py-2 ${resultTone(row.flag)}`}>{row.result}</td>
+                            <td className="px-3 py-2 text-muted-foreground">{row.unit}</td>
+                            <td className="px-3 py-2 text-muted-foreground">{row.referenceRange}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
               </div>
+            ) : (
+              <div className="overflow-hidden rounded-md border border-border">
+                <table className="w-full table-fixed border-collapse text-left text-sm">
+                  <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="w-[240px] px-3 py-2">Parameter</th>
+                      <th className="w-[160px] px-3 py-2">Result</th>
+                      <th className="w-[140px] px-3 py-2">Unit</th>
+                      <th className="w-[180px] px-3 py-2">Range</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getSelectedReportRows(selectedBlock).map((row) => (
+                      <tr key={row.parameter} className="border-t border-border">
+                        <td className="px-3 py-2 font-medium text-foreground">{row.parameter}</td>
+                        <td className={`px-3 py-2 ${resultTone(row.flag)}`}>{row.result}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{row.unit}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{row.referenceRange}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
+      </Drawer>
+
+      <Drawer
+        open={diagnosisOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDiagnosisDialog();
+        }}
+        title="Add Diagnosis"
+        className="w-[calc(100vw-2rem)] max-w-4xl"
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={closeDiagnosisDialog}>
+              Close
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (selectedDiagnosis) {
+                  setConfirmedDiagnoses((current) => [
+                    {
+                      id: `${selectedDiagnosis.code}-${Date.now()}`,
+                      type: selectedDiagnosis.type,
+                      diagnosis: selectedDiagnosis.conclusion,
+                      snomed: selectedDiagnosis.code,
+                      comments: commentDraft,
+                    },
+                    ...current,
+                  ]);
+                  onAddDiagnosis();
+                  closeDiagnosisDialog();
+                }
+              }}
+            >
+              Add Diagnosis
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
+            <div className="min-w-0">
+              <Input value={diagnosisSearch} onChange={(event) => onDiagnosisSearchChange(event.target.value)} placeholder="Search by clinical conclusion or SNOMED code" />
             </div>
-            <div className="flex flex-col gap-2 border-t border-border px-4 py-3 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={closeDiagnosisDialog}>
-                Close
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  if (selectedDiagnosis) {
-                    setConfirmedDiagnoses((current) => [
-                      {
-                        id: `${selectedDiagnosis.code}-${Date.now()}`,
-                        type: selectedDiagnosis.type,
-                        diagnosis: selectedDiagnosis.conclusion,
-                        snomed: selectedDiagnosis.code,
-                        comments: commentDraft,
-                      },
-                      ...current,
-                    ]);
-                    onAddDiagnosis();
-                    closeDiagnosisDialog();
-                  }
-                }}
-              >
-                Add Diagnosis
-              </Button>
+            <div className="min-w-0">
+              <div className="mb-1 text-xs font-medium text-muted-foreground">Diagnosis Type</div>
+              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-border focus:ring-0" value={diagnosisType} onChange={(event) => onDiagnosisTypeChange(event.target.value)}>
+                <option value="">All Types</option>
+                {diagnosisTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+          <div className="overflow-hidden rounded-md border border-border">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left">Select</th>
+                  <th className="px-3 py-2 text-left">Clinical Conclusion</th>
+                  <th className="px-3 py-2 text-left">SNOMED CT Code</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDiagnosisOptions.map((item) => {
+                  const checked = selectedDiagnosis?.code === item.code;
+                  return (
+                    <tr key={item.code} className={checked ? "bg-primary/5" : "border-t border-border"}>
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-primary"
+                          checked={checked}
+                          onChange={(event) => {
+                            if (event.target.checked) {
+                              setSelectedDiagnosis(item);
+                            } else if (selectedDiagnosis?.code === item.code) {
+                              setSelectedDiagnosis(null);
+                            }
+                          }}
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-foreground">{item.conclusion}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{item.code}</td>
+                    </tr>
+                  );
+                })}
+                {!filteredDiagnosisOptions.length ? (
+                  <tr>
+                    <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
+                      No diagnosis found
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-2 md:col-span-2">
+              <div className="text-xs font-medium text-muted-foreground">Comments</div>
+              <textarea className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border focus:ring-0" value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} placeholder="Enter comments" />
+            </label>
+          </div>
         </div>
-      ) : null}
+      </Drawer>
     </div>
   );
 }
+
+
+
+

@@ -98,42 +98,43 @@ export function ReferConsultationTab() {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {(["test-order", "order-summary"] as const).map((tab) => (
-              <Button
-                className={["rounded-lg border-transparent bg-transparent font-bold text-slate-700 hover:bg-white/70 hover:text-slate-900", activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary" : ""].join(" ")}
-                key={tab}
-                size="sm"
-                variant="outline"
-                onClick={() => setActiveTab(tab)}
-              >
+              <Button key={tab} size="sm" variant={activeTab === tab ? "default" : "outline"} onClick={() => setActiveTab(tab)}>
                 {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result / Status Review"}
               </Button>
             ))}
           </div>
 
           {activeTab === "test-order" ? (
-            <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Refer To Department</div><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.referToDepartment} onChange={(e) => setDraft((d) => ({ ...d, referToDepartment: e.target.value }))}>{departments.map((d) => <option key={d}>{d}</option>)}</select></label>
+            <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Refer To Department</div><select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={draft.referToDepartment} onChange={(e) => setDraft((d) => ({ ...d, referToDepartment: e.target.value }))}>{departments.map((d) => <option key={d}>{d}</option>)}</select></label>
                 <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Consultant Doctor</div><Input value={draft.consultantDoctor} onChange={(e) => setDraft((d) => ({ ...d, consultantDoctor: e.target.value }))} placeholder="Consultant name" /></label>
-                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Urgency</div><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={draft.urgency} onChange={(e) => setDraft((d) => ({ ...d, urgency: e.target.value as ReferralUrgency }))}><option>Routine</option><option>Urgent</option></select></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Urgency</div><select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={draft.urgency} onChange={(e) => setDraft((d) => ({ ...d, urgency: e.target.value as ReferralUrgency }))}><option>Routine</option><option>Urgent</option></select></label>
                 <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Date & Time</div><Input type="datetime-local" value={draft.preferredDateTime} onChange={(e) => setDraft((d) => ({ ...d, preferredDateTime: e.target.value }))} /></label>
-                <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Reason for Reference</div><textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none" value={draft.reason} onChange={(e) => setDraft((d) => ({ ...d, reason: e.target.value }))} /></label>
-                {/* <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Referral Notes</div><textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none" value={draft.clinicalSummary} onChange={(e) => setDraft((d) => ({ ...d, clinicalSummary: e.target.value }))} /></label> */}
-                <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Referral Notes</div><textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none" value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} /></label>
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Reason for Reference</div><textarea className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm outline-none" value={draft.reason} onChange={(e) => setDraft((d) => ({ ...d, reason: e.target.value }))} /></label>
+                {/* <label className="space-y-2 md:col-span-2"><div className="text-xs font-medium text-muted-foreground">Referral Notes</div><textarea className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm outline-none" value={draft.clinicalSummary} onChange={(e) => setDraft((d) => ({ ...d, clinicalSummary: e.target.value }))} /></label> */}
+                <label className="space-y-2"><div className="text-xs font-medium text-muted-foreground">Referral Notes</div><textarea className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm outline-none" value={draft.notes} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} /></label>
               </div>
-              <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-4">
+              <div className="ml-auto flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={() => setActiveTab("order-summary")}>
+                  View 
+                </Button>
+                <Button type="button"  onClick={save}>
+                  Save
+                </Button>
+              </div>
+              {/* <div className="space-y-3 rounded-xl border border-border bg-surface-muted p-4">
                 <div className="text-sm font-semibold text-foreground">Consultation Summary</div>
                 <div className="space-y-2 text-sm">
                   <div className="rounded-md border border-border bg-white p-3">Department: <span className="font-semibold">{draft.referToDepartment}</span></div>
                   <div className="rounded-md border border-border bg-white p-3">Consultant: <span className="font-semibold">{draft.consultantDoctor || "-"}</span></div>
                   <div className="rounded-md border border-border bg-white p-3">Urgency: <span className="font-semibold">{draft.urgency}</span></div>
-                  {/* <div className="rounded-md border border-border bg-white p-3">Status: <span className="font-semibold">{draft.status}</span></div> */}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button className="flex-1" onClick={save}><Save className="h-4 w-4" />Submit Order</Button>
                   <Button variant="outline" className="flex-1" onClick={() => setActiveTab("order-summary")}>View Summary</Button>
                 </div>
-              </div>
+              </div> */}
             </div>
           ) : null}
 

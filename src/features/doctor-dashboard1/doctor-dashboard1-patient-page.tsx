@@ -162,11 +162,11 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             <TabsList className="inline-flex h-auto w-max min-w-max rounded-lg bg-surface-muted/70 p-1">
               <PatientTab icon={LayoutDashboard} label="Overview" value="overview" />
               <PatientTab icon={Radio} label="Live Monitoring" value="live-monitoring" />
-              {/* <PatientTab icon={Stethoscope} label="Clinical Exam" value="clinical-examination" /> */}
+              <PatientTab icon={Stethoscope} label="Clinical Exam" value="clinical-examination" />
               <PatientTab icon={FlaskConical} label="Results" value="results" />
               <PatientTab icon={HeartPulse} label="Vitals" value="vitals" />
-              {/* <PatientTab icon={ClipboardCheck} label="Assessment" value="assessment" /> */}
-              {/* <PatientTab icon={ClipboardCheck} label="Progress Note" value="shift-summary" /> */}
+              <PatientTab icon={ClipboardCheck} label="Assessment" value="assessment" />
+              <PatientTab icon={ClipboardCheck} label="Progress Note" value="shift-summary" />
               <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
               <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
             </TabsList>
@@ -180,7 +180,8 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             <LiveMonitoringPage />
           </TabsContent>
           <TabsContent className="mt-0" value="clinical-examination">
-            <ClinicalExaminationPage embedded initialPatientId={getClinicalPatientId(patient.id)} />
+            {/* <ClinicalExaminationPage embedded initialPatientId={getClinicalPatientId(patient.id)} /> */}
+            <h1>under development</h1>
           </TabsContent>
           <TabsContent className="mt-0" value="results">
             {poctMode === "results" ? (
@@ -210,7 +211,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             <PatientVitalsTabs patient={patient} rapidReviewPatient={rapidReviewPatient} />
           </TabsContent>
           <TabsContent className="mt-0" value="assessment">
-            <AssessmentPage
+            {/* <AssessmentPage
               isolationType="Droplet"
               patient={{
                 ageGender: rapidReviewPatient?.ageGender,
@@ -220,10 +221,12 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
                 name: patient.name,
                 uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
               }}
-            />
+            /> */}
+            <h1>under development</h1>
           </TabsContent>
           <TabsContent className="mt-0" value="shift-summary">
-            <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />
+            {/* <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} /> */}
+            <h1>under development</h1>
           </TabsContent>
           <TabsContent className="mt-0" value="orders">
             <DoctorOrdersPage

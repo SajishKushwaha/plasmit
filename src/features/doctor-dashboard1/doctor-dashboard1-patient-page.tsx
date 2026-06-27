@@ -32,12 +32,12 @@ import { ResultsCenterView } from "@/features/results/components/ResultsCenterVi
 import { DoctorOrdersPage } from "@/features/doctor-orders/doctor-orders";
 import { ClinicalExaminationPage } from "@/features/clinical-examination/clinical-examination-page";
 import { AssessmentPage } from "@/features/assessment/assessment-page";
-import { AddPoctPage } from "@/features/poct/poct-pages";
+import { ViewPoctResultPage } from "@/features/poct/poct-pages";
 import { IntakeOutputPage } from "@/features/intake-output/intake-output-page";
 import { ProgressNotesPanel } from "@/features/doctor-dashboard1/progress-notes";
 import { cn } from "@/lib/utils";
 
-type PatientTabValue = "overview" | "live-monitoring" | "clinical-examination" | "results" | "vitals" | "assessment" | "shift-summary" | "orders" | "Poct" | "Intake Output";
+type PatientTabValue = "overview" | "live-monitoring" | "clinical-examination" | "results" | "vitals" | "assessment" | "shift-summary" | "orders" | "Intake Output";
 type DashboardPoctMode = "add" | "results";
 type ResultsAutoView = "laboratory-all";
 
@@ -51,12 +51,12 @@ function getRequestedPatientTab(tab: string | null): PatientTabValue | null {
     case "assessment":
     case "shift-summary":
     case "orders":
-    case "Poct":
     case "Intake Output":
       return tab;
     case "poct":
     case "POCT":
-      return "Poct";
+    case "Poct":
+      return "orders";
     case "intake-output":
       return "Intake Output";
     default:
@@ -81,6 +81,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
   const requestedResultsAutoView = getRequestedResultsAutoView(searchParams.get("resultsView"));
   const [activeTab, setActiveTab] = React.useState<PatientTabValue>(requestedTab ?? "overview");
   const [poctMode, setPoctMode] = React.useState<DashboardPoctMode>(requestedPoctMode ?? "add");
+  const [ordersDefaultTab, setOrdersDefaultTab] = React.useState(requestedPoctMode === "add" ? "poct" : "radiology");
   const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
   const patient = orderedPatients.find((item) => String(item.id) === patientId);
   const rapidReviewPatient = patient ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId) : undefined;
@@ -104,8 +105,9 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
 
   React.useEffect(() => {
     if (requestedPoctMode) {
-      setActiveTab("Poct");
+      setActiveTab(requestedPoctMode === "results" ? "results" : "orders");
       setPoctMode(requestedPoctMode);
+      if (requestedPoctMode === "add") setOrdersDefaultTab("poct");
     }
   }, [requestedPoctMode]);
 
@@ -113,8 +115,9 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
     const openPoctInPlace = (event: Event) => {
       const mode = getRequestedPoctMode((event as CustomEvent<{ mode?: string }>).detail?.mode ?? null);
       if (!mode) return;
-      setActiveTab("Poct");
+      setActiveTab(mode === "results" ? "results" : "orders");
       setPoctMode(mode);
+      if (mode === "add") setOrdersDefaultTab("poct");
     };
 
     window.addEventListener("plasmit-dashboard1-poct-mode", openPoctInPlace);
@@ -159,13 +162,12 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             <TabsList className="inline-flex h-auto w-max min-w-max rounded-lg bg-surface-muted/70 p-1">
               <PatientTab icon={LayoutDashboard} label="Overview" value="overview" />
               <PatientTab icon={Radio} label="Live Monitoring" value="live-monitoring" />
-              <PatientTab icon={Stethoscope} label="Clinical Exam" value="clinical-examination" />
+              {/* <PatientTab icon={Stethoscope} label="Clinical Exam" value="clinical-examination" /> */}
               <PatientTab icon={FlaskConical} label="Results" value="results" />
               <PatientTab icon={HeartPulse} label="Vitals" value="vitals" />
-              <PatientTab icon={ClipboardCheck} label="Assessment" value="assessment" />
-              <PatientTab icon={ClipboardCheck} label="Progress Note" value="shift-summary" />
+              {/* <PatientTab icon={ClipboardCheck} label="Assessment" value="assessment" /> */}
+              {/* <PatientTab icon={ClipboardCheck} label="Progress Note" value="shift-summary" /> */}
               <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
-              <PatientTab icon={ChartNoAxesCombined} label="POCT" value="Poct" />
               <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
             </TabsList>
           </div>
@@ -181,24 +183,28 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             <ClinicalExaminationPage embedded initialPatientId={getClinicalPatientId(patient.id)} />
           </TabsContent>
           <TabsContent className="mt-0" value="results">
-            <ResultsCenterView
-              autoOpenAllDepartment={requestedResultsAutoView === "laboratory-all" ? "laboratory" : undefined}
-              defaultDepartment="all"
-              patientContext={{
-                ageSex: rapidReviewPatient?.ageGender,
-                allergy: "Meropenem",
-                bed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
-                bloodGroup: "AB +ve",
-                consultantDoctor: rapidReviewPatient?.consultant,
-                dob: "30-12-1995",
-                mrn: getResultPatientMrn(patient.id),
-                name: patient.name,
-                uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
-                wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
-              }}
-              viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
-              viewTitle="Results Center"
-            />
+            {poctMode === "results" ? (
+              <ViewPoctResultPage embedded key={`poct-results-${patient.id}`} mode="results" showModeActions={false} />
+            ) : (
+              <ResultsCenterView
+                autoOpenAllDepartment={requestedResultsAutoView === "laboratory-all" ? "laboratory" : undefined}
+                defaultDepartment="all"
+                patientContext={{
+                  ageSex: rapidReviewPatient?.ageGender,
+                  allergy: "Meropenem",
+                  bed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+                  bloodGroup: "AB +ve",
+                  consultantDoctor: rapidReviewPatient?.consultant,
+                  dob: "30-12-1995",
+                  mrn: getResultPatientMrn(patient.id),
+                  name: patient.name,
+                  uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
+                  wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+                }}
+                viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
+                viewTitle="Results Center"
+              />
+            )}
           </TabsContent>
           <TabsContent className="mt-0" value="vitals">
             <PatientVitalsTabs patient={patient} rapidReviewPatient={rapidReviewPatient} />
@@ -219,13 +225,10 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
           <TabsContent className="mt-0" value="shift-summary">
             <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />
           </TabsContent>
-          <TabsContent className="mt-0" value="Poct">
-            <AddPoctPage embedded key={patient.id} mode={poctMode} onModeChange={setPoctMode} />
-          </TabsContent>
           <TabsContent className="mt-0" value="orders">
             <DoctorOrdersPage
-              defaultTab="radiology"
-              key={patient.id}
+              defaultTab={ordersDefaultTab}
+              key={`${patient.id}-${ordersDefaultTab}`}
               patientContext={{
                 ageSex: rapidReviewPatient?.ageGender,
                 diagnosis: patient.diagnosis,

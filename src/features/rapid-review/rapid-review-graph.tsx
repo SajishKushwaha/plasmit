@@ -94,8 +94,8 @@ const reviewMetricColors: Record<ReviewGraphMetricId, string> = {
   consciousnessSedation: "#6f2dbd",
   painScore: "#111827",
   bloodGlucose: "#00a6a6",
-  fluidIntake: "#1f9d55",
-  urineOutput: "#6d4c41",
+  fluidIntake: "#0ea5e9",
+  urineOutput: "#10b981",
 };
 
 const reviewGraphMetrics: ReviewGraphMetric[] = [
@@ -1081,6 +1081,7 @@ type VitalsGraphOnePoint = {
   bloodGlucoseForeign: number | null;
   fluidIntake: number | null;
   urineOutput: number | null;
+  fluidBalance: number | null;
   displays: CombinedReviewGraphPoint["displays"];
   risks: CombinedReviewGraphPoint["risks"];
 };
@@ -1265,26 +1266,14 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
             <VitalsGraphOneSection
               graphOnly={graphOnly}
               legends={[
-                vitalsGraphOneLegend("fluidIntake"),
-                vitalsGraphOneLegend("urineOutput"),
+                { color: reviewMetricColor("fluidIntake"), description: "Intake above baseline", label: "Intake" },
+                { color: reviewMetricColor("urineOutput"), description: "Output below baseline", label: "Output" },
+                { color: "#94a3b8", description: "Zero baseline", label: "Baseline" },
               ]}
               subtitle=""
               title="Intake / Output"
             >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
-                <ResponsiveContainer height="100%" width="100%">
-                <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
-                  <YAxis domain={[0, 180]} tick={{ fontSize: 10 }} width={44} />
-                  <Tooltip content={<VitalsGraphOneTooltip />} />
-                  <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={40} y2={120} />
-                  <ReferenceLine label={{ value: "Review below 30", fill: "#b91c1c", fontSize: 10, position: "insideTopRight" }} stroke="#dc2626" strokeDasharray="4 4" y={30} />
-                  <Line connectNulls dataKey="fluidIntake" dot={{ r: 3 }} name="Intake" stroke={reviewMetricColor("fluidIntake")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" />
-                  <Line connectNulls dataKey="urineOutput" dot={{ r: 3 }} name="Urine" stroke={reviewMetricColor("urineOutput")} strokeWidth={3.2} type="monotone" />
-                </LineChart>
-              </ResponsiveContainer>
-              </HorizontalVitalsChart>
+              <RapidReviewIntakeOutputGraph data={data} showLabels={!graphOnly} />
             </VitalsGraphOneSection>
           )}
 
@@ -1364,7 +1353,7 @@ function VitalsGraphOneSection({
           </div>
         </div>
       ) : null}
-      <div className={cn("min-w-0 p-3", graphOnly ? "h-[220px]" : "h-[250px]")}>
+      <div className={cn("min-w-0 p-3", graphOnly ? "h-[220px]" : title === "Intake / Output" ? "h-[330px]" : "h-[250px]")}>
         {children}
       </div>
     </div>
@@ -2026,28 +2015,34 @@ function GraphStatCard({
 }
 
 function buildVitalsGraphOneData(data: CombinedReviewGraphPoint[]): VitalsGraphOnePoint[] {
-  return sampleVitalsGraphPoints(data, 14).map((point) => ({
-    date: point.date,
-    time: point.time,
-    xLabel: `${formatDateShortLabel(point.date)} ${point.time}`,
-    pulseRate: parseObservationNumber(point.displays.pulseRate ?? ""),
-    monitorHeartRate: parseObservationNumber(point.displays.monitorHeartRate ?? ""),
-    bloodPressure: systolicValue(point.displays.bloodPressure ?? ""),
-    bloodPressureDiastolic: diastolicValue(point.displays.bloodPressure ?? ""),
-    respiratoryRate: parseObservationNumber(point.displays.respiratoryRate ?? ""),
-    oxygenSaturation: parseObservationNumber(point.displays.oxygenSaturation ?? ""),
-    oxygenFlowRate: oxygenFlowValue(point.displays.oxygenFlowRate ?? ""),
-    fio2: parseObservationNumber(point.displays.fio2 ?? ""),
-    temperature: parseObservationNumber(point.displays.temperature ?? ""),
-    consciousnessSedation: parseObservationNumber(point.displays.consciousnessSedation ?? ""),
-    painScore: parseObservationNumber(point.displays.painScore ?? ""),
-    bloodGlucose: parseObservationNumber(point.displays.bloodGlucose ?? ""),
-    bloodGlucoseForeign: typeof point.bloodGlucose === "number" ? mgDlToMmolL(point.bloodGlucose) : null,
-    fluidIntake: parseObservationNumber(point.displays.fluidIntake ?? ""),
-    urineOutput: parseObservationNumber(point.displays.urineOutput ?? ""),
-    displays: point.displays,
-    risks: point.risks,
-  }));
+  return sampleVitalsGraphPoints(data, 14).map((point) => {
+    const fluidIntake = parseObservationNumber(point.displays.fluidIntake ?? "");
+    const urineOutput = parseObservationNumber(point.displays.urineOutput ?? "");
+
+    return {
+      date: point.date,
+      time: point.time,
+      xLabel: `${formatDateShortLabel(point.date)} ${point.time}`,
+      pulseRate: parseObservationNumber(point.displays.pulseRate ?? ""),
+      monitorHeartRate: parseObservationNumber(point.displays.monitorHeartRate ?? ""),
+      bloodPressure: systolicValue(point.displays.bloodPressure ?? ""),
+      bloodPressureDiastolic: diastolicValue(point.displays.bloodPressure ?? ""),
+      respiratoryRate: parseObservationNumber(point.displays.respiratoryRate ?? ""),
+      oxygenSaturation: parseObservationNumber(point.displays.oxygenSaturation ?? ""),
+      oxygenFlowRate: oxygenFlowValue(point.displays.oxygenFlowRate ?? ""),
+      fio2: parseObservationNumber(point.displays.fio2 ?? ""),
+      temperature: parseObservationNumber(point.displays.temperature ?? ""),
+      consciousnessSedation: parseObservationNumber(point.displays.consciousnessSedation ?? ""),
+      painScore: parseObservationNumber(point.displays.painScore ?? ""),
+      bloodGlucose: parseObservationNumber(point.displays.bloodGlucose ?? ""),
+      bloodGlucoseForeign: typeof point.bloodGlucose === "number" ? mgDlToMmolL(point.bloodGlucose) : null,
+      fluidIntake,
+      urineOutput,
+      fluidBalance: fluidIntake !== null && urineOutput !== null ? fluidIntake - urineOutput : null,
+      displays: point.displays,
+      risks: point.risks,
+    };
+  });
 }
 
 function sampleVitalsGraphPoints(data: CombinedReviewGraphPoint[], maxPoints: number) {

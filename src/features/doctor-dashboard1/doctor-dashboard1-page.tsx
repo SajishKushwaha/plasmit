@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CenterModal } from "@/components/ui/center-modal";
+import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { ProgressNotesPanel } from "@/features/doctor-dashboard1/progress-notes";
 import { cn } from "@/lib/utils";
@@ -223,7 +224,7 @@ export function DoctorDashboard1Page() {
                     <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", patientToneCellClass(tone))}>
                       <Link
                         className="block rounded-md px-1 py-0.5 transition hover:bg-white/70"
-                        href={`/doctor-dashboard1/patients/${patient.id}?tab=clinical-examination`}
+                        href={`/doctor-dashboard1/patients/${patient.id}`}
                       >
                         <div className={cn("text-sm font-extrabold", patientToneClass(tone))}>
                           {patient.name}
@@ -726,6 +727,21 @@ function buildPatientEvents(patient: Dashboard1Patient) {
 }
 function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }) {
   const [tab, setTab] = React.useState<"current" | "past" | "intervention">("current");
+  const [addedMedicines, setAddedMedicines] = React.useState<Array<{
+    name: string;
+    dose: string;
+    route: string;
+    frequency: string;
+    startDate: string;
+    status: string;
+    prescribedBy: string;
+  }>>([]);
+  const [medicineDraft, setMedicineDraft] = React.useState({
+    name: "",
+    dose: "",
+    route: "Oral",
+    frequency: "OD",
+  });
 
   const currentMedication = [
     {
@@ -801,6 +817,26 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
     },
   ];
 
+  const currentMedicationRows = [...addedMedicines, ...currentMedication];
+
+  function addMedicine() {
+    if (!medicineDraft.name.trim()) return;
+
+    setAddedMedicines((current) => [
+      {
+        name: medicineDraft.name.trim(),
+        dose: medicineDraft.dose.trim() || "-",
+        route: medicineDraft.route.trim() || "-",
+        frequency: medicineDraft.frequency.trim() || "-",
+        startDate: new Date().toLocaleDateString("en-GB"),
+        status: "Active",
+        prescribedBy: "Doctor IPD",
+      },
+      ...current,
+    ]);
+    setMedicineDraft({ name: "", dose: "", route: "Oral", frequency: "OD" });
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
        
@@ -819,7 +855,45 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
 
       <div className="max-h-[60dvh] overflow-y-auto p-5">
         {tab === "current" ? (
-          <MedicationTable type="current" rows={currentMedication} />
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="mb-3 text-sm font-bold text-slate-900">Add Medicine</div>
+              <div className="grid gap-2 md:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto]">
+                <Input
+                  aria-label="Medicine name"
+                  className="bg-white font-semibold"
+                  placeholder="Medicine name"
+                  value={medicineDraft.name}
+                  onChange={(event) => setMedicineDraft((current) => ({ ...current, name: event.target.value }))}
+                />
+                <Input
+                  aria-label="Dose"
+                  className="bg-white font-semibold"
+                  placeholder="Dose"
+                  value={medicineDraft.dose}
+                  onChange={(event) => setMedicineDraft((current) => ({ ...current, dose: event.target.value }))}
+                />
+                <Input
+                  aria-label="Route"
+                  className="bg-white font-semibold"
+                  placeholder="Route"
+                  value={medicineDraft.route}
+                  onChange={(event) => setMedicineDraft((current) => ({ ...current, route: event.target.value }))}
+                />
+                <Input
+                  aria-label="Frequency"
+                  className="bg-white font-semibold"
+                  placeholder="Frequency"
+                  value={medicineDraft.frequency}
+                  onChange={(event) => setMedicineDraft((current) => ({ ...current, frequency: event.target.value }))}
+                />
+                <Button className="whitespace-nowrap" type="button" onClick={addMedicine}>
+                  Add Medicine
+                </Button>
+              </div>
+            </div>
+            <MedicationTable type="current" rows={currentMedicationRows} />
+          </div>
         ) : null}
 
         {tab === "past" ? (

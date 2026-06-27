@@ -28,12 +28,14 @@ const loginCredentials = [
     password: "doctor123",
     role: "Doctor IPD" as Role,
     scope: "doctor-ipd",
+    route: "/doctor-dashboard1",
   },
   {
     email: "admin@hospital.com",
     password: "admin123",
     role: "Hospital Admin" as Role,
     scope: "admin",
+    route: "/dashboard",
   },
 ] as const;
 
@@ -127,7 +129,7 @@ export function LoginPage() {
     if (window.localStorage.getItem(authStorageKey) === "true") {
       const savedScope = window.localStorage.getItem(accessScopeKey);
       if (savedScope === "doctor-ipd") {
-        router.replace(getRoleRoute("Doctor IPD"));
+        router.replace("/doctor-dashboard1");
         return;
       }
       const savedRole = window.localStorage.getItem("plasmit-role") as Role | null;
@@ -155,7 +157,7 @@ export function LoginPage() {
       setTransitioning(true);
       toast.success("Access granted");
       window.setTimeout(() => {
-        router.push(getRoleRoute(credential.role));
+        router.replace(credential.route);
       }, 320);
     }, 1000);
   }

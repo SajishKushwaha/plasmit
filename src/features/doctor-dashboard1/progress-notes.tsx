@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, ClipboardCheck, Clock3, FilePenLine, Stethoscope, UserRound } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, Clock3, FilePenLine, ListChecks, Stethoscope, UserRound } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ type ProgressNoteRapidReviewPatient = {
   ward?: string;
 };
 
-type ProgressNoteKind = "doctor" | "nurse";
+type ProgressNoteKind = "doctor" | "nurse" | "care-plan";
 
 type ProgressNote = {
   id: string;
@@ -65,6 +65,7 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
   const visibleNotes = notes.filter((note) => note.kind === activeKind);
   const doctorCount = notes.filter((note) => note.kind === "doctor").length;
   const nurseCount = notes.filter((note) => note.kind === "nurse").length;
+  const carePlanCount = notes.filter((note) => note.kind === "care-plan").length;
   const latestNote = visibleNotes[0];
   const uhid = rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`;
   const wardBed = rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed;
@@ -109,6 +110,7 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
           <div className="inline-flex w-full rounded-lg border border-border bg-surface-muted/70 p-1 md:w-auto">
             <ProgressNoteTab active={activeKind === "doctor"} count={doctorCount} icon={Stethoscope} label="Doctor Note" onClick={() => setActiveKind("doctor")} />
             <ProgressNoteTab active={activeKind === "nurse"} count={nurseCount} icon={ClipboardCheck} label="Nurse Note" onClick={() => setActiveKind("nurse")} />
+            <ProgressNoteTab active={activeKind === "care-plan"} count={carePlanCount} icon={ListChecks} label="Care Plan" onClick={() => setActiveKind("care-plan")} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             
@@ -129,6 +131,15 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
             >
               <ClipboardCheck className="h-4 w-4" />
               Add Nurse Note
+            </Button>
+            <Button
+              size="sm"
+              type="button"
+              variant={draftKind === "care-plan" ? "default" : "outline"}
+              onClick={() => openDraft("care-plan")}
+            >
+              <ListChecks className="h-4 w-4" />
+              Add Care Plan
             </Button>
           </div>
         </div>
@@ -174,7 +185,7 @@ function ProgressNoteDraft({
   patientName: string;
   text: string;
 }) {
-  const label = kind === "doctor" ? "Doctor Note" : "Nurse Note";
+  const label = kind === "doctor" ? "Doctor Note" : kind === "nurse" ? "Nurse Note" : "Care Plan";
 
   return (
     <div className="mt-3 rounded-lg border border-primary/25 bg-primary-soft/60 p-3">
@@ -195,7 +206,13 @@ function ProgressNoteDraft({
       <textarea
         className="mt-3 min-h-24 w-full resize-y rounded-md border border-input bg-white px-3 py-2 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20"
         onChange={(event) => onTextChange(event.target.value)}
-        placeholder={kind === "doctor" ? "Enter assessment, treatment plan, and review instructions..." : "Enter bedside observation, care provided, and handover plan..."}
+        placeholder={
+          kind === "doctor"
+            ? "Enter assessment, treatment plan, and review instructions..."
+            : kind === "nurse"
+              ? "Enter bedside observation, care provided, and handover plan..."
+              : "Enter goals, interventions, monitoring schedule, and escalation plan..."
+        }
         value={text}
       />
     </div>
@@ -333,27 +350,32 @@ function createSavedProgressNote({
     minute: "2-digit",
   });
   const isDoctor = kind === "doctor";
+  const isCarePlan = kind === "care-plan";
   const doctor = tone === "red" ? "Dr. Amandeep Singh" : tone === "orange" ? "Dr. Meera Rao" : "Dr. Super Admin";
   const nurse = tone === "red" ? "Nurse Jason Abbott" : tone === "orange" ? "Nurse Priya Menon" : "Nurse Super Admin";
-  const author = isDoctor ? rapidReviewPatient?.consultant ?? doctor : nurse;
+  const author = isDoctor ? rapidReviewPatient?.consultant ?? doctor : isCarePlan ? "Care Team" : nurse;
 
   return {
     id: `${kind}-${patient.id}-${now.getTime()}`,
     kind,
     timestamp,
     author,
-    designation: isDoctor ? "Consultant Doctor" : "Primary Nurse",
+    designation: isDoctor ? "Consultant Doctor" : isCarePlan ? "Multidisciplinary Care Plan" : "Primary Nurse",
     status: "Draft",
     priority: tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Routine",
-    title: isDoctor ? "Doctor Progress Note" : "Nurse Progress Note",
+    title: isDoctor ? "Doctor Progress Note" : isCarePlan ? "Care Plan" : "Nurse Progress Note",
     objective: text,
     assessment: isDoctor
       ? "Doctor note saved for clinical review and treatment continuity."
-      : "Nurse note saved for bedside care continuity and shift handover.",
+      : isCarePlan
+        ? "Care plan saved for team alignment and bedside execution."
+        : "Nurse note saved for bedside care continuity and shift handover.",
     plan: isDoctor
       ? "Review, sign, and communicate updated orders to the care team."
-      : "Continue assigned care plan and escalate changes as per protocol.",
-    acknowledgedBy: isDoctor ? nurse : rapidReviewPatient?.consultant ?? doctor,
+      : isCarePlan
+        ? "Track planned interventions, monitor outcomes, and update during rounds."
+        : "Continue assigned care plan and escalate changes as per protocol.",
+    acknowledgedBy: isDoctor || isCarePlan ? nurse : rapidReviewPatient?.consultant ?? doctor,
   };
 }
 
@@ -422,6 +444,20 @@ function buildProgressNotes(patient: ProgressNotePatient, rapidReviewPatient: Pr
       assessment: "Patient tolerated routine care during the shift. No new adverse event reported.",
       plan: "Repeat vitals as scheduled and complete handover before shift close.",
       acknowledgedBy: "Dr. Kavita Rao",
+    },
+    {
+      id: "care-plan-1",
+      kind: "care-plan",
+      timestamp: "17/06/2026 07:00 PM",
+      author: "Care Team",
+      designation: "Multidisciplinary Care Plan",
+      status: "Reviewed",
+      priority: tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Routine",
+      title: "Care Plan",
+      objective: `Maintain coordinated care for ${patient.name}. ${vitalsSummary}`,
+      assessment: `${patient.diagnosis}. Current care priorities include vitals monitoring, medication compliance, intake/output review, and timely escalation.`,
+      plan: "Continue scheduled monitoring, complete nursing interventions, review pending reports, and update doctor during the next clinical round.",
+      acknowledgedBy: consultant,
     },
   ];
 }

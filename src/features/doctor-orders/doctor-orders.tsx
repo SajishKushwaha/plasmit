@@ -15,6 +15,7 @@ import { RadiologyTab } from "./tabs/radiology-tab";
 import { ReferConsultationTab } from "./tabs/refer-consultation-tab";
 import { RequestsTab } from "./tabs/requests-tab";
 import { LdtTab } from "./tabs/ldt-tab";
+import { AddPoctPage } from "@/features/poct/poct-pages";
 
 type OrderTab = {
   id: string;
@@ -40,6 +41,7 @@ const tabs: OrderTab[] = [
   { id: "pathology", label: "Pathology", description: "Pathology test order, summary, and result review workflow.", icon: Microscope, component: <PathologyTab /> },
   { id: "lab", label: "Laboratory", description: "Laboratory investigations and sample request workflow.", icon: FlaskConical, component: <LaboratoryTab /> },
   { id: "radiology", label: "Radiology", description: "Imaging orders for radiology scheduling and reporting.", icon: FileSearch, component: <RadiologyTab /> },
+  { id: "poct", label: "Add POCT", description: "Bedside POCT ordering and capture workflow.", icon: FlaskConical, component: <AddPoctPage embedded mode="add" showModeActions={false} /> },
   { id: "procedures", label: "Procedure", description: "Procedure orders, clinical notes, and operational instructions.", icon: Stethoscope, component: <ProceduresTab /> },
   { id: "referral", label: "Referral", description: "Specialist referral and consultation request workflow.", icon: UserPlus, component: <ReferConsultationTab /> },
   { id: "ordersets", label: "Master Order Sets", description: "Reusable clinical order bundles for common workflows.", icon: Layers, component: <OrderSetsTab /> },

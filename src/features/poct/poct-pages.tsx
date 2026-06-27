@@ -51,6 +51,7 @@ type PoctWorkspaceProps = {
   embedded?: boolean;
   mode?: PoctWorkspaceMode;
   onModeChange?: (mode: PoctWorkspaceMode) => void;
+  showModeActions?: boolean;
 };
 
 type DraftAction =
@@ -614,7 +615,7 @@ function DraftCardForm({
   );
 }
 
-export function AddPoctPage({ embedded = false, mode, onModeChange }: PoctWorkspaceProps = {}) {
+export function AddPoctPage({ embedded = false, mode, onModeChange, showModeActions = true }: PoctWorkspaceProps = {}) {
   const { role } = useRole();
   const performedBy = getPoctPerformer(role);
   const [localMode, setLocalMode] = React.useState<PoctWorkspaceMode>("add");
@@ -751,7 +752,7 @@ export function AddPoctPage({ embedded = false, mode, onModeChange }: PoctWorksp
   }
 
   if (activeMode === "results") {
-    return <ViewPoctResultPage embedded={embedded} mode="results" onModeChange={changeMode} />;
+    return <ViewPoctResultPage embedded={embedded} mode="results" onModeChange={changeMode} showModeActions={showModeActions} />;
   }
 
   return (
@@ -782,7 +783,7 @@ export function AddPoctPage({ embedded = false, mode, onModeChange }: PoctWorksp
         </CardContent>
       </Card> */}
       <TestPicker
-        actions={<ActionButtons mode="add" onModeChange={changeMode} />}
+        actions={showModeActions ? <ActionButtons mode="add" onModeChange={changeMode} /> : null}
         selectedTests={selectedTests}
         search={search}
         onSearchChange={setSearch}
@@ -875,7 +876,7 @@ function ResultsMatrix({ results }: { results: PoctResult[] }) {
   );
 }
 
-export function ViewPoctResultPage({ embedded = false, mode, onModeChange }: PoctWorkspaceProps = {}) {
+export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showModeActions = true }: PoctWorkspaceProps = {}) {
   const [localMode, setLocalMode] = React.useState<PoctWorkspaceMode>("results");
   const activeMode = mode ?? localMode;
   const changeMode = React.useCallback(
@@ -950,7 +951,7 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange }: Poc
   }
 
   if (activeMode === "add") {
-    return <AddPoctPage embedded={embedded} mode="add" onModeChange={changeMode} />;
+    return <AddPoctPage embedded={embedded} mode="add" onModeChange={changeMode} showModeActions={showModeActions} />;
   }
 
   return (
@@ -993,11 +994,13 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange }: Poc
           </label>
           <div className="flex items-end"><Button className="w-full" type="button" onClick={searchResults}>Search</Button></div>
           <div className="flex items-end"><Button className="w-full" type="button" variant="outline" onClick={resetFilters}>Reset</Button></div>
-          <div className="flex items-end justify-end xl:min-w-[220px]">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <ActionButtons mode="results" onModeChange={changeMode} />
+          {showModeActions ? (
+            <div className="flex items-end justify-end xl:min-w-[220px]">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <ActionButtons mode="results" onModeChange={changeMode} />
+              </div>
             </div>
-          </div>
+          ) : null}
         </CardContent>
       </Card>
 

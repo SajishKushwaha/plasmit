@@ -119,9 +119,13 @@ function patientToneRowClass(tone: PatientTone) {
 }
 
 function patientToneCellClass(tone: PatientTone) {
-  if (tone === "red") return "border-l-4 border-l-red-500 ";
-  if (tone === "orange") return "border-l-4 border-l-orange-400 ";
-  return "border-l-4 border-l-blue-500 ";
+  return "bg-white hover:bg-slate-50";
+}
+
+function patientToneStripeClass(tone: PatientTone) {
+  if (tone === "red") return "bg-red-500";
+  if (tone === "orange") return "bg-orange-400";
+  return "bg-blue-500";
 }
 
 function csvCell(value: string | number) {
@@ -196,91 +200,111 @@ export function DoctorDashboard1Page() {
 
       <Card className="overflow-hidden rounded-md border-slate-200 shadow-sm">
         <CardContent className="p-0">
-          <div className="max-w-full overflow-auto">
-            <table className="w-full min-w-[1320px] border-collapse text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 bg-white text-slate-700">
-                  <HeaderCell className="sticky left-0 z-20 bg-white">Patient</HeaderCell>
-                  <HeaderCell>Diagnosis</HeaderCell>
-                  <HeaderCell>HR (bpm)</HeaderCell>
-                  <HeaderCell>SpO2 (%)</HeaderCell>
-                  <HeaderCell>ABPS (mmHg)</HeaderCell>
-                  <HeaderCell>ABPD (mmHg)</HeaderCell>
-                  <HeaderCell>Temperature<br />(°C)</HeaderCell>
-                  <HeaderCell>Lab Results</HeaderCell>
-                  <HeaderCell>Medication &<br />Intervention</HeaderCell>
-                  <HeaderCell>Progress Note</HeaderCell>
-                  <HeaderCell>Radiology</HeaderCell>
-                  <HeaderCell>Events</HeaderCell>
-                  <HeaderCell>Collaborate</HeaderCell>
-                </tr>
-              </thead>
-              <tbody>
-                {visiblePatients.map((patient) => {
-                  const tone = patientTone(patient);
+          <div className="flex max-w-full overflow-hidden">
+            <div className="w-[190px] shrink-0 border-r border-slate-200 bg-white shadow-[8px_0_14px_rgba(15,23,42,0.04)]">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr className="h-14 border-b border-slate-200 bg-white text-slate-700">
+                    <HeaderCell className="h-14 w-[190px] min-w-[190px]">Patient</HeaderCell>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visiblePatients.map((patient) => {
+                    const tone = patientTone(patient);
 
-                  return (
-                  <tr className={cn("border-b border-slate-100 font-semibold", patientToneRowClass(tone))} key={patient.id}>
-                    <td className={cn("sticky left-0 z-10 border-r border-slate-200 px-3 py-2", patientToneCellClass(tone))}>
-                      <Link
-                        className="block rounded-md px-1 py-0.5 transition hover:bg-white/70"
-                        href={`/doctor-dashboard1/patients/${patient.id}`}
-                      >
-                        <div className={cn("text-sm font-extrabold", patientToneClass(tone))}>
-                          {patient.name}
-                        </div>
-                        <div className="mt-0.5 font-semibold text-slate-700">{patient.bed}</div>
-                      </Link>
-                    </td>
-                    <td className="max-w-44 px-3 py-2 text-center font-medium text-slate-800">
-                      <Link className="block rounded-md px-2 py-1 transition hover:bg-slate-100" href={`/doctor-dashboard1/patients/${patient.id}?tab=clinical-examination`}>
-                        {patient.diagnosis}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2 text-center"><VitalPill {...patient.hr} href="/ipd" /></td>
-                    <td className="px-3 py-2 text-center"><VitalPill {...patient.spo2} href="/ipd" /></td>
-                    <td className="px-3 py-2 text-center"><VitalPill {...patient.abps} href="/ipd" /></td>
-                    <td className="px-3 py-2 text-center"><VitalPill {...patient.abpd} href="/ipd" /></td>
-                    <td className="px-3 py-2 text-center"><VitalPill {...patient.temperature} href="/ipd" /></td>
-                    <td className="px-3 py-2 text-center">
-                      <RoundAction
-                        icon={FlaskConical}
-                        tone="dark"
-                        href={`/doctor-dashboard1/patients/${patient.id}?tab=results&resultsView=laboratory-all`}
-                        label={`Open laboratory results for ${patient.name}`}
-                      />
-                    </td>
-                    {/* <td className="px-3 py-2 text-center"><RoundAction icon={Pill} tone="dark" href="" label="Open medication and intervention" /></td> */}
-                    <td className="px-3 py-2 text-center">
-  <RoundActionButton
-    icon={Pill}
-    tone="dark"
-    label={`Open medication and intervention for ${patient.name}`}
-    onClick={() => setMedicationPatient(patient)}
-  />
-</td>
-                    <td className="px-3 py-2 text-center">
-                      <RoundActionButton icon={ClipboardList} tone="dark" label={`Open progress note for ${patient.name}`} onClick={() => setShiftSummaryPatient(patient)} />
-                    </td>
-                    <td className="px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="" label="Open radiology" /></td>
-                    <td className="px-3 py-2 text-center">
-                      <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <RoundActionButton icon={PhoneCall} tone="dark" label={`Open collaborate for ${patient.name}`} onClick={() => setCollaboratePatient(patient)} />
-                    </td>
+                    return (
+                      <tr className="h-[74px] border-b border-slate-100 bg-white font-semibold" key={patient.id}>
+                        <td className={cn("relative h-[74px] w-[190px] min-w-[190px] px-3 py-2", patientToneCellClass(tone))}>
+                          <span aria-hidden className={cn("pointer-events-none absolute inset-y-0 left-0 w-1", patientToneStripeClass(tone))} />
+                          <Link
+                            className="relative block min-h-12 rounded-md px-1 py-1 pl-2 transition hover:bg-white/70"
+                            href={`/doctor-dashboard1/patients/${patient.id}`}
+                          >
+                            <div className={cn("whitespace-nowrap text-sm font-extrabold leading-5", patientToneClass(tone))}>
+                              {patient.name}
+                            </div>
+                            <div className="mt-0.5 break-words font-semibold leading-4 text-slate-700">{patient.bed}</div>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="min-w-0 flex-1 overflow-x-auto">
+              <table className="w-full min-w-[1270px] border-collapse text-left text-xs">
+                <thead>
+                  <tr className="h-14 border-b border-slate-200 bg-white text-slate-700">
+                    <HeaderCell className="h-14 w-[230px] min-w-[230px]">Diagnosis</HeaderCell>
+                    <HeaderCell className="h-14">HR (bpm)</HeaderCell>
+                    <HeaderCell className="h-14">SpO2 (%)</HeaderCell>
+                    <HeaderCell className="h-14">ABPS (mmHg)</HeaderCell>
+                    <HeaderCell className="h-14">ABPD (mmHg)</HeaderCell>
+                    <HeaderCell className="h-14">Temperature<br />(°C)</HeaderCell>
+                    <HeaderCell className="h-14">Lab Results</HeaderCell>
+                    <HeaderCell className="h-14">Medication &<br />Intervention</HeaderCell>
+                    <HeaderCell className="h-14">Progress Note</HeaderCell>
+                    <HeaderCell className="h-14">Radiology</HeaderCell>
+                    <HeaderCell className="h-14">Events</HeaderCell>
+                    <HeaderCell className="h-14">Collaborate</HeaderCell>
                   </tr>
-                  );
-                })}
-                {!visiblePatients.length ? (
-                  <tr>
-                    <td className="px-4 py-12 text-center text-sm font-medium text-muted-foreground" colSpan={13}>
-                      No patient matched this search.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {visiblePatients.map((patient) => {
+                    const tone = patientTone(patient);
+
+                    return (
+                      <tr className={cn("h-[74px] border-b border-slate-100 font-semibold", patientToneRowClass(tone))} key={patient.id}>
+                        <td className="h-[74px] w-[230px] min-w-[230px] px-3 py-2 text-center font-medium text-slate-800">
+                          <Link className="flex min-h-12 items-center justify-center rounded-md px-2 py-1 leading-4 transition hover:bg-slate-100" href={`/doctor-dashboard1/patients/${patient.id}?tab=clinical-examination`}>
+                            {patient.diagnosis}
+                          </Link>
+                        </td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.hr} href="/ipd" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.spo2} href="/ipd" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abps} href="/ipd" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} href="/ipd" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} href="/ipd" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center">
+                          <RoundAction
+                            icon={FlaskConical}
+                            tone="dark"
+                            href={`/doctor-dashboard1/patients/${patient.id}?tab=results&resultsView=laboratory-all`}
+                            label={`Open laboratory results for ${patient.name}`}
+                          />
+                        </td>
+                        <td className="h-[74px] px-3 py-2 text-center">
+                          <RoundActionButton
+                            icon={Pill}
+                            tone="dark"
+                            label={`Open medication and intervention for ${patient.name}`}
+                            onClick={() => setMedicationPatient(patient)}
+                          />
+                        </td>
+                        <td className="h-[74px] px-3 py-2 text-center">
+                          <RoundActionButton icon={ClipboardList} tone="dark" label={`Open progress note for ${patient.name}`} onClick={() => setShiftSummaryPatient(patient)} />
+                        </td>
+                        <td className="h-[74px] px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="" label="Open radiology" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center">
+                          <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
+                        </td>
+                        <td className="h-[74px] px-3 py-2 text-center">
+                          <RoundActionButton icon={PhoneCall} tone="dark" label={`Open collaborate for ${patient.name}`} onClick={() => setCollaboratePatient(patient)} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!visiblePatients.length ? (
+                    <tr>
+                      <td className="px-4 py-12 text-center text-sm font-medium text-muted-foreground" colSpan={12}>
+                        No patient matched this search.
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
           </div>
         </CardContent>
       </Card>

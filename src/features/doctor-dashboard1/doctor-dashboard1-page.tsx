@@ -11,6 +11,7 @@ import {
   ListTree,
   Pill,
   PhoneCall,
+  Plus,
   Printer,
 } from "lucide-react";
 
@@ -18,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CenterModal } from "@/components/ui/center-modal";
-import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { ProgressNotesPanel } from "@/features/doctor-dashboard1/progress-notes";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,27 @@ export type Dashboard1Patient = {
 };
 
 const rapidReviewPatientIds = ["rr-002", "rr-003", "rr-001", "rr-004"];
+
+const patientNames = [
+  "Aisha Khan",
+  "Liam Anderson",
+  "Meera Sharma",
+  "Oliver Brown",
+  "Priya Nair",
+  "Noah Wilson",
+  "Arjun Patel",
+  "Emily Clarke",
+  "Ravi Menon",
+  "Sophie Williams",
+  "Ananya Roy",
+  "Jack Thompson",
+  "Kabir Ali",
+  "Grace Mitchell",
+  "Neha Iyer",
+  "Ethan Harris",
+  "Rohan Das",
+  "Chloe Bennett",
+];
 
 const patients: Dashboard1Patient[] = [
   row(1, "HN_40*ICU-10***", "Upper Gastrointestinal bleeding", [120, "red"], [95, "green"], [120, "green"], [65, "green"], ["36.5", "green"]),
@@ -87,7 +108,7 @@ function row(
 ): Dashboard1Patient {
   return {
     id,
-    name: `Patient ${id}`,
+    name: patientNames[id - 1] ?? `Patient ${id}`,
     bed,
     diagnosis,
     rapidReviewPatientId: rapidReviewPatientIds[(id - 1) % rapidReviewPatientIds.length],
@@ -261,11 +282,11 @@ export function DoctorDashboard1Page() {
                             {patient.diagnosis}
                           </Link>
                         </td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.hr} href="/ipd" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.spo2} href="/ipd" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abps} href="/ipd" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} href="/ipd" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} href="/ipd" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.hr} href="" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.spo2} href="" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abps} href="" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} href="" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} href="" /></td>
                         <td className="h-[74px] px-3 py-2 text-center">
                           <RoundAction
                             icon={FlaskConical}
@@ -760,12 +781,6 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
     status: string;
     prescribedBy: string;
   }>>([]);
-  const [medicineDraft, setMedicineDraft] = React.useState({
-    name: "",
-    dose: "",
-    route: "Oral",
-    frequency: "OD",
-  });
 
   const currentMedication = [
     {
@@ -843,79 +858,34 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
 
   const currentMedicationRows = [...addedMedicines, ...currentMedication];
 
-  function addMedicine() {
-    if (!medicineDraft.name.trim()) return;
-
-    setAddedMedicines((current) => [
-      {
-        name: medicineDraft.name.trim(),
-        dose: medicineDraft.dose.trim() || "-",
-        route: medicineDraft.route.trim() || "-",
-        frequency: medicineDraft.frequency.trim() || "-",
-        startDate: new Date().toLocaleDateString("en-GB"),
-        status: "Active",
-        prescribedBy: "Doctor IPD",
-      },
-      ...current,
-    ]);
-    setMedicineDraft({ name: "", dose: "", route: "Oral", frequency: "OD" });
-  }
-
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
        
 
-      <div className="flex border-b bg-white text-sm font-semibold">
-        <MedicationTabButton active={tab === "current"} onClick={() => setTab("current")}>
-          Current Medication
-        </MedicationTabButton>
-        <MedicationTabButton active={tab === "past"} onClick={() => setTab("past")}>
-          Past Medication
-        </MedicationTabButton>
-        <MedicationTabButton active={tab === "intervention"} onClick={() => setTab("intervention")}>
-          Intervention
-        </MedicationTabButton>
+      <div className="flex items-center border-b bg-white text-sm font-semibold">
+        <div className="flex min-w-0 flex-1">
+          <MedicationTabButton active={tab === "current"} onClick={() => setTab("current")}>
+            Current Medication
+          </MedicationTabButton>
+          <MedicationTabButton active={tab === "past"} onClick={() => setTab("past")}>
+            Past Medication
+          </MedicationTabButton>
+          <MedicationTabButton active={tab === "intervention"} onClick={() => setTab("intervention")}>
+            Intervention
+          </MedicationTabButton>
+        </div>
+        <div className="flex h-full shrink-0 items-center border-l border-slate-200 px-3">
+          <Button asChild aria-label="Open drug orders" className="h-9 w-9 shrink-0 rounded-full p-0" type="button">
+            <Link href={`/doctor-dashboard1/patients/${patient.id}?tab=orders&orderTab=drugs`}>
+              <Plus className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="max-h-[60dvh] overflow-y-auto p-5">
         {tab === "current" ? (
           <div className="space-y-4">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="mb-3 text-sm font-bold text-slate-900">Add Medicine</div>
-              <div className="grid gap-2 md:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto]">
-                <Input
-                  aria-label="Medicine name"
-                  className="bg-white font-semibold"
-                  placeholder="Medicine name"
-                  value={medicineDraft.name}
-                  onChange={(event) => setMedicineDraft((current) => ({ ...current, name: event.target.value }))}
-                />
-                <Input
-                  aria-label="Dose"
-                  className="bg-white font-semibold"
-                  placeholder="Dose"
-                  value={medicineDraft.dose}
-                  onChange={(event) => setMedicineDraft((current) => ({ ...current, dose: event.target.value }))}
-                />
-                <Input
-                  aria-label="Route"
-                  className="bg-white font-semibold"
-                  placeholder="Route"
-                  value={medicineDraft.route}
-                  onChange={(event) => setMedicineDraft((current) => ({ ...current, route: event.target.value }))}
-                />
-                <Input
-                  aria-label="Frequency"
-                  className="bg-white font-semibold"
-                  placeholder="Frequency"
-                  value={medicineDraft.frequency}
-                  onChange={(event) => setMedicineDraft((current) => ({ ...current, frequency: event.target.value }))}
-                />
-                <Button className="whitespace-nowrap" type="button" onClick={addMedicine}>
-                  Add Medicine
-                </Button>
-              </div>
-            </div>
             <MedicationTable type="current" rows={currentMedicationRows} />
           </div>
         ) : null}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { LogOut, ShieldCheck, UserCircle } from "lucide-react";
+import { BadgeCheck, Building2, Clock3, LogOut, Settings2, ShieldCheck, Stethoscope, UserCircle } from "lucide-react";
 import Link from "next/link";
 
 import { useRole } from "@/components/providers/role-provider";
@@ -10,10 +10,24 @@ import { hospitalContext, users } from "@/data/mock";
 
 export function ProfileMenu() {
   const { role } = useRole();
-  const user = users.find((item) => item.role === role) ?? {
+  const matchedUser = users.find((item) => item.role === role);
+  const baseUser = matchedUser ?? {
     name: "Plasmit User",
     department: hospitalContext.department,
     status: "Active",
+  };
+  const user = role === "Doctor IPD" ? {
+    name: "Dr. Vivek Bindra",
+    department: "Critical Care & Internal Medicine",
+    status: "Active",
+    designation: "Consultant Intensivist",
+    registration: "MCI-DR-20486",
+    patientLoad: "18 IPD patients",
+  } : {
+    ...baseUser,
+    designation: role,
+    registration: hospitalContext.code,
+    patientLoad: "Workspace active",
   };
 
   function handleLogout() {
@@ -33,47 +47,78 @@ export function ProfileMenu() {
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content align="end" className="z-[80] w-72 rounded-xl border border-border bg-white p-2 shadow-soft">
-          <div className="border-b border-border px-3 py-3">
+        <DropdownMenu.Content align="end" className="z-[80] w-80 rounded-xl border border-border bg-white p-2 shadow-soft">
+          <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-primary/10 via-white to-surface-muted px-3 py-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft text-primary">
-                <UserCircle className="h-5 w-5" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-black text-white shadow-sm">
+                {role === "Doctor IPD" ? "VB" : <UserCircle className="h-6 w-6" />}
               </div>
               <div className="min-w-0">
-                <div className="truncate text-sm font-bold text-foreground">{user.name}</div>
-                <div className="truncate text-xs font-medium text-muted-foreground">{role}</div>
+                <div className="truncate text-base font-black text-foreground">{user.name}</div>
+                <div className="mt-0.5 flex items-center gap-1 truncate text-xs font-bold text-primary">
+                  <Stethoscope className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{user.designation}</span>
+                </div>
+                <div className="mt-1 text-[11px] font-semibold text-muted-foreground">{role} workspace</div>
               </div>
             </div>
           </div>
-          <div className="space-y-2 px-3 py-3 text-xs">
-            <div className="flex justify-between gap-3">
-              <span className="text-muted-foreground">Department</span>
-              <span className="truncate font-medium text-foreground">{user.department}</span>
+          <div className="grid gap-2 px-2 py-3 text-xs">
+            <div className="rounded-lg border border-border bg-white px-3 py-2">
+              <div className="flex items-start gap-2">
+                <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-muted-foreground">Department</div>
+                  <div className="truncate font-bold text-foreground">{user.department}</div>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between gap-3">
-              <span className="text-muted-foreground">Branch</span>
-              <span className="truncate font-medium text-foreground">{hospitalContext.branch}</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border bg-surface-muted px-3 py-2">
+                <div className="font-semibold text-muted-foreground">Branch</div>
+                <div className="mt-1 truncate font-bold text-foreground">{hospitalContext.branch}</div>
+              </div>
+              <div className="rounded-lg border border-border bg-surface-muted px-3 py-2">
+                <div className="font-semibold text-muted-foreground">Registration</div>
+                <div className="mt-1 truncate font-bold text-foreground">{user.registration}</div>
+              </div>
             </div>
-            <div className="flex justify-between gap-3">
-              <span className="text-muted-foreground">Shift</span>
-              <span className="truncate font-medium text-foreground">{hospitalContext.shift}</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border bg-surface-muted px-3 py-2">
+                <div className="flex items-center gap-1.5 font-semibold text-muted-foreground">
+                  <Clock3 className="h-3.5 w-3.5" />
+                  Shift
+                </div>
+                <div className="mt-1 truncate font-bold text-foreground">{hospitalContext.shift}</div>
+              </div>
+              <div className="rounded-lg border border-success/25 bg-success/10 px-3 py-2">
+                <div className="flex items-center gap-1.5 font-semibold text-success">
+                  <BadgeCheck className="h-3.5 w-3.5" />
+                  Status
+                </div>
+                <div className="mt-1 truncate font-bold text-success">{user.status}</div>
+              </div>
             </div>
-            <div className="flex justify-between gap-3">
-              <span className="text-muted-foreground">Status</span>
-              <span className="font-medium text-success">{user.status}</span>
+            <div className="flex items-center justify-between rounded-lg border border-border bg-white px-3 py-2">
+              <span className="font-semibold text-muted-foreground">Today's responsibility</span>
+              <span className="font-black text-foreground">{user.patientLoad}</span>
             </div>
           </div>
           <DropdownMenu.Separator className="h-px bg-border" />
           <DropdownMenu.Item asChild>
             <Link
-              className="mt-2 flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none hover:bg-surface-muted focus:bg-surface-muted"
+              className="mt-2 flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-foreground outline-none hover:bg-surface-muted focus:bg-surface-muted"
               href="/settings/ui"
               prefetch={false}
             >
-              <ShieldCheck className="h-4 w-4" />
-              UI Settings
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
+              Preferences
             </Link>
           </DropdownMenu.Item>
+          <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground">
+            <ShieldCheck className="h-4 w-4" />
+            Protected Doctor IPD session
+          </div>
           <DropdownMenu.Item
             className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-danger outline-none hover:bg-danger/10 focus:bg-danger/10"
             onSelect={handleLogout}

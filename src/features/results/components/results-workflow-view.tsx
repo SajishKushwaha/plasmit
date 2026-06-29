@@ -36,7 +36,7 @@ type ReportGroup = {
 
 type ReportModalState =
   | { type: "single"; result: ResultRecord }
-  | { type: "all"; department: ResultDepartment; records: ResultRecord[] }
+  | { type: "all"; department: ResultDepartment; records: ResultRecord[]; comparisonRecords?: ResultRecord[] }
   | null;
 
 type PrintPayload = {
@@ -89,6 +89,12 @@ function formatDateTime(value?: string) {
   if (!value) return "-";
   const date = new Date(value);
   return `${dateFormatter.format(date)}, ${timeFormatter.format(date)}`;
+}
+
+function formatRecordDateScope(records: ResultRecord[]) {
+  const dateKeys = Array.from(new Set(records.map((result) => getDateKey(result.orderedAt))));
+  if (dateKeys.length !== 1) return "All selected dates";
+  return dateFormatter.format(new Date(`${dateKeys[0]}T00:00:00`));
 }
 
 function dateValueParts(value: string) {
@@ -224,12 +230,104 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RES-2026-1001-LFT",
+      id: "RES-2026-1001-CBC-18",
+      department: "laboratory" as const,
+      testName: "Complete Blood Count",
+      orderedAt: "2026-05-18T08:10:00",
+      collectedAt: "2026-05-18T08:24:00",
+      completedAt: "2026-05-18T09:05:00",
+      status: "Completed" as const,
+      imageAvailable: false,
+      resultSummary: "CBC baseline captured for longitudinal monitoring.",
+      specimen: "EDTA whole blood",
+      values: [
+        { name: "Hemoglobin", value: "11.8", unit: "g/dL", range: "13.0 - 17.0", flag: "Low" as const },
+        { name: "WBC Count", value: "18.4", unit: "10^3/uL", range: "4.0 - 11.0", flag: "High" as const },
+        { name: "Platelets", value: "198", unit: "10^3/uL", range: "150 - 450", flag: "Normal" as const },
+      ],
+      timeline: [
+        { label: "Order created", at: "08:10", by: "ICU Desk" },
+        { label: "Sample collected", at: "08:24", by: "Lab Technician" },
+        { label: "Report verified", at: "09:05", by: "Dr. Meera Shah" },
+      ],
+    },
+    {
+      ...base,
+      id: "RES-2026-1001-CBC-21",
+      department: "laboratory" as const,
+      testName: "Complete Blood Count",
+      orderedAt: "2026-05-21T07:50:00",
+      collectedAt: "2026-05-21T08:02:00",
+      completedAt: "2026-05-21T08:38:00",
+      status: "Completed" as const,
+      imageAvailable: false,
+      resultSummary: "CBC repeated. WBC trending down, hemoglobin improving.",
+      specimen: "EDTA whole blood",
+      values: [
+        { name: "Hemoglobin", value: "12.4", unit: "g/dL", range: "13.0 - 17.0", flag: "Low" as const },
+        { name: "WBC Count", value: "15.2", unit: "10^3/uL", range: "4.0 - 11.0", flag: "High" as const },
+        { name: "Platelets", value: "224", unit: "10^3/uL", range: "150 - 450", flag: "Normal" as const },
+      ],
+      timeline: [
+        { label: "Order created", at: "07:50", by: "ICU Desk" },
+        { label: "Sample collected", at: "08:02", by: "Lab Technician" },
+        { label: "Report verified", at: "08:38", by: "Dr. Meera Shah" },
+      ],
+    },
+    {
+      ...base,
+      id: "RES-2026-1001-RENAL-18",
+      department: "laboratory" as const,
+      testName: "Renal Function Panel",
+      orderedAt: "2026-05-18T09:00:00",
+      collectedAt: "2026-05-18T09:12:00",
+      completedAt: "2026-05-18T09:52:00",
+      status: "Completed" as const,
+      imageAvailable: false,
+      resultSummary: "Renal markers elevated; monitor hydration and nephrology plan.",
+      specimen: "Serum",
+      values: [
+        { name: "Creatinine", value: "2.4", unit: "mg/dL", range: "0.7 - 1.3", flag: "High" as const },
+        { name: "BUN", value: "42", unit: "mg/dL", range: "7 - 20", flag: "High" as const },
+        { name: "Sodium", value: "136", unit: "mmol/L", range: "135 - 145", flag: "Normal" as const },
+      ],
+      timeline: [
+        { label: "Order created", at: "09:00", by: "ICU Desk" },
+        { label: "Sample collected", at: "09:12", by: "Lab Technician" },
+        { label: "Report verified", at: "09:52", by: "Dr. Meera Shah" },
+      ],
+    },
+    {
+      ...base,
+      id: "RES-2026-1001-RENAL-23",
+      department: "laboratory" as const,
+      testName: "Renal Function Panel",
+      orderedAt: "2026-05-23T07:40:00",
+      collectedAt: "2026-05-23T07:53:00",
+      completedAt: "2026-05-23T08:30:00",
+      status: "Completed" as const,
+      imageAvailable: false,
+      resultSummary: "Renal function improving but still above reference range.",
+      specimen: "Serum",
+      values: [
+        { name: "Creatinine", value: "1.8", unit: "mg/dL", range: "0.7 - 1.3", flag: "High" as const },
+        { name: "BUN", value: "34", unit: "mg/dL", range: "7 - 20", flag: "High" as const },
+        { name: "Sodium", value: "138", unit: "mmol/L", range: "135 - 145", flag: "Normal" as const },
+      ],
+      timeline: [
+        { label: "Order created", at: "07:40", by: "ICU Desk" },
+        { label: "Sample collected", at: "07:53", by: "Lab Technician" },
+        { label: "Report verified", at: "08:30", by: "Dr. Meera Shah" },
+      ],
+    },
+    {
+      ...base,
+      id: "RES-2026-1001-LFT-18",
       department: "laboratory" as const,
       testName: "Liver Function Test",
-      orderedAt: "2026-05-22T08:30:00",
-      collectedAt: "2026-05-22T08:48:00",
-      completedAt: "2026-05-22T09:40:00",
+      orderedAt: "2026-05-18T08:30:00",
+      collectedAt: "2026-05-18T08:48:00",
+      completedAt: "2026-05-18T09:40:00",
       status: "Completed" as const,
       priority: "Urgent" as const,
       imageAvailable: false,
@@ -237,12 +335,36 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       specimen: "Serum",
       values: [
         { name: "SGPT", value: "62", unit: "U/L", range: "7 - 56", flag: "High" as const },
+        { name: "SGOT", value: "44", unit: "U/L", range: "8 - 40", flag: "High" as const },
         { name: "Bilirubin Total", value: "0.9", unit: "mg/dL", range: "0.1 - 1.2", flag: "Normal" as const },
       ],
       timeline: [
         { label: "Order created", at: "08:30", by: "ICU Nurse" },
         { label: "Sample collected", at: "08:48", by: "Phlebotomy" },
         { label: "Report verified", at: "09:40", by: "Dr. Meera Shah" },
+      ],
+    },
+    {
+      ...base,
+      id: "RES-2026-1001-LFT-23",
+      department: "laboratory" as const,
+      testName: "Liver Function Test",
+      orderedAt: "2026-05-23T08:30:00",
+      collectedAt: "2026-05-23T08:45:00",
+      completedAt: "2026-05-23T09:25:00",
+      status: "Completed" as const,
+      imageAvailable: false,
+      resultSummary: "Liver enzymes improving, bilirubin stable.",
+      specimen: "Serum",
+      values: [
+        { name: "SGPT", value: "48", unit: "U/L", range: "7 - 56", flag: "Normal" as const },
+        { name: "SGOT", value: "36", unit: "U/L", range: "8 - 40", flag: "Normal" as const },
+        { name: "Bilirubin Total", value: "0.8", unit: "mg/dL", range: "0.1 - 1.2", flag: "Normal" as const },
+      ],
+      timeline: [
+        { label: "Order created", at: "08:30", by: "ICU Nurse" },
+        { label: "Sample collected", at: "08:45", by: "Phlebotomy" },
+        { label: "Report verified", at: "09:25", by: "Dr. Meera Shah" },
       ],
     },
     {
@@ -722,13 +844,21 @@ export function ResultsWorkflowView({
                   <div className="space-y-4 p-4 transition-all duration-200">
                     {(activeDepartment === "all" ? departmentCards : departmentCards.filter((card) => card.id === activeDepartment)).map((card) => {
                       const reports = group.records.filter((result) => result.department === card.id);
-                      const allCategoryReports = filteredRecords.filter((result) => result.department === card.id);
                       return (
                         <ResultCategorySection
-                          allReports={allCategoryReports}
+                          allReports={reports}
                           icon={card.icon}
                           key={`${group.dateKey}-${card.id}`}
-                          onAllView={(department, recordsToView) => setReportModal({ type: "all", department, records: recordsToView })}
+                          onAllView={(department, recordsToView) => {
+                            const selectedReportNames = new Set(recordsToView.map((result) => result.testName));
+                            const comparisonRecords = records.filter((result) => {
+                              const matchesDepartment = result.department === department;
+                              const matchesSelectedReport = selectedReportNames.has(result.testName);
+                              const matchesCritical = !criticalOnly || result.status === "Critical";
+                              return matchesDepartment && matchesSelectedReport && matchesCritical && matchesSearch(result, query);
+                            });
+                            setReportModal({ type: "all", department, records: recordsToView, comparisonRecords });
+                          }}
                           onPrint={(result) => printReports([result], `${getDepartmentLabel(result.department)} Report`)}
                           onView={(result) => setReportModal({ type: "single", result })}
                           reports={reports}
@@ -777,35 +907,55 @@ function ResultCategorySection({
   title: string;
 }) {
   const department = allReports[0]?.department ?? reports[0]?.department;
+  const allViewButton = (
+    <Button disabled={!department || allReports.length === 0} size="sm" variant="outline" onClick={() => department && onAllView(department, allReports)}>
+      <Icon className="h-4 w-4" />
+      All View
+    </Button>
+  );
 
   return (
     <Card className="overflow-hidden rounded-lg border-border shadow-none">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-white px-4 py-3">
-          <Button disabled={!department || allReports.length === 0} size="sm" variant="outline" onClick={() => department && onAllView(department, allReports)}>
-            <Icon className="h-4 w-4" />
-            All View
-          </Button>
-          <span className="text-xs font-semibold text-muted-foreground">{allReports.length} report(s)</span>
-        </div>
         {reports.length === 0 ? (
-          <div className="px-4 py-5 text-sm text-muted-foreground">No reports in this section.</div>
+          <div>
+            <div className="flex items-center justify-end gap-2 border-b border-border bg-surface-muted px-4 py-3">
+              {allViewButton}
+              <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Actions</span>
+            </div>
+            <div className="px-4 py-5 text-sm text-muted-foreground">No reports in this section.</div>
+          </div>
         ) : (
-          <ResultTable reports={reports} onPrint={onPrint} onView={onView} />
+          <ResultTable allViewAction={allViewButton} reports={reports} onPrint={onPrint} onView={onView} />
         )}
       </CardContent>
     </Card>
   );
 }
 
-function ResultTable({ onPrint, onView, reports }: { onPrint: (result: ResultRecord) => void; onView: (result: ResultRecord) => void; reports: ResultRecord[] }) {
+function ResultTable({
+  allViewAction,
+  onPrint,
+  onView,
+  reports,
+}: {
+  allViewAction?: React.ReactNode;
+  onPrint: (result: ResultRecord) => void;
+  onView: (result: ResultRecord) => void;
+  reports: ResultRecord[];
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[560px] text-left text-sm">
         <thead className="bg-surface-muted text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
             <th className="px-4 py-3">{getReportColumnLabel(reports)}</th>
-            <th className="w-[170px] px-4 py-3 text-right">Actions</th>
+            <th className="w-[240px] px-4 py-3 text-right">
+              <div className="flex items-center justify-end gap-2">
+                {allViewAction}
+                <span>Actions</span>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -848,14 +998,14 @@ function ReportViewModal({
     payload?.type === "single"
       ? `${getDepartmentLabel(payload.result.department)} result details | ${formatDateTime(payload.result.completedAt ?? payload.result.orderedAt)}`
       : payload
-        ? `${payload.records.length} ${getDepartmentLabel(payload.department).toLowerCase()} report(s)`
+        ? `${formatRecordDateScope(payload.records)} | ${payload.records.length} ${getDepartmentLabel(payload.department).toLowerCase()} report(s)`
         : "";
 
   return (
     <Dialog.Root open={Boolean(payload)} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/35" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[88dvh] w-[min(860px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-white shadow-soft outline-none">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[88dvh] w-[min(1120px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-white shadow-soft outline-none">
           {payload ? (
             <>
               <div className="flex items-start justify-between gap-3 border-b border-border p-4">
@@ -883,7 +1033,7 @@ function ReportViewModal({
                 </div>
               </div>
               <div className="max-h-[calc(88dvh-82px)] overflow-y-auto p-4">
-                {payload.type === "single" ? <SingleReportView result={payload.result} /> : <AllCategoryView department={payload.department} records={payload.records} />}
+                {payload.type === "single" ? <SingleReportView result={payload.result} /> : <AllCategoryView comparisonRecords={payload.comparisonRecords} department={payload.department} records={payload.records} />}
               </div>
             </>
           ) : null}
@@ -899,12 +1049,16 @@ function SingleReportView({ result }: { result: ResultRecord }) {
   return <PoctReportView result={result} />;
 }
 
-function AllCategoryView({ department, records }: { department: ResultDepartment; records: ResultRecord[] }) {
+function AllCategoryView({ comparisonRecords, department, records }: { comparisonRecords?: ResultRecord[]; department: ResultDepartment; records: ResultRecord[] }) {
   const grouped = groupRecordsByTestName(records);
   const groupEntries = Object.entries(grouped);
 
   if (records.length === 0) {
     return <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No {getDepartmentLabel(department).toLowerCase()} reports available.</div>;
+  }
+
+  if (department === "laboratory") {
+    return <LaboratoryAllViewTabs comparisonRecords={comparisonRecords ?? records} records={records} />;
   }
 
   return (
@@ -929,6 +1083,415 @@ function AllCategoryView({ department, records }: { department: ResultDepartment
       ))}
     </div>
   );
+}
+
+type LaboratoryAllViewTab = "details" | "comparison" | "trends";
+
+function LaboratoryAllViewTabs({ comparisonRecords, records }: { comparisonRecords: ResultRecord[]; records: ResultRecord[] }) {
+  const [activeTab, setActiveTab] = useState<LaboratoryAllViewTab>("details");
+  const tabs: Array<{ id: LaboratoryAllViewTab; label: string }> = [
+    { id: "details", label: "All Laboratory Details" },
+    { id: "comparison", label: "Comparison View" },
+    { id: "trends", label: "Trend Analysis" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 border-b border-border pb-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          {tabs.map((tab) => (
+            <button
+              className={cn(
+                "h-10 rounded-md border border-transparent px-3 text-sm font-bold transition",
+                activeTab === tab.id
+                  ? "border-primary bg-primary-soft text-primary"
+                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+              )}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="text-xs font-semibold text-muted-foreground">
+          {activeTab === "details" ? `${records.length} laboratory report(s)` : `${Array.from(new Set(comparisonRecords.map((result) => getDateKey(result.completedAt ?? result.orderedAt)))).slice(-3).length} date comparison`}
+        </div>
+      </div>
+
+      {activeTab === "details" ? <LaboratoryAllDetailsView records={records} /> : null}
+      {activeTab === "comparison" ? <LaboratoryDateWiseComparison records={comparisonRecords} /> : null}
+      {activeTab === "trends" ? <LaboratoryTrendAnalysis records={comparisonRecords} /> : null}
+    </div>
+  );
+}
+
+function LaboratoryAllDetailsView({ records }: { records: ResultRecord[] }) {
+  const sortedRecords = [...records].sort((first, second) => new Date(second.completedAt ?? second.orderedAt).getTime() - new Date(first.completedAt ?? first.orderedAt).getTime());
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-white">
+      <div className="flex flex-col gap-1 border-b border-border bg-surface-muted px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-sm font-bold text-foreground">All Laboratory Details</div>
+        <div className="text-xs font-semibold text-muted-foreground">{records.length} report(s)</div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[820px] border-collapse text-left text-xs">
+          <thead className="bg-surface-muted/80 uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="w-[210px] border-b border-r border-border px-3 py-2">Report</th>
+              <th className="border-b border-r border-border px-3 py-2">Test</th>
+              <th className="w-[160px] border-b border-r border-border px-3 py-2">Value</th>
+              <th className="w-[150px] border-b border-border px-3 py-2">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRecords.map((result) =>
+              result.values.map((value, index) => (
+                <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/40" key={`${result.id}-${value.name}`}>
+                  {index === 0 ? (
+                    <>
+                      <td className="border-r border-border px-3 py-2 align-top" rowSpan={result.values.length}>
+                        <div className="font-extrabold text-foreground">{result.testName}</div>
+                      </td>
+                    </>
+                  ) : null}
+                  <td className="border-r border-border px-3 py-2 font-semibold text-foreground">{value.name}</td>
+                  <td className={cn("border-r border-border px-3 py-2 font-bold", resultValueClass(value))}>
+                    {value.value}
+                    {value.unit ? <span className="ml-1 font-medium text-muted-foreground">{value.unit}</span> : null}
+                  </td>
+                  <td className="px-3 py-2 font-medium text-muted-foreground">{value.range ?? "-"}</td>
+                </tr>
+              )),
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function LaboratoryDateWiseComparison({ records }: { records: ResultRecord[] }) {
+  const dateKeys = Array.from(new Set(records.map((result) => getDateKey(result.completedAt ?? result.orderedAt))))
+    .sort()
+    .slice(-3);
+  const sections = buildLaboratoryComparisonSections(records, dateKeys);
+  const criticalCount = sections.reduce(
+    (total, section) => total + section.rows.filter((row) => row.trend === "Elevated" || row.trend === "Critical" || row.trend === "Watch").length,
+    0,
+  );
+  const improvingCount = sections.reduce((total, section) => total + section.rows.filter((row) => row.trend === "Recovering" || row.trend === "Stabilizing").length, 0);
+  const lastUpdate = records
+    .map((result) => result.completedAt ?? result.orderedAt)
+    .sort((first, second) => second.localeCompare(first))[0];
+
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-end">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" type="button" variant="outline">{lastUpdate ? formatDate(lastUpdate).replace(/\d{2} /, "") : "All dates"}</Button>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-border bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+            <thead>
+              <tr className="bg-surface-muted text-muted-foreground">
+                <th className="w-[250px] border-b border-r border-border px-5 py-5 text-base font-bold">Laboratory Parameter</th>
+                <th className="w-[210px] border-b border-r border-border px-5 py-5 text-base font-bold">Normal Range</th>
+                {dateKeys.map((dateKey) => (
+                  <th className="min-w-[150px] border-b border-r border-border bg-info/10 px-5 py-4 text-center" key={dateKey}>
+                    <span className="block text-lg font-extrabold text-info">{formatComparisonDate(dateKey)}</span>
+                    <span className="mt-1 block text-xs font-semibold italic normal-case text-info/80">{comparisonDateSubtitle(dateKey, dateKeys)}</span>
+                  </th>
+                ))}
+                <th className="w-[150px] border-b border-border bg-warning/10 px-5 py-5 text-center text-base font-extrabold text-warning">Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sections.map((section) => (
+                <RowsForLaboratoryComparisonSection dateKeys={dateKeys} key={section.name} section={section} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <ComparisonSummaryCard label="Critical Flags" value={`${criticalCount} Active`} tone="danger" />
+        <ComparisonSummaryCard label="Improvement Rate" value={`+${Math.max(0, improvingCount * 6)}% Overall`} tone="info" />
+        <ComparisonSummaryCard label="Last Update" value={lastUpdate ? formatDateTime(lastUpdate) : "-"} tone="warning" />
+      </div>
+    </div>
+  );
+}
+
+function RowsForLaboratoryComparisonSection({
+  dateKeys,
+  section,
+}: {
+  dateKeys: string[];
+  section: {
+    name: string;
+    rows: Array<{
+      key: string;
+      parameter: string;
+      range: string;
+      trend: string;
+      valuesByDate: Record<string, ResultValue | undefined>;
+      arrowByDate: Record<string, "up" | "down" | "same" | undefined>;
+    }>;
+  };
+}) {
+  return (
+    <>
+      <tr className="bg-slate-200/80">
+        <td className="border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground" colSpan={dateKeys.length + 3}>
+          {section.name}
+        </td>
+      </tr>
+      {section.rows.map((row) => (
+        <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/50" key={row.key}>
+          <td className="border-r border-border px-5 py-4 text-base font-extrabold text-foreground">{row.parameter}</td>
+          <td className="border-r border-border px-5 py-4 font-mono text-sm font-bold text-muted-foreground">{row.range}</td>
+          {dateKeys.map((dateKey) => {
+            const value = row.valuesByDate[dateKey];
+            const arrow = row.arrowByDate[dateKey];
+            return (
+              <td className="border-r border-border px-5 py-4 text-center" key={`${row.key}-${dateKey}`}>
+                {value ? (
+                  <span className={cn("inline-flex items-center justify-center gap-2 text-base font-extrabold", resultValueClass(value))}>
+                    {value.value}
+                    <span className={cn("text-lg", arrow === "up" && "text-danger", arrow === "down" && "text-info", arrow === "same" && "text-muted-foreground")}>
+                      {arrow === "up" ? "↑" : arrow === "down" ? "↓" : arrow === "same" ? "→" : ""}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </td>
+            );
+          })}
+          <td className="px-5 py-4 text-center">
+            <span className={cn("inline-flex rounded px-3 py-1 text-xs font-extrabold uppercase", comparisonTrendClass(row.trend))}>{row.trend}</span>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function buildLaboratoryComparisonSections(records: ResultRecord[], dateKeys: string[]) {
+  return Object.entries(groupRecordsByTestName(records))
+    .sort(([first], [second]) => first.localeCompare(second))
+    .map(([testName, items]) => {
+      const valueNames = Array.from(new Set(items.flatMap((result) => result.values.map((value) => value.name))));
+      const rows = valueNames.map((valueName) => {
+        const valuesByDate = dateKeys.reduce<Record<string, ResultValue | undefined>>((values, dateKey) => {
+          const resultForDate = items
+            .filter((result) => getDateKey(result.completedAt ?? result.orderedAt) === dateKey)
+            .sort((first, second) => new Date(second.completedAt ?? second.orderedAt).getTime() - new Date(first.completedAt ?? first.orderedAt).getTime())[0];
+          values[dateKey] = resultForDate?.values.find((value) => value.name === valueName);
+          return values;
+        }, {});
+        const orderedValues = dateKeys.map((dateKey) => valuesByDate[dateKey]);
+        const firstValue = items.flatMap((result) => result.values).find((value) => value.name === valueName);
+        const arrowByDate = dateKeys.reduce<Record<string, "up" | "down" | "same" | undefined>>((arrows, dateKey, index) => {
+          const current = numericResultValue(valuesByDate[dateKey]);
+          const previous = numericResultValue(index > 0 ? valuesByDate[dateKeys[index - 1]] : undefined);
+          arrows[dateKey] = current === null || previous === null ? undefined : current > previous ? "up" : current < previous ? "down" : "same";
+          return arrows;
+        }, {});
+
+        return {
+          key: `${testName}-${valueName}`,
+          parameter: valueName,
+          range: firstValue?.range ?? "-",
+          trend: comparisonTrendLabel(orderedValues),
+          valuesByDate,
+          arrowByDate,
+        };
+      });
+
+      return { name: testName, rows };
+    });
+}
+
+function numericResultValue(value?: ResultValue) {
+  if (!value) return null;
+  const numeric = Number.parseFloat(value.value.replace(/,/g, ""));
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function comparisonTrendLabel(values: Array<ResultValue | undefined>) {
+  const available = values.filter(Boolean) as ResultValue[];
+  const latest = available[available.length - 1];
+  const first = available[0];
+  const latestNumeric = numericResultValue(latest);
+  const firstNumeric = numericResultValue(first);
+
+  if (latest?.flag === "Critical") return "Critical";
+  if (latest?.flag === "High") {
+    return firstNumeric !== null && latestNumeric !== null && latestNumeric < firstNumeric ? "Recovering" : "Elevated";
+  }
+  if (latest?.flag === "Low") return "Watch";
+  if (firstNumeric !== null && latestNumeric !== null && Math.abs(latestNumeric - firstNumeric) > 0.1) return "Stabilizing";
+  return "Normal";
+}
+
+function comparisonTrendClass(trend: string) {
+  if (trend === "Critical" || trend === "Elevated") return "bg-danger/15 text-danger";
+  if (trend === "Recovering" || trend === "Watch") return "bg-warning/15 text-warning";
+  if (trend === "Stabilizing") return "bg-info/15 text-info";
+  return "bg-success/10 text-success";
+}
+
+function formatComparisonDate(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }).toUpperCase();
+}
+
+function comparisonDateSubtitle(dateKey: string, dateKeys: string[]) {
+  const index = dateKeys.indexOf(dateKey);
+  if (index === dateKeys.length - 1) return "Current";
+  if (index === 0) return "Baseline";
+  return `Previous ${dateKeys.length - index - 1}`;
+}
+
+function ComparisonSummaryCard({ label, tone, value }: { label: string; tone: "danger" | "info" | "warning"; value: string }) {
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-border bg-white p-4 shadow-sm">
+      <div
+        className={cn(
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-xl font-extrabold",
+          tone === "danger" && "bg-danger/10 text-danger",
+          tone === "info" && "bg-info/10 text-info",
+          tone === "warning" && "bg-warning/10 text-warning",
+        )}
+      >
+        {tone === "danger" ? "!" : tone === "info" ? "↗" : "↺"}
+      </div>
+      <div>
+        <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className={cn("mt-1 text-base font-extrabold", tone === "danger" ? "text-danger" : "text-foreground")}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function LaboratoryTrendAnalysis({ records }: { records: ResultRecord[] }) {
+  const rows = buildLaboratoryTrendRows(records);
+  const criticalCount = rows.filter((row) => row.latestFlag === "Critical" || row.latestFlag === "High").length;
+  const improvingCount = rows.filter((row) => row.trend === "Improving").length;
+  const lastUpdate = records
+    .map((result) => result.completedAt ?? result.orderedAt)
+    .sort((first, second) => second.localeCompare(first))[0];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-3">
+        <MetricPill label="Critical Flags" value={criticalCount} />
+        <MetricPill label="Improving Parameters" value={improvingCount} />
+        <div className="rounded-lg border border-border bg-surface-muted px-3 py-2">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Last Update</div>
+          <div className="text-lg font-bold text-foreground">{lastUpdate ? formatDateTime(lastUpdate) : "-"}</div>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-border bg-white">
+        <div className="border-b border-border bg-surface-muted px-4 py-3">
+          <div className="text-sm font-bold text-foreground">Laboratory Trend Analysis</div>
+          <div className="mt-1 text-xs font-semibold text-muted-foreground">Trends are calculated from earliest to latest numeric result.</div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[820px] text-left text-sm">
+            <thead className="bg-white text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Laboratory Parameter</th>
+                <th className="px-4 py-3">Normal Range</th>
+                <th className="px-4 py-3 text-center">First Result</th>
+                <th className="px-4 py-3 text-center">Latest Result</th>
+                <th className="px-4 py-3 text-center">Change</th>
+                <th className="px-4 py-3 text-center">Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr className="border-t border-border hover:bg-surface-muted/50" key={row.key}>
+                  <td className="px-4 py-3">
+                    <div className="font-bold text-foreground">{row.parameter}</div>
+                    <div className="text-xs font-semibold text-muted-foreground">{row.reportName}</div>
+                  </td>
+                  <td className="px-4 py-3 text-xs font-medium text-muted-foreground">{row.range}</td>
+                  <td className="px-4 py-3 text-center font-bold text-foreground">{row.firstDisplay}</td>
+                  <td className={cn("px-4 py-3 text-center font-bold", row.latestClass)}>{row.latestDisplay}</td>
+                  <td className="px-4 py-3 text-center font-bold text-foreground">{row.changeDisplay}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={cn("inline-flex rounded-md px-2.5 py-1 text-xs font-bold", trendPillClass(row.trend))}>{row.trend}</span>
+                  </td>
+                </tr>
+              ))}
+              {!rows.length ? (
+                <tr>
+                  <td className="px-4 py-8 text-center text-sm text-muted-foreground" colSpan={6}>No numeric laboratory values available for trend analysis.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function buildLaboratoryTrendRows(records: ResultRecord[]) {
+  const grouped = records.reduce<Record<string, Array<{ result: ResultRecord; value: ResultValue; numeric: number }>>>((groups, result) => {
+    result.values.forEach((value) => {
+      const numeric = Number.parseFloat(value.value.replace(/,/g, ""));
+      if (!Number.isFinite(numeric)) return;
+      const key = `${result.testName}::${value.name}`;
+      groups[key] = [...(groups[key] ?? []), { result, value, numeric }];
+    });
+    return groups;
+  }, {});
+
+  return Object.entries(grouped).map(([key, items]) => {
+    const sorted = [...items].sort((first, second) => new Date(first.result.completedAt ?? first.result.orderedAt).getTime() - new Date(second.result.completedAt ?? second.result.orderedAt).getTime());
+    const first = sorted[0];
+    const latest = sorted[sorted.length - 1];
+    const change = latest.numeric - first.numeric;
+    const trend = trendLabel(change, latest.value.flag);
+
+    return {
+      key,
+      reportName: latest.result.testName,
+      parameter: latest.value.name,
+      range: latest.value.range ?? "-",
+      firstDisplay: `${first.value.value}${first.value.unit ? ` ${first.value.unit}` : ""}`,
+      latestDisplay: `${latest.value.value}${latest.value.unit ? ` ${latest.value.unit}` : ""}`,
+      latestFlag: latest.value.flag,
+      latestClass: resultValueClass(latest.value),
+      changeDisplay: `${change > 0 ? "+" : ""}${Number.isInteger(change) ? change : change.toFixed(1)}`,
+      trend,
+    };
+  });
+}
+
+function trendLabel(change: number, flag?: ResultValue["flag"]) {
+  if (flag === "Critical" || flag === "High") return change < 0 ? "Recovering" : "Elevated";
+  if (Math.abs(change) < 0.1) return "Stable";
+  return change < 0 ? "Improving" : "Rising";
+}
+
+function trendPillClass(trend: string) {
+  if (trend === "Elevated") return "bg-danger/10 text-danger";
+  if (trend === "Recovering") return "bg-warning/15 text-warning";
+  if (trend === "Improving") return "bg-success/10 text-success";
+  if (trend === "Rising") return "bg-info/10 text-info";
+  return "bg-surface-muted text-muted-foreground";
 }
 
 function LaboratoryReportView({ result }: { result: ResultRecord }) {
@@ -1026,6 +1589,7 @@ function ReportPrintView({ patientContext, payload }: { patientContext?: Results
   const firstResult = payload?.records[0];
   const ageGender = firstResult ? getPatientAgeGender(firstResult, patientContext) : { age: "-", gender: "-" };
   const printedAt = new Date().toLocaleString("en-IN");
+  const allLaboratoryPrint = firstResult?.department === "laboratory" && (payload?.records.length ?? 0) > 1;
   const signature =
     firstResult?.department === "radiology"
       ? "Radiologist Digital Signature"
@@ -1057,22 +1621,147 @@ function ReportPrintView({ patientContext, payload }: { patientContext?: Results
             font-family: Arial, sans-serif !important;
             left: 0;
             line-height: 1.35;
-            padding: 18px;
+            padding: 14mm 12mm 46mm;
             position: absolute;
             top: 0;
             width: 100%;
           }
 
+          .result-print-header {
+            align-items: flex-start;
+            border-bottom: 1px solid #d5dae7;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+          }
+
+          .result-print-title {
+            color: #1e40af !important;
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+          }
+
+          .result-print-logo {
+            height: 34px;
+            object-fit: contain;
+            width: 100px;
+          }
+
+          .result-print-patient-box {
+            border: 1px solid #d5dae7;
+            border-radius: 4px;
+            margin-bottom: 22px;
+            overflow: hidden;
+          }
+
+          .result-print-section-title {
+            border-bottom: 1px solid #d5dae7;
+            color: #111827 !important;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 7px 9px;
+          }
+
+          .result-print-patient-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 34px;
+            padding: 8px 9px;
+          }
+
+          .result-print-field-line {
+            display: grid;
+            font-size: 8px;
+            gap: 12px;
+            grid-template-columns: 86px 1fr;
+            line-height: 1.35;
+            padding: 2px 0;
+          }
+
+          .result-print-field-line strong {
+            color: #4b5563 !important;
+          }
+
+          .result-print-footer {
+            background: #f7fbff !important;
+            border: 1px solid #bfc7d5;
+            border-radius: 4px;
+            bottom: 12mm;
+            color: #1f2937 !important;
+            display: grid;
+            grid-template-columns: 48px 1fr 118px;
+            gap: 12px;
+            left: 12mm;
+            position: fixed;
+            right: 12mm;
+            padding: 8px;
+          }
+
+          .result-print-qr {
+            background: #fff !important;
+            border: 1px solid #111827;
+            height: 42px;
+            object-fit: contain;
+            padding: 2px;
+            width: 42px;
+          }
+
+          .result-print-footer-main {
+            font-size: 8px;
+            line-height: 1.35;
+          }
+
+          .result-print-footer-row {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: 78px 1fr;
+            margin-bottom: 4px;
+          }
+
+          .result-print-footer-contact {
+            color: #1e40af !important;
+            display: flex;
+            gap: 18px;
+            margin-top: 5px;
+          }
+
+          .result-print-signatory {
+            font-size: 7px;
+            line-height: 1.35;
+            text-align: center;
+          }
+
+          .result-print-sign-line {
+            border-top: 1px solid #111827;
+            margin: 17px 7px 4px;
+          }
+
+          .result-print-disclaimer {
+            color: #475569 !important;
+            font-size: 6.5px;
+            margin-top: 5px;
+          }
+
+          .result-print-page {
+            bottom: 3mm;
+            color: #5b6675 !important;
+            font-size: 7px;
+            position: fixed;
+            right: 12mm;
+          }
+
           .result-print-root table {
             border-collapse: collapse;
-            font-size: 11px;
+            font-size: 10px;
             width: 100%;
           }
 
           .result-print-root th,
           .result-print-root td {
             border: 1px solid #d5dae7;
-            padding: 7px;
+            padding: 5px 6px;
             text-align: left;
             vertical-align: top;
           }
@@ -1080,106 +1769,172 @@ function ReportPrintView({ patientContext, payload }: { patientContext?: Results
           .result-print-root th {
             background: #eef3fb !important;
             color: #4b5563 !important;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
           }
 
           @page {
-            margin: 12mm;
+            margin: 0;
           }
         }
       `}</style>
 
       {payload && firstResult ? (
         <div className="result-print-root">
-          <div className="flex items-start justify-between gap-5 border-b-2 border-primary pb-4">
-            <div>
-              <img alt="Plasmit Hospital" className="mb-2 h-14 object-contain" src="/plasmit-sidebar-logo.webp" />
-              <div className="text-xl font-bold">Plasmit Hospital</div>
-              <div className="text-sm font-semibold text-slate-600">{payload.title}</div>
-            </div>
-            <div className="text-right text-xs">
-              <div className="font-bold">Print Timestamp</div>
-              <div>{printedAt}</div>
-              <div className="mt-2 font-bold">Report ID</div>
-              <div>{payload.records.map((result) => result.id).join(", ")}</div>
-            </div>
+          <div className="result-print-header">
+            <div className="result-print-title">LABORATORY REPORT</div>
+            <img alt="Plasmit Hospital" className="result-print-logo" src="/plasmit-sidebar-logo.webp" />
           </div>
 
-          <section className="mt-4">
-            <div className="mb-2 text-sm font-bold uppercase tracking-wide text-primary">Patient Information</div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <PrintField label="Patient Name" value={patientContext?.name ?? firstResult.patientName} />
-              <PrintField label="MR Number" value={patientContext?.mrn ?? firstResult.mrn} />
-              <PrintField label="DOB" value={patientContext?.dob ?? "-"} />
-              <PrintField label="Age" value={ageGender.age} />
-              <PrintField label="Gender" value={ageGender.gender} />
-              <PrintField label="Blood Group" value={patientContext?.bloodGroup ?? "-"} />
-              <PrintField label="Ward / Bed" value={patientContext?.bed ?? patientContext?.wardBed ?? firstResult.location} />
-              <PrintField label="Allergy" value={patientContext?.allergy ?? "-"} />
-              <PrintField label="Consultant Doctor" value={patientContext?.consultantDoctor ?? firstResult.orderingDoctor} />
-              <PrintField label="Admission Details" value={`${firstResult.visitType} encounter, active clinical care`} />
-              <PrintField label="Sample Collected Date" value={formatDateTime(firstResult.collectedAt)} />
-              <PrintField label="Report Date" value={formatDateTime(firstResult.completedAt ?? firstResult.orderedAt)} />
+          <section className="result-print-patient-box">
+            <div className="result-print-section-title">Patient Information</div>
+            <div className="result-print-patient-grid">
+              <div>
+                <PrintLineField label="Patient Name:" value={patientContext?.name ?? firstResult.patientName} />
+                <PrintLineField label="MRN:" value={patientContext?.mrn ?? firstResult.mrn} />
+                <PrintLineField label="Age / Gender:" value={`${ageGender.age} / ${ageGender.gender}`} />
+                <PrintLineField label="Doctor Name:" value={patientContext?.consultantDoctor ?? firstResult.orderingDoctor} />
+              </div>
+              <div>
+                <PrintLineField label="Sample Collection:" value={formatDateTime(firstResult.collectedAt)} />
+                <PrintLineField label="Report Date:" value={formatDate(firstResult.completedAt ?? firstResult.orderedAt)} />
+                <PrintLineField label="Report Status:" value="Final" />
+                <PrintLineField label="Report ID:" value={payload.records.map((result) => result.id).join(", ")} />
+              </div>
             </div>
           </section>
 
           <section className="mt-5">
             <div className="mb-2 text-sm font-bold uppercase tracking-wide text-primary">{getDepartmentLabel(firstResult.department)} Details</div>
-            {payload.records.map((result) => (
-              <div className="mb-5 break-inside-avoid" key={`print-${result.id}`}>
-                <div className="mb-2 grid grid-cols-4 gap-2 text-xs">
-                  <PrintField label="Test Name" value={result.testName} />
-                  <PrintField label="Sample Type" value={result.specimen ?? "-"} />
-                  <PrintField label="Status" value={result.status} />
-                  <PrintField label="Report Date" value={formatDateTime(result.completedAt ?? result.orderedAt)} />
-                </div>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Test Name</th>
-                      <th>Result Value</th>
-                      <th>Unit</th>
-                      <th>Reference Range</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.values.map((value) => (
-                      <tr key={`${result.id}-print-${value.name}`}>
-                        <td>{value.name}</td>
-                        <td>{value.value}</td>
-                        <td>{value.unit ?? "-"}</td>
-                        <td>{value.range ?? "-"}</td>
-                        <td>{value.flag ?? result.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {result.resultSummary ? (
-                  <div className="mt-2 rounded border border-slate-300 p-2 text-xs">
-                    <strong>Interpretation:</strong> {result.resultSummary}
+            {allLaboratoryPrint ? (
+              <AllLaboratoryPrintTable records={payload.records} />
+            ) : (
+              payload.records.map((result) => (
+                <div className="mb-4 break-inside-avoid" key={`print-${result.id}`}>
+                  <div className="mb-2 grid grid-cols-4 gap-2 text-xs">
+                    <PrintField label="Test Name" value={result.testName} />
+                    <PrintField label="Sample Type" value={result.specimen ?? "-"} />
+                    <PrintField label="Status" value={result.status} />
+                    <PrintField label="Report Date" value={formatDateTime(result.completedAt ?? result.orderedAt)} />
                   </div>
-                ) : null}
-              </div>
-            ))}
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Test Name</th>
+                        <th>Result Value</th>
+                        <th>Unit</th>
+                        <th>Reference Range</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.values.map((value) => (
+                        <tr key={`${result.id}-print-${value.name}`}>
+                          <td>{value.name}</td>
+                          <td>{value.value}</td>
+                          <td>{value.unit ?? "-"}</td>
+                          <td>{value.range ?? "-"}</td>
+                          <td>{value.flag ?? result.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {result.resultSummary ? (
+                    <div className="mt-2 rounded border border-slate-300 p-2 text-xs">
+                      <strong>Interpretation:</strong> {result.resultSummary}
+                    </div>
+                  ) : null}
+                </div>
+              ))
+            )}
           </section>
 
-          <section className="mt-6 grid grid-cols-[1fr_120px] items-end gap-8">
-            <div>
-              <div className="mb-8 text-xs font-bold uppercase tracking-wide text-primary">Verification Details</div>
-              <div className="border-t border-slate-500 pt-2 text-sm font-bold">{signature}</div>
-              <div className="mt-1 text-xs">Electronically verified report</div>
+          <div className="result-print-footer">
+            <PrintQrCode />
+            <div className="result-print-footer-main">
+              <div className="result-print-footer-row">
+                <strong>Booking Centre :-</strong>
+                <span>PlasmIT Hospital</span>
+              </div>
+              <div className="result-print-footer-row">
+                <strong>Processing Lab :-</strong>
+                <span>PlasmIT Pty Ltd, Level 17, Tower 4, 727 Collins Street, Docklands, Victoria - 3008 Australia</span>
+              </div>
+              <div className="result-print-footer-contact">
+                <span>+61 431 770 499</span>
+                <span>info@plasmitvector.com</span>
+                <span>www.plasmitvector.com</span>
+              </div>
+              <div className="result-print-disclaimer">
+                All Lab results are subject to clinical interpretation by qualified medical professional and this report is not subject to use for any medico-legal purpose.
+              </div>
             </div>
-            <div className="grid h-[110px] w-[110px] place-items-center border-2 border-slate-900 text-center text-[10px] font-bold">
-              QR Verification
-              <br />
-              {payload.records[0]?.id}
+            <div className="result-print-signatory">
+              <div className="font-bold">Authorized Signatory</div>
+              <div className="result-print-sign-line" />
+              <div>Dr. Kavita Rao</div>
+              <div>MD Pathology</div>
+              <div>Reg. No: MMC12345</div>
             </div>
-          </section>
+          </div>
+          <div className="result-print-page">Page 1 of 1</div>
         </div>
       ) : null}
     </>
+  );
+}
+
+function AllLaboratoryPrintTable({ records }: { records: ResultRecord[] }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Report</th>
+          <th>Sample Type</th>
+          <th>Test Name</th>
+          <th>Result Value</th>
+          <th>Unit</th>
+          <th>Reference Range</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {records.map((result) =>
+          result.values.map((value, index) => (
+            <tr key={`${result.id}-all-print-${value.name}`}>
+              {index === 0 ? (
+                <>
+                  <td rowSpan={result.values.length}>
+                    <strong>{result.testName}</strong>
+                    <br />
+                    {formatDateTime(result.completedAt ?? result.orderedAt)}
+                  </td>
+                  <td rowSpan={result.values.length}>{result.specimen ?? "-"}</td>
+                </>
+              ) : null}
+              <td>{value.name}</td>
+              <td>{value.value}</td>
+              <td>{value.unit ?? "-"}</td>
+              <td>{value.range ?? "-"}</td>
+              <td>{value.flag ?? result.status}</td>
+            </tr>
+          )),
+        )}
+      </tbody>
+    </table>
+  );
+}
+
+function PrintQrCode() {
+  return <img alt="QR verification code" className="result-print-qr" src="/laboratory-report-qr.png" />;
+}
+
+function PrintLineField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="result-print-field-line">
+      <strong>{label}</strong>
+      <span>{value || "-"}</span>
+    </div>
   );
 }
 

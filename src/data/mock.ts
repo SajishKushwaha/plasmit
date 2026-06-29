@@ -1,7 +1,7 @@
 import type { NotificationItem, Role, SearchResult, StatusTone } from "@/types";
 
 export const hospitalContext = {
-  name: "Plasmit Hospital",
+  name: "BLK max hospital",
   code: "PLH-HQ",
   branch: "Main Campus",
   department: "Multi Department",

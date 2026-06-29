@@ -86,7 +86,7 @@ const reviewMetricColors: Record<ReviewGraphMetricId, string> = {
   oxygenSaturation: "#0072b2",
   oxygenFlowRate: "#8f5a11",
   fio2: "#009e73",
-  bloodPressure: "#d55e00",
+  bloodPressure: "#7c3aed",
   bloodPressureDiastolic: "#cc79a7",
   pulseRate: "#d00000",
   monitorHeartRate: "#0057b8",

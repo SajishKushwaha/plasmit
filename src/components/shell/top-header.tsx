@@ -52,7 +52,7 @@ export function TopHeader() {
           <span className="truncate">{hospitalContext.name}</span>
         </div>
       </div>
-      <CommandSearch />
+     
       <RoleSwitcher className="hidden sm:flex" />
       <ProfileMenu />
     </header>

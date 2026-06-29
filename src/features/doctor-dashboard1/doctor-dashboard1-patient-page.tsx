@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 type PatientTabValue = "overview" | "live-monitoring" | "clinical-examination" | "results" | "vitals" | "assessment" | "shift-summary" | "orders" | "Intake Output";
 type DashboardPoctMode = "add" | "results";
 type ResultsAutoView = "laboratory-all";
+type RequestedOrderTab = "blood" | "drugs" | "pathology" | "lab" | "radiology" | "poct" | "procedures" | "referral" | "ordersets" | "ldt";
 
 function getRequestedPatientTab(tab: string | null): PatientTabValue | null {
   switch (tab) {
@@ -74,14 +75,33 @@ function getRequestedResultsAutoView(view: string | null): ResultsAutoView | nul
   return null;
 }
 
+function getRequestedOrderTab(tab: string | null): RequestedOrderTab | null {
+  if (
+    tab === "blood" ||
+    tab === "drugs" ||
+    tab === "pathology" ||
+    tab === "lab" ||
+    tab === "radiology" ||
+    tab === "poct" ||
+    tab === "procedures" ||
+    tab === "referral" ||
+    tab === "ordersets" ||
+    tab === "ldt"
+  ) {
+    return tab;
+  }
+  return null;
+}
+
 export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }) {
   const searchParams = useSearchParams();
   const requestedTab = getRequestedPatientTab(searchParams.get("tab"));
   const requestedPoctMode = getRequestedPoctMode(searchParams.get("poct"));
   const requestedResultsAutoView = getRequestedResultsAutoView(searchParams.get("resultsView"));
+  const requestedOrderTab = getRequestedOrderTab(searchParams.get("orderTab"));
   const [activeTab, setActiveTab] = React.useState<PatientTabValue>(requestedTab ?? "overview");
   const [poctMode, setPoctMode] = React.useState<DashboardPoctMode>(requestedPoctMode ?? "add");
-  const [ordersDefaultTab, setOrdersDefaultTab] = React.useState(requestedPoctMode === "add" ? "poct" : "radiology");
+  const [ordersDefaultTab, setOrdersDefaultTab] = React.useState(requestedOrderTab ?? (requestedPoctMode === "add" ? "poct" : "radiology"));
   const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
   const patient = orderedPatients.find((item) => String(item.id) === patientId);
   const rapidReviewPatient = patient ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId) : undefined;
@@ -110,6 +130,12 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
       if (requestedPoctMode === "add") setOrdersDefaultTab("poct");
     }
   }, [requestedPoctMode]);
+
+  React.useEffect(() => {
+    if (!requestedOrderTab) return;
+    setActiveTab("orders");
+    setOrdersDefaultTab(requestedOrderTab);
+  }, [requestedOrderTab]);
 
   React.useEffect(() => {
     const openPoctInPlace = (event: Event) => {
@@ -225,7 +251,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             <h1>under development</h1>
           </TabsContent>
           <TabsContent className="mt-0" value="shift-summary">
-            {/* <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} /> */}
+            <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />
             <h1>under development</h1>
           </TabsContent>
           <TabsContent className="mt-0" value="orders">
@@ -319,8 +345,8 @@ function PatientDetailTopStrip({
           </div>
           {details.map((item) => (
             <div className="whitespace-nowrap text-sm font-semibold" key={`${item.label}-${item.value}`}>
-              {item.label ? <span className="text-white/80">{item.label}: </span> : null}
-              <span>{item.value}</span>
+              {item.label ? <span className={item.label === "Isolation Type" ? "font-extrabold text-red-300" : "text-white/80"}>{item.label}: </span> : null}
+              <span className={item.label === "Isolation Type" ? "font-extrabold text-red-300" : undefined}>{item.value}</span>
             </div>
           ))}
           <div className={cn("whitespace-nowrap text-sm font-bold text-orange-300", !isCompact && "ml-0")}>Allergies: Meropenem</div>

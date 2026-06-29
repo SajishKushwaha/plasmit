@@ -109,7 +109,7 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
         <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3 md:flex-row md:items-center md:justify-between">
           <div className="inline-flex w-full rounded-lg border border-border bg-surface-muted/70 p-1 md:w-auto">
             <ProgressNoteTab active={activeKind === "doctor"} count={doctorCount} icon={Stethoscope} label="Doctor Note" onClick={() => setActiveKind("doctor")} />
-            <ProgressNoteTab active={activeKind === "nurse"} count={nurseCount} icon={ClipboardCheck} label="Nurse Note" onClick={() => setActiveKind("nurse")} />
+           
             <ProgressNoteTab active={activeKind === "care-plan"} count={carePlanCount} icon={ListChecks} label="Care Plan" onClick={() => setActiveKind("care-plan")} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -122,15 +122,6 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
             >
               <FilePenLine className="h-4 w-4" />
               Add Doctor Note
-            </Button>
-            <Button
-              size="sm"
-              type="button"
-              variant={draftKind === "nurse" ? "default" : "outline"}
-              onClick={() => openDraft("nurse")}
-            >
-              <ClipboardCheck className="h-4 w-4" />
-              Add Nurse Note
             </Button>
             <Button
               size="sm"

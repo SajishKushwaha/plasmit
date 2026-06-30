@@ -15,23 +15,29 @@ const RoleContext = React.createContext<RoleContextValue | null>(null);
 
 const DEFAULT_ROLE: Role = "Hospital Admin";
 const DOCTOR_IPD_ROLE: Role = "Doctor IPD";
+const ICU_ROLE: Role = "ICU";
 const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
-type AccessScope = "doctor-ipd" | "admin";
+type AccessScope = "doctor-ipd" | "icu" | "admin";
 
 function readAccessScope(): AccessScope {
   if (typeof window === "undefined") return "admin";
-  return window.localStorage.getItem(accessScopeKey) === "doctor-ipd" ? "doctor-ipd" : "admin";
+  const savedScope = window.localStorage.getItem(accessScopeKey);
+  if (savedScope === "doctor-ipd" || savedScope === "icu") return savedScope;
+  return "admin";
 }
 
 function getAllowedRoles(scope: AccessScope): Role[] {
-  return scope === "doctor-ipd" ? [DOCTOR_IPD_ROLE] : allRoles;
+  if (scope === "doctor-ipd") return [DOCTOR_IPD_ROLE];
+  if (scope === "icu") return [ICU_ROLE];
+  return allRoles;
 }
 
 function readStoredRole(): Role {
   if (typeof window === "undefined") return DEFAULT_ROLE;
   const accessScope = readAccessScope();
   if (accessScope === "doctor-ipd") return DOCTOR_IPD_ROLE;
+  if (accessScope === "icu") return ICU_ROLE;
 
   const saved = window.localStorage.getItem("plasmit-role");
   if (saved === "Doctor") return "Doctor OPD";
@@ -55,7 +61,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
 
   const setRole = React.useCallback((nextRole: Role) => {
     const nextAccessScope = readAccessScope();
-    window.localStorage.setItem("plasmit-role", nextAccessScope === "doctor-ipd" ? DOCTOR_IPD_ROLE : nextRole);
+    const lockedRole = nextAccessScope === "doctor-ipd" ? DOCTOR_IPD_ROLE : nextAccessScope === "icu" ? ICU_ROLE : nextRole;
+    window.localStorage.setItem("plasmit-role", lockedRole);
     window.dispatchEvent(new Event(roleChangeEvent));
   }, []);
 

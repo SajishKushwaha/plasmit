@@ -538,7 +538,7 @@ export function IcuCommandCenterPatientPage({
   initialEventFocus,
   initialTab = "overview",
   initialMonitoringTab = "monitoring-overview",
-  initialOrdersSubTab = "medication-overview",
+  initialOrdersSubTab = "medicine-chart",
   initialResultType,
   initialShiftFocus,
 }: {
@@ -571,8 +571,8 @@ export function IcuCommandCenterPatientPage({
             <span>Unit: {patient.unit}</span>
             <span>Doctor: {patient.admittingDoctor}</span>
             <span>Nurse: {patient.assignedWardNurse}</span>
-            <Link className="inline-flex h-9 items-center justify-center rounded-full border border-white/40 bg-white/15 px-4 text-xs font-bold text-white hover:bg-white/25" href="/icu-command-center">
-              Back
+            <Link className="inline-flex h-9 items-center justify-center rounded-full border border-white/30 bg-[#1d4ed8] px-4 text-xs font-black text-white shadow-sm hover:bg-[#1e40af]" href="/icu-command-center">
+              Back to Dashboard
             </Link>
             <Link className="inline-flex h-9 items-center justify-center rounded-full border border-white/40 bg-white px-4 text-xs font-bold text-violet-600 hover:bg-white/90" href={icuPatientDailyChartHref(patient.id)}>
               ICU Daily Chart
@@ -3116,7 +3116,7 @@ function buildExecutivePatientDocumentationRows(patient: IcuPatient, unitRow: Ex
       category: "Medication / MAR",
       due: medication.scheduledTime,
       evidence: `${medication.medication} ${medication.dose} | ${medication.route} | ${medication.reason}`,
-      href: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=medication-overview"),
+      href: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=medicine-chart"),
       item: "Medication administration record",
       owner: medication.administeredBy === "-" ? patient.assignedWardNurse : medication.administeredBy,
       patient,
@@ -11223,7 +11223,7 @@ function escalatedCaseSourceHref(row: EscalatedCaseRow) {
   if (lower.includes("device")) return "/icu-command-center/critical-care/device-monitoring";
   if (!row.patientId) return "/icu-command-center/tele-icu/escalated-cases";
   if (lower.includes("diagnostic") || lower.includes("lab")) return icuPatientDetailHref(row.patientId, "results");
-  if (lower.includes("pharmacy") || lower.includes("medication")) return icuPatientDetailHref(row.patientId, "orders", undefined, "ordersTab=medication-overview");
+  if (lower.includes("pharmacy") || lower.includes("medication")) return icuPatientDetailHref(row.patientId, "orders", undefined, "ordersTab=medicine-chart");
   if (lower.includes("ventilator") || lower.includes("respiratory")) return icuPatientDetailHref(row.patientId, "monitoring", "device-snapshot");
   if (lower.includes("clinical")) return icuPatientDetailHref(row.patientId, "monitoring", "24h-chart");
   return icuPatientDetailHref(row.patientId, "events");
@@ -14867,7 +14867,7 @@ function normalizeIcuMonitoringSubTab(subtab?: string): IcuMonitoringSubTab {
 }
 
 type DashboardCellTone = "critical" | "danger" | "warning" | "success" | "info" | "purple" | "muted";
-type MedicationOrdersSubTab = "pending-work" | "medication-overview" | "medicine-chart" | "medicine-reference";
+type MedicationOrdersSubTab = "pending-work" | "medicine-chart" | "medicine-reference";
 type IcuEventFocus = "all" | "open-alerts" | "action-needed";
 type IcuShiftFocus = "all" | "pending" | "critical" | "completed";
 type TeleIcuScenarioMode = "readiness" | "local-team" | "remote-md" | "sla";
@@ -14875,7 +14875,7 @@ type EscalatedCaseScenarioMode = "trigger" | "severity" | "source" | "owner-chai
 
 function normalizeMedicationOrdersSubTab(tab?: string): MedicationOrdersSubTab {
   if (tab === "pending-work" || tab === "medicine-chart" || tab === "medicine-reference") return tab;
-  return "medication-overview";
+  return "medicine-chart";
 }
 
 function normalizeIcuEventFocus(focus?: string): IcuEventFocus {
@@ -15593,7 +15593,6 @@ function IcuPatientCommandProfile({
           <Tabs value={ordersSubTab} onValueChange={(value) => setOrdersSubTab(value as MedicationOrdersSubTab)}>
             <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl bg-slate-100 p-2">
               <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="pending-work">Pending Work</TabsTrigger>
-              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medication-overview">Medication Overview</TabsTrigger>
               <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medicine-chart">Medicine Chart</TabsTrigger>
               <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medicine-reference">Medicine Reference</TabsTrigger>
             </TabsList>
@@ -15604,59 +15603,6 @@ function IcuPatientCommandProfile({
                 patientInstructions={patientInstructions}
                 tasks={activeTasks}
               />
-            </TabsContent>
-
-            <TabsContent className="mt-4" value="medication-overview">
-              <div className="grid gap-4 xl:grid-cols-2">
-                <IcuPatientQueuePanel
-                  title="Medication"
-                  icon={Pill}
-                  count={activeMeds.length}
-                  rows={activeMeds.map((row) => ({
-                    id: row.id,
-                    title: `${row.medication} ${row.dose}`,
-                    detail: `${row.scheduledTime} | ${row.route} | ${row.status} | ${row.reason}`,
-                    tone: row.status === "Late" ? "danger" : row.status === "Due" ? "warning" : "success",
-                  }))}
-                  empty="No active medication rows for this patient."
-                />
-                <IcuPatientQueuePanel
-                  title="Doctor instructions"
-                  icon={Stethoscope}
-                  count={patientInstructions.length}
-                  rows={patientInstructions.map((row) => ({
-                    id: row.id,
-                    title: `${row.instructionType} - ${row.priority}`,
-                    detail: `${row.instruction} | ${row.dueTime} | ${row.assignedNurse}`,
-                    tone: row.priority === "Critical" ? "critical" : row.priority === "High" ? "warning" : "info",
-                  }))}
-                  empty="No doctor instruction for this patient."
-                />
-                <IcuPatientQueuePanel
-                  title="Transfusion"
-                  icon={Droplets}
-                  count={patientTransfusions.length}
-                  rows={patientTransfusions.map((row) => ({
-                    id: row.id,
-                    title: `${row.componentType} ${row.unitNumber}`,
-                    detail: `${row.bloodGroup} | ${row.status} | Reaction: ${row.reactionObserved}`,
-                    tone: row.status === "Running" || row.status === "Issued" ? "warning" : "success",
-                  }))}
-                  empty="No transfusion rows for this patient."
-                />
-                <IcuPatientQueuePanel
-                  title="Pending nursing tasks"
-                  icon={ClipboardCheck}
-                  count={activeTasks.length}
-                  rows={activeTasks.map((row) => ({
-                    id: row.id,
-                    title: row.title,
-                    detail: `${row.dueTime} | ${row.assignedTo} | ${row.remarks}`,
-                    tone: row.status === "Overdue" ? "danger" : "info",
-                  }))}
-                  empty="No pending nursing tasks for this patient."
-                />
-              </div>
             </TabsContent>
 
             <TabsContent className="mt-4" value="medicine-chart">
@@ -16686,14 +16632,13 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
             <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-3 py-2">Time</th>
                 <th className="px-3 py-2">Event Type</th>
                 <th className="px-3 py-2">Classification</th>
                 <th className="px-3 py-2">Severity</th>
-                <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Event</th>
                 <th className="px-3 py-2">Details</th>
                 <th className="px-3 py-2">Owner</th>
@@ -16710,9 +16655,6 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
                   <td className="px-3 py-2 text-sm font-semibold text-slate-800">{event.classification}</td>
                   <td className="px-3 py-2">
                     <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(icuPatientEventSeverityTone(event.severity)))}>{event.severity}</span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{event.status}</span>
                   </td>
                   <td className="px-3 py-2 text-sm font-bold text-slate-950">{event.title}</td>
                   <td className="px-3 py-2 text-xs leading-5 text-slate-500">{event.detail}</td>
@@ -16757,6 +16699,71 @@ type IcuShiftHandoverRow = {
   tone: DashboardCellTone;
   focus: Exclude<IcuShiftFocus, "all">;
 };
+
+function icuShiftStatusTone(row: Pick<IcuShiftHandoverRow, "focus" | "status" | "tone">): StatusTone {
+  const status = row.status.toLowerCase();
+  if (
+    status.includes("abnormal") ||
+    status.includes("late") ||
+    status.includes("overdue") ||
+    status.includes("open") ||
+    status.includes("escalated")
+  ) {
+    return "danger";
+  }
+  if (
+    status.includes("pending") ||
+    status.includes("due") ||
+    status.includes("watch") ||
+    status.includes("review")
+  ) {
+    return "warning";
+  }
+  if (
+    status.includes("acknowledged") ||
+    status.includes("complete") ||
+    status.includes("corrected") ||
+    status.includes("signed") ||
+    status.includes("reviewed") ||
+    status.includes("synced") ||
+    status.includes("administered")
+  ) {
+    return "success";
+  }
+  if (row.focus === "critical" || row.tone === "critical" || row.tone === "danger") return "danger";
+  if (row.focus === "pending" || row.tone === "warning") return "warning";
+  if (row.focus === "completed" || row.tone === "success") return "success";
+  return "info";
+}
+
+function icuShiftHistoryStatusTone(row: { status: string; tone: DashboardCellTone }): StatusTone {
+  return icuShiftStatusTone({
+    focus: row.tone === "danger" || row.tone === "critical" ? "critical" : row.tone === "success" ? "completed" : "pending",
+    status: row.status,
+    tone: row.tone,
+  });
+}
+
+function IcuShiftStatusPill({ status, tone }: { status: string; tone: StatusTone }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-7 min-w-[128px] items-center justify-center whitespace-nowrap rounded-full border px-3 text-center text-[11px] font-black leading-none shadow-sm",
+        tone === "danger" || tone === "critical"
+          ? "border-rose-200 bg-rose-50 text-rose-700"
+          : tone === "warning"
+            ? "border-amber-200 bg-amber-50 text-amber-700"
+            : tone === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : tone === "muted"
+                ? "border-slate-200 bg-slate-50 text-slate-600"
+                : "border-sky-200 bg-sky-50 text-sky-700",
+      )}
+    >
+      {status}
+    </span>
+  );
+}
 
 function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFocus: IcuShiftFocus; patient: IcuPatient }) {
   const shiftOptions = React.useMemo(() => icuShiftSummaryScenarios(), []);
@@ -16873,7 +16880,7 @@ function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFoc
                 <th className="px-3 py-2">Handover Item</th>
                 <th className="px-3 py-2">Time</th>
                 <th className="px-3 py-2">Assigned To</th>
-                <th className="px-3 py-2">Status</th>
+                <th className="min-w-[150px] px-3 py-2 text-center">Status</th>
                 <th className="px-3 py-2">Source</th>
                 <th className="px-3 py-2">Next Action</th>
               </tr>
@@ -16889,7 +16896,9 @@ function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFoc
                   </td>
                   <td className="px-3 py-2 font-bold text-slate-800">{row.time}</td>
                   <td className="px-3 py-2 font-semibold text-slate-700">{row.assignedTo}</td>
-                  <td className="px-3 py-2"><StatusPill tone={smartBedStatusToneFromDashboard(row.tone)}>{row.status}</StatusPill></td>
+                  <td className="px-3 py-2 text-center">
+                    <IcuShiftStatusPill status={row.status} tone={icuShiftStatusTone(row)} />
+                  </td>
                   <td className="px-3 py-2 text-xs font-semibold text-slate-600">{row.source}</td>
                   <td className="px-3 py-2 text-xs font-bold text-slate-800">{row.nextAction}</td>
                 </tr>
@@ -16924,7 +16933,7 @@ function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFoc
                   <p className="text-sm font-bold text-slate-950">{row.shift}</p>
                   <p className="mt-1 text-xs text-slate-500">{row.time}</p>
                 </div>
-                <span className={cn("rounded-full border bg-white px-2.5 py-1 text-xs font-bold", patientDetailIconClass(row.tone))}>{row.status}</span>
+                <IcuShiftStatusPill status={row.status} tone={icuShiftHistoryStatusTone(row)} />
               </div>
               <div className="mt-3 grid gap-2 text-xs">
                 <InfoLine label="Outgoing" value={row.outgoing} />
@@ -19771,14 +19780,13 @@ function DashboardMatrixCell({
 
   if (column === "Risk") {
     return (
-      <button
+      <Link
         className="inline-flex min-h-16 w-full items-center justify-center"
-        type="button"
-        onClick={() => onOpenRiskReference?.(patient)}
-        title={`Risk score and sepsis reference - ${patient.bedNo}`}
+        href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}
+        title={`Open patient monitoring 24h chart - ${patient.bedNo}`}
       >
         <VitalTrafficPill cell={cell} icon={Icon} />
-      </button>
+      </Link>
     );
   }
 
@@ -20068,7 +20076,7 @@ function buildDashboardCells(patient: IcuPatient): Record<string, DashboardCell>
       detail: dueMeds[0] ? `${dueMeds[0].medication} ${dueMeds[0].scheduledTime}` : `${meds.length} active`,
       tone: lateMeds.length ? "danger" : dueMeds.length ? "warning" : "success",
       icon: Pill,
-      route: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=medication-overview"),
+      route: icuPatientDetailHref(patient.id, "orders", undefined, "ordersTab=medicine-chart"),
     },
     Events: {
       title: alerts.length ? `${alerts.length} alert${alerts.length === 1 ? "" : "s"}` : "No alert",

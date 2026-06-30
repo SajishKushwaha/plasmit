@@ -352,8 +352,8 @@ function PatientDetailTopStrip({
           <div className={cn("whitespace-nowrap text-sm font-bold text-orange-300", !isCompact && "ml-0")}>Allergies: Meropenem</div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button asChild className="h-8 border-white/30 bg-white px-3 text-xs text-[#1d4f8d] hover:bg-white/90" size="sm" variant="outline">
-            <Link href="/doctor-dashboard1"><ArrowLeft className="h-4 w-4" />Dashboard1</Link>
+          <Button asChild className="h-8 border-white/25 bg-[#1d4ed8] px-3 text-xs font-bold text-white shadow-sm hover:bg-[#1e40af]" size="sm" variant="outline">
+            <Link href="/doctor-dashboard1"><ArrowLeft className="h-4 w-4" />Back to Dashboard</Link>
           </Button>
         </div>
       </div>

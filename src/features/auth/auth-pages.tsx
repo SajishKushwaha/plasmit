@@ -31,6 +31,13 @@ const loginCredentials = [
     route: "/doctor-dashboard1",
   },
   {
+    email: "icu@hospital.com",
+    password: "icu123",
+    role: "ICU" as Role,
+    scope: "icu",
+    route: "/icu-command-center",
+  },
+  {
     email: "admin@hospital.com",
     password: "admin123",
     role: "Hospital Admin" as Role,
@@ -130,6 +137,10 @@ export function LoginPage() {
       const savedScope = window.localStorage.getItem(accessScopeKey);
       if (savedScope === "doctor-ipd") {
         router.replace("/doctor-dashboard1");
+        return;
+      }
+      if (savedScope === "icu") {
+        router.replace("/icu-command-center");
         return;
       }
       const savedRole = window.localStorage.getItem("plasmit-role") as Role | null;
@@ -262,10 +273,6 @@ export function LoginPage() {
                 </button>
               </form>
 
-              <div className="mt-5 space-y-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                <div>Doctor IPD: doctor@hospital.com / doctor123</div>
-                <div>Admin: admin@hospital.com / admin123</div>
-              </div>
             </div>
 
             <div className="mt-4 text-center text-xs font-medium text-slate-500">

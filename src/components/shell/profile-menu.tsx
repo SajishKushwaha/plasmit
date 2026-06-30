@@ -16,19 +16,30 @@ export function ProfileMenu() {
     department: hospitalContext.department,
     status: "Active",
   };
-  const user = role === "Doctor IPD" ? {
-    name: "Dr. Vivek Bindra",
-    department: "Critical Care & Internal Medicine",
-    status: "Active",
-    designation: "Consultant Intensivist",
-    registration: "MCI-DR-20486",
-    patientLoad: "18 IPD patients",
-  } : {
-    ...baseUser,
-    designation: role,
-    registration: hospitalContext.code,
-    patientLoad: "Workspace active",
-  };
+  const user = role === "Doctor IPD"
+    ? {
+      name: "Dr. Vivek Bindra",
+      department: "Critical Care & Internal Medicine",
+      status: "Active",
+      designation: "Consultant Intensivist",
+      registration: "MCI-DR-20486",
+      patientLoad: "18 IPD patients",
+    }
+    : role === "ICU"
+      ? {
+        name: "ICU Command Center",
+        department: "Critical Care Operations",
+        status: "Active",
+        designation: "ICU Command Role",
+        registration: hospitalContext.code,
+        patientLoad: "6 ICU beds visible",
+      }
+      : {
+        ...baseUser,
+        designation: role,
+        registration: hospitalContext.code,
+        patientLoad: "Workspace active",
+      };
 
   function handleLogout() {
     window.localStorage.removeItem("hk-general-auth");
@@ -51,7 +62,7 @@ export function ProfileMenu() {
           <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-primary/10 via-white to-surface-muted px-3 py-3">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-black text-white shadow-sm">
-                {role === "Doctor IPD" ? "VB" : <UserCircle className="h-6 w-6" />}
+                {role === "Doctor IPD" ? "VB" : role === "ICU" ? "ICU" : <UserCircle className="h-6 w-6" />}
               </div>
               <div className="min-w-0">
                 <div className="truncate text-base font-black text-foreground">{user.name}</div>
@@ -117,7 +128,7 @@ export function ProfileMenu() {
           </DropdownMenu.Item>
           <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground">
             <ShieldCheck className="h-4 w-4" />
-            Protected Doctor IPD session
+            Protected {role} session
           </div>
           <DropdownMenu.Item
             className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-danger outline-none hover:bg-danger/10 focus:bg-danger/10"

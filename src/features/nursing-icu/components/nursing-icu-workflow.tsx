@@ -22,6 +22,7 @@ import {
   HeartPulse,
   ListChecks,
   MonitorDot,
+  MoreHorizontal,
   Pill,
   Search,
   Save,
@@ -210,7 +211,7 @@ type MedicationScenario = {
   tone: StatusTone;
   blocking?: boolean;
 };
-type MedicationView = "Nurse eMAR" | "Doctor Orders";
+type MedicationEmarQueue = "Due Now" | "Administered" | "Held / Skipped" | "Infusions" | "PRN" | "History";
 
 type AdmissionDraft = {
   patientId: string;
@@ -3696,7 +3697,7 @@ export function MedicationTimelineWorkspace() {
   const [shift, setShift] = React.useState<(typeof medicationShiftOptions)[number]>("All shifts");
   const [hour, setHour] = React.useState<(typeof medicationHourOptions)[number]>("All hours");
   const [query, setQuery] = React.useState("");
-  const [medicationView, setMedicationView] = React.useState<MedicationView>("Nurse eMAR");
+  const [emarQueue, setEmarQueue] = React.useState<MedicationEmarQueue>("Due Now");
   const [selectedDoseId, setSelectedDoseId] = React.useState<string | null>(null);
   const [pendingDoseAction, setPendingDoseAction] = React.useState<{ doseId: string; action: MedicationNurseAction } | null>(null);
   const [pendingOrderAction, setPendingOrderAction] = React.useState<{ orderId: string; action: DoctorOrderStatusAction } | null>(null);
@@ -3743,7 +3744,6 @@ export function MedicationTimelineWorkspace() {
 
   React.useEffect(() => {
     if (queryFocus === "medication") {
-      setMedicationView("Nurse eMAR");
       setStatus("All status");
     }
   }, [queryFocus]);
@@ -3766,14 +3766,11 @@ export function MedicationTimelineWorkspace() {
     return focusRank || medicationChartSortValue(left).localeCompare(medicationChartSortValue(right));
   });
 
-  const selectedDose = visibleDoses.find((dose) => dose.id === selectedDoseId) ?? visibleDoses[0];
-  const activeDoseCount = visibleDoses.filter((dose) => dose.orderStatus === "Active").length;
+  const emarDoses = React.useMemo(() => visibleDoses.filter((dose) => medicationDoseMatchesEmarQueue(dose, emarQueue)), [emarQueue, visibleDoses]);
+  const selectedDose = emarDoses.find((dose) => dose.id === selectedDoseId) ?? emarDoses[0];
   const dueCount = visibleDoses.filter((dose) => isMedicationDueStatus(dose.status)).length;
-  const highRiskCount = visibleDoses.filter((dose) => dose.highRisk && dose.orderStatus === "Active").length;
-  const pharmacyIssueCount = visibleDoses.filter((dose) => dose.pharmacyStatus !== "Available" && dose.orderStatus === "Active").length;
-  const runningInfusionCount = visibleDoses.filter((dose) => dose.status === "Running").length;
-  const complianceBase = visibleDoses.filter((dose) => dose.status !== "Upcoming" && dose.orderStatus === "Active").length;
-  const compliance = complianceBase ? Math.round((visibleDoses.filter((dose) => dose.status === "Administered").length / complianceBase) * 100) : 0;
+  const administeredCount = visibleDoses.filter((dose) => dose.status === "Administered").length;
+  const heldSkippedCount = visibleDoses.filter((dose) => ["Held", "Skipped", "Missed", "Refused"].includes(dose.status)).length;
   const selectedFormularyMedicine = getSelectedFormularyMedicine(draft);
   const doctorOrderScenarios = getDoctorOrderScenarios(draft, orders);
   const hasBlockingDoctorScenario = doctorOrderScenarios.some((scenario) => scenario.blocking);
@@ -3782,8 +3779,17 @@ export function MedicationTimelineWorkspace() {
     unitFilter,
     selectedFilterPatient ? `${selectedFilterPatient.bedNo} - ${selectedFilterPatient.patientName}` : "All patients",
     medicationDate || "All dates",
+    emarQueue,
     status,
   ].join(" | ");
+  const emarQueueCounts: Record<MedicationEmarQueue, number> = {
+    "Due Now": dueCount,
+    "Administered": administeredCount,
+    "Held / Skipped": heldSkippedCount,
+    "Infusions": visibleDoses.filter((dose) => dose.orderType === "Continuous" || dose.status === "Running" || ["Paused", "Stopped"].includes(dose.status)).length,
+    "PRN": visibleDoses.filter((dose) => dose.orderType === "PRN").length,
+    "History": visibleDoses.filter((dose) => ["Administered", "Held", "Skipped", "Missed", "Refused", "Paused", "Stopped"].includes(dose.status)).length,
+  };
 
   const updateDoseStatus = (
     doseId: string,
@@ -4057,166 +4063,108 @@ export function MedicationTimelineWorkspace() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-2 rounded-md border border-border bg-surface p-1 sm:grid-cols-2">
-        {([
-          { id: "Nurse eMAR", icon: Syringe },
-          { id: "Doctor Orders", icon: FileText },
-        ] as const).map((item) => {
-          const Icon = item.icon;
-          return (
-          <Button
-            className="justify-center"
-            key={item.id}
-            variant={medicationView === item.id ? "default" : "ghost"}
-            onClick={() => setMedicationView(item.id)}
-          >
-            <Icon className="h-4 w-4" />
-            {item.id}
-          </Button>
-          );
-        })}
-      </div>
-
-      {medicationView === "Nurse eMAR" ? (
-        <details className="group overflow-hidden rounded-md border border-border bg-background shadow-sm">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-foreground">Medication filters</span>
-              <span className="mt-0.5 block truncate text-xs text-muted-foreground">{medicationFilterSummary}</span>
-            </span>
-            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="space-y-3 border-t border-border p-4">
-            <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_minmax(200px,260px)_minmax(240px,360px)]">
-              <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">Search dose</span>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input className="pl-9" placeholder="Medicine, patient, bed, doctor..." value={query} onChange={(event) => setQuery(event.target.value)} />
-                </div>
-              </label>
-              <NativeSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={medicationUnitOptions} />
-              <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">Patient</span>
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-                  value={patientId}
-                  onChange={(event) => setPatientId(event.target.value)}
-                >
-                  <option value="All patients">All patients</option>
-                  {icuPatients.map((patient) => (
-                    <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
-              <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">Medication date</span>
-                <Input type="date" value={medicationDate} onChange={(event) => setMedicationDate(event.target.value)} />
-              </label>
-              <NativeSelect label="Shift" value={shift} onChange={(value) => setShift(value as (typeof medicationShiftOptions)[number])} options={[...medicationShiftOptions]} />
-              <NativeSelect label="Hour" value={hour} onChange={(value) => setHour(value as (typeof medicationHourOptions)[number])} options={[...medicationHourOptions]} />
-              <NativeSelect label="Dose status" value={status} onChange={(value) => setStatus(value as (typeof medicationStatuses)[number])} options={medicationStatuses} />
-              <NativeSelect label="Order type" value={orderType} onChange={(value) => setOrderType(value as (typeof orderTypeOptions)[number])} options={orderTypeOptions} />
-              <NativeSelect label="Pharmacy" value={pharmacy} onChange={(value) => setPharmacy(value as (typeof pharmacyOptions)[number])} options={pharmacyOptions} />
-              <Button className="w-full" variant="outline" onClick={() => {
-                setQuery("");
-                setUnitFilter("All ICU units");
-                setPatientId("All patients");
-                setStatus("All status");
-                setOrderType("All types");
-                setPharmacy("All pharmacy");
-                setMedicationDate("2026-06-08");
-                setShift("All shifts");
-                setHour("All hours");
-              }}><Filter className="h-4 w-4" />Reset</Button>
-            </div>
-          </div>
-        </details>
-      ) : null}
-
-      {medicationView === "Nurse eMAR" ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricTile label="Due / late" value={dueCount} tone={dueCount ? "danger" : "success"} icon={Pill} />
-          <MetricTile label="High risk" value={highRiskCount} tone={highRiskCount ? "critical" : "success"} icon={ShieldAlert} />
-          <MetricTile label="Pharmacy issues" value={pharmacyIssueCount} tone={pharmacyIssueCount ? "warning" : "success"} icon={Syringe} />
-          <MetricTile label="Compliance" value={`${compliance}%`} tone={compliance > 80 ? "success" : "warning"} icon={Activity} />
-        </div>
-      ) : null}
-
-      {medicationView === "Doctor Orders" ? (
-        <MedicationOrderComposer
-          draft={draft}
-          hasBlockingScenario={hasBlockingDoctorScenario}
-          onSaveDraft={() => addDoctorOrder("Draft")}
-          onSignOrder={() => addDoctorOrder("Active")}
-          onDraftChange={(nextDraft) => setDraft((current) => ({ ...current, ...nextDraft }))}
-          onCopyOrder={setPendingAmendOrderId}
-          onHoldOrder={(orderId) => requestDoctorOrderAction(orderId, "Hold")}
-          onResumeOrder={(orderId) => changeOrderStatus(orderId, "Active")}
-          onSignDraft={signDraftOrder}
-          onStopOrder={(orderId) => requestDoctorOrderAction(orderId, "Discontinue")}
-          orders={orders}
-          scenarios={doctorOrderScenarios}
-          selectedMedicine={selectedFormularyMedicine}
-        />
-      ) : null}
-
-      {medicationView === "Nurse eMAR" ? (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div>
-                  <CardTitle>Priority Dose Queue</CardTitle>
-                </div>
-                <Badge tone={dueCount ? "danger" : "success"}>{dueCount} due</Badge>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {visibleDoses.filter((dose) => isPriorityMedicationDose(dose)).map((dose) => (
-                  <MedicationDoseCard
-                    dose={dose}
-                    key={dose.id}
-                    selected={selectedDose?.id === dose.id}
-                    onSelect={() => setSelectedDoseId(dose.id)}
-                    onMarkPharmacyAvailable={() => markPharmacyAvailable(dose.orderId)}
-                    onRequestAction={(action) => requestDoseAction(dose.id, action)}
-                  />
+      <details className="group overflow-hidden rounded-md border border-border bg-background shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-foreground">Medication filters</span>
+            <span className="mt-0.5 block truncate text-xs text-muted-foreground">{medicationFilterSummary}</span>
+          </span>
+          <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="space-y-3 border-t border-border p-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_minmax(200px,260px)_minmax(240px,360px)]">
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Search dose</span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" placeholder="Medicine, patient, bed, doctor..." value={query} onChange={(event) => setQuery(event.target.value)} />
+              </div>
+            </label>
+            <NativeSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={medicationUnitOptions} />
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Patient</span>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={patientId}
+                onChange={(event) => setPatientId(event.target.value)}
+              >
+                <option value="All patients">All patients</option>
+                {icuPatients.map((patient) => (
+                  <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
                 ))}
-                {!visibleDoses.filter((dose) => isPriorityMedicationDose(dose)).length ? (
-                  <EmptyPanel title="No priority dose" detail="Current filters have no due, STAT, running, or blocked medicine." />
-                ) : null}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div>
-                  <CardTitle>Medication Chart</CardTitle>
-                </div>
-                <Badge tone="info">{visibleDoses.length} of {activeDoseCount} doses</Badge>
-              </CardHeader>
-              <CardContent>
-                <MedicationChartTable
-                  doses={visibleDoses}
-                  selectedDoseId={selectedDose?.id}
-                  onMarkPharmacyAvailable={markPharmacyAvailable}
-                  onRequestAction={requestDoseAction}
-                  onSelectDose={setSelectedDoseId}
-                />
-              </CardContent>
-            </Card>
+              </select>
+            </label>
           </div>
-
-          <MedicationSafetyPanel
-            dose={selectedDose}
-            runningInfusionCount={runningInfusionCount}
-            onMarkPharmacyAvailable={() => selectedDose ? markPharmacyAvailable(selectedDose.orderId) : undefined}
-            onRequestAction={(action) => selectedDose ? requestDoseAction(selectedDose.id, action) : undefined}
-          />
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Medication date</span>
+              <Input type="date" value={medicationDate} onChange={(event) => setMedicationDate(event.target.value)} />
+            </label>
+            <NativeSelect label="Shift" value={shift} onChange={(value) => setShift(value as (typeof medicationShiftOptions)[number])} options={[...medicationShiftOptions]} />
+            <NativeSelect label="Hour" value={hour} onChange={(value) => setHour(value as (typeof medicationHourOptions)[number])} options={[...medicationHourOptions]} />
+            <NativeSelect label="Dose status" value={status} onChange={(value) => setStatus(value as (typeof medicationStatuses)[number])} options={medicationStatuses} />
+            <NativeSelect label="Order type" value={orderType} onChange={(value) => setOrderType(value as (typeof orderTypeOptions)[number])} options={orderTypeOptions} />
+            <NativeSelect label="Pharmacy" value={pharmacy} onChange={(value) => setPharmacy(value as (typeof pharmacyOptions)[number])} options={pharmacyOptions} />
+            <Button className="w-full" variant="outline" onClick={() => {
+              setQuery("");
+              setUnitFilter("All ICU units");
+              setPatientId("All patients");
+              setStatus("All status");
+              setOrderType("All types");
+              setPharmacy("All pharmacy");
+              setMedicationDate("2026-06-08");
+              setShift("All shifts");
+              setHour("All hours");
+              setEmarQueue("Due Now");
+            }}><Filter className="h-4 w-4" />Reset</Button>
+          </div>
         </div>
-      ) : null}
+      </details>
+
+      <div className="space-y-4">
+        <div className="flex gap-1 overflow-x-auto rounded-md border border-border bg-surface-muted p-1">
+          {(Object.keys(emarQueueCounts) as MedicationEmarQueue[]).map((item) => (
+            <button
+              className={cn(
+                "inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-semibold transition",
+                emarQueue === item
+                  ? "bg-white text-primary shadow-sm ring-1 ring-border"
+                  : "text-muted-foreground hover:bg-white/70 hover:text-foreground",
+              )}
+              key={item}
+              type="button"
+              onClick={() => {
+                setEmarQueue(item);
+                setSelectedDoseId(null);
+              }}
+            >
+              {item}
+              <span className={cn(
+                "rounded-full px-2 py-0.5 text-xs",
+                emarQueue === item ? "bg-primary/10 text-primary" : "bg-white text-muted-foreground",
+              )}>{emarQueueCounts[item]}</span>
+            </button>
+          ))}
+        </div>
+
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-slate-200 bg-white">
+            <div>
+              <CardTitle>Medication administration</CardTitle>
+            </div>
+            <Badge tone="info">{emarDoses.length} dose(s)</Badge>
+          </CardHeader>
+          <CardContent className="p-0">
+            <MedicationChartTable
+              doses={emarDoses}
+              selectedDoseId={selectedDose?.id}
+              onMarkPharmacyAvailable={markPharmacyAvailable}
+              onRequestAction={requestDoseAction}
+              onSelectDose={setSelectedDoseId}
+            />
+          </CardContent>
+        </Card>
+      </div>
       <MedicationActionDialog
         key={pendingDoseAction ? `${pendingDoseAction.doseId}-${pendingDoseAction.action}` : "medication-action-closed"}
         action={pendingDoseAction?.action ?? null}
@@ -5006,87 +4954,76 @@ function MedicationChartTable({
   onMarkPharmacyAvailable: (orderId: string) => void;
 }) {
   const orderedDoses = doses;
+  const [openActionDoseId, setOpenActionDoseId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setOpenActionDoseId(null);
+  }, [doses]);
 
   if (!orderedDoses.length) {
-    return <EmptyPanel title="No medication matched" detail="Change search, patient, status, type, or pharmacy filter." />;
+    return <EmptyPanel title="No medicine found" detail="No dose is available for the selected filters." />;
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-background">
+    <div className="overflow-hidden bg-white">
       <div className="overflow-auto">
-        <table className="w-full min-w-[1180px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-surface-muted">
-            <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-              <th className="w-24 px-3 py-2">Time</th>
-              <th className="min-w-[190px] px-3 py-2">Patient</th>
-              <th className="min-w-[210px] px-3 py-2">Medicine</th>
-              <th className="w-24 px-3 py-2">Dose</th>
-              <th className="w-24 px-3 py-2">Route</th>
-              <th className="w-28 px-3 py-2">Frequency</th>
-              <th className="w-28 px-3 py-2">Type</th>
-              <th className="w-36 px-3 py-2">Pharmacy</th>
-              <th className="w-32 px-3 py-2">Status</th>
-              <th className="w-36 px-3 py-2">Verified</th>
-              <th className="min-w-[210px] px-3 py-2 text-right">Action</th>
+        <table className="w-full min-w-[980px] border-collapse text-sm">
+          <thead className="sticky top-0 z-10 bg-white">
+            <tr className="border-b border-slate-200 text-left text-[11px] uppercase tracking-wide text-slate-500">
+              <th className="w-24 px-4 py-3">Time</th>
+              <th className="min-w-[190px] px-4 py-3">Patient</th>
+              <th className="min-w-[230px] px-4 py-3">Medicine</th>
+              <th className="w-32 px-4 py-3">Dose / route</th>
+              <th className="w-28 px-4 py-3">Frequency</th>
+              <th className="w-44 px-4 py-3">Status</th>
+              <th className="w-24 px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {orderedDoses.map((dose) => {
               const patient = icuPatients.find((item) => item.id === dose.patientId);
               const selected = selectedDoseId === dose.id;
-              const blockedByPharmacy = dose.pharmacyStatus !== "Available";
-              const needsVerification = dose.highRisk && dose.doubleVerification === "Pending";
               return (
-                <tr className={cn("border-b border-border last:border-b-0 transition hover:bg-surface-muted/60", selected ? "bg-primary/5" : "bg-background")} key={dose.id}>
-                  <td className="px-3 py-2 align-top">
+                <tr className={cn("transition hover:bg-slate-50/80", selected ? "bg-slate-50 ring-1 ring-inset ring-slate-200" : "bg-white")} key={dose.id}>
+                  <td className="px-4 py-4 align-top">
                     <button className="text-left" type="button" onClick={() => onSelectDose(dose.id)}>
-                      <span className="block font-semibold text-foreground">{dose.scheduledTime}</span>
-                      <span className="text-xs text-muted-foreground">{dose.shift}</span>
+                      <span className="block font-semibold text-slate-950">{dose.scheduledTime}</span>
+                      <span className="text-xs text-slate-500">{dose.shift}</span>
                     </button>
                   </td>
-                  <td className="px-3 py-2 align-top">
+                  <td className="px-4 py-4 align-top">
                     <button className="text-left" type="button" onClick={() => onSelectDose(dose.id)}>
-                      <span className="block font-semibold text-foreground">{dose.bedNo} - {patient?.patientName ?? "Patient"}</span>
-                      <span className="line-clamp-1 text-xs text-muted-foreground">{patient?.diagnosis ?? dose.reason}</span>
+                      <span className="block font-semibold text-slate-950">{dose.bedNo} - {patient?.patientName ?? "Patient"}</span>
+                      <span className="line-clamp-1 text-xs text-slate-500">{patient?.unit ?? dose.reason}</span>
                     </button>
                   </td>
-                  <td className="px-3 py-2 align-top">
+                  <td className="px-4 py-4 align-top">
                     <button className="text-left" type="button" onClick={() => onSelectDose(dose.id)}>
-                      <span className="block font-semibold text-foreground">{dose.medication}</span>
-                      <span className="line-clamp-1 text-xs text-muted-foreground">{dose.indication}</span>
+                      <span className="block font-semibold text-slate-950">{dose.medication}</span>
+                      <span className="line-clamp-1 text-xs text-slate-500">{dose.indication}</span>
                     </button>
                   </td>
-                  <td className="px-3 py-2 align-top font-medium text-foreground">{dose.dose}</td>
-                  <td className="px-3 py-2 align-top">{dose.route}</td>
-                  <td className="px-3 py-2 align-top">{dose.frequency}</td>
-                  <td className="px-3 py-2 align-top"><Badge tone={orderTypeTone(dose.orderType)}>{dose.orderType}</Badge></td>
-                  <td className="px-3 py-2 align-top"><Badge tone={dose.pharmacyStatus === "Available" ? "success" : "warning"}>{dose.pharmacyStatus}</Badge></td>
-                  <td className="px-3 py-2 align-top"><Badge tone={medicationStatusTone(dose.status)}>{dose.status}</Badge></td>
-                  <td className="px-3 py-2 align-top">
-                    <Badge tone={dose.doubleVerification === "Verified" ? "success" : dose.doubleVerification === "Pending" ? "warning" : "muted"}>
-                      {dose.highRisk ? dose.doubleVerification : "Not required"}
-                    </Badge>
+                  <td className="px-4 py-4 align-top">
+                    <span className="block font-medium text-slate-950">{dose.dose}</span>
+                    <span className="text-xs text-slate-500">{dose.route}</span>
                   </td>
-                  <td className="px-3 py-2 align-top">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      {blockedByPharmacy ? <Button size="sm" variant="outline" onClick={() => onMarkPharmacyAvailable(dose.orderId)}>Receive</Button> : null}
-                      {needsVerification ? <Button size="sm" variant="outline" onClick={() => onRequestAction(dose.id, "Verify")}>Verify</Button> : null}
-                      {dose.status === "Running" ? (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => onRequestAction(dose.id, "Running")}>Update</Button>
-                          <Button size="sm" variant="outline" onClick={() => onRequestAction(dose.id, "Paused")}>Pause</Button>
-                        </>
-                      ) : null}
-                      {isMedicationDueStatus(dose.status) || dose.status === "Upcoming" ? (
-                        <>
-                          <Button size="sm" disabled={blockedByPharmacy || needsVerification} onClick={() => onRequestAction(dose.id, "Administered")}>Give</Button>
-                          <Button size="sm" variant="outline" onClick={() => onRequestAction(dose.id, "Held")}>Hold</Button>
-                        </>
-                      ) : null}
-                      {["Administered", "Held", "Skipped", "Missed", "Refused", "Stopped", "Paused"].includes(dose.status) ? (
-                        <Button size="sm" variant="outline" onClick={() => onSelectDose(dose.id)}>View</Button>
-                      ) : null}
+                  <td className="px-4 py-4 align-top text-slate-700">{dose.frequency}</td>
+                  <td className="px-4 py-4 align-top">
+                    <div className="space-y-1.5">
+                      <Badge tone={medicationStatusTone(dose.status)}>{dose.status}</Badge>
+                      {dose.highRisk ? <p className="text-xs text-slate-500">Double check: {dose.doubleVerification}</p> : null}
+                      {dose.pharmacyStatus !== "Available" ? <p className="text-xs text-slate-500">Pharmacy: {dose.pharmacyStatus}</p> : null}
                     </div>
+                  </td>
+                  <td className="px-4 py-4 align-top">
+                    <MedicationActionCell
+                      dose={dose}
+                      open={openActionDoseId === dose.id}
+                      onMarkPharmacyAvailable={onMarkPharmacyAvailable}
+                      onOpenChange={(open) => setOpenActionDoseId(open ? dose.id : null)}
+                      onRequestAction={onRequestAction}
+                      onSelectDose={onSelectDose}
+                    />
                   </td>
                 </tr>
               );
@@ -5096,6 +5033,108 @@ function MedicationChartTable({
       </div>
     </div>
   );
+}
+
+type MedicationTableAction = {
+  action: MedicationNurseAction | "Receive" | "View";
+  label: string;
+  variant?: "default" | "outline";
+};
+
+function MedicationActionCell({
+  dose,
+  open,
+  onRequestAction,
+  onMarkPharmacyAvailable,
+  onOpenChange,
+  onSelectDose,
+}: {
+  dose: MedicationDoseRow;
+  open: boolean;
+  onRequestAction: (doseId: string, action: MedicationNurseAction) => void;
+  onMarkPharmacyAvailable: (orderId: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onSelectDose: (doseId: string) => void;
+}) {
+  const actions = medicationTableActions(dose);
+  const runAction = (action: MedicationTableAction["action"]) => {
+    if (action === "Receive") {
+      onMarkPharmacyAvailable(dose.orderId);
+      return;
+    }
+    if (action === "View") {
+      onSelectDose(dose.id);
+      return;
+    }
+    onRequestAction(dose.id, action);
+  };
+
+  return (
+    <div className="relative flex min-w-[88px] justify-end">
+      <button
+        aria-expanded={open}
+        aria-label="Medication actions"
+        className={cn(
+          "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-slate-600 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-primary",
+          open ? "border-sky-200 bg-sky-50 text-primary" : "",
+        )}
+        type="button"
+        onClick={() => onOpenChange(!open)}
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-10 z-30 w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-xl">
+          {actions.map((item) => (
+            <button
+              className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              key={`${dose.id}-${item.action}`}
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                runAction(item.action);
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function medicationTableActions(dose: MedicationDoseRow): MedicationTableAction[] {
+  const blockedByPharmacy = dose.pharmacyStatus !== "Available";
+  const needsVerification = dose.highRisk && dose.doubleVerification === "Pending";
+  const isContinuous = dose.orderType === "Continuous";
+  const isClosed = ["Administered", "Skipped", "Missed", "Refused", "Stopped"].includes(dose.status);
+  const canAct = dose.orderStatus === "Active" && !isClosed;
+  const actions: MedicationTableAction[] = [];
+
+  if (blockedByPharmacy && canAct) actions.push({ action: "Receive", label: "Receive" });
+  if (needsVerification && canAct) actions.push({ action: "Verify", label: "Verify" });
+
+  if (isContinuous && canAct) {
+    if (dose.status !== "Running") actions.push({ action: "Running", label: "Start" });
+    if (dose.status === "Running") actions.push({ action: "Running", label: "Update" });
+    if (dose.status === "Running") actions.push({ action: "Paused", label: "Pause", variant: "outline" });
+    actions.push({ action: "Stopped", label: "Stop", variant: "outline" });
+  }
+
+  if (!isContinuous && canAct) {
+    if (!blockedByPharmacy && !needsVerification) actions.push({ action: "Administered", label: "Give" });
+    actions.push({ action: "Held", label: "Hold", variant: "outline" });
+    actions.push({ action: "Skipped", label: "Skip", variant: "outline" });
+    if (dose.status === "Late") actions.push({ action: "Missed", label: "Missed", variant: "outline" });
+    actions.push({ action: "Refused", label: "Refuse", variant: "outline" });
+  }
+
+  if (!actions.length || ["Administered", "Held", "Skipped", "Missed", "Refused", "Stopped", "Paused"].includes(dose.status)) {
+    actions.push({ action: "View", label: "View", variant: actions.length ? "outline" : "default" });
+  }
+
+  return actions;
 }
 
 function medicationChartSortValue(dose: MedicationDoseRow) {
@@ -6936,6 +6975,20 @@ function parseMedicationSchedule(value: string, orderType: MedicationOrderType) 
   if (orderType === "PRN") return ["PRN"];
   if (orderType === "STAT") return ["Now"];
   return ["08:00"];
+}
+
+function medicationDoseMatchesEmarQueue(dose: MedicationDoseRow, queue: MedicationEmarQueue) {
+  if (queue === "Due Now") {
+    return isMedicationDueStatus(dose.status)
+      || dose.orderType === "STAT"
+      || dose.doubleVerification === "Pending"
+      || dose.pharmacyStatus !== "Available";
+  }
+  if (queue === "Administered") return dose.status === "Administered";
+  if (queue === "Held / Skipped") return ["Held", "Skipped", "Missed", "Refused"].includes(dose.status);
+  if (queue === "Infusions") return dose.orderType === "Continuous" || dose.status === "Running" || ["Paused", "Stopped"].includes(dose.status);
+  if (queue === "PRN") return dose.orderType === "PRN";
+  return ["Administered", "Held", "Skipped", "Missed", "Refused", "Paused", "Stopped"].includes(dose.status);
 }
 
 function isMedicationDueStatus(status: WorkflowMedicationStatus) {

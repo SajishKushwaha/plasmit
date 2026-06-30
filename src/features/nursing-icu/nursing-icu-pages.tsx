@@ -59,6 +59,7 @@ import {
   WorkflowReportsWorkspace,
 } from "@/features/nursing-icu/components/nursing-icu-workflow";
 import { IntakeOutputWorkspace } from "@/features/nursing-icu/components/intake-output-workspace";
+import { Ventilation } from "@/features/nursing-icu/components/ventilation";
 import { NotesPage } from "@/features/notes/notes-page";
 import { FamilyCommunicationWorkspace } from "@/features/nursing-icu/components/family-communication-workspace";
 import {
@@ -157,7 +158,7 @@ type NursingIcuPageId =
   | "reports";
 
 type IcuPatientDetailTab = "overview" | "monitoring" | "results" | "graph" | "orders" | "events" | "shift-summary" | "collaborate";
-type IcuMonitoringSubTab = "monitoring-overview" | "24h-chart" | "intake-output" | "device-snapshot";
+type IcuMonitoringSubTab = "monitoring-overview" | "24h-chart" | "ventilation" | "intake-output" | "device-snapshot";
 
 const pageMeta: Record<NursingIcuPageId, { title: string; description: string; icon: typeof HeartPulse }> = {
   dashboard: { title: "ICU Dashboard", description: "ICU census, alerts, bed occupancy, workload, pending activities, and shift summary.", icon: HeartPulse },
@@ -14862,7 +14863,7 @@ function normalizeIcuPatientDetailTab(tab?: string): IcuPatientDetailTab {
 }
 
 function normalizeIcuMonitoringSubTab(subtab?: string): IcuMonitoringSubTab {
-  if (subtab === "24h-chart" || subtab === "intake-output" || subtab === "device-snapshot") return subtab;
+  if (subtab === "24h-chart" || subtab === "ventilation" || subtab === "intake-output" || subtab === "device-snapshot") return subtab;
   return "monitoring-overview";
 }
 
@@ -15546,6 +15547,7 @@ function IcuPatientCommandProfile({
             <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl bg-slate-100 p-2">
               <IcuPatientTabLink active={initialMonitoringTab === "monitoring-overview"} href={icuPatientDetailHref(patient.id, "monitoring", "monitoring-overview")}>Monitoring Overview</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "24h-chart"} href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}>24h Chart</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "ventilation"} href={icuPatientDetailHref(patient.id, "monitoring", "ventilation")}>Ventilation</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "intake-output"} href={icuPatientDetailHref(patient.id, "monitoring", "intake-output")}>Intake Output</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "device-snapshot"} href={icuPatientDetailHref(patient.id, "monitoring", "device-snapshot")}>Device Snapshot</IcuPatientTabLink>
             </TabsList>
@@ -15563,6 +15565,10 @@ function IcuPatientCommandProfile({
 
             <TabsContent className="mt-4 space-y-4" value="24h-chart">
               <IcuPatientMonitoring24HourChart patient={patient} />
+            </TabsContent>
+
+            <TabsContent className="mt-4 space-y-4" value="ventilation">
+              <Ventilation patient={patient} />
             </TabsContent>
 
             <TabsContent className="mt-4 space-y-4" value="intake-output">
@@ -15926,6 +15932,124 @@ function IcuPatientMonitoring24HourChart({ patient }: { patient: IcuPatient }) {
         </div>
       </CollapsibleCommandPanel>
       <IcuVitals24HourTable data={filteredHourlyVitals} />
+    </div>
+  );
+}
+
+const ventilationChartHours = ["0000", "0100", "0200", "0300", "0400", "0500", "0600", "0700", "0800", "0900", "1000", "1100", "1200"];
+
+const ventilationParameterRows = [
+  { property: "Ventilation Mode", values: ["NIV S/T", "-", "-", "NIV S/T", "-", "-", "NIV S/T", "-", "-", "NIV S/T", "-", "-", "NIV S/T"] },
+  { property: "Sxxx Ventilation Mode", values: ["S/T", "-", "-", "S/T", "-", "-", "S/T", "-", "-", "S/T", "-", "-", "S/T"] },
+  { property: "Ventilator Type", values: ["NIV mask", "-", "-", "NIV mask", "-", "-", "NIV mask", "-", "-", "NIV mask", "-", "-", "NIV mask"] },
+  { property: "Humidification", values: ["Heated", "-", "-", "-", "-", "Heated", "-", "-", "-", "-", "-", "-", "Heated"] },
+  { property: "Humidification temperature", values: ["35.5", "-", "-", "-", "-", "35.5", "-", "-", "-", "-", "-", "-", "36.5"] },
+  { property: "Humidified water check", values: ["Checked", "-", "-", "-", "-", "-", "-", "-", "Checked", "-", "-", "-", "-"] },
+  { property: "Mandatory breath type", values: ["Pressure", "-", "-", "Pressure", "-", "-", "-", "-", "Pressure", "-", "-", "-", "Pressure"] },
+  { property: "Apnea ventilatory", values: ["Standby", "-", "-", "-", "-", "Standby", "-", "-", "-", "-", "-", "-", "Standby"] },
+  { property: "Spontaneous", values: ["19", "20", "19", "18", "17", "16", "17", "18", "19", "20", "19", "18", "17"] },
+  { property: "FiO2", values: ["56", "57", "58", "57", "56", "55", "54", "55", "56", "57", "58", "57", "56"] },
+  { property: "Peep", values: ["5", "6", "7", "8", "7", "6", "5", "4", "5", "6", "7", "8", "7"] },
+  { property: "Spontaneous breath", values: ["19", "20", "19", "18", "17", "16", "17", "18", "19", "20", "19", "18", "17"] },
+  { property: "IE (Inspiratory / Expiratory ratio)", values: ["1:3", "-", "1:3", "-", "1:3", "-", "1:3", "-", "1:3", "-", "1:3", "-", "1:3"] },
+  { property: "T High", values: ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"] },
+  { property: "T low", values: ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"] },
+  { property: "Ppeak Pressure", values: ["18", "19", "20", "19", "18", "17", "16", "17", "18", "19", "20", "19", "18"] },
+  { property: "Plateau pressure", values: ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"] },
+  { property: "Compliance static (C static)", values: ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"] },
+  { property: "Compliance dynamics (C dynamics)", values: ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"] },
+  { property: "Pressure support (Ps) - tidal volume", values: ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"] },
+  { property: "Pinspiratory", values: ["15", "16", "17", "18", "17", "16", "15", "14", "15", "16", "17", "18", "17"] },
+  { property: "Pressure support (Ps) - Minute volume", values: ["9.0", "9.4", "9.8", "9.4", "9.0", "8.6", "8.2", "8.6", "9.0", "9.4", "9.8", "9.4", "9.0"] },
+  { property: "Respiratory rate", values: ["17", "18", "17", "16", "15", "14", "15", "16", "17", "18", "17", "16", "15"] },
+];
+
+const ventilationValidationColumns = ["38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "Units"];
+
+const ventilationValidationRows = [
+  { property: "Ventilation Mode", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "Celsius"] },
+  { property: "Sxxx Ventilation Mode", values: ["-", "98", "130", "132", "37.5", "not good", "yes", "-", "night", "-", "None"] },
+  { property: "Ventilator Type", values: ["-", "96", "141", "46", "38", "very good", "no result", "-", "morning", "-", "Beats/min"] },
+  { property: "Humidification", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "mmHg"] },
+  { property: "Humidification temperature", values: ["-", "95", "96", "85", "37", "nice", "yes", "-", "noon", "-", "mmHg"] },
+  { property: "Humidified water check", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "ml"] },
+  { property: "Mandatory breath type", values: ["-", "95", "70", "82", "36.5", "very good", "yes", "-", "noon", "-", "/min"] },
+  { property: "Apnea ventilatory", values: ["-", "79", "150", "90", "38", "good", "yes", "-", "night", "-", "cmH2O"] },
+  { property: "Spontaneous", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "%"] },
+  { property: "FiO2", values: ["-", "98", "130", "132", "37.5", "not good", "yes", "-", "night", "-", "kPa"] },
+  { property: "Peep", values: ["-", "96", "141", "46", "38", "very good", "no result", "-", "morning", "-", "kPa"] },
+  { property: "Spontaneous breath", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "kPa"] },
+  { property: "IE (Inspiratory / Expiratory ratio)", values: ["-", "95", "96", "85", "37", "nice", "yes", "-", "noon", "-", "kPa"] },
+  { property: "T High", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "/min"] },
+  { property: "T low", values: ["-", "95", "70", "82", "36.5", "very good", "yes", "-", "noon", "-", "cmH2O"] },
+  { property: "Ppeak Pressure", values: ["-", "79", "150", "90", "38", "good", "yes", "-", "night", "-", "%"] },
+  { property: "Plateau pressure", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "kPa"] },
+  { property: "Compliance static (C static)", values: ["-", "98", "130", "132", "37.5", "not good", "yes", "-", "night", "-", "kPa"] },
+  { property: "Compliance dynamics (C dynamics)", values: ["-", "96", "141", "46", "38", "very good", "no result", "-", "morning", "-", "kPa"] },
+  { property: "Pressure support (Ps) - tidal volume", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "kPa"] },
+  { property: "Pinspiratory", values: ["-", "95", "96", "85", "37", "nice", "yes", "-", "noon", "-", "kPa"] },
+  { property: "Pressure support (Ps) - Minute volume", values: ["-", "95", "120", "52", "36.5", "good", "yes", "-", "night", "-", "kPa"] },
+  { property: "Respiratory rate", values: ["-", "95", "70", "82", "36.5", "very good", "yes", "-", "noon", "-", "kPa"] },
+];
+
+function IcuPatientVentilationValidation({ patient }: { patient: IcuPatient }) {
+  return (
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-950">Hourly ventilation parameters</h3>
+            <p className="mt-1 text-xs font-semibold text-slate-500">{patient.bedNo} | {patient.patientName} | {patient.ventilatorStatus} | FiO2 58% | PEEP 7</p>
+          </div>
+          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600">0000 - 1200</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1320px] border-collapse bg-white text-sm">
+            <thead className="bg-slate-50 text-[11px] uppercase text-slate-500">
+              <tr className="border-b border-slate-200">
+                <th className="sticky left-0 z-20 min-w-[210px] border-r border-slate-200 bg-slate-50 px-3 py-3 text-left">Property</th>
+                {ventilationChartHours.map((hour) => <th className="min-w-[86px] border-r border-slate-200 px-3 py-3 text-center" key={hour}>{hour}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {ventilationParameterRows.map((row) => (
+                <tr className="border-b border-slate-100 last:border-b-0 hover:bg-sky-50/40" key={row.property}>
+                  <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-950">{row.property}</td>
+                  {row.values.map((value, index) => (
+                    <td className="border-r border-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-700" key={`${row.property}-${index}`}>{value}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-4 py-3">
+          <h3 className="text-sm font-bold text-slate-950">Property validation</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1180px] border-collapse bg-white text-sm">
+            <thead className="bg-slate-50 text-[11px] uppercase text-slate-500">
+              <tr className="border-b border-slate-200">
+                <th className="sticky left-0 z-20 min-w-[230px] border-r border-slate-200 bg-slate-50 px-3 py-3 text-left">Property</th>
+                {ventilationValidationColumns.map((column) => <th className="min-w-[86px] border-r border-slate-200 px-3 py-3 text-center" key={column}>{column}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {ventilationValidationRows.map((row) => (
+                <tr className="border-b border-slate-100 last:border-b-0 hover:bg-sky-50/40" key={row.property}>
+                  <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-950">{row.property}</td>
+                  {row.values.map((value, index) => (
+                    <td className="border-r border-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-700" key={`${row.property}-validation-${index}`}>{value}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -19098,9 +19222,19 @@ function patientMedicationSortValue(row: PatientMedicationChartRow) {
 
 function patientMedicationStatusTone(status: PatientMedicationChartStatus): DashboardCellTone {
   if (status === "Given") return "success";
-  if (status === "Late" || status === "Scheduled") return "warning";
+  if (status === "Scheduled") return "warning";
+  if (status === "Late") return "danger";
   if (status === "Held" || status === "Missed" || status === "Refused") return "danger";
   return "info";
+}
+
+function medicineChartStatusClass(status: PatientMedicationChartStatus) {
+  const base = "inline-flex min-w-24 justify-center rounded-full border px-2.5 py-1 text-xs font-black";
+  if (status === "Given") return cn(base, "border-emerald-200 bg-emerald-50 text-emerald-700");
+  if (status === "Scheduled") return cn(base, "border-orange-200 bg-orange-50 text-orange-700");
+  if (status === "Late") return cn(base, "border-red-200 bg-red-50 text-red-700");
+  if (status === "Held") return cn(base, "border-amber-200 bg-amber-50 text-amber-700");
+  return cn(base, "border-rose-200 bg-rose-50 text-rose-700");
 }
 
 function patientMedicationWeekDays(selectedDate: string) {
@@ -19168,7 +19302,7 @@ function IcuPatientMedicineChartTab({ patient }: { patient: IcuPatient }) {
       && (routeFilter === "All routes" || row.route === routeFilter)
       && (!highAlertOnly || row.highAlert)
       && text.includes(query.toLowerCase());
-  }).sort((first, second) => medicineChartTimestamp(second).getTime() - medicineChartTimestamp(first).getTime());
+  }).sort((first, second) => medicineChartTimestamp(first).getTime() - medicineChartTimestamp(second).getTime());
   const addedRows = filteredRows.filter((row) => row.scenario === "Added");
   const changedRows = filteredRows.filter((row) => row.scenario === "Changed");
   const givenRows = filteredRows.filter((row) => row.status === "Given");
@@ -19249,7 +19383,7 @@ function IcuPatientMedicineChartTab({ patient }: { patient: IcuPatient }) {
                     <p className="mt-1">Given: {row.givenTime || "-"}</p>
                   </td>
                   <td className="border border-slate-200 px-3 py-2">
-                    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(patientMedicationStatusTone(row.status)))}>{row.status}</span>
+                    <span className={medicineChartStatusClass(row.status)}>{row.status}</span>
                   </td>
                   <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">
                     <p className="font-semibold text-slate-900">{row.changedBy}</p>
@@ -19278,7 +19412,9 @@ function buildMedicineChartTableLines(rows: MedicineChartHistoryRow[]): Medicine
   const lines: MedicineChartTableLine[] = [];
   const dateGroups = new Map<string, MedicineChartHistoryRow[]>();
 
-  rows.forEach((row) => {
+  [...rows]
+    .sort((first, second) => medicineChartTimestamp(first).getTime() - medicineChartTimestamp(second).getTime())
+    .forEach((row) => {
     const groupRows = dateGroups.get(row.date) ?? [];
     groupRows.push(row);
     dateGroups.set(row.date, groupRows);
@@ -19286,21 +19422,9 @@ function buildMedicineChartTableLines(rows: MedicineChartHistoryRow[]): Medicine
 
   dateGroups.forEach((dateRows) => {
     const dateLineIndex = lines.length;
-    const slotGroups = new Map<string, MedicineChartHistoryRow[]>();
-
-    dateRows.forEach((row) => {
-      const slotRows = slotGroups.get(row.slot) ?? [];
-      slotRows.push(row);
-      slotGroups.set(row.slot, slotRows);
-    });
-
-    slotGroups.forEach((slotRows) => {
-      const slotLineIndex = lines.length;
-      slotRows.forEach((row) => lines.push({ row }));
-      if (lines[slotLineIndex]) {
-        lines[slotLineIndex] = { ...lines[slotLineIndex], slotRowSpan: slotRows.length };
-      }
-    });
+    dateRows
+      .sort((first, second) => medicineChartTimestamp(first).getTime() - medicineChartTimestamp(second).getTime())
+      .forEach((row) => lines.push({ row }));
 
     if (lines[dateLineIndex]) {
       lines[dateLineIndex] = { ...lines[dateLineIndex], dateRowSpan: dateRows.length };
@@ -20062,7 +20186,7 @@ function buildDashboardCells(patient: IcuPatient): Record<string, DashboardCell>
       detail: runningInfusion ? runningInfusion.alert : patient.lastVitalsTime,
       tone: patient.ventilatorStatus === "Room air" ? "success" : "purple",
       icon: Activity,
-      route: icuPatientDetailHref(patient.id, "monitoring", "24h-chart"),
+      route: icuPatientDetailHref(patient.id, "monitoring", "ventilation"),
     },
     "Intake / Output": {
       title: `${balance} ml`,

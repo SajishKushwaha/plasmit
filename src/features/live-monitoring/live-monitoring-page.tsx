@@ -1,6 +1,6 @@
 "use client";
 
-const liveMonitoringUrl = "https://icuvisualizer.up.railway.app/app";
+const liveMonitoringUrl = "https://icuvisualizer.up.railway.app/";
 
 export function LiveMonitoringPage() {
   return (

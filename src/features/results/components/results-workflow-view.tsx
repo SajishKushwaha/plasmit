@@ -1098,14 +1098,14 @@ function LaboratoryAllViewTabs({ comparisonRecords, records }: { comparisonRecor
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 border-b border-border pb-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-surface-muted/70 p-1">
           {tabs.map((tab) => (
             <button
               className={cn(
-                "h-10 rounded-md border border-transparent px-3 text-sm font-bold transition",
+                "h-10 rounded-lg border border-transparent px-3 text-sm font-bold transition-all duration-200",
                 activeTab === tab.id
-                  ? "border-primary bg-primary-soft text-primary"
-                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                  ? "bg-white text-primary shadow-sm"
+                  : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
               )}
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -1208,7 +1208,6 @@ function LaboratoryDateWiseComparison({ records }: { records: ResultRecord[] }) 
                     <span className="mt-1 block text-xs font-semibold italic normal-case text-info/80">{comparisonDateSubtitle(dateKey, dateKeys)}</span>
                   </th>
                 ))}
-                <th className="w-[150px] border-b border-border bg-warning/10 px-5 py-5 text-center text-base font-extrabold text-warning">Trend</th>
               </tr>
             </thead>
             <tbody>
@@ -1249,7 +1248,7 @@ function RowsForLaboratoryComparisonSection({
   return (
     <>
       <tr className="bg-slate-200/80">
-        <td className="border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground" colSpan={dateKeys.length + 3}>
+        <td className="border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground" colSpan={dateKeys.length + 2}>
           {section.name}
         </td>
       </tr>
@@ -1275,9 +1274,6 @@ function RowsForLaboratoryComparisonSection({
               </td>
             );
           })}
-          <td className="px-5 py-4 text-center">
-            <span className={cn("inline-flex rounded px-3 py-1 text-xs font-extrabold uppercase", comparisonTrendClass(row.trend))}>{row.trend}</span>
-          </td>
         </tr>
       ))}
     </>
@@ -1342,13 +1338,6 @@ function comparisonTrendLabel(values: Array<ResultValue | undefined>) {
   return "Normal";
 }
 
-function comparisonTrendClass(trend: string) {
-  if (trend === "Critical" || trend === "Elevated") return "bg-danger/15 text-danger";
-  if (trend === "Recovering" || trend === "Watch") return "bg-warning/15 text-warning";
-  if (trend === "Stabilizing") return "bg-info/15 text-info";
-  return "bg-success/10 text-success";
-}
-
 function formatComparisonDate(dateKey: string) {
   const date = new Date(`${dateKey}T00:00:00`);
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }).toUpperCase();
@@ -1407,7 +1396,7 @@ function LaboratoryTrendAnalysis({ records }: { records: ResultRecord[] }) {
           <div className="mt-1 text-xs font-semibold text-muted-foreground">Trends are calculated from earliest to latest numeric result.</div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left text-sm">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-white text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Laboratory Parameter</th>
@@ -1415,7 +1404,6 @@ function LaboratoryTrendAnalysis({ records }: { records: ResultRecord[] }) {
                 <th className="px-4 py-3 text-center">First Result</th>
                 <th className="px-4 py-3 text-center">Latest Result</th>
                 <th className="px-4 py-3 text-center">Change</th>
-                <th className="px-4 py-3 text-center">Trend</th>
               </tr>
             </thead>
             <tbody>
@@ -1429,14 +1417,11 @@ function LaboratoryTrendAnalysis({ records }: { records: ResultRecord[] }) {
                   <td className="px-4 py-3 text-center font-bold text-foreground">{row.firstDisplay}</td>
                   <td className={cn("px-4 py-3 text-center font-bold", row.latestClass)}>{row.latestDisplay}</td>
                   <td className="px-4 py-3 text-center font-bold text-foreground">{row.changeDisplay}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={cn("inline-flex rounded-md px-2.5 py-1 text-xs font-bold", trendPillClass(row.trend))}>{row.trend}</span>
-                  </td>
                 </tr>
               ))}
               {!rows.length ? (
                 <tr>
-                  <td className="px-4 py-8 text-center text-sm text-muted-foreground" colSpan={6}>No numeric laboratory values available for trend analysis.</td>
+                  <td className="px-4 py-8 text-center text-sm text-muted-foreground" colSpan={5}>No numeric laboratory values available for trend analysis.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -1484,14 +1469,6 @@ function trendLabel(change: number, flag?: ResultValue["flag"]) {
   if (flag === "Critical" || flag === "High") return change < 0 ? "Recovering" : "Elevated";
   if (Math.abs(change) < 0.1) return "Stable";
   return change < 0 ? "Improving" : "Rising";
-}
-
-function trendPillClass(trend: string) {
-  if (trend === "Elevated") return "bg-danger/10 text-danger";
-  if (trend === "Recovering") return "bg-warning/15 text-warning";
-  if (trend === "Improving") return "bg-success/10 text-success";
-  if (trend === "Rising") return "bg-info/10 text-info";
-  return "bg-surface-muted text-muted-foreground";
 }
 
 function LaboratoryReportView({ result }: { result: ResultRecord }) {

@@ -21,10 +21,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CenterModal } from "@/components/ui/center-modal";
 import { SearchInput } from "@/components/ui/search-input";
 import { ProgressNotesPanel } from "@/features/doctor-dashboard1/progress-notes";
+import { DoctorOrdersPage } from "@/features/doctor-orders/doctor-orders";
+import { rapidReviewPatients } from "@/features/rapid-review/rapid-review-data";
+import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
 import { cn } from "@/lib/utils";
 
 type VitalTone = "green" | "orange" | "red";
 type PatientTone = "blue" | "orange" | "red";
+
+type DashboardMedicationRow = {
+  orderId?: string;
+  name: string;
+  dose: string;
+  route: string;
+  frequency: string;
+  startDate: string;
+  endDate?: string;
+  status: string;
+  prescribedBy: string;
+};
 
 export type Dashboard1Patient = {
   id: number;
@@ -159,6 +174,7 @@ export function DoctorDashboard1Page() {
   const [shiftSummaryPatient, setShiftSummaryPatient] = React.useState<Dashboard1Patient | null>(null);
   const [collaboratePatient, setCollaboratePatient] = React.useState<Dashboard1Patient | null>(null);
   const [eventPatient, setEventPatient] = React.useState<Dashboard1Patient | null>(null);
+  const [labResultsPatient, setLabResultsPatient] = React.useState<Dashboard1Patient | null>(null);
   const [medicationPatient, setMedicationPatient] = React.useState<Dashboard1Patient | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredPatients = orderedPatients.filter((patient) =>
@@ -288,11 +304,11 @@ export function DoctorDashboard1Page() {
                         <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} href="" /></td>
                         <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} href="" /></td>
                         <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundAction
+                          <RoundActionButton
                             icon={FlaskConical}
                             tone="dark"
-                            href={`/doctor-dashboard1/patients/${patient.id}?tab=results&resultsView=laboratory-all`}
                             label={`Open laboratory results for ${patient.name}`}
+                            onClick={() => setLabResultsPatient(patient)}
                           />
                         </td>
                         <td className="h-[74px] px-3 py-2 text-center">
@@ -306,7 +322,15 @@ export function DoctorDashboard1Page() {
                         <td className="h-[74px] px-3 py-2 text-center">
                           <RoundActionButton icon={ClipboardList} tone="dark" label={`Open progress note for ${patient.name}`} onClick={() => setShiftSummaryPatient(patient)} />
                         </td>
-                        <td className="h-[74px] px-3 py-2 text-center"><RoundAction icon={FileText} tone="dark" href="" label="Open radiology" /></td>
+                        <td className="h-[74px] px-3 py-2 text-center">
+                          <RoundAction
+                            download="radiology-report.pdf"
+                            icon={FileText}
+                            tone="dark"
+                            href="/radiology-report.pdf"
+                            label={`Download radiology report for ${patient.name}`}
+                          />
+                        </td>
                         <td className="h-[74px] px-3 py-2 text-center">
                           <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
                         </td>
@@ -351,19 +375,28 @@ export function DoctorDashboard1Page() {
           </Button>
         </div>
       </div>
-<CenterModal
-  className="w-[min(94vw,920px)]"
-  description={
-    medicationPatient
-      ? `${medicationPatient.name} | ${medicationPatient.bed} | ${medicationPatient.diagnosis}`
-      : undefined
-  }
-  onOpenChange={(open) => !open && setMedicationPatient(null)}
-  open={Boolean(medicationPatient)}
-  title="Medication & Intervention"
->
-  {medicationPatient ? <MedicationInterventionPopup patient={medicationPatient} /> : null}
-</CenterModal>
+      <CenterModal
+        className="w-[min(96vw,1180px)]"
+        description={labResultsPatient ? `${labResultsPatient.name} | ${labResultsPatient.bed} | ${labResultsPatient.diagnosis}` : undefined}
+        onOpenChange={(open) => !open && setLabResultsPatient(null)}
+        open={Boolean(labResultsPatient)}
+        title="Laboratory Results"
+      >
+        {labResultsPatient ? <DashboardLabResultsPopup patient={labResultsPatient} /> : null}
+      </CenterModal>
+      <CenterModal
+        className="w-[min(94vw,920px)]"
+        description={
+          medicationPatient
+            ? `${medicationPatient.name} | ${medicationPatient.bed} | ${medicationPatient.diagnosis}`
+            : undefined
+        }
+        onOpenChange={(open) => !open && setMedicationPatient(null)}
+        open={Boolean(medicationPatient)}
+        title="Medication & Intervention"
+      >
+        {medicationPatient ? <MedicationInterventionPopup patient={medicationPatient} /> : null}
+      </CenterModal>
       <CenterModal
         className="w-[min(94vw,1040px)]"
         description={shiftSummaryPatient ? `${shiftSummaryPatient.name} | ${shiftSummaryPatient.bed} | ${shiftSummaryPatient.diagnosis}` : undefined}
@@ -417,7 +450,19 @@ function VitalPill({ value, tone, href }: { value: string | number; tone: VitalT
   );
 }
 
-function RoundAction({ icon: Icon, tone, href, label }: { icon: React.ElementType; tone: "dark" | "red"; href: string; label: string }) {
+function RoundAction({
+  icon: Icon,
+  tone,
+  href,
+  label,
+  download,
+}: {
+  icon: React.ElementType;
+  tone: "dark" | "red";
+  href: string;
+  label: string;
+  download?: string;
+}) {
   return (
     <Link
       aria-label={label}
@@ -426,6 +471,7 @@ function RoundAction({ icon: Icon, tone, href, label }: { icon: React.ElementTyp
         tone === "dark" && "bg-[#4a4a4a]",
         tone === "red" && "bg-[#ff443e]",
       )}
+      download={download}
       href={href}
     >
       <Icon className="h-4 w-4" />
@@ -770,19 +816,54 @@ function buildPatientEvents(patient: Dashboard1Patient) {
     },
   ] satisfies Array<{ name: string; value: number; time: string; priority: "high" | "medium" | "low" }>;
 }
+
+function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
+  const rapidReviewPatient = rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId);
+
+  return (
+    <ResultsCenterView
+      autoOpenAllDepartment="laboratory"
+      defaultDepartment="laboratory"
+      patientContext={{
+        ageSex: rapidReviewPatient?.ageGender,
+        allergy: "Meropenem",
+        bed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+        bloodGroup: "AB +ve",
+        consultantDoctor: rapidReviewPatient?.consultant,
+        dob: "30-12-1995",
+        mrn: getDashboardResultPatientMrn(patient.id),
+        name: patient.name,
+        uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
+        wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+      }}
+      viewDescription="Laboratory reports for the selected Dashboard1 patient."
+      viewTitle="Laboratory Results"
+    />
+  );
+}
+
+function getDashboardResultPatientMrn(patientId: number) {
+  const resultMrns = [
+    "MRN-240118",
+    "MRN-240119",
+    "MRN-240121",
+    "MRN-240124",
+    "MRN-240126",
+    "MRN-240127",
+    "MRN-240130",
+    "MRN-240133",
+    "MRN-240135",
+    "MRN-240136",
+  ];
+
+  return resultMrns[(patientId - 1) % resultMrns.length];
+}
+
 function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }) {
   const [tab, setTab] = React.useState<"current" | "past" | "intervention">("current");
-  const [addedMedicines, setAddedMedicines] = React.useState<Array<{
-    name: string;
-    dose: string;
-    route: string;
-    frequency: string;
-    startDate: string;
-    status: string;
-    prescribedBy: string;
-  }>>([]);
+  const [addMedicineOpen, setAddMedicineOpen] = React.useState(false);
 
-  const currentMedication = [
+  const currentMedication: DashboardMedicationRow[] = [
     {
       name: "Inj. Pantoprazole",
       dose: "40 mg",
@@ -812,7 +893,7 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
     },
   ];
 
-  const pastMedication = [
+  const pastMedication: DashboardMedicationRow[] = [
     {
       name: "Tab. Azithromycin",
       dose: "500 mg",
@@ -856,67 +937,84 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
     },
   ];
 
-  const currentMedicationRows = [...addedMedicines, ...currentMedication];
-
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-       
-
-      <div className="flex items-center border-b bg-white text-sm font-semibold">
-        <div className="flex min-w-0 flex-1">
-          <MedicationTabButton active={tab === "current"} onClick={() => setTab("current")}>
-            Current Medication
-          </MedicationTabButton>
-          <MedicationTabButton active={tab === "past"} onClick={() => setTab("past")}>
-            Past Medication
-          </MedicationTabButton>
-          <MedicationTabButton active={tab === "intervention"} onClick={() => setTab("intervention")}>
-            Intervention
-          </MedicationTabButton>
-        </div>
-        <div className="flex h-full shrink-0 items-center border-l border-slate-200 px-3">
-          <Button asChild aria-label="Open drug orders" className="h-9 w-9 shrink-0 rounded-full p-0" type="button">
-            <Link href={`/doctor-dashboard1/patients/${patient.id}?tab=orders&orderTab=drugs`}>
+    <>
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center border-b bg-white text-sm font-semibold">
+          <div className="flex min-w-0 flex-1">
+            <MedicationTabButton active={tab === "current"} onClick={() => setTab("current")}>
+              Current Medication
+            </MedicationTabButton>
+            <MedicationTabButton active={tab === "past"} onClick={() => setTab("past")}>
+              Past Medication
+            </MedicationTabButton>
+            <MedicationTabButton active={tab === "intervention"} onClick={() => setTab("intervention")}>
+              Intervention
+            </MedicationTabButton>
+          </div>
+          <div className="group relative flex h-full shrink-0 items-center border-l border-slate-200 px-3">
+            <Button
+              aria-label="Add medicine from drug orders"
+              className="h-9 w-9 shrink-0 rounded-full p-0"
+              onClick={() => setAddMedicineOpen(true)}
+              title="Add Medicine"
+              type="button"
+            >
               <Plus className="h-4 w-4" />
-            </Link>
-          </Button>
+            </Button>
+            {!addMedicineOpen ? (
+              <div className="pointer-events-none absolute right-14 top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-3 py-1.5 text-xs font-bold text-white opacity-0 shadow-lg transition group-hover:opacity-100">
+                Add Medicine
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="max-h-[60dvh] overflow-y-auto p-5">
+          {tab === "current" ? (
+            <div className="space-y-4">
+              <MedicationTable type="current" rows={currentMedication} />
+            </div>
+          ) : null}
+
+          {tab === "past" ? (
+            <MedicationTable type="past" rows={pastMedication} />
+          ) : null}
+
+          {tab === "intervention" ? (
+            <div className="space-y-3">
+              {interventions.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-bold text-slate-900">{item.title}</div>
+                      <p className="mt-1 text-sm font-medium text-slate-600">{item.detail}</p>
+                      <div className="mt-2 text-xs font-semibold text-slate-400">{item.time}</div>
+                    </div>
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                      {item.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <div className="max-h-[60dvh] overflow-y-auto p-5">
-        {tab === "current" ? (
-          <div className="space-y-4">
-            <MedicationTable type="current" rows={currentMedicationRows} />
-          </div>
-        ) : null}
-
-        {tab === "past" ? (
-          <MedicationTable type="past" rows={pastMedication} />
-        ) : null}
-
-        {tab === "intervention" ? (
-          <div className="space-y-3">
-            {interventions.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-bold text-slate-900">{item.title}</div>
-                    <p className="mt-1 text-sm font-medium text-slate-600">{item.detail}</p>
-                    <div className="mt-2 text-xs font-semibold text-slate-400">{item.time}</div>
-                  </div>
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
-                    {item.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
+      <CenterModal
+        className="h-[min(88dvh,900px)] w-[min(96vw,1560px)]"
+        description={`${patient.name} | ${patient.bed} | ${patient.diagnosis}`}
+        onOpenChange={(open) => setAddMedicineOpen(open)}
+        open={addMedicineOpen}
+        title="Add Medicine"
+      >
+        <DoctorOrdersPage defaultTab="drugs" />
+      </CenterModal>
+    </>
   );
 }
 
@@ -949,16 +1047,7 @@ function MedicationTable({
   rows,
   type,
 }: {
-  rows: Array<{
-    name: string;
-    dose: string;
-    route: string;
-    frequency: string;
-    startDate: string;
-    endDate?: string;
-    status: string;
-    prescribedBy: string;
-  }>;
+  rows: DashboardMedicationRow[];
   type: "current" | "past";
 }) {
   return (
@@ -979,7 +1068,7 @@ function MedicationTable({
 
         <tbody className="divide-y divide-slate-100 bg-white">
           {rows.map((row) => (
-            <tr key={`${row.name}-${row.startDate}`} className="hover:bg-slate-50">
+            <tr key={`${row.orderId ?? row.name}-${row.startDate}`} className="hover:bg-slate-50">
               <td className="px-4 py-3 font-bold text-slate-900">{row.name}</td>
               <td className="px-4 py-3 font-medium text-slate-700">{row.dose}</td>
               <td className="px-4 py-3 font-medium text-slate-700">{row.route}</td>

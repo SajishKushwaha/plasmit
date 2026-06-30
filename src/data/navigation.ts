@@ -249,8 +249,10 @@ export const navigationItems: NavigationItem[] = [
         children: [
           { id: "icu-command-nursing-station", label: "Nursing Station", route: "/icu-command-center/nursing/station", status: "ready" },
           { id: "icu-command-nurse-entry", label: "Nurse Entry", route: "/icu-command-center/nursing/nurse-entry", status: "ready" },
+          { id: "icu-command-nurse-review", label: "Nurse Review", route: "/icu-command-center/nursing/nurse-review", status: "ready" },
           { id: "icu-command-medication", label: "Medication Administration", route: "/icu-command-center/nursing/medication-administration", status: "ready" },
           { id: "icu-command-patient-medication-chart", label: "Patient Medication Chart", route: "/icu-command-center/nursing/patient-medication", status: "ready" },
+          { id: "icu-command-nursing-ews", label: "Early Warning Score", route: "/icu-command-center/nursing/early-warning-score", status: "ready" },
           { id: "icu-command-handover", label: "Shift Handover", route: "/icu-command-center/nursing/shift-handover", status: "ready" },
           { id: "icu-command-tasks", label: "Tasks & Assessments", route: "/icu-command-center/nursing/tasks-assessments", status: "ready" },
         ],
@@ -296,6 +298,30 @@ export const navigationItems: NavigationItem[] = [
         children: [
           { id: "icu-command-patient-risk", label: "Patient Risk Center", route: "/icu-command-center/clinical-intelligence/patient-risk-center", status: "ready" },
           { id: "icu-command-ews", label: "Early Warning Scores", route: "/icu-command-center/clinical-intelligence/early-warning-scores", status: "ready" },
+        ],
+      },
+      {
+        id: "icu-command-group-analytics",
+        label: "Analytics",
+        route: "/icu-command-center/analytics/operational",
+        status: "ready",
+        children: [
+          { id: "icu-command-operational-analytics", label: "Operational Analytics", route: "/icu-command-center/analytics/operational", status: "ready" },
+          { id: "icu-command-clinical-analytics", label: "Clinical Analytics", route: "/icu-command-center/analytics/clinical", status: "ready" },
+          { id: "icu-command-device-analytics", label: "Device Analytics", route: "/icu-command-center/analytics/device", status: "ready" },
+          { id: "icu-command-pilot-outcome", label: "Pilot Outcome Dashboard", route: "/icu-command-center/analytics/pilot-outcome", status: "ready" },
+          { id: "icu-command-adoption", label: "Adoption Analytics", route: "/icu-command-center/analytics/adoption", status: "ready" },
+        ],
+      },
+      {
+        id: "icu-command-group-administration",
+        label: "Administration",
+        route: "/icu-command-center/administration/users-roles",
+        status: "ready",
+        children: [
+          { id: "icu-command-users-roles", label: "Users & Roles", route: "/icu-command-center/administration/users-roles", status: "ready" },
+          { id: "icu-command-configuration", label: "Configuration", route: "/icu-command-center/administration/configuration", status: "ready" },
+          { id: "icu-command-audit", label: "Audit Logs", route: "/icu-command-center/administration/audit-logs", status: "ready" },
         ],
       },
     ],

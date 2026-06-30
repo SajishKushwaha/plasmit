@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, ClipboardCheck, Clock3, FilePenLine, ListChecks, Stethoscope, UserRound } from "lucide-react";
+import { CheckCircle2, ChevronRight, ClipboardCheck, Clock3, FilePenLine, ListChecks, Stethoscope, UserRound } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,7 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
   const [activeKind, setActiveKind] = React.useState<ProgressNoteKind>("doctor");
   const [draftKind, setDraftKind] = React.useState<ProgressNoteKind | null>(null);
   const [draftText, setDraftText] = React.useState("");
+  const [selectedNoteId, setSelectedNoteId] = React.useState<string | null>(null);
   const baseNotes = React.useMemo(() => buildProgressNotes(patient, rapidReviewPatient, tone), [patient, rapidReviewPatient, tone]);
   const [savedNotes, setSavedNotes] = React.useState<ProgressNote[]>([]);
   const notes = React.useMemo(() => [...savedNotes, ...baseNotes], [baseNotes, savedNotes]);
@@ -70,6 +71,7 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
   const uhid = rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`;
   const wardBed = rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed;
   const toneLabel = tone === "red" ? "Urgent review" : tone === "orange" ? "Watch" : "Stable";
+  const selectedNote = visibleNotes.find((note) => note.id === selectedNoteId) ?? latestNote;
 
   function openDraft(kind: ProgressNoteKind) {
     setActiveKind(kind);
@@ -99,21 +101,50 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
     setSavedNotes([]);
     setDraftKind(null);
     setDraftText("");
+    setSelectedNoteId(null);
   }, [patient.id]);
 
+  React.useEffect(() => {
+    if (!visibleNotes.length) {
+      setSelectedNoteId(null);
+      return;
+    }
+
+    if (!selectedNoteId || !visibleNotes.some((note) => note.id === selectedNoteId)) {
+      setSelectedNoteId(visibleNotes[0].id);
+    }
+  }, [selectedNoteId, visibleNotes]);
+
   return (
-    <Card className="overflow-hidden rounded-xl border-border/80 bg-white shadow-sm">
-      <div className="border-b border-border bg-white px-4 py-4">
-      
+    <Card className="overflow-hidden rounded-lg border-border bg-white shadow-sm">
+      <div className="border-b border-border bg-gradient-to-b from-white to-slate-50 px-4 py-4">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-bold text-slate-950">Clinical Progress Notes</h2>
+              <Badge tone={tone === "red" ? "danger" : tone === "orange" ? "warning" : "success"}>{toneLabel}</Badge>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
+              <span>{patient.name}</span>
+              <span>{uhid}</span>
+              <span>{wardBed}</span>
+              <span>{patient.diagnosis}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <ProgressMetric label="HR" value={`${patient.hr.value} bpm`} />
+            <ProgressMetric label="SpO2" value={`${patient.spo2.value}%`} />
+            <ProgressMetric label="BP" value={`${patient.abps.value}/${patient.abpd.value}`} />
+            <ProgressMetric label="Temp" value={`${patient.temperature.value} C`} />
+          </div>
+        </div>
 
         <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3 md:flex-row md:items-center md:justify-between">
-          <div className="inline-flex w-full rounded-lg border border-border bg-surface-muted/70 p-1 md:w-auto">
+          <div className="inline-flex w-full rounded-md border border-slate-200 bg-slate-100 p-1 md:w-auto">
             <ProgressNoteTab active={activeKind === "doctor"} count={doctorCount} icon={Stethoscope} label="Doctor Note" onClick={() => setActiveKind("doctor")} />
-           
             <ProgressNoteTab active={activeKind === "care-plan"} count={carePlanCount} icon={ListChecks} label="Care Plan" onClick={() => setActiveKind("care-plan")} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            
             <Button
               size="sm"
               type="button"
@@ -150,11 +181,36 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
         ) : null}
       </div>
 
-      <CardContent className={cn("overflow-y-auto bg-surface-muted/30 p-4", compact ? "max-h-[70dvh]" : "max-h-[68dvh]")}>
-        <div className="space-y-3">
-          {visibleNotes.map((note) => (
-            <ProgressNoteCard key={note.id} note={note} />
-          ))}
+      <CardContent className={cn("overflow-y-auto bg-slate-50 p-4", compact ? "max-h-[70dvh]" : "max-h-[68dvh]")}>
+        <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                {activeKind === "doctor" ? "Doctor Notes" : "Care Plans"}
+              </div>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500 shadow-sm">
+                {visibleNotes.length} item{visibleNotes.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            {visibleNotes.map((note) => (
+              <ProgressNoteCard
+                active={selectedNote?.id === note.id}
+                key={note.id}
+                note={note}
+                onClick={() => setSelectedNoteId(note.id)}
+              />
+            ))}
+          </div>
+
+          <div className="min-w-0">
+            {selectedNote ? (
+              <ProgressNoteDetail note={selectedNote} />
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm font-semibold text-slate-500">
+                No notes available.
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -212,9 +268,9 @@ function ProgressNoteDraft({
 
 function ProgressMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-surface-muted/70 px-3 py-2">
-      <div className="text-[11px] font-bold uppercase text-muted-foreground">{label}</div>
-      <div className="mt-0.5 text-sm font-extrabold text-foreground">{value}</div>
+    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm">
+      <div className="text-[10px] font-bold uppercase text-slate-500">{label}</div>
+      <div className="mt-0.5 whitespace-nowrap text-sm font-extrabold text-slate-950">{value}</div>
     </div>
   );
 }
@@ -236,28 +292,74 @@ function ProgressNoteTab({
     <button
       className={cn(
         "inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-bold transition md:flex-none",
-        active ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:bg-white/80 hover:text-foreground",
+        active ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:bg-white/80 hover:text-slate-950",
       )}
       onClick={onClick}
       type="button"
     >
       <Icon className="h-4 w-4" />
       {label}
-      <span className={cn("rounded-full px-2 py-0.5 text-xs", active ? "bg-primary-soft text-primary" : "bg-white text-muted-foreground")}>{count}</span>
+      <span className={cn("rounded-full px-2 py-0.5 text-xs", active ? "bg-primary-soft text-primary" : "bg-white text-slate-500")}>{count}</span>
     </button>
   );
 }
 
-function ProgressNoteCard({ note }: { note: ProgressNote }) {
+function ProgressNoteCard({ active, note, onClick }: { active: boolean; note: ProgressNote; onClick: () => void }) {
+  const excerpt = note.subjective ?? note.assessment;
+
+  return (
+    <button
+      className={cn(
+        "group w-full rounded-lg border bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20",
+        active ? "border-primary ring-2 ring-primary/10" : "border-slate-200",
+      )}
+      onClick={onClick}
+      type="button"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold", priorityPillClass(note.priority))}>{note.priority}</span>
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", statusPillClass(note.status))}>
+              <CheckCircle2 className="h-3 w-3" />
+              {note.status}
+            </span>
+          </div>
+          <div>
+            <h3 className="truncate text-sm font-extrabold text-slate-950">{note.title}</h3>
+            <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-slate-500">{excerpt}</p>
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+            <span className="inline-flex items-center gap-1">
+              <UserRound className="h-3.5 w-3.5" />
+              {note.author}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Clock3 className="h-3.5 w-3.5" />
+              {note.timestamp}
+            </span>
+          </div>
+        </div>
+        <ChevronRight className={cn("mt-1 h-4 w-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-primary", active && "text-primary")} />
+      </div>
+    </button>
+  );
+}
+
+function ProgressNoteDetail({ note }: { note: ProgressNote }) {
   return (
     <article className={cn("overflow-hidden rounded-lg border bg-white shadow-sm", priorityBorderClass(note.priority))}>
-      <div className="flex flex-col gap-3 border-b border-border px-4 py-3 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-extrabold text-foreground">{note.title}</h3>
+            <h3 className="text-base font-extrabold text-slate-950">{note.title}</h3>
             <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold", priorityPillClass(note.priority))}>{note.priority}</span>
+            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold", statusPillClass(note.status))}>
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {note.status}
+            </span>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-500">
             <span className="inline-flex items-center gap-1.5">
               <UserRound className="h-3.5 w-3.5" />
               {note.author}
@@ -265,27 +367,23 @@ function ProgressNoteCard({ note }: { note: ProgressNote }) {
             <span>{note.designation}</span>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-muted px-2.5 py-1">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1">
             <Clock3 className="h-3.5 w-3.5" />
             {note.timestamp}
-          </span>
-          <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2.5 py-1", statusPillClass(note.status))}>
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            {note.status}
           </span>
         </div>
       </div>
 
-      <div className="grid gap-x-5 gap-y-3 p-4 md:grid-cols-2">
+      <div className="grid gap-x-6 gap-y-4 p-5 md:grid-cols-2">
         {note.subjective ? <ProgressTextBlock label="Subjective" value={note.subjective} /> : null}
         <ProgressTextBlock label="Objective" value={note.objective} />
         <ProgressTextBlock label="Assessment" value={note.assessment} />
         <ProgressTextBlock label="Plan" value={note.plan} />
       </div>
       {note.acknowledgedBy ? (
-        <div className="border-t border-border bg-surface-muted/40 px-4 py-2 text-xs font-semibold text-muted-foreground">
-          Acknowledged by: <span className="text-foreground">{note.acknowledgedBy}</span>
+        <div className="border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs font-semibold text-slate-500">
+          Acknowledged by: <span className="text-slate-950">{note.acknowledgedBy}</span>
         </div>
       ) : null}
     </article>
@@ -295,8 +393,8 @@ function ProgressNoteCard({ note }: { note: ProgressNote }) {
 function ProgressTextBlock({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{label}</div>
-      <p className="mt-1 text-sm font-medium leading-5 text-foreground">{value}</p>
+      <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</div>
+      <p className="mt-1 text-sm font-semibold leading-6 text-slate-900">{value}</p>
     </div>
   );
 }

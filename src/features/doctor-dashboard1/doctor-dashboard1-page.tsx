@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Activity,
   ClipboardList,
+  Download,
   FileText,
   FileSpreadsheet,
   FlaskConical,
@@ -40,6 +41,8 @@ type DashboardMedicationRow = {
   status: string;
   prescribedBy: string;
 };
+
+const RADIOLOGY_REPORT_URL = "/radiology-report.pdf";
 
 export type Dashboard1Patient = {
   id: number;
@@ -176,6 +179,7 @@ export function DoctorDashboard1Page() {
   const [eventPatient, setEventPatient] = React.useState<Dashboard1Patient | null>(null);
   const [labResultsPatient, setLabResultsPatient] = React.useState<Dashboard1Patient | null>(null);
   const [medicationPatient, setMedicationPatient] = React.useState<Dashboard1Patient | null>(null);
+  const [radiologyPatient, setRadiologyPatient] = React.useState<Dashboard1Patient | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredPatients = orderedPatients.filter((patient) =>
     `${patient.name} ${patient.bed} ${patient.diagnosis}`.toLowerCase().includes(normalizedSearch),
@@ -323,12 +327,11 @@ export function DoctorDashboard1Page() {
                           <RoundActionButton icon={ClipboardList} tone="dark" label={`Open progress note for ${patient.name}`} onClick={() => setShiftSummaryPatient(patient)} />
                         </td>
                         <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundAction
-                            download="radiology-report.pdf"
+                          <RoundActionButton
                             icon={FileText}
                             tone="dark"
-                            href="/radiology-report.pdf"
-                            label={`Download radiology report for ${patient.name}`}
+                            label={`Open radiology report for ${patient.name}`}
+                            onClick={() => setRadiologyPatient(patient)}
                           />
                         </td>
                         <td className="h-[74px] px-3 py-2 text-center">
@@ -408,6 +411,16 @@ export function DoctorDashboard1Page() {
       </CenterModal>
 
       <CenterModal
+        className="h-[min(92dvh,900px)] w-[min(96vw,1180px)]"
+        description={radiologyPatient ? `${radiologyPatient.name} | ${radiologyPatient.bed} | ${radiologyPatient.diagnosis}` : undefined}
+        onOpenChange={(open) => !open && setRadiologyPatient(null)}
+        open={Boolean(radiologyPatient)}
+        title="Radiology Report"
+      >
+        {radiologyPatient ? <DashboardRadiologyReportPopup patient={radiologyPatient} /> : null}
+      </CenterModal>
+
+      <CenterModal
         className="w-[min(94vw,1040px)]"
         description={collaboratePatient ? `${collaboratePatient.name} | ${collaboratePatient.bed} | ${collaboratePatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setCollaboratePatient(null)}
@@ -431,7 +444,7 @@ export function DoctorDashboard1Page() {
 }
 
 function HeaderCell({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <th className={cn("px-3 py-3 text-center align-middle text-[11px] font-bold", className)}>{children}</th>;
+  return <th className={cn("px-3 py-3 text-center align-middle text-xs font-extrabold text-slate-900", className)}>{children}</th>;
 }
 
 function VitalPill({ value, tone, href }: { value: string | number; tone: VitalTone; href: string }) {
@@ -823,6 +836,7 @@ function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
   return (
     <ResultsCenterView
       autoOpenAllDepartment="laboratory"
+      autoOpenLatestDateOnly
       defaultDepartment="laboratory"
       patientContext={{
         ageSex: rapidReviewPatient?.ageGender,
@@ -836,9 +850,38 @@ function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
         uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
         wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
       }}
-      viewDescription="Laboratory reports for the selected Dashboard1 patient."
+      viewDescription="Laboratory reports for the selected dashboard patient."
       viewTitle="Laboratory Results"
     />
+  );
+}
+
+function DashboardRadiologyReportPopup({ patient }: { patient: Dashboard1Patient }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-900">Radiology report preview</p>
+          <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
+            {patient.name} | {patient.bed}
+          </p>
+        </div>
+        <Button asChild size="sm" variant="outline">
+          <a download="radiology-report.pdf" href={RADIOLOGY_REPORT_URL}>
+            <Download className="h-4 w-4" />
+            Download
+          </a>
+        </Button>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-hidden rounded-md border border-slate-200 bg-slate-100 shadow-sm">
+        <iframe
+          className="h-[68dvh] w-full bg-white"
+          src={`${RADIOLOGY_REPORT_URL}#toolbar=1&navpanes=0`}
+          title={`Radiology report for ${patient.name}`}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -1012,7 +1055,7 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
         open={addMedicineOpen}
         title="Add Medicine"
       >
-        <DoctorOrdersPage defaultTab="drugs" />
+        <DoctorOrdersPage defaultTab="drugs" drugsOnly />
       </CenterModal>
     </>
   );

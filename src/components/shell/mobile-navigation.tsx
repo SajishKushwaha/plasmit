@@ -1,15 +1,16 @@
 "use client";
 
-import { useMemo, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Check, ChevronDown, Menu, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/components/providers/role-provider";
+import { collectNavigationHrefs, normalizeNavigationHref } from "@/components/shell/navigation-prefetch";
 import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
@@ -29,9 +30,29 @@ export function MobileNavigation() {
   const [roleOpen, setRoleOpen] = useState(false);
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
+  const router = useRouter();
   const { role, roles, setRole } = useRole();
   const visibleItems = useMemo(() => getNavigationItemsForRole(role), [role]);
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
+  const warmRoute = useCallback((route: string) => {
+    const href = normalizeNavigationHref(route);
+    if (!href || href === pathname) return;
+    router.prefetch(href);
+    void fetch(href, { cache: "force-cache" }).catch(() => undefined);
+  }, [pathname, router]);
+  const prefetchRoutes = useMemo(
+    () => collectNavigationHrefs(visibleItems, role === "Doctor IPD" ? 6 : 8).filter((href) => href !== pathname),
+    [pathname, role, visibleItems],
+  );
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      prefetchRoutes.forEach(warmRoute);
+    }, 350);
+
+    return () => window.clearTimeout(timeout);
+  }, [prefetchRoutes, warmRoute]);
+
   const renderChildItem = (child: NavigationChildItem, depth = 0) => {
     const hasNestedChildren = Boolean(child.children?.length);
     const active = childIsActive(child, pathname);
@@ -71,6 +92,8 @@ export function MobileNavigation() {
         )}
         href={child.route}
         key={child.id}
+        onFocus={() => warmRoute(child.route)}
+        onMouseEnter={() => warmRoute(child.route)}
         onClick={(event: MouseEvent<HTMLAnchorElement>) => {
           if (poctMode && pathname.startsWith("/doctor-dashboard1/patients/")) {
             event.preventDefault();
@@ -197,6 +220,8 @@ export function MobileNavigation() {
                           )}
                           href={item.route}
                           key={item.id}
+                          onFocus={() => warmRoute(item.route)}
+                          onMouseEnter={() => warmRoute(item.route)}
                           onClick={() => setOpen(false)}
                         >
                           <Icon className="h-4 w-4 shrink-0" />

@@ -44,6 +44,27 @@ const loginCredentials = [
     scope: "admin",
     route: "/dashboard",
   },
+  {
+    email: "unitnurse@hospital.com",
+    password: "123456",
+    role: "Unit Nurse" as Role,
+    scope: "unit-nurse",
+    route: "/unit-nurse",
+  },
+  {
+    email: "headnurse@hospital.com",
+    password: "123456",
+    role: "Head Nurse" as Role,
+    scope: "head-nurse",
+    route: "/head-nurse",
+  },
+  {
+    email: "wardnurse@hospital.com",
+    password: "123456",
+    role: "Ward Nurse" as Role,
+    scope: "ward-nurse",
+    route: "/ward-nurse",
+  },
 ] as const;
 
 function getRoleRoute(role: Role) {
@@ -141,6 +162,18 @@ export function LoginPage() {
       }
       if (savedScope === "icu") {
         router.replace("/icu-command-center");
+        return;
+      }
+      if (savedScope === "unit-nurse") {
+        router.replace("/unit-nurse");
+        return;
+      }
+      if (savedScope === "head-nurse") {
+        router.replace("/head-nurse");
+        return;
+      }
+      if (savedScope === "ward-nurse") {
+        router.replace("/ward-nurse");
         return;
       }
       const savedRole = window.localStorage.getItem("plasmit-role") as Role | null;
@@ -279,6 +312,165 @@ export function LoginPage() {
               Support: securitydesk@plasmit.care | +91 20 4000 2211
             </div>
           </div>
+      </div>
+
+      {transitioning ? <div className="fixed inset-0 z-50 animate-[dashboardReveal_420ms_ease_both] bg-white" /> : null}
+    </main>
+  );
+}
+
+type NurseLoginRole = "Unit Nurse" | "Head Nurse" | "Ward Nurse";
+
+const nurseLoginConfigs: Record<NurseLoginRole, { route: string; scope: string; title: string }> = {
+  "Unit Nurse": {
+    route: "/unit-nurse",
+    scope: "unit-nurse",
+    title: "Unit Nurse Login",
+  },
+  "Head Nurse": {
+    route: "/head-nurse",
+    scope: "head-nurse",
+    title: "Head Nurse Login",
+  },
+  "Ward Nurse": {
+    route: "/ward-nurse",
+    scope: "ward-nurse",
+    title: "Ward Nurse Login",
+  },
+};
+
+export function NurseRoleLoginPage({ role }: { role: NurseLoginRole }) {
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [transitioning, setTransitioning] = React.useState(false);
+  const router = useRouter();
+  const config = nurseLoginConfigs[role];
+
+  React.useEffect(() => {
+    if (window.localStorage.getItem(authStorageKey) === "true") {
+      const savedRole = window.localStorage.getItem("plasmit-role") as Role | null;
+      router.replace(savedRole === role ? config.route : getRoleRoute(savedRole && roles.includes(savedRole) ? savedRole : role));
+    }
+  }, [config.route, role, router]);
+
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (loading) return;
+    setError("");
+
+    if (!username.trim() || !password.trim()) {
+      setError("Username and password required");
+      return;
+    }
+
+    setLoading(true);
+    window.setTimeout(() => {
+      window.localStorage.setItem(authStorageKey, "true");
+      window.localStorage.setItem(accessScopeKey, config.scope);
+      window.localStorage.setItem("plasmit-role", role);
+      window.localStorage.setItem("hk-general-remember", "true");
+      window.dispatchEvent(new Event(roleChangeEvent));
+      setTransitioning(true);
+      toast.success(`${role} access granted`);
+      window.setTimeout(() => {
+        router.replace(config.route);
+      }, 320);
+    }, 500);
+  }
+
+  return (
+    <main className="min-h-dvh bg-[#f4f7fb] px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-md flex-col items-center justify-center">
+        <div className="w-full">
+          <div className="mb-7 flex justify-center">
+            <Image
+              src="/plasmit-sidebar-logo.webp"
+              alt="Plasmit Healthcare IT Vector logo"
+              width={230}
+              height={94}
+              priority
+              className="h-auto w-[220px] object-contain"
+            />
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl font-black tracking-tight text-slate-950">{config.title}</h2>
+                  <p className="mt-1 text-sm font-medium text-slate-500">Login to open your blank nurse workspace.</p>
+                </div>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
+                  <LockKeyhole className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
+
+            {error ? (
+              <div className="mb-4 flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700" role="alert">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            ) : null}
+
+            <form className="space-y-4" onSubmit={submit}>
+              <label className="block space-y-2 text-sm">
+                <span className="font-semibold text-slate-700">Email/Username</span>
+                <div className="relative min-w-0">
+                  <UserRound className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    name="username"
+                    autoComplete="username"
+                    placeholder={`${role.toLowerCase().replaceAll(" ", "")}@hospital.com`}
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    className="h-11 rounded-lg border-slate-200 bg-slate-50 pl-11 font-medium text-slate-900 transition hover:border-slate-300 hover:bg-white focus-visible:border-[#2563eb] focus-visible:ring-[#2563eb]/20"
+                  />
+                </div>
+              </label>
+
+              <label className="block space-y-2 text-sm">
+                <span className="font-semibold text-slate-700">Password</span>
+                <div className="relative min-w-0">
+                  <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className="h-11 rounded-lg border-slate-200 bg-slate-50 pl-11 pr-12 font-medium text-slate-900 transition hover:border-slate-300 hover:bg-white focus-visible:border-[#2563eb] focus-visible:ring-[#2563eb]/20"
+                  />
+                  <button
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-2 text-slate-400 transition hover:bg-slate-100 hover:text-[#2563eb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/30 active:scale-95"
+                    type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((value) => !value)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </label>
+
+              <button
+                className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#2563eb] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/35 focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-80"
+                disabled={loading}
+                type="submit"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                {loading ? "Opening workspace..." : "Login"}
+              </button>
+            </form>
+          </div>
+
+          <div className="mt-4 text-center text-xs font-medium text-slate-500">
+            Support: securitydesk@plasmit.care | +91 20 4000 2211
+          </div>
+        </div>
       </div>
 
       {transitioning ? <div className="fixed inset-0 z-50 animate-[dashboardReveal_420ms_ease_both] bg-white" /> : null}

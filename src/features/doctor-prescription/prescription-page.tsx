@@ -66,7 +66,7 @@ const drugForms = ["Tablet", "Capsule", "Syrup", "Injection", "IV Fluid", "Cream
 const frequencies = ["OD", "BD", "TDS", "QID", "6 hrly", "8 hrly", "SOS", "Continuous", "Intermittent"] as const;
 const routes = ["Oral", "IV", "IM", "SC", "Topical", "Inhalation"] as const;
 const todayIso = new Date().toISOString().slice(0, 10);
-const loggedInDoctorName = "Dr. Kavita Rao";
+const loggedInDoctorName = "Dr. Vivek Bindra";
 
 const frequencyMultiplier: Record<Frequency, number> = {
   OD: 1,

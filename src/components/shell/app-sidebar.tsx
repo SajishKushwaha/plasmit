@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import {
   ChevronDown,
   ChevronsLeft,
@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "@/components/providers/role-provider";
+import { collectNavigationHrefs, normalizeNavigationHref } from "@/components/shell/navigation-prefetch";
 import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
@@ -42,6 +43,7 @@ export function AppSidebar({
   onCollapsedChange: (collapsed: boolean) => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { role } = useRole();
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const [currentHash, setCurrentHash] = useState("");
@@ -60,6 +62,25 @@ export function AppSidebar({
     () => Array.from(new Set(visibleItems.map((item) => item.group))),
     [visibleItems],
   );
+  const warmRoute = useCallback((route: string) => {
+    const href = normalizeNavigationHref(route);
+    if (!href || href === pathname) return;
+    router.prefetch(href);
+    void fetch(href, { cache: "force-cache" }).catch(() => undefined);
+  }, [pathname, router]);
+  const prefetchRoutes = useMemo(
+    () => collectNavigationHrefs(visibleItems, role === "Doctor IPD" ? 6 : 8).filter((href) => href !== pathname),
+    [pathname, role, visibleItems],
+  );
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      prefetchRoutes.forEach(warmRoute);
+    }, 350);
+
+    return () => window.clearTimeout(timeout);
+  }, [prefetchRoutes, warmRoute]);
+
   const renderChildItem = (child: NavigationChildItem, depth = 0) => {
     const hasNestedChildren = Boolean(child.children?.length);
     const active = childIsActive(child, pathname, currentHash);
@@ -99,6 +120,8 @@ export function AppSidebar({
         )}
         href={child.route}
         key={child.id}
+        onFocus={() => warmRoute(child.route)}
+        onMouseEnter={() => warmRoute(child.route)}
         onClick={(event: MouseEvent<HTMLAnchorElement>) => {
           if (!poctMode || !pathname.startsWith("/doctor-dashboard1/patients/")) return;
           event.preventDefault();
@@ -229,6 +252,8 @@ export function AppSidebar({
                       )}
                       href={item.route}
                       key={item.id}
+                      onFocus={() => warmRoute(item.route)}
+                      onMouseEnter={() => warmRoute(item.route)}
                       title={collapsed ? item.label : undefined}
                     >
                       <Icon className="h-4 w-4 shrink-0" />

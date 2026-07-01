@@ -156,7 +156,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
         <CardContent className="space-y-3 p-6 text-center">
           <div className="text-base font-semibold">Patient not found</div>
           <Button asChild>
-            <Link href="/doctor-dashboard1">Back to Dashboard1</Link>
+            <Link href="/doctor-dashboard1">Back to Dashboard</Link>
           </Button>
         </CardContent>
       </Card>

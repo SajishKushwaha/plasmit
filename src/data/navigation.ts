@@ -66,7 +66,67 @@ export const navigationItems: NavigationItem[] = [
   // DOCTOR: MAIN
   // =====================================================
   { id: "doctor-dashboard",    label: "Dashboard",            icon: LayoutDashboard,   route: "/doctor-dashboard",     group: "Main",     allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
-  { id: "doctor-dashboard1",   label: "Dashboard1",           icon: Activity,          route: "/doctor-dashboard1",    group: "Main",     allowedRoles: ["Doctor", "Doctor IPD"], status: "ready" },
+  { id: "doctor-dashboard1",   label: "Dashboard",            icon: Activity,          route: "/doctor-dashboard1",    group: "Main",     allowedRoles: ["Doctor", "Doctor IPD"], status: "ready" },
+  {
+    id: "unit-nurse-dashboard",
+    label: "Unit Nurse",
+    icon: ClipboardList,
+    route: "/unit-nurse",
+    group: "Main",
+    allowedRoles: ["Unit Nurse"],
+    status: "ready",
+    children: [
+      { id: "unit-nurse-step-4", label: "4. Ward Assignment", route: "/unit-nurse/ward-assignment", status: "ready" },
+      { id: "unit-nurse-step-8", label: "8. Pending Monitor", route: "/unit-nurse/monitoring", status: "ready" },
+      { id: "unit-nurse-step-11", label: "11. Issue Review", route: "/unit-nurse/issue-review", status: "ready" },
+      { id: "unit-nurse-step-12", label: "12. Escalation", route: "/unit-nurse/escalation", status: "ready" },
+      { id: "unit-nurse-step-15", label: "15. Submit Handover", route: "/unit-nurse/handover-submit", status: "ready" },
+      { id: "unit-nurse-ward", label: "Ward Nurse Flow", route: "/ward-nurse", status: "ready" },
+      { id: "unit-nurse-head", label: "Head Nurse Flow", route: "/head-nurse", status: "ready" },
+    ],
+  },
+  {
+    id: "head-nurse-dashboard",
+    label: "Head Nurse",
+    icon: UserCog,
+    route: "/head-nurse",
+    group: "Main",
+    allowedRoles: ["Head Nurse"],
+    status: "ready",
+    children: [
+      { id: "head-nurse-step-1", label: "1. Admission Queue", route: "/head-nurse/admission-queue", status: "ready" },
+      { id: "head-nurse-step-2", label: "2. Admission Review", route: "/head-nurse/admission-review", status: "ready" },
+      { id: "head-nurse-step-3", label: "3. Unit Assignment", route: "/head-nurse/unit-assignment", status: "ready" },
+      { id: "head-nurse-step-9", label: "9. Audit & Control", route: "/head-nurse/audit-control", status: "ready" },
+      { id: "head-nurse-step-12", label: "12. Escalation", route: "/head-nurse/escalation", status: "ready" },
+      { id: "head-nurse-step-16", label: "16. Verify Handover", route: "/head-nurse/handover-verification", status: "ready" },
+      { id: "head-nurse-unit-flow", label: "Unit Nurse Flow", route: "/unit-nurse", status: "ready" },
+      { id: "head-nurse-ward-flow", label: "Ward Nurse Flow", route: "/ward-nurse", status: "ready" },
+    ],
+  },
+  {
+    id: "ward-nurse-dashboard",
+    label: "Ward Nurse",
+    icon: BedDouble,
+    route: "/ward-nurse",
+    group: "Main",
+    allowedRoles: ["Ward Nurse"],
+    status: "ready",
+    children: [
+      { id: "ward-nurse-step-5", label: "5. Accept Assignment", route: "/ward-nurse/accept-assignment", status: "ready" },
+      { id: "ward-nurse-step-6", label: "6. Assessment", route: "/ward-nurse/assessment", status: "ready" },
+      { id: "ward-nurse-step-7a", label: "7. Vitals Update", route: "/ward-nurse/vitals", status: "ready" },
+      { id: "ward-nurse-step-7b", label: "7. Medication", route: "/ward-nurse/medication", status: "ready" },
+      { id: "ward-nurse-step-7c", label: "7. Intake / Output", route: "/ward-nurse/intake-output", status: "ready" },
+      { id: "ward-nurse-step-7d", label: "7. Doctor Orders", route: "/ward-nurse/doctor-orders", status: "ready" },
+      { id: "ward-nurse-step-7e", label: "7. Notes", route: "/ward-nurse/notes", status: "ready" },
+      { id: "ward-nurse-step-10", label: "10. Raise Issue", route: "/ward-nurse/raise-issue", status: "ready" },
+      { id: "ward-nurse-step-13", label: "13. Close Escalation", route: "/ward-nurse/close-escalation", status: "ready" },
+      { id: "ward-nurse-step-14", label: "14. Discharge Checklist", route: "/ward-nurse/discharge-checklist", status: "ready" },
+      { id: "ward-nurse-step-17", label: "17. Accept Handover", route: "/ward-nurse/next-shift-accept", status: "ready" },
+      { id: "ward-nurse-unit-flow", label: "Unit Nurse Review", route: "/unit-nurse/issue-review", status: "ready" },
+    ],
+  },
 
   // =====================================================
   // DOCTOR: CLINICAL
@@ -87,7 +147,7 @@ export const navigationItems: NavigationItem[] = [
   { id: "doctor-followups",    label: "Follow-ups",           icon: CalendarCheck,     route: "/follow-ups",           group: "Clinical", allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   {
     id: "results",
-    label: "Results",
+    label: "Result",
     icon: CheckCircle2,
     route: "/results",
     group: "Diagnostics",
@@ -491,68 +551,22 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
     const visibleItemIds = new Set([
       "doctor-dashboard1",
       "doctor-orders",
-      "doctor-prescription",
-      "admission",
-      "clinical-examination",
-      "rapid-review",
-      "intake-output",
-      "poct-add",
-      "poct-results",
-      "doctor-patients",
-      "ipd",
-      "doctor-live-monitoring",
       "results",
-      "radiology-mnt",
-      "doctor-lab",
-      "doctor-emergency",
-      "doctor-messages",
-      "doctor-settings",
-    ]);
-    const workItemIds = new Set([
-      "admission",
-      "clinical-examination",
-      "rapid-review",
-      "intake-output",
-      "poct-add",
-      "poct-results",
     ]);
     const groupOrder = new Map([
       ["Main", 0],
       ["Doctor", 1],
-      ["Work", 2],
-      ["Clinical", 3],
-      ["Diagnostics", 4],
-      ["Radiology", 5],
-      ["Platform", 6],
+      ["Diagnostics", 2],
     ]);
     const itemOrder = new Map([
       ["doctor-dashboard1", 0],
       ["doctor-orders", 0],
-      ["doctor-prescription", 1],
-      ["admission", 0],
-      ["clinical-examination", 1],
-      ["rapid-review", 2],
-      ["intake-output", 3],
-      ["poct-add", 4],
-      ["poct-results", 5],
-      ["doctor-patients", 0],
-      ["ipd", 1],
-      ["doctor-live-monitoring", 2],
-      ["results", 3],
-      ["radiology-mnt", 4],
-      ["doctor-lab", 5],
-      ["doctor-emergency", 6],
-      ["doctor-messages", 0],
-      ["doctor-settings", 1],
+      ["results", 0],
     ]);
 
     return roleItems
       .filter((item) => visibleItemIds.has(item.id))
-      .map((item) => {
-        if (workItemIds.has(item.id)) return { ...item, group: "Work" };
-        if (item.id === "doctor-lab") return { ...item, group: "Radiology" };
-        return item;
-      })
+      .map((item) => item.id === "results" ? { ...item, children: undefined } : item)
       .sort((a, b) => {
         const groupDifference = (groupOrder.get(a.group) ?? 100) - (groupOrder.get(b.group) ?? 100);
         if (groupDifference !== 0) return groupDifference;

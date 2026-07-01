@@ -50,27 +50,32 @@ const tabs: OrderTab[] = [
 
 export function DoctorOrdersPage({
   defaultTab: defaultTabProp,
+  drugsOnly = false,
 }: {
   defaultTab?: string;
+  drugsOnly?: boolean;
   patientContext?: DoctorOrdersPatientContext;
 } = {}) {
-  const defaultTab = defaultTabProp && tabs.some((tab) => tab.id === defaultTabProp) ? defaultTabProp : "blood";
+  const visibleTabs = drugsOnly ? tabs.filter((tab) => tab.id === "drugs") : tabs;
+  const defaultTab = defaultTabProp && visibleTabs.some((tab) => tab.id === defaultTabProp) ? defaultTabProp : visibleTabs[0]?.id ?? "drugs";
 
   return (
     <div className="space-y-4 px-2 py-2 sm:space-y-5 sm:px-0 sm:py-3">
       <Tabs defaultValue={defaultTab} className="w-full">
         <div className="space-y-3 sm:space-y-4">
-          <div className="space-y-2">
-            <TabsList className="w-full gap-1.5 overflow-x-auto px-1 py-1 sm:gap-2 sm:px-0">
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="flex h-8 min-w-[110px] flex-row items-center justify-center gap-1.5 border border-transparent px-2.5 text-xs sm:h-10 sm:min-w-[132px] sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-                  <span className="min-w-0 truncate leading-none">{tab.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-          {tabs.map((tab) => (
+          {!drugsOnly ? (
+            <div className="space-y-2">
+              <TabsList className="w-full gap-1.5 overflow-x-auto px-1 py-1 sm:gap-2 sm:px-0">
+                {visibleTabs.map((tab) => (
+                  <TabsTrigger key={tab.id} value={tab.id} className="flex h-8 min-w-[110px] flex-row items-center justify-center gap-1.5 border border-transparent px-2.5 text-xs sm:h-10 sm:min-w-[132px] sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+                    <span className="min-w-0 truncate leading-none">{tab.label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+          ) : null}
+          {visibleTabs.map((tab) => (
             <TabsContent key={tab.id} value={tab.id} className="mt-2 sm:mt-3">
               {tab.component}
             </TabsContent>

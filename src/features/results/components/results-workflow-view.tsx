@@ -606,6 +606,7 @@ function DateRangeCalendar({
 
 export function ResultsWorkflowView({
   autoOpenAllDepartment,
+  autoOpenLatestDateOnly = false,
   initialDepartment = "all",
   defaultDepartment = initialDepartment,
   criticalOnly = false,
@@ -614,6 +615,7 @@ export function ResultsWorkflowView({
   viewDescription = "Laboratory, radiology, and POCT reports organized for IPD review.",
 }: {
   autoOpenAllDepartment?: ResultDepartment;
+  autoOpenLatestDateOnly?: boolean;
   initialDepartment?: DepartmentFilter;
   defaultDepartment?: DepartmentFilter;
   criticalOnly?: boolean;
@@ -700,10 +702,25 @@ export function ResultsWorkflowView({
     if (!autoOpenAllDepartment || hasAutoOpenedAllDepartment.current) return;
 
     const departmentRecords = records.filter((result) => result.department === autoOpenAllDepartment && (!criticalOnly || result.status === "Critical"));
+    const latestDateKey = departmentRecords
+      .map((result) => getDateKey(result.orderedAt))
+      .sort((first, second) => second.localeCompare(first))[0];
+    const recordsToView = autoOpenLatestDateOnly && latestDateKey
+      ? departmentRecords.filter((result) => getDateKey(result.orderedAt) === latestDateKey)
+      : departmentRecords;
+    const selectedReportNames = new Set(recordsToView.map((result) => result.testName));
+    const comparisonRecords = autoOpenLatestDateOnly
+      ? departmentRecords.filter((result) => selectedReportNames.has(result.testName))
+      : undefined;
+
     setActiveDepartment(autoOpenAllDepartment);
-    setReportModal({ type: "all", department: autoOpenAllDepartment, records: departmentRecords });
+    if (autoOpenLatestDateOnly && latestDateKey) {
+      setSelectedDate(latestDateKey);
+      setOpenGroups({ [latestDateKey]: true });
+    }
+    setReportModal({ type: "all", department: autoOpenAllDepartment, records: recordsToView, comparisonRecords });
     hasAutoOpenedAllDepartment.current = true;
-  }, [autoOpenAllDepartment, criticalOnly, records]);
+  }, [autoOpenAllDepartment, autoOpenLatestDateOnly, criticalOnly, records]);
 
   function printReports(recordsToPrint: ResultRecord[], title: string) {
     if (recordsToPrint.length === 0) return;

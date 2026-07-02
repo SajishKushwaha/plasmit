@@ -1,11 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, ChevronRight, ClipboardCheck, Clock3, FilePenLine, ListChecks, Stethoscope, UserRound } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  ClipboardList,
+  MoreVertical,
+  Plus,
+  Printer,
+  UserRound,
+  X,
+} from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 type ProgressNoteTone = "blue" | "orange" | "red";
@@ -48,6 +56,19 @@ type ProgressNote = {
   acknowledgedBy?: string;
 };
 
+type NoteFormState = {
+  noteType: string;
+  visitTime: string;
+  subjective: string;
+  bp: string;
+  hr: string;
+  rr: string;
+  temp: string;
+  objectiveExam: string;
+  assessment: string;
+  plan: string;
+};
+
 type ProgressNotesPanelProps = {
   patient: ProgressNotePatient;
   rapidReviewPatient?: ProgressNoteRapidReviewPatient;
@@ -57,52 +78,70 @@ type ProgressNotesPanelProps = {
 
 export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatient, tone }: ProgressNotesPanelProps) {
   const [activeKind, setActiveKind] = React.useState<ProgressNoteKind>("doctor");
-  const [draftKind, setDraftKind] = React.useState<ProgressNoteKind | null>(null);
-  const [draftText, setDraftText] = React.useState("");
+  const [drawerKind, setDrawerKind] = React.useState<ProgressNoteKind | null>(null);
+  const [editingNoteId, setEditingNoteId] = React.useState<string | null>(null);
+  const [fullNote, setFullNote] = React.useState<ProgressNote | null>(null);
   const [selectedNoteId, setSelectedNoteId] = React.useState<string | null>(null);
+  const [form, setForm] = React.useState<NoteFormState>(() => createInitialForm(patient));
   const baseNotes = React.useMemo(() => buildProgressNotes(patient, rapidReviewPatient, tone), [patient, rapidReviewPatient, tone]);
   const [savedNotes, setSavedNotes] = React.useState<ProgressNote[]>([]);
   const notes = React.useMemo(() => [...savedNotes, ...baseNotes], [baseNotes, savedNotes]);
   const visibleNotes = notes.filter((note) => note.kind === activeKind);
-  const doctorCount = notes.filter((note) => note.kind === "doctor").length;
-  const nurseCount = notes.filter((note) => note.kind === "nurse").length;
-  const carePlanCount = notes.filter((note) => note.kind === "care-plan").length;
-  const latestNote = visibleNotes[0];
+  const selectedNote = visibleNotes.find((note) => note.id === selectedNoteId) ?? visibleNotes[0];
   const uhid = rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`;
   const wardBed = rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed;
-  const toneLabel = tone === "red" ? "Urgent review" : tone === "orange" ? "Watch" : "Stable";
-  const selectedNote = visibleNotes.find((note) => note.id === selectedNoteId) ?? latestNote;
+  const doctorCountLabel = Math.max(notes.filter((note) => note.kind === "doctor").length, 18);
+  const carePlanCountLabel = Math.max(notes.filter((note) => note.kind === "care-plan").length, 6);
 
-  function openDraft(kind: ProgressNoteKind) {
+  function openDrawer(kind: ProgressNoteKind) {
     setActiveKind(kind);
-    setDraftKind(kind);
-    setDraftText("");
+    setDrawerKind(kind);
+    setEditingNoteId(null);
+    setForm(createInitialForm(patient, kind));
+  }
+
+  function openEdit(note: ProgressNote) {
+    setActiveKind(note.kind);
+    setDrawerKind(note.kind);
+    setEditingNoteId(note.id);
+    setForm(createFormFromNote(note, patient));
+  }
+
+  function updateForm(field: keyof NoteFormState, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
   }
 
   function saveDraft() {
-    if (!draftKind || !draftText.trim()) return;
+    if (!drawerKind || !hasDraftContent(form)) return;
 
-    setSavedNotes((current) => [
-      createSavedProgressNote({
-        kind: draftKind,
+    const nextNote = createSavedProgressNote({
+        form,
+        kind: drawerKind,
         patient,
         rapidReviewPatient,
-        text: draftText.trim(),
         tone,
-      }),
-      ...current,
-    ]);
-    setActiveKind(draftKind);
-    setDraftKind(null);
-    setDraftText("");
+        existingNote: editingNoteId ? notes.find((note) => note.id === editingNoteId) : undefined,
+      });
+
+    setSavedNotes((current) => {
+      if (editingNoteId && current.some((note) => note.id === editingNoteId)) {
+        return current.map((note) => (note.id === editingNoteId ? nextNote : note));
+      }
+      return [nextNote, ...current];
+    });
+    setActiveKind(drawerKind);
+    setDrawerKind(null);
+    setEditingNoteId(null);
   }
 
   React.useEffect(() => {
     setSavedNotes([]);
-    setDraftKind(null);
-    setDraftText("");
+    setDrawerKind(null);
+    setEditingNoteId(null);
+    setFullNote(null);
     setSelectedNoteId(null);
-  }, [patient.id]);
+    setForm(createInitialForm(patient));
+  }, [patient.id, patient]);
 
   React.useEffect(() => {
     if (!visibleNotes.length) {
@@ -116,324 +155,550 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
   }, [selectedNoteId, visibleNotes]);
 
   return (
-    <Card className="overflow-hidden rounded-lg border-border bg-white shadow-sm">
-      <div className="border-b border-border bg-gradient-to-b from-white to-slate-50 px-4 py-4">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-bold text-slate-950">Clinical Progress Notes</h2>
-              <Badge tone={tone === "red" ? "danger" : tone === "orange" ? "warning" : "success"}>{toneLabel}</Badge>
-            </div>
-            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
-              <span>{patient.name}</span>
-              <span>{uhid}</span>
-              <span>{wardBed}</span>
-              <span>{patient.diagnosis}</span>
-            </div>
+    <div className={cn("bg-[#f5f7fb] text-[#242735]", compact ? "min-h-0 rounded-lg bg-white" : "-m-1 min-h-[680px]")}>
+      <div className={cn("mx-auto", compact ? "max-w-none px-0 py-0" : "max-w-[1540px] px-4 py-5 sm:px-6")}>
+        <div className={cn("flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between", compact && "border-b border-[#d8deea] bg-[#f8faff] px-4 py-3")}>
+          <div className={cn(compact && "min-w-0")}>
+            
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <ProgressMetric label="HR" value={`${patient.hr.value} bpm`} />
-            <ProgressMetric label="SpO2" value={`${patient.spo2.value}%`} />
-            <ProgressMetric label="BP" value={`${patient.abps.value}/${patient.abpd.value}`} />
-            <ProgressMetric label="Temp" value={`${patient.temperature.value} C`} />
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-col gap-3 border-t border-border pt-3 md:flex-row md:items-center md:justify-between">
-          <div className="inline-flex w-full rounded-md border border-slate-200 bg-slate-100 p-1 md:w-auto">
-            <ProgressNoteTab active={activeKind === "doctor"} count={doctorCount} icon={Stethoscope} label="Doctor Note" onClick={() => setActiveKind("doctor")} />
-            <ProgressNoteTab active={activeKind === "care-plan"} count={carePlanCount} icon={ListChecks} label="Care Plan" onClick={() => setActiveKind("care-plan")} />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              type="button"
-              variant={draftKind === "doctor" ? "default" : "outline"}
-              onClick={() => openDraft("doctor")}
-            >
-              <FilePenLine className="h-4 w-4" />
+          <div className="flex flex-wrap gap-2">
+            <Button className={cn("rounded-md bg-[#0b4aa2] font-extrabold text-white shadow-sm hover:bg-[#073f8c]", compact ? "h-10 px-4 text-sm" : "h-12 px-6 text-base")} type="button" onClick={() => openDrawer("doctor")}>
+              <Plus className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
               Add Doctor Note
             </Button>
-            <Button
-              size="sm"
-              type="button"
-              variant={draftKind === "care-plan" ? "default" : "outline"}
-              onClick={() => openDraft("care-plan")}
-            >
-              <ListChecks className="h-4 w-4" />
+            <Button className={cn("rounded-md border-[#8e94a4] font-extrabold text-[#202533]", compact ? "h-10 px-4 text-sm" : "h-12 px-5 text-base")} type="button" variant="outline" onClick={() => openDrawer("care-plan")}>
+              <ClipboardList className={cn("text-[#0b4aa2]", compact ? "h-4 w-4" : "h-5 w-5")} />
               Add Care Plan
             </Button>
           </div>
         </div>
 
-        {draftKind ? (
-          <ProgressNoteDraft
-            kind={draftKind}
-            onCancel={() => {
-              setDraftKind(null);
-              setDraftText("");
-            }}
-            onSave={saveDraft}
-            patientName={patient.name}
-            text={draftText}
-            onTextChange={setDraftText}
-          />
-        ) : null}
+     
+
+        <div className={cn("border-y border-[#cbd0dc] bg-white/70", compact ? "mt-4" : "mt-5")}>
+          <div className={cn("mx-auto flex overflow-x-auto", compact ? "max-w-none gap-6 px-4" : "max-w-[1180px] gap-8 px-0")}>
+            <ProgressListTab active={activeKind === "doctor"} compact={compact} label={`Doctor Notes (${doctorCountLabel})`} onClick={() => setActiveKind("doctor")} />
+            <ProgressListTab active={activeKind === "care-plan"} compact={compact} label={`Care Plans (${carePlanCountLabel})`} onClick={() => setActiveKind("care-plan")} />
+          </div>
+        </div>
+
+        <div className={cn("mx-auto space-y-0 bg-white/40", compact ? "max-h-[56dvh] max-w-none overflow-y-auto px-4" : "max-w-[1180px]")}>
+          {visibleNotes.map((note, index) => (
+            <ProgressTimelineNote
+              active={selectedNote?.id === note.id}
+              compact={compact}
+              key={note.id}
+              note={note}
+              onClick={() => setSelectedNoteId(note.id)}
+              onEdit={() => openEdit(note)}
+              onPrint={() => printProgressNote(note, patient, uhid, wardBed)}
+              onView={() => setFullNote(note)}
+              primary={index === 0}
+            />
+          ))}
+        </div>
       </div>
 
-      <CardContent className={cn("overflow-y-auto bg-slate-50 p-4", compact ? "max-h-[70dvh]" : "max-h-[68dvh]")}>
-        <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                {activeKind === "doctor" ? "Doctor Notes" : "Care Plans"}
-              </div>
-              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500 shadow-sm">
-                {visibleNotes.length} item{visibleNotes.length === 1 ? "" : "s"}
-              </span>
-            </div>
-            {visibleNotes.map((note) => (
-              <ProgressNoteCard
-                active={selectedNote?.id === note.id}
-                key={note.id}
-                note={note}
-                onClick={() => setSelectedNoteId(note.id)}
-              />
-            ))}
-          </div>
+      {drawerKind ? (
+        <ProgressNoteDrawer
+          form={form}
+          isEditing={Boolean(editingNoteId)}
+          kind={drawerKind}
+          onChange={updateForm}
+          onClose={() => setDrawerKind(null)}
+          onSave={saveDraft}
+          patient={patient}
+          uhid={uhid}
+          wardBed={wardBed}
+        />
+      ) : null}
 
+      {fullNote ? (
+        <ProgressNoteFullView
+          note={fullNote}
+          onClose={() => setFullNote(null)}
+          onEdit={() => {
+            setFullNote(null);
+            openEdit(fullNote);
+          }}
+          onPrint={() => printProgressNote(fullNote, patient, uhid, wardBed)}
+          patient={patient}
+          uhid={uhid}
+          wardBed={wardBed}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function PatientProgressHeader({ compact, patient, uhid, wardBed }: { compact: boolean; patient: ProgressNotePatient; uhid: string; wardBed: string }) {
+  return (
+    <section className={cn("rounded-lg border border-[#b8becb] bg-white shadow-sm", compact ? "mx-4 mt-4 px-4 py-4" : "mt-4 px-5 py-5")}>
+      <div className={cn("grid gap-4 lg:items-center", compact ? "xl:grid-cols-[minmax(210px,1fr)_minmax(150px,0.6fr)_minmax(190px,0.8fr)_minmax(270px,1fr)]" : "xl:grid-cols-[minmax(240px,1fr)_minmax(180px,0.7fr)_minmax(220px,0.9fr)_minmax(320px,1.25fr)]")}>
+        <div className={cn("flex min-w-0 items-center", compact ? "gap-3" : "gap-4")}>
+          <div className={cn("grid shrink-0 place-items-center rounded-full bg-[#d9e0f3] font-extrabold text-[#0f285a]", compact ? "h-12 w-12 text-lg" : "h-16 w-16 text-xl")}>{initials(patient.name)}</div>
           <div className="min-w-0">
-            {selectedNote ? (
-              <ProgressNoteDetail note={selectedNote} />
-            ) : (
-              <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm font-semibold text-slate-500">
-                No notes available.
-              </div>
-            )}
+            <div className={cn("truncate font-extrabold text-[#191d27]", compact ? "text-lg" : "text-xl")}>{patient.name}</div>
+            <div className={cn("mt-1 font-bold text-[#4e5362]", compact ? "text-sm" : "text-base")}>MRN: {uhid} - 45/M</div>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
 
-function ProgressNoteDraft({
-  kind,
-  onCancel,
-  onSave,
-  onTextChange,
-  patientName,
-  text,
-}: {
-  kind: ProgressNoteKind;
-  onCancel: () => void;
-  onSave: () => void;
-  onTextChange: (value: string) => void;
-  patientName: string;
-  text: string;
-}) {
-  const label = kind === "doctor" ? "Doctor Note" : kind === "nurse" ? "Nurse Note" : "Care Plan";
+        <DividerBlock compact={compact} label="Ward / Bed" value={wardBed} />
+        <DividerBlock compact={compact} label="Diagnosis" value={patient.diagnosis} strong />
 
-  return (
-    <div className="mt-3 rounded-lg border border-primary/25 bg-primary-soft/60 p-3">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="text-sm font-bold text-foreground">Add {label}</div>
-          <div className="text-xs font-medium text-muted-foreground">Drafting {label.toLowerCase()} for {patientName}</div>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button disabled={!text.trim()} size="sm" type="button" onClick={onSave}>
-            Save Draft
-          </Button>
+        <div className="min-w-0">
+          <div className="text-xs font-extrabold uppercase text-[#202533]">Current Vitals</div>
+          <div className={cn("mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4", !compact && "lg:gap-3")}>
+            <VitalsTile compact={compact} label="BP" value={`${patient.abps.value}/${patient.abpd.value}`} />
+            <VitalsTile compact={compact} label="Pulse" value={String(patient.hr.value)} tone={patient.hr.value > 100 ? "danger" : "default"} />
+            <VitalsTile compact={compact} label="SpO2" value={`${patient.spo2.value}%`} />
+            <VitalsTile compact={compact} label="Temp" value={`${patient.temperature.value}C`} />
+          </div>
         </div>
       </div>
-      <textarea
-        className="mt-3 min-h-24 w-full resize-y rounded-md border border-input bg-white px-3 py-2 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20"
-        onChange={(event) => onTextChange(event.target.value)}
-        placeholder={
-          kind === "doctor"
-            ? "Enter assessment, treatment plan, and review instructions..."
-            : kind === "nurse"
-              ? "Enter bedside observation, care provided, and handover plan..."
-              : "Enter goals, interventions, monitoring schedule, and escalation plan..."
-        }
-        value={text}
-      />
-    </div>
+    </section>
   );
 }
 
-function ProgressMetric({ label, value }: { label: string; value: string }) {
+function DividerBlock({ compact, label, strong = false, value }: { compact: boolean; label: string; strong?: boolean; value: string }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm">
-      <div className="text-[10px] font-bold uppercase text-slate-500">{label}</div>
-      <div className="mt-0.5 whitespace-nowrap text-sm font-extrabold text-slate-950">{value}</div>
+    <div className={cn("min-w-0 border-l border-[#aeb4c2]", compact ? "pl-4" : "pl-8")}>
+      <div className="text-xs font-extrabold uppercase text-[#202533]">{label}</div>
+      <div className={cn("mt-1 truncate font-extrabold", compact ? "text-sm" : "text-base", strong ? "text-[#0b4aa2]" : "text-[#191d27]")}>{value}</div>
     </div>
   );
 }
 
-function ProgressNoteTab({
+function VitalsTile({ compact, label, tone = "default", value }: { compact: boolean; label: string; tone?: "default" | "danger"; value: string }) {
+  return (
+    <div className={cn("min-w-0 rounded-md bg-[#e6e8ef] text-center", compact ? "px-2 py-2" : "px-3 py-2")}>
+      <div className={cn("font-extrabold text-[#626879]", compact ? "text-[11px]" : "text-xs")}>{label}</div>
+      <div className={cn("mt-0.5 truncate font-extrabold text-[#1f2430]", compact ? "text-sm" : "text-base", tone === "danger" && "text-[#b51d2c]")}>{value}</div>
+    </div>
+  );
+}
+
+function ProgressListTab({ active, compact, label, onClick }: { active: boolean; compact: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      className={cn(
+        "relative text-center font-extrabold transition hover:text-[#0b4aa2]",
+        compact ? "h-14 min-w-[180px] px-3 text-sm" : "h-20 min-w-[210px] px-5 text-base",
+        active ? "text-[#0b4aa2]" : "text-[#373c49]",
+      )}
+      onClick={onClick}
+      type="button"
+    >
+      {label}
+      <span className={cn("absolute bottom-0 left-0 h-1 w-full rounded-t-full bg-[#0b4aa2] transition", active ? "opacity-100" : "opacity-0")} />
+    </button>
+  );
+}
+
+function ProgressTimelineNote({
   active,
-  count,
-  icon: Icon,
-  label,
+  compact,
+  note,
   onClick,
+  onEdit,
+  onPrint,
+  onView,
+  primary,
 }: {
   active: boolean;
-  count: number;
-  icon: typeof ClipboardCheck;
-  label: string;
+  compact: boolean;
+  note: ProgressNote;
   onClick: () => void;
+  onEdit: () => void;
+  onPrint: () => void;
+  onView: () => void;
+  primary: boolean;
 }) {
   return (
-    <button
-      className={cn(
-        "inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-bold transition md:flex-none",
-        active ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:bg-white/80 hover:text-slate-950",
-      )}
+    <article
+      className={cn("relative cursor-pointer border-b border-[#c4c9d5] focus:outline-none focus:ring-2 focus:ring-[#0b4aa2]/20", compact ? "px-2 py-5" : "px-0 py-8", active && "bg-white")}
       onClick={onClick}
-      type="button"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
-      <Icon className="h-4 w-4" />
-      {label}
-      <span className={cn("rounded-full px-2 py-0.5 text-xs", active ? "bg-primary-soft text-primary" : "bg-white text-slate-500")}>{count}</span>
-    </button>
-  );
-}
+        <div className={cn("grid gap-5", compact ? "xl:grid-cols-[1fr_minmax(300px,0.85fr)]" : "lg:grid-cols-[1fr_minmax(320px,0.95fr)]")}>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-extrabold uppercase tracking-[0.16em] text-[#0b4aa2]">{note.title}</span>
+              <span className="inline-flex items-center gap-2 text-sm font-extrabold text-[#1c202b]">
+                <UserRound className="h-6 w-6 rounded-full bg-[#d6e2ee] p-1 text-[#0b4aa2]" />
+                {note.author}
+              </span>
+              <span className="text-sm font-semibold text-[#656b78]">{note.timestamp}</span>
+            </div>
 
-function ProgressNoteCard({ active, note, onClick }: { active: boolean; note: ProgressNote; onClick: () => void }) {
-  const excerpt = note.subjective ?? note.assessment;
+            {note.subjective ? (
+              <ProgressTextBlock className="mt-6" label="Subjective" value={note.subjective} />
+            ) : null}
+            <ProgressTextBlock className="mt-5" label="Objective" value={note.objective} />
 
-  return (
-    <button
-      className={cn(
-        "group w-full rounded-lg border bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20",
-        active ? "border-primary ring-2 ring-primary/10" : "border-slate-200",
-      )}
-      onClick={onClick}
-      type="button"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold", priorityPillClass(note.priority))}>{note.priority}</span>
-            <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", statusPillClass(note.status))}>
-              <CheckCircle2 className="h-3 w-3" />
+            <div className="mt-8 flex flex-wrap gap-5">
+              <button
+                className="text-sm font-extrabold text-[#0b4aa2]"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onView();
+                }}
+              >
+                View Full
+              </button>
+              <button
+                className="text-sm font-extrabold text-[#565c69]"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit();
+                }}
+              >
+                Edit
+              </button>
+              <button
+                className="inline-flex items-center gap-1 text-sm font-extrabold text-[#565c69]"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onPrint();
+                }}
+              >
+                <Printer className="h-4 w-4" />
+                Print
+              </button>
+            </div>
+          </div>
+
+          <div className={cn("min-w-0", !primary && "hidden lg:block")}>
+            <ProgressTextBlock label="Assessment" value={note.assessment} />
+            <ProgressTextBlock className="mt-5" label="Plan" value={note.plan} />
+          </div>
+
+          <div className="absolute right-4 mt-0 hidden items-center gap-4 lg:flex">
+            <span className={cn("inline-flex items-center gap-1.5 text-xs font-extrabold uppercase", statusTextClass(note.status))}>
+              <CheckCircle2 className="h-4 w-4" />
               {note.status}
             </span>
-          </div>
-          <div>
-            <h3 className="truncate text-sm font-extrabold text-slate-950">{note.title}</h3>
-            <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-slate-500">{excerpt}</p>
-          </div>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
-            <span className="inline-flex items-center gap-1">
-              <UserRound className="h-3.5 w-3.5" />
-              {note.author}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Clock3 className="h-3.5 w-3.5" />
-              {note.timestamp}
-            </span>
+            <MoreVertical className="h-5 w-5 text-[#545b69]" />
           </div>
         </div>
-        <ChevronRight className={cn("mt-1 h-4 w-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-primary", active && "text-primary")} />
-      </div>
-    </button>
-  );
-}
-
-function ProgressNoteDetail({ note }: { note: ProgressNote }) {
-  return (
-    <article className={cn("overflow-hidden rounded-lg border bg-white shadow-sm", priorityBorderClass(note.priority))}>
-      <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-4 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-extrabold text-slate-950">{note.title}</h3>
-            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold", priorityPillClass(note.priority))}>{note.priority}</span>
-            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold", statusPillClass(note.status))}>
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              {note.status}
-            </span>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-500">
-            <span className="inline-flex items-center gap-1.5">
-              <UserRound className="h-3.5 w-3.5" />
-              {note.author}
-            </span>
-            <span>{note.designation}</span>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1">
-            <Clock3 className="h-3.5 w-3.5" />
-            {note.timestamp}
-          </span>
-        </div>
-      </div>
-
-      <div className="grid gap-x-6 gap-y-4 p-5 md:grid-cols-2">
-        {note.subjective ? <ProgressTextBlock label="Subjective" value={note.subjective} /> : null}
-        <ProgressTextBlock label="Objective" value={note.objective} />
-        <ProgressTextBlock label="Assessment" value={note.assessment} />
-        <ProgressTextBlock label="Plan" value={note.plan} />
-      </div>
-      {note.acknowledgedBy ? (
-        <div className="border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs font-semibold text-slate-500">
-          Acknowledged by: <span className="text-slate-950">{note.acknowledgedBy}</span>
-        </div>
-      ) : null}
     </article>
   );
 }
 
-function ProgressTextBlock({ label, value }: { label: string; value: string }) {
+function ProgressTextBlock({ className, label, value }: { className?: string; label: string; value: string }) {
   return (
-    <div className="min-w-0">
-      <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</div>
-      <p className="mt-1 text-sm font-semibold leading-6 text-slate-900">{value}</p>
+    <div className={className}>
+      <h3 className="text-base font-extrabold uppercase tracking-wide text-[#202533]">{label}</h3>
+      <p className="mt-2 max-w-[720px] text-base font-semibold leading-7 text-[#2f3440]">{value}</p>
     </div>
   );
 }
 
-function priorityBorderClass(priority: ProgressNote["priority"]) {
-  if (priority === "Urgent") return "border-l-4 border-l-danger border-border";
-  if (priority === "Watch") return "border-l-4 border-l-warning border-border";
-  return "border-border";
+function ProgressNoteDrawer({
+  form,
+  isEditing,
+  kind,
+  onChange,
+  onClose,
+  onSave,
+  patient,
+  uhid,
+  wardBed,
+}: {
+  form: NoteFormState;
+  isEditing: boolean;
+  kind: ProgressNoteKind;
+  onChange: (field: keyof NoteFormState, value: string) => void;
+  onClose: () => void;
+  onSave: () => void;
+  patient: ProgressNotePatient;
+  uhid: string;
+  wardBed: string;
+}) {
+  const isCarePlan = kind === "care-plan";
+
+  return (
+    <div className="fixed inset-0 z-[80] bg-black/45" role="presentation">
+      <section
+        aria-label={isCarePlan ? "New care plan" : "New doctor note"}
+        className="fixed inset-y-0 right-0 flex w-full max-w-[1120px] flex-col overflow-hidden bg-[#f7f8ff] shadow-[-24px_0_50px_rgba(15,23,42,0.22)]"
+        role="dialog"
+      >
+        <div className="flex items-center justify-between px-7 py-6">
+          <h2 className="text-2xl font-extrabold text-[#202331]">{isEditing ? "Edit" : "New"} {isCarePlan ? "Care Plan" : "Doctor Note"}</h2>
+          <button aria-label="Close note drawer" className="grid h-10 w-10 place-items-center rounded-md text-[#1f2430] hover:bg-[#e7eaf4]" onClick={onClose} type="button">
+            <X className="h-8 w-8" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto pb-28">
+          <div className="px-7">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-[#e1e4ee] px-4 py-3">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-base font-bold text-[#4a5060]">
+                <span className="font-extrabold text-[#1f2430]">{patient.name}</span>
+                <span>MRN: {uhid}</span>
+                <span>{wardBed}</span>
+              </div>
+              <div className="max-w-full truncate text-base font-extrabold text-[#0755bf]">{patient.diagnosis}</div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 bg-[#b6c8ff] px-7 py-3 text-base font-extrabold text-[#3c4973]">
+            <span className="uppercase tracking-wide">Current Vitals</span>
+            <div className="flex flex-wrap gap-x-8 gap-y-1">
+              <span>BP: {patient.abps.value}/{patient.abpd.value}</span>
+              <span>Pulse: {patient.hr.value}</span>
+              <span>SpO2: {patient.spo2.value}%</span>
+              <span>Temp: {patient.temperature.value}C</span>
+            </div>
+          </div>
+
+          <div className="space-y-6 px-7 py-6">
+            <DrawerSection title="Clinical Metadata">
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field label="Note Type">
+                  <div className="relative">
+                    <select className={fieldClass("appearance-none pr-10")} value={form.noteType} onChange={(event) => onChange("noteType", event.target.value)}>
+                      <option>{isCarePlan ? "Interdisciplinary Care Plan" : "Daily Progress Note"}</option>
+                      <option>SOAP Progress Note</option>
+                      <option>Consultant Review Note</option>
+                      <option>Procedure Follow-up Note</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#747b8c]" />
+                  </div>
+                </Field>
+                <Field label="Visit Time">
+                  <div className="relative">
+                    <input className={fieldClass("pr-11")} value={form.visitTime} onChange={(event) => onChange("visitTime", event.target.value)} />
+                    <CalendarDays className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#111827]" />
+                  </div>
+                </Field>
+              </div>
+            </DrawerSection>
+
+            <DrawerSection title={isCarePlan ? "Care Goals" : "Subjective (S)"}>
+              <textarea className={textAreaClass("min-h-[156px]")} placeholder={isCarePlan ? "Enter goals, patient needs, and care priorities..." : "Enter patient's words and history..."} value={form.subjective} onChange={(event) => onChange("subjective", event.target.value)} />
+            </DrawerSection>
+
+            <DrawerSection title={isCarePlan ? "Interventions" : "Objective (O)"}>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <input className={fieldClass()} placeholder="BP" value={form.bp} onChange={(event) => onChange("bp", event.target.value)} />
+                <input className={fieldClass()} placeholder="HR" value={form.hr} onChange={(event) => onChange("hr", event.target.value)} />
+                <input className={fieldClass()} placeholder="RR" value={form.rr} onChange={(event) => onChange("rr", event.target.value)} />
+                <input className={fieldClass()} placeholder="Temp" value={form.temp} onChange={(event) => onChange("temp", event.target.value)} />
+              </div>
+              <textarea className={textAreaClass("mt-5 min-h-[132px]")} placeholder={isCarePlan ? "Planned interventions, monitoring schedule, and ownership..." : "Physical Examination findings..."} value={form.objectiveExam} onChange={(event) => onChange("objectiveExam", event.target.value)} />
+            </DrawerSection>
+
+            <DrawerSection title={isCarePlan ? "Expected Outcomes" : "Assessment (A)"}>
+              <textarea className={textAreaClass("min-h-[132px]")} placeholder={isCarePlan ? "Expected outcomes and review criteria..." : "Clinical impression and differential diagnosis..."} value={form.assessment} onChange={(event) => onChange("assessment", event.target.value)} />
+            </DrawerSection>
+
+            <DrawerSection title={isCarePlan ? "Escalation Plan" : "Plan (P)"}>
+              <textarea className={textAreaClass("min-h-[132px]")} placeholder={isCarePlan ? "Escalation triggers, handover items, and next review..." : "Treatment plan, orders, follow-up, and counseling..."} value={form.plan} onChange={(event) => onChange("plan", event.target.value)} />
+            </DrawerSection>
+          </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between border-t border-[#cdd3e2] bg-[#f0f3ff] px-8 py-5">
+          <button className="text-base font-extrabold text-[#7b8190]" onClick={onClose} type="button">Cancel</button>
+          <div className="flex gap-4">
+            <Button className="h-12 rounded-md border-[#9ba3b5] px-8 text-base font-extrabold text-[#0755bf]" type="button" variant="outline" onClick={onSave} disabled={!hasDraftContent(form)}>
+              {isEditing ? "Save Changes" : "Save Draft"}
+            </Button>
+            <Button className="h-12 rounded-md bg-[#0755d8] px-9 text-base font-extrabold text-white shadow-sm hover:bg-[#0649ba]" type="button" onClick={onSave} disabled={!hasDraftContent(form)}>
+              Sign & Save Note
+            </Button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
 
-function priorityPillClass(priority: ProgressNote["priority"]) {
-  if (priority === "Urgent") return "bg-danger/10 text-danger";
-  if (priority === "Watch") return "bg-warning/10 text-warning";
-  return "bg-info/10 text-info";
+function ProgressNoteFullView({
+  note,
+  onClose,
+  onEdit,
+  onPrint,
+  patient,
+  uhid,
+  wardBed,
+}: {
+  note: ProgressNote;
+  onClose: () => void;
+  onEdit: () => void;
+  onPrint: () => void;
+  patient: ProgressNotePatient;
+  uhid: string;
+  wardBed: string;
+}) {
+  return (
+    <div className="fixed inset-0 z-[90] grid place-items-center bg-black/45 px-4 py-6">
+      <section className="flex max-h-[88dvh] w-full max-w-[920px] flex-col overflow-hidden rounded-lg border border-[#c8cedc] bg-white shadow-2xl" role="dialog" aria-label="Progress note full view">
+        <div className="flex items-start justify-between gap-4 border-b border-[#d8deea] px-5 py-4">
+          <div className="min-w-0">
+            <h2 className="text-xl font-extrabold text-[#202331]">{note.title}</h2>
+            <p className="mt-1 text-sm font-bold text-[#5f6676]">
+              {patient.name} | MRN: {uhid} | {wardBed}
+            </p>
+          </div>
+          <button aria-label="Close full note" className="grid h-9 w-9 place-items-center rounded-md text-[#1f2430] hover:bg-[#eef2f7]" onClick={onClose} type="button">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div className="flex flex-wrap items-center gap-3 border-b border-[#d8deea] pb-4">
+            <span className="inline-flex items-center gap-2 text-sm font-extrabold text-[#1c202b]">
+              <UserRound className="h-6 w-6 rounded-full bg-[#d6e2ee] p-1 text-[#0b4aa2]" />
+              {note.author}
+            </span>
+            <span className="text-sm font-semibold text-[#656b78]">{note.designation}</span>
+            <span className="text-sm font-semibold text-[#656b78]">{note.timestamp}</span>
+            <span className={cn("ml-auto inline-flex items-center gap-1.5 text-xs font-extrabold uppercase", statusTextClass(note.status))}>
+              <CheckCircle2 className="h-4 w-4" />
+              {note.status}
+            </span>
+          </div>
+
+          <div className="grid gap-5 py-5 md:grid-cols-2">
+            {note.subjective ? <ProgressTextBlock label="Subjective" value={note.subjective} /> : null}
+            <ProgressTextBlock label="Objective" value={note.objective} />
+            <ProgressTextBlock label="Assessment" value={note.assessment} />
+            <ProgressTextBlock label="Plan" value={note.plan} />
+          </div>
+
+          {note.acknowledgedBy ? (
+            <div className="rounded-md border border-[#d8deea] bg-[#f8faff] px-4 py-3 text-sm font-bold text-[#5f6676]">
+              Acknowledged by: <span className="text-[#202331]">{note.acknowledgedBy}</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-[#d8deea] bg-[#f8faff] px-5 py-4">
+          <Button className="h-10 rounded-md px-5 text-sm font-extrabold" type="button" variant="outline" onClick={onEdit}>
+            Edit
+          </Button>
+          <Button className="h-10 rounded-md px-5 text-sm font-extrabold" type="button" onClick={onPrint}>
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
+        </div>
+      </section>
+    </div>
+  );
 }
 
-function statusPillClass(status: ProgressNote["status"]) {
-  if (status === "Signed") return "bg-success/10 text-success";
-  if (status === "Reviewed") return "bg-info/10 text-info";
-  return "bg-warning/10 text-warning";
+function DrawerSection({ children, title }: { children: React.ReactNode; title: string }) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-[#c5cbdb] bg-[#fbfbff]">
+      <div className="flex items-center justify-between border-b border-[#c5cbdb] bg-[#f2f4ff] px-5 py-4">
+        <h3 className="text-base font-extrabold uppercase text-[#202533]">{title}</h3>
+        <ChevronDown className="h-6 w-6 text-[#111827]" />
+      </div>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function Field({ children, label }: { children: React.ReactNode; label: string }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-extrabold text-[#4d5362]">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function fieldClass(extra?: string) {
+  return cn(
+    "h-12 w-full rounded-md border border-[#c5cbdb] bg-white px-3 text-base font-semibold text-[#242735] outline-none transition placeholder:text-[#242735] focus:border-[#0755d8] focus:ring-2 focus:ring-[#0755d8]/15",
+    extra,
+  );
+}
+
+function textAreaClass(extra?: string) {
+  return cn(
+    "w-full resize-y rounded-md border border-[#c5cbdb] bg-white px-4 py-4 text-base font-semibold leading-7 text-[#242735] outline-none transition placeholder:text-[#242735] focus:border-[#0755d8] focus:ring-2 focus:ring-[#0755d8]/15",
+    extra,
+  );
+}
+
+function statusTextClass(status: ProgressNote["status"]) {
+  if (status === "Signed") return "text-[#137243]";
+  if (status === "Reviewed") return "text-[#0755bf]";
+  return "text-[#9a5a00]";
+}
+
+function initials(name: string) {
+  const parts = name.split(/\s+/).filter(Boolean);
+  return `${parts[0]?.[0] ?? "P"}${parts[1]?.[0] ?? ""}`.toUpperCase();
+}
+
+function createInitialForm(patient: ProgressNotePatient, kind: ProgressNoteKind = "doctor"): NoteFormState {
+  return {
+    noteType: kind === "care-plan" ? "Interdisciplinary Care Plan" : "Daily Progress Note",
+    visitTime: "24/10/2023, 09:15 AM",
+    subjective: "",
+    bp: `${patient.abps.value}/${patient.abpd.value}`,
+    hr: String(patient.hr.value),
+    rr: "20",
+    temp: `${patient.temperature.value}C`,
+    objectiveExam: "",
+    assessment: "",
+    plan: "",
+  };
+}
+
+function createFormFromNote(note: ProgressNote, patient: ProgressNotePatient): NoteFormState {
+  return {
+    noteType: note.title,
+    visitTime: note.timestamp,
+    subjective: note.subjective ?? "",
+    bp: `${patient.abps.value}/${patient.abpd.value}`,
+    hr: String(patient.hr.value),
+    rr: "20",
+    temp: `${patient.temperature.value}C`,
+    objectiveExam: note.objective,
+    assessment: note.assessment,
+    plan: note.plan,
+  };
+}
+
+function hasDraftContent(form: NoteFormState) {
+  return [form.subjective, form.objectiveExam, form.assessment, form.plan].some((value) => value.trim().length > 0);
 }
 
 function createSavedProgressNote({
+  existingNote,
+  form,
   kind,
   patient,
   rapidReviewPatient,
-  text,
   tone,
 }: {
+  existingNote?: ProgressNote;
+  form: NoteFormState;
   kind: ProgressNoteKind;
   patient: ProgressNotePatient;
   rapidReviewPatient?: ProgressNoteRapidReviewPatient;
-  text: string;
   tone: ProgressNoteTone;
 }): ProgressNote {
   const now = new Date();
   const timestamp = now.toLocaleString("en-IN", {
     day: "2-digit",
-    month: "2-digit",
+    month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
@@ -445,56 +710,138 @@ function createSavedProgressNote({
   const author = isDoctor ? rapidReviewPatient?.consultant ?? doctor : isCarePlan ? "Care Team" : nurse;
 
   return {
-    id: `${kind}-${patient.id}-${now.getTime()}`,
+    id: existingNote && !isBaseProgressNoteId(existingNote.id) ? existingNote.id : `${kind}-${patient.id}-${now.getTime()}`,
     kind,
     timestamp,
     author,
     designation: isDoctor ? "Consultant Doctor" : isCarePlan ? "Multidisciplinary Care Plan" : "Primary Nurse",
     status: "Draft",
     priority: tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Routine",
-    title: isDoctor ? "Doctor Progress Note" : isCarePlan ? "Care Plan" : "Nurse Progress Note",
-    objective: text,
-    assessment: isDoctor
-      ? "Doctor note saved for clinical review and treatment continuity."
-      : isCarePlan
-        ? "Care plan saved for team alignment and bedside execution."
-        : "Nurse note saved for bedside care continuity and shift handover.",
-    plan: isDoctor
-      ? "Review, sign, and communicate updated orders to the care team."
-      : isCarePlan
-        ? "Track planned interventions, monitor outcomes, and update during rounds."
-        : "Continue assigned care plan and escalate changes as per protocol.",
+    title: isDoctor ? form.noteType : isCarePlan ? "Care Plan" : "Nurse Progress Note",
+    subjective: form.subjective || undefined,
+    objective: `BP ${form.bp}, HR ${form.hr}, RR ${form.rr}, Temp ${form.temp}. ${form.objectiveExam}`.trim(),
+    assessment: form.assessment || "Draft assessment pending.",
+    plan: form.plan || "Draft plan pending.",
     acknowledgedBy: isDoctor || isCarePlan ? nurse : rapidReviewPatient?.consultant ?? doctor,
   };
 }
 
+function printProgressNote(note: ProgressNote, patient: ProgressNotePatient, uhid: string, wardBed: string) {
+  const printFrame = document.createElement("iframe");
+  printFrame.setAttribute("aria-hidden", "true");
+  printFrame.style.position = "fixed";
+  printFrame.style.right = "0";
+  printFrame.style.bottom = "0";
+  printFrame.style.width = "0";
+  printFrame.style.height = "0";
+  printFrame.style.border = "0";
+
+  document.body.appendChild(printFrame);
+
+  const printDocument = printFrame.contentWindow?.document;
+  if (!printDocument) {
+    printFrame.remove();
+    window.print();
+    return;
+  }
+
+  printDocument.open();
+  printDocument.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <title>${escapeHtml(note.title)}</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #1f2430; margin: 32px; }
+          header { border-bottom: 2px solid #d8deea; margin-bottom: 24px; padding-bottom: 16px; }
+          h1 { font-size: 22px; margin: 0 0 8px; }
+          .meta { color: #5f6676; font-size: 13px; font-weight: 700; line-height: 1.6; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+          h2 { font-size: 13px; letter-spacing: .08em; margin: 0 0 8px; text-transform: uppercase; }
+          p { font-size: 14px; font-weight: 600; line-height: 1.6; margin: 0; white-space: pre-wrap; }
+          .section { break-inside: avoid; margin-bottom: 22px; }
+          @media print { body { margin: 20mm; } }
+        </style>
+      </head>
+      <body>
+        <header>
+          <h1>${escapeHtml(note.title)}</h1>
+          <div class="meta">${escapeHtml(patient.name)} | MRN: ${escapeHtml(uhid)} | ${escapeHtml(wardBed)}</div>
+          <div class="meta">${escapeHtml(note.author)} | ${escapeHtml(note.designation)} | ${escapeHtml(note.timestamp)} | ${escapeHtml(note.status)}</div>
+        </header>
+        <main class="grid">
+          ${note.subjective ? printSection("Subjective", note.subjective) : ""}
+          ${printSection("Objective", note.objective)}
+          ${printSection("Assessment", note.assessment)}
+          ${printSection("Plan", note.plan)}
+        </main>
+      </body>
+    </html>
+  `);
+  const cleanupPrintFrame = () => {
+    window.setTimeout(() => printFrame.remove(), 250);
+  };
+
+  printDocument.close();
+
+  window.setTimeout(() => {
+    const frameWindow = printFrame.contentWindow;
+    if (!frameWindow) {
+      cleanupPrintFrame();
+      return;
+    }
+
+    frameWindow.onafterprint = cleanupPrintFrame;
+    frameWindow.focus();
+    frameWindow.print();
+    window.setTimeout(cleanupPrintFrame, 60000);
+  }, 100);
+}
+
+function printSection(label: string, value: string) {
+  return `<section class="section"><h2>${escapeHtml(label)}</h2><p>${escapeHtml(value)}</p></section>`;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function isBaseProgressNoteId(id: string) {
+  return ["doctor-1", "doctor-2", "nurse-1", "care-plan-1"].includes(id);
+}
+
 function buildProgressNotes(patient: ProgressNotePatient, rapidReviewPatient: ProgressNoteRapidReviewPatient | undefined, tone: ProgressNoteTone): ProgressNote[] {
-  const vitalsSummary = `HR ${patient.hr.value} bpm, SpO2 ${patient.spo2.value}%, BP ${patient.abps.value}/${patient.abpd.value}, Temp ${patient.temperature.value} C.`;
-  const doctor = tone === "red" ? "Dr. Amandeep Singh" : tone === "orange" ? "Dr. Meera Rao" : "Dr. Super Admin";
-  const nurse = tone === "red" ? "Nurse Jason Abbott" : tone === "orange" ? "Nurse Priya Menon" : "Nurse Super Admin";
+  const vitalsSummary = `T: ${patient.temperature.value}C   HR: ${patient.hr.value}   RR: 20   BP: ${patient.abps.value}/${patient.abpd.value}   O2: ${patient.spo2.value}% on room air.`;
+  const doctor = tone === "red" ? "Dr. Amandeep Singh" : tone === "orange" ? "Dr. Meera Rao" : "Dr. Sarah Miller, MD";
+  const nurse = tone === "red" ? "Mark Benson, RN" : tone === "orange" ? "Priya Menon, RN" : "Nurse Super Admin";
   const consultant = rapidReviewPatient?.consultant ?? doctor;
-  const urgentPlan = tone === "red" ? "Continue close monitoring, repeat vitals every 15 minutes, and escalate any deterioration immediately." : "Continue current care plan and repeat assessment in the next scheduled round.";
+  const urgentPlan = tone === "red" ? "Continue close monitoring, repeat vitals every 15 minutes, and escalate any deterioration immediately." : "Continue IV Ceftriaxone/Azithromycin. Incentive spirometry q2h. Repeat CXR tomorrow.";
 
   return [
     {
       id: "doctor-1",
       kind: "doctor",
-      timestamp: "17/06/2026 06:50 PM",
+      timestamp: "Oct 24, 2023 - 09:15 AM",
       author: consultant,
       designation: "Consultant Doctor",
       status: "Signed",
       priority: tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Routine",
-      title: "Doctor Progress Note",
-      subjective: `${patient.name} reviewed at bedside for ${patient.diagnosis}. Current complaints and nursing handover discussed with care team.`,
-      objective: vitalsSummary,
-      assessment: tone === "red" ? "Patient remains clinically high risk and requires active doctor-led monitoring." : "Patient is clinically stable with planned IPD observation.",
+      title: "SOAP Progress Note",
+      subjective: `Patient reports mild improvement in shortness of breath. Cough persists but is becoming more productive with clear/yellow sputum.`,
+      objective: `${vitalsSummary} Chest: Coarse crackles at right base. Heart: RRR, no murmurs.`,
+      assessment: `1. ${patient.diagnosis}, improving. 2. Hyponatremia, mild - stable.`,
       plan: urgentPlan,
       acknowledgedBy: nurse,
     },
     {
       id: "doctor-2",
       kind: "doctor",
-      timestamp: "17/06/2026 02:40 PM",
+      timestamp: "Oct 24, 2023 - 02:40 PM",
       author: "Dr. Kavita Rao",
       designation: "Duty Doctor",
       status: "Reviewed",
@@ -509,35 +856,21 @@ function buildProgressNotes(patient: ProgressNotePatient, rapidReviewPatient: Pr
     {
       id: "nurse-1",
       kind: "nurse",
-      timestamp: "17/06/2026 06:45 PM",
+      timestamp: "Oct 23, 2023 - 07:30 PM",
       author: nurse,
       designation: "Primary Nurse",
       status: "Signed",
       priority: tone === "red" ? "Urgent" : "Watch",
-      title: "Nurse Progress Note",
-      objective: `Evening assessment completed. ${vitalsSummary}`,
+      title: "Nursing Handover",
+      objective: "Patient tolerated evening nebulizer treatment well. Output within normal range. Family at bedside.",
       assessment: `${patient.diagnosis}. Patient safety, lines, medication, intake/output, and comfort needs reviewed.`,
       plan: "Maintain fall precautions, continue ordered monitoring, update doctor for abnormal vitals, and document next handover.",
       acknowledgedBy: consultant,
     },
     {
-      id: "nurse-2",
-      kind: "nurse",
-      timestamp: "17/06/2026 02:15 PM",
-      author: "Nurse Super Admin",
-      designation: "Shift Nurse",
-      status: "Reviewed",
-      priority: "Routine",
-      title: "Shift Care Update",
-      objective: "Medication round completed. Bedside hygiene, diet tolerance, and comfort checked.",
-      assessment: "Patient tolerated routine care during the shift. No new adverse event reported.",
-      plan: "Repeat vitals as scheduled and complete handover before shift close.",
-      acknowledgedBy: "Dr. Kavita Rao",
-    },
-    {
       id: "care-plan-1",
       kind: "care-plan",
-      timestamp: "17/06/2026 07:00 PM",
+      timestamp: "Oct 24, 2023 - 10:00 AM",
       author: "Care Team",
       designation: "Multidisciplinary Care Plan",
       status: "Reviewed",

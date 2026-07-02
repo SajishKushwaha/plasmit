@@ -338,7 +338,7 @@ export function DoctorDashboard1Page() {
                           <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
                         </td>
                         <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundActionButton icon={PhoneCall} tone="dark" label={`Open collaborate for ${patient.name}`} onClick={() => setCollaboratePatient(patient)} />
+                          <RoundActionButton disabled icon={PhoneCall} tone="dark" label={`Collaborate unavailable for ${patient.name}`} />
                         </td>
                       </tr>
                     );
@@ -401,7 +401,8 @@ export function DoctorDashboard1Page() {
         {medicationPatient ? <MedicationInterventionPopup patient={medicationPatient} /> : null}
       </CenterModal>
       <CenterModal
-        className="w-[min(94vw,1040px)]"
+        bodyClassName="p-0"
+        className="h-[min(88dvh,860px)] w-[min(94vw,1220px)]"
         description={shiftSummaryPatient ? `${shiftSummaryPatient.name} | ${shiftSummaryPatient.bed} | ${shiftSummaryPatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setShiftSummaryPatient(null)}
         open={Boolean(shiftSummaryPatient)}
@@ -498,26 +499,30 @@ function RoundActionButton({
   label,
   onClick,
   dataTestId,
+  disabled = false,
 }: {
   icon: React.ElementType;
   tone: "dark" | "red";
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
   dataTestId?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       aria-label={label}
       data-testid={dataTestId}
+      disabled={disabled}
       className={cn(
-        "relative z-20 inline-flex h-9 w-9 cursor-pointer select-none items-center justify-center rounded-full text-white shadow-[0_4px_9px_rgba(15,23,42,0.20)] transition hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400/40",
+        "relative z-20 inline-flex h-9 w-9 select-none items-center justify-center rounded-full text-white shadow-[0_4px_9px_rgba(15,23,42,0.20)] transition focus:outline-none focus:ring-2 focus:ring-slate-400/40",
+        disabled ? "cursor-not-allowed opacity-35 grayscale" : "cursor-pointer hover:scale-105 active:scale-95",
         tone === "dark" && "bg-[#4a4a4a]",
         tone === "red" && "bg-[#ff443e]",
       )}
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        onClick();
+        if (!disabled) onClick?.();
       }}
       type="button"
     >

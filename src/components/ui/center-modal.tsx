@@ -13,6 +13,7 @@ export function CenterModal({
   description,
   children,
   className,
+  bodyClassName,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -20,6 +21,7 @@ export function CenterModal({
   description?: string;
   children: React.ReactNode;
   className?: string;
+  bodyClassName?: string;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -42,7 +44,7 @@ export function CenterModal({
               </Button>
             </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-5">{children}</div>
+          <div className={cn("min-h-0 flex-1 overflow-auto p-3 sm:p-5", bodyClassName)}>{children}</div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

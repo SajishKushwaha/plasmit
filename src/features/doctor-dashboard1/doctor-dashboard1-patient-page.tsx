@@ -252,7 +252,6 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
           </TabsContent>
           <TabsContent className="mt-0" value="shift-summary">
             <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />
-            <h1>under development</h1>
           </TabsContent>
           <TabsContent className="mt-0" value="orders">
             <DoctorOrdersPage

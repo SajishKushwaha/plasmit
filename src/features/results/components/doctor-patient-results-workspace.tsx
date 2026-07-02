@@ -4,13 +4,15 @@ import * as React from "react";
 import { ChevronDown, Search, UserRound } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { DoctorOrdersPage, type DoctorOrdersPatientContext } from "@/features/doctor-orders/doctor-orders";
+import { PatientSummaryBanner } from "@/components/ui/patient-summary-banner";
 import { orderedPatients } from "@/features/doctor-dashboard1/doctor-dashboard1-page";
+import { rapidReviewPatients } from "@/features/rapid-review/rapid-review-data";
+import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
 
-export function DoctorPatientOrdersWorkspace() {
+export function DoctorPatientResultsWorkspace() {
   const [selectedPatientId, setSelectedPatientId] = React.useState(String(orderedPatients[0]?.id ?? ""));
   const selectedPatient = orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? orderedPatients[0];
-  const patientContext = selectedPatient ? toPatientContext(selectedPatient) : undefined;
+  const rapidReviewPatient = selectedPatient ? rapidReviewPatients.find((item) => item.id === selectedPatient.rapidReviewPatientId) : undefined;
   const [patientSearchOpen, setPatientSearchOpen] = React.useState(false);
   const [patientQuery, setPatientQuery] = React.useState(selectedPatient ? patientOptionLabel(selectedPatient) : "");
 
@@ -43,8 +45,8 @@ export function DoctorPatientOrdersWorkspace() {
       <Card className="rounded-md border-slate-200 shadow-sm">
         <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <div className="text-lg font-extrabold text-slate-950">Patient Orders</div>
-            <p className="mt-1 text-sm font-semibold text-slate-500">Select one patient to view and place orders for that patient.</p>
+            <div className="text-lg font-extrabold text-slate-950">Patient Results</div>
+            <p className="mt-1 text-sm font-semibold text-slate-500">Select one patient to view only that patient's results.</p>
           </div>
 
           <div className="w-full max-w-xl">
@@ -107,15 +109,42 @@ export function DoctorPatientOrdersWorkspace() {
         </CardContent>
       </Card>
 
-      {selectedPatient && patientContext ? (
-        <section className="min-w-0 rounded-md border border-slate-200 bg-white p-3 shadow-sm">
-          <DoctorOrdersPage key={selectedPatient.id} patientContext={patientContext} showPatientBanner />
+      {selectedPatient ? (
+        <section className="space-y-4">
+          <PatientSummaryBanner
+            title="Selected Patient Results"
+            fields={[
+              { label: "Name", value: selectedPatient.name },
+              { label: "UHID", value: rapidReviewPatient?.uhid ?? `DASH-${String(selectedPatient.id).padStart(4, "0")}` },
+              { label: "Age/Sex", value: rapidReviewPatient?.ageGender ?? "45/M" },
+              { label: "Ward/Bed", value: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : selectedPatient.bed },
+              { label: "Diagnosis", value: selectedPatient.diagnosis },
+            ]}
+          />
+          <ResultsCenterView
+            defaultDepartment="all"
+            key={selectedPatient.id}
+            patientContext={{
+              ageSex: rapidReviewPatient?.ageGender,
+              allergy: "Meropenem",
+              bed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : selectedPatient.bed,
+              bloodGroup: "AB +ve",
+              consultantDoctor: rapidReviewPatient?.consultant,
+              dob: "30-12-1995",
+              mrn: getResultPatientMrn(selectedPatient.id),
+              name: selectedPatient.name,
+              uhid: rapidReviewPatient?.uhid ?? `DASH-${String(selectedPatient.id).padStart(4, "0")}`,
+              wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : selectedPatient.bed,
+            }}
+            viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
+            viewTitle="Results Center"
+          />
         </section>
       ) : (
         <Card>
           <CardContent className="flex items-center gap-3 p-6 text-sm font-semibold text-slate-500">
             <UserRound className="h-5 w-5" />
-            No patient available for orders.
+            No patient available for results.
           </CardContent>
         </Card>
       )}
@@ -127,14 +156,19 @@ function patientOptionLabel(patient: (typeof orderedPatients)[number]) {
   return `${patient.name} | ${patient.bed} | ${patient.diagnosis}`;
 }
 
-function toPatientContext(patient: (typeof orderedPatients)[number]): DoctorOrdersPatientContext {
-  return {
-    id: `doctor-ipd-${patient.id}`,
-    name: patient.name,
-    uhid: `DASH-${String(patient.id).padStart(4, "0")}`,
-    ageSex: "45/M",
-    wardBed: patient.bed,
-    diagnosis: patient.diagnosis,
-    radiologyPatientId: `pat-${1000 + (((patient.id - 1) % 6) + 1)}`,
-  };
+function getResultPatientMrn(patientId: number) {
+  const resultMrns = [
+    "MRN-240118",
+    "MRN-240119",
+    "MRN-240121",
+    "MRN-240124",
+    "MRN-240126",
+    "MRN-240127",
+    "MRN-240130",
+    "MRN-240133",
+    "MRN-240135",
+    "MRN-240136",
+  ];
+
+  return resultMrns[(patientId - 1) % resultMrns.length];
 }

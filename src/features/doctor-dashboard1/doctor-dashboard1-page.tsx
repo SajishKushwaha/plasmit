@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Activity,
   ClipboardList,
-  Download,
   FileText,
   FileSpreadsheet,
   FlaskConical,
@@ -864,21 +863,6 @@ function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
 function DashboardRadiologyReportPopup({ patient }: { patient: Dashboard1Patient }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm">
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-900">Radiology report preview</p>
-          <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
-            {patient.name} | {patient.bed}
-          </p>
-        </div>
-        <Button asChild size="sm" variant="outline">
-          <a download="radiology-report.pdf" href={RADIOLOGY_REPORT_URL}>
-            <Download className="h-4 w-4" />
-            Download
-          </a>
-        </Button>
-      </div>
-
       <div className="min-h-0 flex-1 overflow-hidden rounded-md border border-slate-200 bg-slate-100 shadow-sm">
         <iframe
           className="h-[68dvh] w-full bg-white"

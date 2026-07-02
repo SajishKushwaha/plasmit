@@ -560,7 +560,7 @@ export function IcuCommandCenterPatientPage({
   return (
     <div className="min-w-0 max-w-full space-y-2 pb-8">
       {patient ? (
-        <section className="overflow-x-auto rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 px-3 py-2 text-white shadow-sm">
+        <section className="overflow-x-auto rounded-xl border border-[#dcd8ff] bg-gradient-to-r from-[#7064EC] via-[#6878E8] to-[#6888E8] px-3 py-2 text-white shadow-sm">
           <div className="flex min-w-max items-center gap-4 text-sm font-bold">
             <span className="text-base">{patient.patientName}</span>
             <span className="rounded-full border border-white/30 bg-red-500 px-3 py-1 text-xs uppercase tracking-wide text-white shadow-sm">
@@ -8001,7 +8001,7 @@ function OrdersCarePlansCommand() {
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 px-3 py-2.5 text-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-[#dcd8ff] bg-gradient-to-r from-[#7064EC] via-[#6878E8] to-[#6888E8] px-3 py-2.5 text-white shadow-sm">
         <div className="flex min-w-max items-center gap-4 text-sm font-bold">
           <span className="text-base">{patient.patientName}</span>
           <span className="rounded-full border border-white/30 bg-red-500 px-3 py-1 text-xs uppercase tracking-wide text-white shadow-sm">

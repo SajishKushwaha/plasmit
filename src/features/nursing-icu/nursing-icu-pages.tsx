@@ -7600,9 +7600,9 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
                         />
                         <WardNurseRoundAction
                           disabled={!profileVerified}
-                          href={`/icu-command-center/nursing/shift-handover?patientId=${row.patient.id}&focus=issue&locked=1`}
+                          href={icuPatientDetailHref(row.patient.id, "collaborate", undefined, "action=raise-unit-issue&locked=1")}
                           icon={ExternalLink}
-                          label="Handover"
+                          label="Raise Issue"
                         />
                       </div>
                     </td>

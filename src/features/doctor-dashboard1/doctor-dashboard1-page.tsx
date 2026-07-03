@@ -240,118 +240,106 @@ export function DoctorDashboard1Page() {
 
       <Card className="overflow-hidden rounded-md border-slate-200 shadow-sm">
         <CardContent className="p-0">
-          <div className="flex max-w-full overflow-hidden">
-            <div className="w-[190px] shrink-0 border-r border-slate-200 bg-white shadow-[8px_0_14px_rgba(15,23,42,0.04)]">
-              <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="h-14 border-b border-slate-200 bg-white text-slate-700">
-                    <HeaderCell className="h-14 w-[190px] min-w-[190px]">Patient</HeaderCell>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visiblePatients.map((patient) => {
-                    const tone = patientTone(patient);
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full min-w-[1460px] border-collapse text-left text-xs">
+              <thead>
+                <tr className="h-14 border-b border-slate-200 bg-white text-slate-700">
+                  <HeaderCell className="sticky left-0 z-50 h-14 w-[190px] min-w-[190px] border-r border-slate-200 bg-white shadow-[8px_0_14px_rgba(15,23,42,0.04)]">
+                    Patient
+                  </HeaderCell>
+                  <HeaderCell className="h-14 w-[230px] min-w-[230px]">Diagnosis</HeaderCell>
+                  <HeaderCell className="h-14">HR (bpm)</HeaderCell>
+                  <HeaderCell className="h-14">SpO2 (%)</HeaderCell>
+                  <HeaderCell className="h-14">ABPS (mmHg)</HeaderCell>
+                  <HeaderCell className="h-14">ABPD (mmHg)</HeaderCell>
+                  <HeaderCell className="h-14">Temperature<br />(°C)</HeaderCell>
+                  <HeaderCell className="h-14">Lab Results</HeaderCell>
+                  <HeaderCell className="h-14">Medication &<br />Intervention</HeaderCell>
+                  <HeaderCell className="h-14">Progress Note</HeaderCell>
+                  <HeaderCell className="h-14">Radiology</HeaderCell>
+                  <HeaderCell className="h-14">Events</HeaderCell>
+                  <HeaderCell className="h-14">Collaborate</HeaderCell>
+                </tr>
+              </thead>
+              <tbody>
+                {visiblePatients.map((patient) => {
+                  const tone = patientTone(patient);
 
-                    return (
-                      <tr className="h-[74px] border-b border-slate-100 bg-white font-semibold" key={patient.id}>
-                        <td className={cn("relative h-[74px] w-[190px] min-w-[190px] px-3 py-2", patientToneCellClass(tone))}>
-                          <span aria-hidden className={cn("pointer-events-none absolute inset-y-0 left-0 w-1", patientToneStripeClass(tone))} />
-                          <Link
-                            className="relative block min-h-12 rounded-md px-1 py-1 pl-2 transition hover:bg-white/70"
-                            href={`/doctor-dashboard1/patients/${patient.id}`}
-                          >
-                            <div className={cn("whitespace-nowrap text-sm font-extrabold leading-5", patientToneClass(tone))}>
-                              {patient.name}
-                            </div>
-                            <div className="mt-0.5 break-words font-semibold leading-4 text-slate-700">{patient.bed}</div>
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="min-w-0 flex-1 overflow-x-auto">
-              <table className="w-full min-w-[1270px] border-collapse text-left text-xs">
-                <thead>
-                  <tr className="h-14 border-b border-slate-200 bg-white text-slate-700">
-                    <HeaderCell className="h-14 w-[230px] min-w-[230px]">Diagnosis</HeaderCell>
-                    <HeaderCell className="h-14">HR (bpm)</HeaderCell>
-                    <HeaderCell className="h-14">SpO2 (%)</HeaderCell>
-                    <HeaderCell className="h-14">ABPS (mmHg)</HeaderCell>
-                    <HeaderCell className="h-14">ABPD (mmHg)</HeaderCell>
-                    <HeaderCell className="h-14">Temperature<br />(°C)</HeaderCell>
-                    <HeaderCell className="h-14">Lab Results</HeaderCell>
-                    <HeaderCell className="h-14">Medication &<br />Intervention</HeaderCell>
-                    <HeaderCell className="h-14">Progress Note</HeaderCell>
-                    <HeaderCell className="h-14">Radiology</HeaderCell>
-                    <HeaderCell className="h-14">Events</HeaderCell>
-                    <HeaderCell className="h-14">Collaborate</HeaderCell>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visiblePatients.map((patient) => {
-                    const tone = patientTone(patient);
-
-                    return (
-                      <tr className={cn("h-[74px] border-b border-slate-100 font-semibold", patientToneRowClass(tone))} key={patient.id}>
-                        <td className="h-[74px] w-[230px] min-w-[230px] px-3 py-2 text-center font-medium text-slate-800">
-                          <Link className="flex min-h-12 items-center justify-center rounded-md px-2 py-1 leading-4 transition hover:bg-slate-100" href={`/doctor-dashboard1/patients/${patient.id}?tab=clinical-examination`}>
-                            {patient.diagnosis}
-                          </Link>
-                        </td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.hr} href="" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.spo2} href="" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abps} href="" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} href="" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} href="" /></td>
-                        <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundActionButton
-                            icon={FlaskConical}
-                            tone="dark"
-                            label={`Open laboratory results for ${patient.name}`}
-                            onClick={() => setLabResultsPatient(patient)}
-                          />
-                        </td>
-                        <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundActionButton
-                            icon={Pill}
-                            tone="dark"
-                            label={`Open medication and intervention for ${patient.name}`}
-                            onClick={() => setMedicationPatient(patient)}
-                          />
-                        </td>
-                        <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundActionButton icon={ClipboardList} tone="dark" label={`Open progress note for ${patient.name}`} onClick={() => setShiftSummaryPatient(patient)} />
-                        </td>
-                        <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundActionButton
-                            icon={FileText}
-                            tone="dark"
-                            label={`Open radiology report for ${patient.name}`}
-                            onClick={() => setRadiologyPatient(patient)}
-                          />
-                        </td>
-                        <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
-                        </td>
-                        <td className="h-[74px] px-3 py-2 text-center">
-                          <RoundActionButton disabled icon={PhoneCall} tone="dark" label={`Collaborate unavailable for ${patient.name}`} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {!visiblePatients.length ? (
-                    <tr>
-                      <td className="px-4 py-12 text-center text-sm font-medium text-muted-foreground" colSpan={12}>
-                        No patient matched this search.
+                  return (
+                    <tr className={cn("h-[74px] border-b border-slate-100 font-semibold", patientToneRowClass(tone))} key={patient.id}>
+                      <td
+                        className={cn(
+                          "sticky left-0 z-40 h-[74px] w-[190px] min-w-[190px] border-r border-slate-200 px-3 py-2 shadow-[8px_0_14px_rgba(15,23,42,0.04)]",
+                          patientToneCellClass(tone),
+                        )}
+                      >
+                        <span aria-hidden className="pointer-events-none absolute inset-0 z-0 bg-white" />
+                        <span aria-hidden className={cn("pointer-events-none absolute inset-y-0 left-0 z-20 w-1", patientToneStripeClass(tone))} />
+                        <Link
+                          className="relative z-10 flex min-h-[58px] flex-col justify-center rounded-md px-1 py-1 pl-2 transition hover:bg-slate-50"
+                          href={`/doctor-dashboard1/patients/${patient.id}`}
+                        >
+                          <div className={cn("whitespace-nowrap text-sm font-extrabold leading-5", patientToneClass(tone))}>
+                            {patient.name}
+                          </div>
+                          <div className="mt-0.5 break-words font-semibold leading-4 text-slate-700">{patient.bed}</div>
+                        </Link>
+                      </td>
+                      <td className="h-[74px] w-[230px] min-w-[230px] px-3 py-2 text-center font-medium text-slate-800">
+                        <Link className="flex min-h-12 items-center justify-center rounded-md px-2 py-1 leading-4 transition hover:bg-slate-100" href={`/doctor-dashboard1/patients/${patient.id}?tab=clinical-examination`}>
+                          {patient.diagnosis}
+                        </Link>
+                      </td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.hr} href="" /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.spo2} href="" /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abps} href="" /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} href="" /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} href="" /></td>
+                      <td className="h-[74px] px-3 py-2 text-center">
+                        <RoundActionButton
+                          icon={FlaskConical}
+                          tone="dark"
+                          label={`Open laboratory results for ${patient.name}`}
+                          onClick={() => setLabResultsPatient(patient)}
+                        />
+                      </td>
+                      <td className="h-[74px] px-3 py-2 text-center">
+                        <RoundActionButton
+                          icon={Pill}
+                          tone="dark"
+                          label={`Open medication and intervention for ${patient.name}`}
+                          onClick={() => setMedicationPatient(patient)}
+                        />
+                      </td>
+                      <td className="h-[74px] px-3 py-2 text-center">
+                        <RoundActionButton icon={ClipboardList} tone="dark" label={`Open progress note for ${patient.name}`} onClick={() => setShiftSummaryPatient(patient)} />
+                      </td>
+                      <td className="h-[74px] px-3 py-2 text-center">
+                        <RoundActionButton
+                          icon={FileText}
+                          tone="dark"
+                          label={`Open radiology report for ${patient.name}`}
+                          onClick={() => setRadiologyPatient(patient)}
+                        />
+                      </td>
+                      <td className="h-[74px] px-3 py-2 text-center">
+                        <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
+                      </td>
+                      <td className="h-[74px] px-3 py-2 text-center">
+                        <RoundActionButton disabled icon={PhoneCall} tone="dark" label={`Collaborate unavailable for ${patient.name}`} />
                       </td>
                     </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
+                  );
+                })}
+                {!visiblePatients.length ? (
+                  <tr>
+                    <td className="px-4 py-12 text-center text-sm font-medium text-muted-foreground" colSpan={13}>
+                      No patient matched this search.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
@@ -671,7 +659,7 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-white shadow-sm">
-      <div className="bg-[#2f66aa] px-4 py-3 text-base font-semibold text-white">{patient.name}</div>
+      <div className="bg-primary px-4 py-3 text-base font-semibold text-primary-foreground">{patient.name}</div>
 
       <div className="flex items-center border-b border-border bg-white text-sm font-semibold text-muted-foreground">
         <button
@@ -685,7 +673,7 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
         <button
           className={cn(
             "h-12 flex-1 cursor-pointer border-b-2 transition hover:bg-slate-50",
-            topTab === "active" ? "border-[#446fd7] text-foreground" : "border-transparent text-muted-foreground",
+            topTab === "active" ? "border-primary text-primary" : "border-transparent text-muted-foreground",
           )}
           type="button"
           onClick={() => setTopTab("active")}
@@ -695,7 +683,7 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
         <button
           className={cn(
             "h-12 flex-1 cursor-pointer border-b-2 transition hover:bg-slate-50",
-            topTab === "collaboration" ? "border-[#446fd7] text-foreground" : "border-transparent text-muted-foreground",
+            topTab === "collaboration" ? "border-primary text-primary" : "border-transparent text-muted-foreground",
           )}
           type="button"
           onClick={() => setTopTab("collaboration")}
@@ -713,10 +701,10 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
       </div>
 
       <div className="max-h-[68dvh] overflow-y-auto p-4">
-        <div className="overflow-hidden rounded-sm border border-[#d7e4fb]">
+        <div className="overflow-hidden rounded-sm border border-primary/20">
           <table className="w-full text-center text-sm">
             <thead>
-              <tr className="bg-[#2f73cf] text-white">
+              <tr className="bg-primary text-primary-foreground">
                 <th className="px-3 py-3 font-semibold">Priority</th>
                 <th className="px-3 py-3 font-semibold">Event Name</th>
                 <th className="px-3 py-3 font-semibold">Value</th>
@@ -726,19 +714,19 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
             <tbody>
               {events.map((event, index) => (
                 <tr
-                  className="cursor-pointer border-t border-[#d7e4fb] transition"
+                  className="cursor-pointer border-t border-primary/20 transition"
                   key={event.name}
                   onClick={() => {
                     setSelectedEventIndex(index);
                     setActionStatus(`${event.name} selected`);
                   }}
                 >
-                  <td className={cn("px-3 py-3", selectedEventIndex === index && "bg-[#6aa3f4]")}>
+                  <td className={cn("px-3 py-3", selectedEventIndex === index && "bg-primary/75")}>
                     <PriorityMeter level={event.priority} />
                   </td>
-                  <td className={cn("px-3 py-3 font-medium", selectedEventIndex === index && "bg-[#6aa3f4] text-white")}>{event.name}</td>
-                  <td className={cn("px-3 py-3 font-semibold", selectedEventIndex === index && "bg-[#6aa3f4] text-white")}>{event.value}</td>
-                  <td className={cn("whitespace-nowrap px-3 py-3", selectedEventIndex === index && "bg-[#6aa3f4] text-white")}>{event.time}</td>
+                  <td className={cn("px-3 py-3 font-medium", selectedEventIndex === index && "bg-primary/75 text-primary-foreground")}>{event.name}</td>
+                  <td className={cn("px-3 py-3 font-semibold", selectedEventIndex === index && "bg-primary/75 text-primary-foreground")}>{event.value}</td>
+                  <td className={cn("whitespace-nowrap px-3 py-3", selectedEventIndex === index && "bg-primary/75 text-primary-foreground")}>{event.time}</td>
                 </tr>
               ))}
             </tbody>
@@ -749,7 +737,7 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
           <button
             className={cn(
               "cursor-pointer border-b-2 px-4 py-3 transition hover:bg-slate-50",
-              detailTab === "repeat" ? "border-[#446fd7] text-foreground" : "border-transparent text-muted-foreground",
+              detailTab === "repeat" ? "border-primary text-primary" : "border-transparent text-muted-foreground",
             )}
             type="button"
             onClick={() => setDetailTab("repeat")}
@@ -759,7 +747,7 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
           <button
             className={cn(
               "cursor-pointer border-b-2 px-4 py-3 transition hover:bg-slate-50",
-              detailTab === "details" ? "border-[#446fd7] text-foreground" : "border-transparent text-muted-foreground",
+              detailTab === "details" ? "border-primary text-primary" : "border-transparent text-muted-foreground",
             )}
             type="button"
             onClick={() => setDetailTab("details")}
@@ -779,15 +767,15 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
           <div className="min-h-20 rounded-sm bg-[#f3f3f3] p-3 text-sm font-medium text-foreground">
             Comments: Blood pressure going down. Current BP {patient.abps.value}/{patient.abpd.value}, HR {patient.hr.value}.
           </div>
-          <div className="rounded-sm border border-[#d7e4fb] bg-[#f8fbff] p-2 text-xs font-semibold text-[#2f66aa]">
+          <div className="rounded-sm border border-primary/20 bg-primary/5 p-2 text-xs font-semibold text-primary">
             {actionStatus}
           </div>
         </div>
 
         <div className="mt-5 flex flex-wrap justify-center gap-4">
-          <Button className="min-w-24 bg-[#2f73cf] hover:bg-[#255ca8]" type="button" onClick={() => setActionStatus(`Actions opened for ${selectedEvent.name}`)}>Actions</Button>
-          <Button className="min-w-24 bg-[#2f73cf] hover:bg-[#255ca8]" type="button" onClick={() => setActionStatus(`${selectedEvent.name} validated`)}>Validate</Button>
-          <Button className="min-w-24 bg-[#2f73cf] hover:bg-[#255ca8]" type="button" onClick={() => setActionStatus(`${selectedEvent.name} saved`)}>Save</Button>
+          <Button className="min-w-24 bg-primary hover:bg-primary/90" type="button" onClick={() => setActionStatus(`Actions opened for ${selectedEvent.name}`)}>Actions</Button>
+          <Button className="min-w-24 bg-primary hover:bg-primary/90" type="button" onClick={() => setActionStatus(`${selectedEvent.name} validated`)}>Validate</Button>
+          <Button className="min-w-24 bg-primary hover:bg-primary/90" type="button" onClick={() => setActionStatus(`${selectedEvent.name} saved`)}>Save</Button>
         </div>
       </div>
     </div>
@@ -861,16 +849,57 @@ function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
 }
 
 function DashboardRadiologyReportPopup({ patient }: { patient: Dashboard1Patient }) {
+  const [addRadiologyOpen, setAddRadiologyOpen] = React.useState(false);
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="min-h-0 flex-1 overflow-hidden rounded-md border border-slate-200 bg-slate-100 shadow-sm">
-        <iframe
-          className="h-[68dvh] w-full bg-white"
-          src={`${RADIOLOGY_REPORT_URL}#toolbar=1&navpanes=0`}
-          title={`Radiology report for ${patient.name}`}
-        />
+    <>
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded-md border border-slate-200 bg-slate-100 shadow-sm">
+          <iframe
+            className="h-[68dvh] w-full bg-white"
+            src={`${RADIOLOGY_REPORT_URL}#toolbar=1&navpanes=0`}
+            title={`Radiology report for ${patient.name}`}
+          />
+          <div className="group absolute bottom-4 right-4 z-10">
+            <Button
+              aria-label="Add radiology order"
+              className="h-11 w-11 rounded-full p-0 shadow-lg"
+              onClick={() => setAddRadiologyOpen(true)}
+              title="Add Radiology Order"
+              type="button"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+            {!addRadiologyOpen ? (
+              <div className="pointer-events-none absolute bottom-1/2 right-14 z-[80] translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-3 py-1.5 text-xs font-bold text-white opacity-0 shadow-lg transition group-hover:opacity-100">
+                Add Radiology Order
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
-    </div>
+      <CenterModal
+        className="h-[min(88dvh,900px)] w-[min(96vw,1560px)]"
+        description={`${patient.name} | ${patient.bed} | ${patient.diagnosis}`}
+        onOpenChange={setAddRadiologyOpen}
+        open={addRadiologyOpen}
+        title="Add Radiology Order"
+      >
+        <DoctorOrdersPage
+          defaultTab="radiology"
+          onlyTab="radiology"
+          patientContext={{
+            ageSex: "45/M",
+            diagnosis: patient.diagnosis,
+            id: `doctor-ipd-${patient.id}`,
+            name: patient.name,
+            radiologyPatientId: `pat-${1000 + (((patient.id - 1) % 6) + 1)}`,
+            uhid: `DASH-${String(patient.id).padStart(4, "0")}`,
+            wardBed: patient.bed,
+          }}
+        />
+      </CenterModal>
+    </>
   );
 }
 
@@ -972,8 +1001,8 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
   return (
     <>
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center border-b bg-white text-sm font-semibold">
-          <div className="flex min-w-0 flex-1">
+        <div className="flex items-center gap-3 border-b bg-white p-3 text-sm font-semibold">
+          <div className="flex min-w-0 flex-1 gap-1 rounded-lg bg-surface-muted/70 p-1">
             <MedicationTabButton active={tab === "current"} onClick={() => setTab("current")}>
               Current Medication
             </MedicationTabButton>
@@ -984,7 +1013,7 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
               Intervention
             </MedicationTabButton>
           </div>
-          <div className="group relative flex h-full shrink-0 items-center border-l border-slate-200 px-3">
+          <div className="group relative flex h-full shrink-0 items-center">
             <Button
               aria-label="Add medicine from drug orders"
               className="h-9 w-9 shrink-0 rounded-full p-0"
@@ -1026,7 +1055,7 @@ function MedicationInterventionPopup({ patient }: { patient: Dashboard1Patient }
                       <p className="mt-1 text-sm font-medium text-slate-600">{item.detail}</p>
                       <div className="mt-2 text-xs font-semibold text-slate-400">{item.time}</div>
                     </div>
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                       {item.status}
                     </span>
                   </div>
@@ -1064,10 +1093,10 @@ function MedicationTabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 border-b-2 px-4 py-3 text-center transition hover:bg-slate-50",
+        "flex-1 rounded-lg border border-transparent px-4 py-2.5 text-center font-bold transition",
         active
-          ? "border-blue-600 text-blue-700"
-          : "border-transparent text-slate-500",
+          ? "bg-white text-primary shadow-sm"
+          : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
       )}
     >
       {children}

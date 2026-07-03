@@ -42,7 +42,7 @@ const tabs: OrderTab[] = [
   { id: "pathology", label: "Pathology", description: "Pathology test order, summary, and result review workflow.", icon: Microscope, component: <PathologyTab /> },
   { id: "lab", label: "Laboratory", description: "Laboratory investigations and sample request workflow.", icon: FlaskConical, component: <LaboratoryTab /> },
   { id: "radiology", label: "Radiology", description: "Imaging orders for radiology scheduling and reporting.", icon: FileSearch, component: <RadiologyTab /> },
-  { id: "poct", label: "Add POCT", description: "Bedside POCT ordering and capture workflow.", icon: FlaskConical, component: <AddPoctPage embedded mode="add" showModeActions={false} /> },
+  { id: "poct", label: " POCT", description: "Bedside POCT ordering and capture workflow.", icon: FlaskConical, component: <AddPoctPage embedded mode="add" showModeActions={false} /> },
   { id: "procedures", label: "Procedure", description: "Procedure orders, clinical notes, and operational instructions.", icon: Stethoscope, component: <ProceduresTab /> },
   { id: "referral", label: "Referral", description: "Specialist referral and consultation request workflow.", icon: UserPlus, component: <ReferConsultationTab /> },
   { id: "ordersets", label: "Master Order Sets", description: "Reusable clinical order bundles for common workflows.", icon: Layers, component: <OrderSetsTab /> },
@@ -52,15 +52,21 @@ const tabs: OrderTab[] = [
 export function DoctorOrdersPage({
   defaultTab: defaultTabProp,
   drugsOnly = false,
+  onlyTab,
   patientContext,
   showPatientBanner = false,
 }: {
   defaultTab?: string;
   drugsOnly?: boolean;
+  onlyTab?: string;
   patientContext?: DoctorOrdersPatientContext;
   showPatientBanner?: boolean;
 } = {}) {
-  const visibleTabs = drugsOnly ? tabs.filter((tab) => tab.id === "drugs") : tabs;
+  const visibleTabs = drugsOnly
+    ? tabs.filter((tab) => tab.id === "drugs")
+    : onlyTab
+      ? tabs.filter((tab) => tab.id === onlyTab)
+      : tabs;
   const defaultTab = defaultTabProp && visibleTabs.some((tab) => tab.id === defaultTabProp) ? defaultTabProp : visibleTabs[0]?.id ?? "drugs";
 
   return (
@@ -79,16 +85,18 @@ export function DoctorOrdersPage({
       ) : null}
       <Tabs defaultValue={defaultTab} className="w-full">
         <div className="space-y-3 sm:space-y-4">
-          {!drugsOnly ? (
+          {!drugsOnly && !onlyTab ? (
             <div className="space-y-2">
-              <TabsList className="w-full gap-1.5 overflow-x-auto px-1 py-1 sm:gap-2 sm:px-0">
-                {visibleTabs.map((tab) => (
-                  <TabsTrigger key={tab.id} value={tab.id} className="flex h-8 min-w-[110px] flex-row items-center justify-center gap-1.5 border border-transparent px-2.5 text-xs sm:h-10 sm:min-w-[132px] sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-                    <span className="min-w-0 truncate leading-none">{tab.label}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              <div className="overflow-x-auto rounded-xl border border-border bg-white/95 p-1 shadow-sm">
+                <TabsList className="inline-flex h-auto w-max min-w-max rounded-lg bg-surface-muted/70 p-1">
+                  {visibleTabs.map((tab) => (
+                    <TabsTrigger key={tab.id} value={tab.id} className="flex h-10 min-w-[132px] shrink-0 flex-row items-center justify-center gap-2 rounded-lg border border-transparent bg-transparent px-3 text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+                      <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+                      <span className="min-w-0 truncate leading-none">{tab.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
             </div>
           ) : null}
           {visibleTabs.map((tab) => (

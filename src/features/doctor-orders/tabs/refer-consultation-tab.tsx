@@ -96,12 +96,20 @@ export function ReferConsultationTab() {
           <CardDescription>Doctor referral screen with department, consultant, reason, notes, and review flow.</CardDescription>
         </CardHeader> */}
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {(["test-order", "order-summary"] as const).map((tab) => (
-              <Button key={tab} size="sm" variant={activeTab === tab ? "default" : "outline"} onClick={() => setActiveTab(tab)}>
-                {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result / Status Review"}
-              </Button>
-            ))}
+          <div className="overflow-x-auto pb-1 sm:pb-0">
+            <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
+              {(["test-order", "order-summary"] as const).map((tab) => (
+                <Button
+                  key={tab}
+                  size="sm"
+                  variant="ghost"
+                  className={activeTab === tab ? "h-10 min-w-[132px] shrink-0 rounded-lg bg-white px-3 text-sm font-bold text-primary shadow-sm hover:bg-white" : "h-10 min-w-[132px] shrink-0 rounded-lg bg-transparent px-3 text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900"}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result / Status Review"}
+                </Button>
+              ))}
+            </div>
           </div>
 
           {activeTab === "test-order" ? (

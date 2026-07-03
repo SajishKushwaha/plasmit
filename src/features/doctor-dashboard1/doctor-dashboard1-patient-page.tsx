@@ -101,7 +101,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
   const requestedOrderTab = getRequestedOrderTab(searchParams.get("orderTab"));
   const [activeTab, setActiveTab] = React.useState<PatientTabValue>(requestedTab ?? "overview");
   const [poctMode, setPoctMode] = React.useState<DashboardPoctMode>(requestedPoctMode ?? "add");
-  const [ordersDefaultTab, setOrdersDefaultTab] = React.useState(requestedOrderTab ?? (requestedPoctMode === "add" ? "poct" : "radiology"));
+  const [ordersDefaultTab, setOrdersDefaultTab] = React.useState(requestedOrderTab ?? (requestedPoctMode === "add" ? "poct" : "blood"));
   const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
   const patient = orderedPatients.find((item) => String(item.id) === patientId);
   const rapidReviewPatient = patient ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId) : undefined;

@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useRole } from "@/components/providers/role-provider";
 import { cn } from "@/lib/utils";
 
+const wardNurseRoute = "/icu-command-center/clinical-workspace/patient-overview";
+
 export function RoleSwitcher({ className, portal = true }: { className?: string; portal?: boolean }) {
   const { role, setRole, roles } = useRole();
   const router = useRouter();
@@ -30,7 +32,7 @@ export function RoleSwitcher({ className, portal = true }: { className?: string;
     } else if (nextRole === "Head Nurse") {
       router.push("/head-nurse");
     } else if (nextRole === "Ward Nurse") {
-      router.push("/ward-nurse");
+      router.push(wardNurseRoute);
     } else if (nextRole === "Nurse ICU") {
       router.push("/nursing-icu");
     } else if (nextRole === "ICU" || nextRole === "Nurse ICU 2") {

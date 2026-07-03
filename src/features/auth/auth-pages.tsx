@@ -21,6 +21,7 @@ import type { Role } from "@/types";
 const authStorageKey = "hk-general-auth";
 const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
+const wardNurseRoute = "/icu-command-center/clinical-workspace/patient-overview";
 
 const loginCredentials = [
   {
@@ -63,7 +64,7 @@ const loginCredentials = [
     password: "123456",
     role: "Ward Nurse" as Role,
     scope: "ward-nurse",
-    route: "/ward-nurse",
+    route: wardNurseRoute,
   },
 ] as const;
 
@@ -173,7 +174,7 @@ export function LoginPage() {
         return;
       }
       if (savedScope === "ward-nurse") {
-        router.replace("/ward-nurse");
+        router.replace(wardNurseRoute);
         return;
       }
       const savedRole = window.localStorage.getItem("plasmit-role") as Role | null;
@@ -333,7 +334,7 @@ const nurseLoginConfigs: Record<NurseLoginRole, { route: string; scope: string; 
     title: "Head Nurse Login",
   },
   "Ward Nurse": {
-    route: "/ward-nurse",
+    route: wardNurseRoute,
     scope: "ward-nurse",
     title: "Ward Nurse Login",
   },

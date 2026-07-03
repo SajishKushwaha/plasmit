@@ -1,13 +1,15 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, FileText, FlaskConical, Image as ImageIcon, Printer, Search, X, Zap } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, FileText, FlaskConical, Image as ImageIcon, Plus, Printer, Search, X, Zap } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CenterModal } from "@/components/ui/center-modal";
 import { Input } from "@/components/ui/input";
+import { DoctorOrdersPage, type DoctorOrdersPatientContext } from "@/features/doctor-orders/doctor-orders";
 import { cn } from "@/lib/utils";
 import { resultRecords } from "@/features/results/data/mockResults";
 import type { ResultDepartment, ResultRecord, ResultStatus, ResultValue } from "@/features/results/types";
@@ -1017,6 +1019,13 @@ function ReportViewModal({
       : payload
         ? `${formatRecordDateScope(payload.records)} | ${payload.records.length} ${getDepartmentLabel(payload.department).toLowerCase()} report(s)`
         : "";
+  const [laboratoryOrderOpen, setLaboratoryOrderOpen] = useState(false);
+  const showLaboratoryOrderAction = payload?.type === "all" && payload.department === "laboratory";
+  const orderPatientContext = showLaboratoryOrderAction ? toOrderPatientContext(payload.records[0]) : undefined;
+
+  useEffect(() => {
+    setLaboratoryOrderOpen(false);
+  }, [payload]);
 
   return (
     <Dialog.Root open={Boolean(payload)} onOpenChange={(open) => !open && onClose()}>
@@ -1031,6 +1040,24 @@ function ReportViewModal({
                   <Dialog.Description className="text-sm text-muted-foreground">{description}</Dialog.Description>
                 </div>
                 <div className="flex gap-2">
+                  {showLaboratoryOrderAction ? (
+                    <div className="group relative">
+                      <Button
+                        aria-label="Add laboratory order"
+                        className="h-9 w-9 rounded-full p-0"
+                        onClick={() => setLaboratoryOrderOpen(true)}
+                        title="Add Laboratory Order"
+                        type="button"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      {!laboratoryOrderOpen ? (
+                        <div className="pointer-events-none absolute right-11 top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-3 py-1.5 text-xs font-bold text-white opacity-0 shadow-lg transition group-hover:opacity-100">
+                           Laboratory Order
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <Button
                     size="sm"
                     variant="outline"
@@ -1052,12 +1079,35 @@ function ReportViewModal({
               <div className="max-h-[calc(88dvh-82px)] overflow-y-auto p-4">
                 {payload.type === "single" ? <SingleReportView result={payload.result} /> : <AllCategoryView comparisonRecords={payload.comparisonRecords} department={payload.department} records={payload.records} />}
               </div>
+              {showLaboratoryOrderAction ? (
+                <CenterModal
+                  className="h-[min(88dvh,900px)] w-[min(96vw,1560px)]"
+                  description={payload.records[0] ? `${payload.records[0].patientName} | ${payload.records[0].location}` : undefined}
+                  onOpenChange={setLaboratoryOrderOpen}
+                  open={laboratoryOrderOpen}
+                  title=" Laboratory Order"
+                >
+                  <DoctorOrdersPage defaultTab="lab" onlyTab="lab" patientContext={orderPatientContext} />
+                </CenterModal>
+              ) : null}
             </>
           ) : null}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+function toOrderPatientContext(result?: ResultRecord): DoctorOrdersPatientContext | undefined {
+  if (!result) return undefined;
+
+  return {
+    ageSex: result.ageSex,
+    id: result.mrn,
+    name: result.patientName,
+    uhid: result.mrn,
+    wardBed: result.location,
+  };
 }
 
 function SingleReportView({ result }: { result: ResultRecord }) {
@@ -1205,24 +1255,18 @@ function LaboratoryDateWiseComparison({ records }: { records: ResultRecord[] }) 
     .sort((first, second) => second.localeCompare(first))[0];
 
   return (
-    <div className="space-y-5">
-      <div className="flex justify-end">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" type="button" variant="outline">{lastUpdate ? formatDate(lastUpdate).replace(/\d{2} /, "") : "All dates"}</Button>
-        </div>
-      </div>
-
+    <div className="space-y-3">
       <div className="overflow-hidden rounded-lg border border-border bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] border-collapse text-left text-sm">
             <thead>
               <tr className="bg-surface-muted text-muted-foreground">
-                <th className="w-[250px] border-b border-r border-border px-5 py-5 text-base font-bold">Laboratory Parameter</th>
-                <th className="w-[210px] border-b border-r border-border px-5 py-5 text-base font-bold">Normal Range</th>
+                <th className="w-[280px] border-b border-r border-border px-4 py-3 text-sm font-bold">Laboratory Parameter</th>
+                <th className="w-[190px] border-b border-r border-border px-4 py-3 text-sm font-bold">Normal Range</th>
                 {dateKeys.map((dateKey) => (
-                  <th className="min-w-[150px] border-b border-r border-border bg-info/10 px-5 py-4 text-center" key={dateKey}>
-                    <span className="block text-lg font-extrabold text-info">{formatComparisonDate(dateKey)}</span>
-                    <span className="mt-1 block text-xs font-semibold italic normal-case text-info/80">{comparisonDateSubtitle(dateKey, dateKeys)}</span>
+                  <th className="min-w-[150px] border-b border-r border-border bg-primary/10 px-4 py-3 text-center" key={dateKey}>
+                    <span className="block text-base font-extrabold text-primary">{formatComparisonDate(dateKey)}</span>
+                    <span className="mt-0.5 block text-xs font-semibold italic normal-case text-primary/75">{comparisonDateSubtitle(dateKey, dateKeys)}</span>
                   </th>
                 ))}
               </tr>
@@ -1236,7 +1280,7 @@ function LaboratoryDateWiseComparison({ records }: { records: ResultRecord[] }) 
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         <ComparisonSummaryCard label="Critical Flags" value={`${criticalCount} Active`} tone="danger" />
         <ComparisonSummaryCard label="Improvement Rate" value={`+${Math.max(0, improvingCount * 6)}% Overall`} tone="info" />
         <ComparisonSummaryCard label="Last Update" value={lastUpdate ? formatDateTime(lastUpdate) : "-"} tone="warning" />
@@ -1264,24 +1308,24 @@ function RowsForLaboratoryComparisonSection({
 }) {
   return (
     <>
-      <tr className="bg-slate-200/80">
-        <td className="border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground" colSpan={dateKeys.length + 2}>
+      <tr className="bg-surface-muted/80">
+        <td className="border-b border-border px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground" colSpan={dateKeys.length + 2}>
           {section.name}
         </td>
       </tr>
       {section.rows.map((row) => (
         <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/50" key={row.key}>
-          <td className="border-r border-border px-5 py-4 text-base font-extrabold text-foreground">{row.parameter}</td>
-          <td className="border-r border-border px-5 py-4 font-mono text-sm font-bold text-muted-foreground">{row.range}</td>
+          <td className="whitespace-nowrap border-r border-border px-4 py-2.5 text-sm font-extrabold text-foreground">{row.parameter}</td>
+          <td className="border-r border-border px-4 py-2.5 font-mono text-sm font-bold text-muted-foreground">{row.range}</td>
           {dateKeys.map((dateKey) => {
             const value = row.valuesByDate[dateKey];
             const arrow = row.arrowByDate[dateKey];
             return (
-              <td className="border-r border-border px-5 py-4 text-center" key={`${row.key}-${dateKey}`}>
+              <td className="border-r border-border px-4 py-2.5 text-center" key={`${row.key}-${dateKey}`}>
                 {value ? (
-                  <span className={cn("inline-flex items-center justify-center gap-2 text-base font-extrabold", resultValueClass(value))}>
+                  <span className={cn("inline-flex items-center justify-center gap-1.5 text-sm font-extrabold", comparisonValueClass(value))}>
                     {value.value}
-                    <span className={cn("text-lg", arrow === "up" && "text-danger", arrow === "down" && "text-info", arrow === "same" && "text-muted-foreground")}>
+                    <span className={cn("text-base", arrow === "up" && "text-primary", arrow === "down" && "text-primary", arrow === "same" && "text-muted-foreground")}>
                       {arrow === "up" ? "↑" : arrow === "down" ? "↓" : arrow === "same" ? "→" : ""}
                     </span>
                   </span>
@@ -1295,6 +1339,11 @@ function RowsForLaboratoryComparisonSection({
       ))}
     </>
   );
+}
+
+function comparisonValueClass(value: ResultValue) {
+  if (value.flag === "Critical" || value.flag === "High" || value.flag === "Low") return "text-primary";
+  return "text-foreground";
 }
 
 function buildLaboratoryComparisonSections(records: ResultRecord[], dateKeys: string[]) {
@@ -1408,10 +1457,6 @@ function LaboratoryTrendAnalysis({ records }: { records: ResultRecord[] }) {
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-white">
-        <div className="border-b border-border bg-surface-muted px-4 py-3">
-          <div className="text-sm font-bold text-foreground">Laboratory Trend Analysis</div>
-          <div className="mt-1 text-xs font-semibold text-muted-foreground">Trends are calculated from earliest to latest numeric result.</div>
-        </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-white text-xs uppercase tracking-wide text-muted-foreground">

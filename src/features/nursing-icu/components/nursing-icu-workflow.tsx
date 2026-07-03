@@ -21,6 +21,7 @@ import {
   Filter,
   HeartPulse,
   ListChecks,
+  LockKeyhole,
   MonitorDot,
   MoreHorizontal,
   Pill,
@@ -212,6 +213,7 @@ type MedicationScenario = {
   blocking?: boolean;
 };
 type MedicationEmarQueue = "Due Now" | "Administered" | "Held / Skipped" | "Infusions" | "PRN" | "History";
+const MEDICATION_READY_STORAGE_KEY = "plasmit-nursing-ready-medications";
 
 type AdmissionDraft = {
   patientId: string;
@@ -241,6 +243,7 @@ type AdmissionDraft = {
   medication: string;
   pastMedication: string;
   currentMedication: string;
+  allergy: string;
   highAlertMedications: string;
   otherRelevantInformation: string;
   procedures: string;
@@ -313,7 +316,17 @@ type AdmissionPatientCandidate = {
   handoverBy: string;
   acceptanceStatus: string;
   notes: string;
+  allergy?: string;
   duplicateBlock?: boolean;
+};
+
+type EmergencyAdmissionQuickDraft = {
+  patientName: string;
+  ageGender: string;
+  mobile: string;
+  relativeName: string;
+  diagnosis: string;
+  allergy: string;
 };
 
 type IcuAdmissionBedOption = {
@@ -574,10 +587,8 @@ const admissionHandoverOptions: Record<string, string[]> = {
   "Direct ICU admission": ["Admission coordinator", "ICU duty doctor", "Billing + admission desk", "Consultant secretary"],
 };
 const alertStatusFlow: WorkflowAlertStatus[] = ["New", "Acknowledged", "Assigned", "Resolved", "Closed"];
-const medicationStatuses: Array<"All status" | WorkflowMedicationStatus> = ["All status", "Due", "Late", "Upcoming", "Administered", "Held", "Skipped", "Missed", "Refused", "Running", "Paused", "Stopped"];
 const medicationDepartments: MedicationDepartment[] = ["ICU", "Emergency", "Cardiology", "Neurology", "Pediatrics", "Surgery", "Anesthesia"];
 const medicationShiftOptions = ["All shifts", "Morning", "Evening", "Night"] as const;
-const medicationHourOptions = ["All hours", ...Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`)] as const;
 
 type NurseTaskSource =
   | "Doctor order"
@@ -742,6 +753,17 @@ function generatedAdmissionIdentity(source: string) {
   };
 }
 
+function createEmergencyAdmissionQuickDraft(patientName = ""): EmergencyAdmissionQuickDraft {
+  return {
+    patientName,
+    ageGender: "",
+    mobile: "",
+    relativeName: "",
+    diagnosis: "",
+    allergy: "",
+  };
+}
+
 function admissionDefaultPastMedication(candidate?: AdmissionPatientCandidate) {
   if (!candidate) return "Not documented";
   if (candidate.diagnosis.toLowerCase().includes("cabg")) return "Aspirin, statin, beta blocker as per cardiac history";
@@ -794,47 +816,80 @@ function admissionDefaultPlannedCare(candidate?: AdmissionPatientCandidate) {
 }
 
 function createEmptyAdmissionDraft(): AdmissionDraft {
-  const candidate = admissionPatientCandidates.find((patient) => !patient.duplicateBlock) ?? admissionPatientCandidates[0];
-  const source = candidate?.source ?? "Emergency";
+  const source = "Emergency";
+  const identity = generatedAdmissionIdentity(source);
   return {
-    patientId: candidate?.id ?? "",
-    patientName: candidate?.patientName ?? "",
-    mrn: candidate?.mrn || generatedAdmissionIdentity(source).mrn,
-    icuAdmissionNo: generatedAdmissionIdentity(source).icuAdmissionNo,
-    ageGender: candidate?.ageGender ?? "",
+    patientId: "",
+    patientName: "",
+    mrn: "",
+    icuAdmissionNo: identity.icuAdmissionNo,
+    ageGender: "",
     source,
-    currentLocation: candidate?.currentLocation ?? "",
-    patientStatus: candidate?.patientStatus ?? "ICU request pending",
-    sourceDetail: candidate?.sourceDetail ?? "",
-    handoverBy: candidate?.handoverBy ?? "",
-    diagnosis: candidate?.diagnosis ?? "",
-    condition: candidate?.condition ?? "Critical",
-    recoveryStatus: candidate?.condition === "Ready for transfer" ? "Revived" : candidate?.condition === "Stable ICU care" ? "Reviving" : "Other",
-    pendingInvestigations: admissionDefaultPendingInvestigations(candidate),
-    plannedCareTreatment: admissionDefaultPlannedCare(candidate),
-    bedNo: candidate?.bedNo ?? "ICU-C05",
-    unit: candidate?.unit ?? "Medical ICU",
-    nurse: candidate?.nurse ?? "Unit Nurse Priya",
-    doctor: candidate?.doctor ?? "Dr. Sameer Mehta",
-    admittingConsultant: candidate?.doctor ?? "Dr. Sameer Mehta",
-    admittingTeam: normalizeAdmittingUnit(candidate?.admittingTeam ?? getAdmittingTeamDefault(source, candidate?.unit)),
-    acceptanceStatus: candidate?.acceptanceStatus ?? "Pending ICU doctor acceptance",
-    ventilator: candidate?.ventilator ?? "NIV support",
-    devices: candidate?.devices ?? "Monitor, infusion pump",
-    medication: candidate?.medication ?? "Antibiotics, fluids, vasopressor review",
-    pastMedication: admissionDefaultPastMedication(candidate),
-    currentMedication: candidate?.medication ?? "Antibiotics, fluids, vasopressor review",
-    highAlertMedications: admissionDefaultHighAlertMedication(candidate),
-    otherRelevantInformation: admissionDefaultOtherRelevantInformation(candidate),
-    procedures: admissionDefaultProcedures(candidate),
-    handedOver: candidate?.handoverBy ?? "ER nurse / source unit team",
-    takenOverBy: candidate?.nurse ?? "Unit Nurse Priya",
+    currentLocation: "",
+    patientStatus: "ICU request pending",
+    sourceDetail: "",
+    handoverBy: getAdmissionHandoverOptions(source)[0],
+    diagnosis: "",
+    condition: "Critical",
+    recoveryStatus: "Other",
+    pendingInvestigations: "",
+    plannedCareTreatment: "",
+    bedNo: "ICU-C05",
+    unit: "Medical ICU",
+    nurse: "Unit Nurse Priya",
+    doctor: "Dr. Sameer Mehta",
+    admittingConsultant: "Dr. Sameer Mehta",
+    admittingTeam: normalizeAdmittingUnit(getAdmittingTeamDefault(source, "Medical ICU")),
+    acceptanceStatus: "Pending ICU doctor acceptance",
+    ventilator: "NIV support",
+    devices: "Monitor, infusion pump",
+    medication: "",
+    pastMedication: "",
+    currentMedication: "",
+    allergy: "",
+    highAlertMedications: "",
+    otherRelevantInformation: "",
+    procedures: "",
+    handedOver: "ER nurse / source unit team",
+    takenOverBy: "Unit Nurse Priya",
     signatureConfirmation: "Pending bedside confirmation",
-    nursingNotes: candidate?.notes ?? "",
-    risk: candidate?.risk ?? "High",
-    isolation: candidate?.isolation ?? "No",
+    nursingNotes: "",
+    risk: "High",
+    isolation: "No",
     readiness: admissionReadinessItems.slice(0, 4).join("|"),
-    notes: candidate?.notes ?? "",
+    notes: "",
+  };
+}
+
+function createEmergencyAdmissionCandidate(form: EmergencyAdmissionQuickDraft, index: number): AdmissionPatientCandidate {
+  const identity = generatedAdmissionIdentity("Emergency direct ICU");
+  const contactNote = [form.mobile.trim(), form.relativeName.trim()].filter(Boolean).join(" | ");
+
+  return {
+    id: `emergency-icu-${Date.now()}-${index + 1}`,
+    patientName: form.patientName.trim(),
+    mrn: identity.mrn,
+    ageGender: form.ageGender.trim(),
+    source: "Emergency direct ICU",
+    currentLocation: "Emergency triage red zone",
+    patientStatus: "Emergency direct ICU",
+    diagnosis: form.diagnosis.trim(),
+    condition: "Critical",
+    unit: "Medical ICU",
+    bedNo: "ICU-C05",
+    nurse: "Unit Nurse Priya",
+    doctor: "Dr. Sameer Mehta",
+    admittingTeam: "ER + ICU rapid admit unit",
+    ventilator: "NIV support",
+    devices: "Monitor, oxygen, suction",
+    medication: "",
+    risk: "Critical",
+    isolation: "No",
+    sourceDetail: contactNote || "Emergency direct ICU admission",
+    handoverBy: "ER nurse / source unit team",
+    acceptanceStatus: "Pending ICU doctor acceptance",
+    notes: contactNote,
+    allergy: form.allergy.trim(),
   };
 }
 
@@ -871,6 +926,7 @@ function applyAdmissionCandidate(candidate: AdmissionPatientCandidate): Admissio
     medication: candidate.medication,
     pastMedication: admissionDefaultPastMedication(candidate),
     currentMedication: candidate.medication,
+    allergy: candidate.allergy ?? "",
     highAlertMedications: admissionDefaultHighAlertMedication(candidate),
     otherRelevantInformation: admissionDefaultOtherRelevantInformation(candidate),
     procedures: admissionDefaultProcedures(candidate),
@@ -1293,7 +1349,7 @@ const initialDoctorMedicationOrders: DoctorMedicationOrder[] = [
     scheduleTimes: ["08:00", "16:00", "00:00"],
     doctor: "Dr. Sameer Mehta",
     indication: "Septic shock",
-    instructions: "Give after identity check. Escalate if dose is delayed beyond 30 minutes.",
+    instructions: "Administer after identity check. Escalate if dose is delayed beyond 30 minutes.",
     priority: "High",
     highRisk: false,
     doubleVerificationRequired: false,
@@ -1350,7 +1406,7 @@ const initialDoctorMedicationOrders: DoctorMedicationOrder[] = [
     scheduleTimes: ["PRN"],
     doctor: "Dr. Sameer Mehta",
     indication: "Fever or pain",
-    instructions: "Give if temp > 38 C or pain score > 5. Capture reason.",
+    instructions: "Administer if temp > 38 C or pain score > 5. Capture reason.",
     priority: "Routine",
     highRisk: false,
     doubleVerificationRequired: false,
@@ -1436,12 +1492,11 @@ function buildSeedMedicationOrders() {
 
 const seededDoctorMedicationOrders = buildSeedMedicationOrders();
 
-const orderTypeOptions: Array<"All types" | MedicationOrderType> = ["All types", "Scheduled", "STAT", "PRN", "Continuous", "One-time"];
-const pharmacyOptions: Array<"All pharmacy" | PharmacyStatus> = ["All pharmacy", "Available", "Pending dispense", "Low stock", "Out of stock", "Restricted", "Shortage", "Substitution requested"];
-
 function deriveDoseStatus(order: DoctorMedicationOrder, scheduledTime: string, index: number): WorkflowMedicationStatus {
   if (order.status === "Held by doctor") return "Held";
   if (order.status === "Discontinued") return "Stopped";
+  if (order.id === "ord-003" && scheduledTime === "12:00") return "Administered";
+  if (order.id === "ord-003" && scheduledTime === "18:00") return "Held";
   if (order.orderType === "Continuous") return "Running";
   if (order.orderType === "PRN") return "Upcoming";
   if (order.orderType === "STAT") return index === 0 ? "Due" : "Upcoming";
@@ -1477,12 +1532,59 @@ function buildMedicationDoseRows(orders: DoctorMedicationOrder[]): MedicationDos
         indication: order.indication,
         instructions: order.instructions,
         highRisk: order.highRisk,
-        doubleVerification: order.doubleVerificationRequired ? "Pending" : "Not required",
+        doubleVerification: order.doubleVerificationRequired
+          ? ["Administered", "Held", "Skipped", "Missed", "Refused", "Stopped"].includes(status)
+            ? "Verified"
+            : "Pending"
+          : "Not required",
         pharmacyStatus: order.pharmacyStatus,
         orderStatus: order.status,
-        auditTrail: [`Order created by ${order.doctor}`, `${time}: ${status}`],
+        auditTrail: [
+          `Order created by ${order.doctor}`,
+          `${time}: ${status}`,
+          status === "Administered" ? "Dose documented in nurse eMAR" : "",
+          status === "Held" ? "Dose held with clinical reason documented" : "",
+        ].filter(Boolean),
       };
     });
+  });
+}
+
+function readReadyMedicationIds() {
+  if (typeof window === "undefined") return new Set<string>();
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(MEDICATION_READY_STORAGE_KEY) ?? "[]");
+    return new Set(Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function saveReadyMedicationIds(ids: Iterable<string>) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MEDICATION_READY_STORAGE_KEY, JSON.stringify(Array.from(new Set(ids))));
+}
+
+function persistReadyMedication(dose: MedicationDoseRow) {
+  const ids = readReadyMedicationIds();
+  ids.add(dose.id);
+  ids.add(dose.orderId);
+  saveReadyMedicationIds(ids);
+}
+
+function applyReadyMedicationState(doses: MedicationDoseRow[]) {
+  const readyIds = readReadyMedicationIds();
+  if (!readyIds.size) return doses;
+  return doses.map((dose) => {
+    if (!readyIds.has(dose.id) && !readyIds.has(dose.orderId)) return dose;
+    return {
+      ...dose,
+      pharmacyStatus: "Available" as PharmacyStatus,
+      doubleVerification: dose.highRisk ? "Verified" as const : dose.doubleVerification,
+      auditTrail: dose.auditTrail.some((entry) => entry.includes("Medicine received and verified"))
+        ? dose.auditTrail
+        : ["Now: Medicine received and verified for nurse administration", ...dose.auditTrail],
+    };
   });
 }
 
@@ -1616,13 +1718,47 @@ export function AdmissionWizardWorkspace() {
   const [step, setStep] = React.useState(0);
   const [draft, setDraft] = React.useState<AdmissionDraft>(() => createEmptyAdmissionDraft());
   const [created, setCreated] = React.useState<Array<AdmissionDraft & { id: string; status: string }>>([]);
+  const [localAdmissionCandidates, setLocalAdmissionCandidates] = React.useState<AdmissionPatientCandidate[]>([]);
   const [patientQuery, setPatientQuery] = React.useState("");
+  const [showEmergencyCreate, setShowEmergencyCreate] = React.useState(false);
+  const [emergencyDraft, setEmergencyDraft] = React.useState<EmergencyAdmissionQuickDraft>(() => createEmergencyAdmissionQuickDraft());
+
+  const admissionCandidateRows = React.useMemo(() => [...localAdmissionCandidates, ...admissionPatientCandidates], [localAdmissionCandidates]);
+  const findAdmissionCandidate = React.useCallback(
+    (patientId: string) => admissionCandidateRows.find((patient) => patient.id === patientId),
+    [admissionCandidateRows],
+  );
 
   const updateDraft = (key: keyof AdmissionDraft, value: string) => setDraft((current) => ({ ...current, [key]: value }));
   const updateAdmissionPatient = (patientId: string) => {
-    const candidate = getAdmissionCandidate(patientId);
+    const candidate = findAdmissionCandidate(patientId);
     if (!candidate) return;
     setDraft(applyAdmissionCandidate(candidate));
+    setPatientQuery(candidate.patientName);
+    setShowEmergencyCreate(false);
+  };
+  const updateEmergencyDraft = (key: keyof EmergencyAdmissionQuickDraft, value: string) => {
+    setEmergencyDraft((current) => ({ ...current, [key]: value }));
+  };
+  const openEmergencyCreate = () => {
+    setEmergencyDraft((current) => ({
+      ...current,
+      patientName: current.patientName || patientQuery.trim(),
+    }));
+    setShowEmergencyCreate(true);
+  };
+  const createEmergencyAdmission = () => {
+    if (!emergencyDraft.patientName.trim() || !emergencyDraft.ageGender.trim() || !emergencyDraft.diagnosis.trim()) {
+      toast.error("Patient name, age/sex, and diagnosis are required.");
+      return;
+    }
+    const candidate = createEmergencyAdmissionCandidate(emergencyDraft, localAdmissionCandidates.length);
+    setLocalAdmissionCandidates((current) => [candidate, ...current]);
+    setDraft(applyAdmissionCandidate(candidate));
+    setPatientQuery(candidate.patientName);
+    setEmergencyDraft(createEmergencyAdmissionQuickDraft());
+    setShowEmergencyCreate(false);
+    toast.success(`${candidate.patientName} added for ICU admission`);
   };
   const updateAdmissionSource = (source: string) => {
     setDraft((current) => ({
@@ -1646,6 +1782,8 @@ export function AdmissionWizardWorkspace() {
   const resetDraft = () => {
     setDraft(createEmptyAdmissionDraft());
     setPatientQuery("");
+    setShowEmergencyCreate(false);
+    setEmergencyDraft(createEmergencyAdmissionQuickDraft());
   };
   const toggleReadiness = (item: string) => {
     setDraft((current) => {
@@ -1656,15 +1794,12 @@ export function AdmissionWizardWorkspace() {
   };
   const filteredPatientCandidates = React.useMemo(() => {
     const query = patientQuery.trim().toLowerCase();
-    const rows = admissionPatientCandidates.filter((patient) => {
+    if (!query) return [];
+    return admissionCandidateRows.filter((patient) => {
       const text = `${patient.patientName} ${patient.mrn} ${patient.currentLocation} ${patient.patientStatus} ${patient.source} ${patient.diagnosis}`.toLowerCase();
-      return !query || text.includes(query);
+      return text.includes(query);
     });
-    return rows.some((patient) => patient.id === draft.patientId)
-      ? rows
-      : [getAdmissionCandidate(draft.patientId), ...rows].filter(Boolean) as AdmissionPatientCandidate[];
-  }, [draft.patientId, patientQuery]);
-  const selectedCandidate = getAdmissionCandidate(draft.patientId);
+  }, [admissionCandidateRows, patientQuery]);
   const availableAdmissionBeds = React.useMemo(() => getAssignableAdmissionBedsForUnit(draft.unit), [draft.unit]);
   const availableAdmissionBedOptions = React.useMemo(() => availableAdmissionBeds.map((bed) => bed.bedNo), [availableAdmissionBeds]);
   const selectedBed = getAdmissionBed(draft.bedNo);
@@ -1697,7 +1832,6 @@ export function AdmissionWizardWorkspace() {
         <CardHeader>
           <div>
             <CardTitle>ICU Admission Wizard</CardTitle>
-            <CardDescription>Patient, status, bed, device, medication, handover, and risk capture.</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -1728,23 +1862,36 @@ export function AdmissionWizardWorkspace() {
         <CardHeader>
           <div>
             <CardTitle>{admissionSteps[step]}</CardTitle>
-            <CardDescription>Step {step + 1} of {admissionSteps.length}</CardDescription>
           </div>
           <Badge tone={toneForStatus(step === admissionSteps.length - 1 ? "Ready" : "In progress")}>{step === admissionSteps.length - 1 ? "Review" : "In progress"}</Badge>
         </CardHeader>
         <CardContent className="space-y-4">
           {step === 0 ? (
             <FormGrid>
-              <TextField label="Search patient / MRN / location" value={patientQuery} onChange={setPatientQuery} placeholder="Search admitted, ER, ward, OT, external transfer..." wide />
-              <SelectField label="Patient / MRN" value={draft.patientId} onChange={updateAdmissionPatient} options={filteredPatientCandidates.map((patient) => patient.id)} renderOption={admissionCandidateLabel} wide />
+              <TextField label="Search patient / MRN / location" value={patientQuery} onChange={setPatientQuery} placeholder="Search patient name, MRN, ER, ward, OT, external transfer..." wide />
+              {patientQuery.trim() ? (
+                <AdmissionPatientSearchRows
+                  rows={filteredPatientCandidates}
+                  searchedText={patientQuery}
+                  selectedPatientId={draft.patientId}
+                  onCreate={openEmergencyCreate}
+                  onSelect={updateAdmissionPatient}
+                />
+              ) : null}
+              {showEmergencyCreate ? (
+                <EmergencyAdmissionCreatePanel
+                  draft={emergencyDraft}
+                  onCancel={() => setShowEmergencyCreate(false)}
+                  onChange={updateEmergencyDraft}
+                  onCreate={createEmergencyAdmission}
+                />
+              ) : null}
               <SelectField label="Admission origin" value={draft.source} onChange={updateAdmissionSource} options={admissionSourceOptions} />
-              <ReadOnlyField label="Patient name" value={draft.patientName} />
-              <ReadOnlyField label="MRN / UHID" value={draft.mrn} />
+              <ReadOnlyField label="Selected patient" value={draft.patientName && draft.mrn ? `${draft.patientName} | ${draft.mrn}` : ""} />
               <ReadOnlyField label="ICU Admission No" value={draft.icuAdmissionNo} />
               <ReadOnlyField label="Age / gender" value={draft.ageGender} />
               <ReadOnlyField label="Location" value={draft.currentLocation} />
               <ReadOnlyField label="Current status" value={draft.patientStatus} />
-              <AdmissionCandidatePanel candidate={selectedCandidate} blockReason={admissionBlockReason} />
             </FormGrid>
           ) : null}
 
@@ -1764,8 +1911,6 @@ export function AdmissionWizardWorkspace() {
                 <TextAreaField half label="Planned Care / Treatment" value={draft.plannedCareTreatment} onChange={(value) => updateDraft("plannedCareTreatment", value)} placeholder="ICU plan, treatment goal, monitoring plan, escalation plan..." />
                 <TextField label={getAdmissionScenario(draft.source).detailLabel} value={draft.sourceDetail} onChange={(value) => updateDraft("sourceDetail", value)} placeholder="Admission source context..." wide />
               </AdmissionFormSection>
-
-              <AdmissionSourceScenarioPanel source={draft.source} />
             </div>
           ) : null}
 
@@ -1785,7 +1930,6 @@ export function AdmissionWizardWorkspace() {
               <SelectField label="Admitting doctor" value={draft.doctor} onChange={(value) => updateDraft("doctor", value)} options={["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma"]} />
               <SelectField label="Admitting consultant" value={draft.admittingConsultant} onChange={(value) => updateDraft("admittingConsultant", value)} options={admittingConsultantOptions} />
               <SelectField label="Admitting unit" value={draft.admittingTeam} onChange={(value) => updateDraft("admittingTeam", value)} options={admittingTeamOptions} />
-              <AdmissionBedPanel bed={selectedBed} />
               <AdmissionReadinessChecklist selected={selectedReadiness} onToggle={toggleReadiness} />
             </FormGrid>
           ) : null}
@@ -1798,6 +1942,7 @@ export function AdmissionWizardWorkspace() {
                   updateDraft("currentMedication", value);
                   updateDraft("medication", value);
                 }} placeholder="Antibiotics, infusions, emergency medicines, active ICU medicines..." />
+                <TextAreaField half label="Allergy" value={draft.allergy} onChange={(value) => updateDraft("allergy", value)} placeholder="Drug, food, latex, contrast, or no known allergy..." />
                 <TextAreaField half label="High-Alert Medications" value={draft.highAlertMedications} onChange={(value) => updateDraft("highAlertMedications", value)} placeholder="Insulin, vasopressor, anticoagulant, concentrated electrolytes, narcotics..." />
                 <TextAreaField half label="Other Relevant Information" value={draft.otherRelevantInformation} onChange={(value) => updateDraft("otherRelevantInformation", value)} placeholder="Allergy, implants, NPO, infection risk, family instruction, consent context..." />
               </AdmissionFormSection>
@@ -1921,8 +2066,6 @@ export function ShiftHandoverWorkspace() {
   );
   const [draft, setDraft] = React.useState<NursingClinicalHandoffDraft>(() => buildClinicalHandoffDraft(firstPatient, "K - Morning (07:00-15:00)"));
   const selectedPatient = icuPatients.find((patient) => patient.id === draft.patientId) ?? firstPatient;
-  const sourceSummary = React.useMemo(() => selectedPatient ? buildWholeShiftSummary(selectedPatient, draft.handedOverBy, draft.shift) : null, [draft.handedOverBy, draft.shift, selectedPatient]);
-  const completion = calculateClinicalHandoffCompletion(draft);
   const [records, setRecords] = React.useState<ClinicalHandoffRecord[]>(() => [
     {
       ...buildClinicalHandoffDraft(icuPatients[0], "Y - Evening (15:00-23:00)"),
@@ -1985,87 +2128,39 @@ export function ShiftHandoverWorkspace() {
 
   return (
     <div className="space-y-4">
-      <details className="group overflow-hidden rounded-md border border-border bg-surface shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
-          <span className="min-w-0">
-            <span className="block text-sm font-semibold text-foreground">Shift handover summary</span>
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-              {selectedPatient?.bedNo} - {selectedPatient?.patientName} | {draft.shift} | {completion}% complete
-            </span>
-          </span>
-          <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="border-t border-border">
-          <Card className="rounded-none border-0 bg-gradient-to-r from-sky-50 via-white to-emerald-50 shadow-none">
-            <CardHeader>
-              <div>
-                <CardTitle>Nursing Clinical Handoff</CardTitle>
-                <CardDescription>PDF format mapped to bedside ICU handoff: critical information, allergies, pending work, medicine, procedure, referral, and nurse sign-off.</CardDescription>
-              </div>
-              <Badge tone={completion >= 80 ? "success" : completion >= 55 ? "warning" : "danger"}>{completion}% complete</Badge>
-            </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <MetricTile label="Critical items" value={selectedPatient?.alerts.length ?? 0} tone={(selectedPatient?.alerts.length ?? 0) ? "critical" : "success"} icon={AlertTriangle} />
-              <MetricTile label="Pending medicine" value={patientPendingMedicationCount(selectedPatient?.id)} tone={patientPendingMedicationCount(selectedPatient?.id) ? "danger" : "success"} icon={Pill} />
-              <MetricTile label="Pending tasks" value={selectedPatient?.pendingTasks ?? 0} tone={(selectedPatient?.pendingTasks ?? 0) ? "warning" : "success"} icon={ListChecks} />
-              <MetricTile label="Shift code" value={draft.shift.split(" ")[0]} tone="info" icon={ClipboardCheck} />
-            </CardContent>
-          </Card>
-        </div>
-      </details>
+      <Card className="overflow-hidden">
+        <CardContent className="grid gap-3 p-3 lg:grid-cols-[minmax(260px,1fr)_minmax(220px,0.85fr)_160px_minmax(320px,1.25fr)] lg:items-end">
+          <SelectField
+            label="Patient / bed"
+            value={draft.patientId}
+            onChange={updatePatient}
+            options={icuPatients.map((patient) => patient.id)}
+            renderOption={(id) => {
+              const patient = icuPatients.find((item) => item.id === id);
+              return patient ? `${patient.bedNo} - ${patient.patientName}` : id;
+            }}
+          />
+          <SelectField label="Shift" value={draft.shift} onChange={updateShift} options={clinicalHandoffShiftOptions} />
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Date</span>
+            <Input type="date" value={draft.handoffDate} onChange={(event) => updateDraft("handoffDate", event.target.value)} />
+          </label>
+          <div className="rounded-md border border-border bg-surface-muted px-3 py-2 text-xs leading-5 text-muted-foreground">
+            <p className="font-semibold text-foreground">{selectedPatient?.bedNo} - {selectedPatient?.patientName}</p>
+            <p>{selectedPatient?.mrn} | {selectedPatient?.ageGender} | {selectedPatient?.unit}</p>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <div className="space-y-4">
-          <Card className="xl:sticky xl:top-4">
-            <CardHeader>
-              <div>
-                <CardTitle>Patient Label</CardTitle>
-                <CardDescription>Selected ICU patient and shift context.</CardDescription>
-              </div>
-              <StatusPill tone={toneForStatus(selectedPatient?.currentStatus ?? "")}>{selectedPatient?.currentStatus ?? "No patient"}</StatusPill>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <SelectField
-                label="Patient / bed"
-                value={draft.patientId}
-                onChange={updatePatient}
-                options={icuPatients.map((patient) => patient.id)}
-                renderOption={(id) => {
-                  const patient = icuPatients.find((item) => item.id === id);
-                  return patient ? `${patient.bedNo} - ${patient.patientName}` : id;
-                }}
-              />
-              <SelectField label="Shift" value={draft.shift} onChange={updateShift} options={clinicalHandoffShiftOptions} />
-              <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">Date</span>
-                <Input type="date" value={draft.handoffDate} onChange={(event) => updateDraft("handoffDate", event.target.value)} />
-              </label>
-              <div className="rounded-md border border-border bg-surface-muted p-3 text-xs leading-5 text-muted-foreground">
-                <p className="font-semibold text-foreground">{selectedPatient?.patientName}</p>
-                <p>{selectedPatient?.mrn} | {selectedPatient?.ageGender}</p>
-                <p>{selectedPatient?.bedNo} | {selectedPatient?.unit}</p>
-                <p className="mt-2">{selectedPatient?.diagnosis}</p>
-              </div>
-              <div className="rounded-md border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800">
-                <p className="font-semibold">Shift legend</p>
-                <p className="mt-1">K = Morning, Y = Evening, X = Night</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
+      <Card>
           <CardHeader>
             <div>
               <CardTitle>Clinical Handoff Sheet</CardTitle>
-              <CardDescription>Outgoing nurse fills the sheet, incoming nurse acknowledges and continues pending care.</CardDescription>
             </div>
-            <Badge tone="info">{draft.handedOverBy} {" -> "} {draft.takenOverBy}</Badge>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2">
               <ClinicalHandoffSection
-                description="Current critical issue that must be known before taking over."
                 icon={AlertTriangle}
                 tone="critical"
                 title="Critical Information"
@@ -2073,7 +2168,6 @@ export function ShiftHandoverWorkspace() {
                 <TextAreaField label="Critical information" value={draft.criticalInformation} onChange={(value) => updateDraft("criticalInformation", value)} placeholder="Airway, sepsis, bleeding, isolation, escalation trigger..." />
               </ClinicalHandoffSection>
               <ClinicalHandoffSection
-                description="Food and drug allergy visible at handoff."
                 icon={ShieldAlert}
                 tone="warning"
                 title="Food / Drug Allergies"
@@ -2083,7 +2177,6 @@ export function ShiftHandoverWorkspace() {
             </div>
 
             <ClinicalHandoffSection
-              description="Pending/planned investigations and reports to collect in next shift."
               icon={FileText}
               tone="info"
               title="Investigations"
@@ -2095,7 +2188,6 @@ export function ShiftHandoverWorkspace() {
             </ClinicalHandoffSection>
 
             <ClinicalHandoffSection
-              description="High-alert, pending, and other medication information for incoming nurse."
               icon={Pill}
               tone="danger"
               title="Medicine"
@@ -2109,7 +2201,6 @@ export function ShiftHandoverWorkspace() {
 
             <div className="grid gap-3 lg:grid-cols-2">
               <ClinicalHandoffSection
-                description="Procedure completed or pending further in next shift."
                 icon={ClipboardCheck}
                 tone="success"
                 title="Procedure"
@@ -2120,7 +2211,6 @@ export function ShiftHandoverWorkspace() {
                 </div>
               </ClinicalHandoffSection>
               <ClinicalHandoffSection
-                description="Any new consultant referral created during handoff window."
                 icon={FileSignature}
                 tone="info"
                 title="New Consultant Referral"
@@ -2130,7 +2220,6 @@ export function ShiftHandoverWorkspace() {
             </div>
 
             <ClinicalHandoffSection
-              description="Final nurse-to-nurse confirmation for this shift."
               icon={CheckCircle2}
               tone="success"
               title="Handover Confirmation"
@@ -2143,7 +2232,6 @@ export function ShiftHandoverWorkspace() {
             </ClinicalHandoffSection>
 
             <ClinicalHandoffSection
-              description="Use only when assigned nurse leaves unit and patient responsibility is temporarily handed over."
               icon={Clock}
               tone="warning"
               title="Nurse Leaving Unit Hand-Off"
@@ -2156,7 +2244,6 @@ export function ShiftHandoverWorkspace() {
             </ClinicalHandoffSection>
 
             <ClinicalHandoffSection
-              description="On return, temporary owner hands back current patient status to assigned nurse."
               icon={ArrowRight}
               tone="info"
               title="On Return Handover"
@@ -2168,32 +2255,18 @@ export function ShiftHandoverWorkspace() {
               </div>
             </ClinicalHandoffSection>
 
-            <div className="rounded-md border border-border bg-surface-muted p-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Source basis</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Critical info, medicine, and pending work are prefilled from patient record, alerts, medication chart, I/O, and task list. Nurse can edit before saving.
-                  </p>
-                </div>
-                <Badge tone="info">{sourceSummary?.metrics.length ?? 0} source groups</Badge>
-              </div>
-            </div>
-
             <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4">
               <Button variant="outline" onClick={resetDraft}>Reset</Button>
               <Button variant="outline" onClick={saveDraft}><Save className="h-4 w-4" />Save draft</Button>
               <Button onClick={signHandoff}><ClipboardCheck className="h-4 w-4" />Sign handoff</Button>
             </div>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
 
       <Card>
         <CardHeader>
           <div>
             <CardTitle>Clinical Handoff Queue</CardTitle>
-            <CardDescription>Recent patient handoff records and incoming nurse acknowledgement.</CardDescription>
           </div>
           <Badge tone="info">{records.length} records</Badge>
         </CardHeader>
@@ -2201,12 +2274,12 @@ export function ShiftHandoverWorkspace() {
           <table className="min-w-[920px] w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr className="bg-surface-muted text-left text-xs uppercase text-muted-foreground">
-                <th className="rounded-l-md px-3 py-2">Patient</th>
-                <th className="px-3 py-2">Shift / date</th>
-                <th className="px-3 py-2">Critical info</th>
-                <th className="px-3 py-2">Pending work</th>
-                <th className="px-3 py-2">Nurse route</th>
-                <th className="rounded-r-md px-3 py-2">Status</th>
+                <th className="rounded-l-md px-3 py-3">Patient</th>
+                <th className="px-3 py-3">Shift / date</th>
+                <th className="px-3 py-3">Critical info</th>
+                <th className="px-3 py-3">Pending work</th>
+                <th className="px-3 py-3">Nurse route</th>
+                <th className="rounded-r-md px-3 py-3">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -2214,24 +2287,24 @@ export function ShiftHandoverWorkspace() {
                 const patient = icuPatients.find((item) => item.id === record.patientId);
                 return (
                   <tr className="border-b border-border" key={record.id}>
-                    <td className="px-3 py-2 align-top">
+                    <td className="px-3 py-3 align-top">
                       <p className="font-semibold text-foreground">{patient?.bedNo} - {patient?.patientName}</p>
                       <p className="text-xs text-muted-foreground">{patient?.mrn} | {patient?.unit}</p>
                     </td>
-                    <td className="px-3 py-2 align-top">
+                    <td className="px-3 py-3 align-top">
                       <p className="font-semibold text-foreground">{record.shift}</p>
                       <p className="text-xs text-muted-foreground">{record.handoffDate}</p>
                     </td>
-                    <td className="max-w-[280px] px-3 py-2 align-top text-xs text-muted-foreground">{record.criticalInformation}</td>
-                    <td className="max-w-[260px] px-3 py-2 align-top text-xs text-muted-foreground">{record.pendingInvestigations || record.pendingMedications}</td>
-                    <td className="px-3 py-2 align-top">
+                    <td className="max-w-[280px] px-3 py-3 align-top text-xs text-muted-foreground">{record.criticalInformation}</td>
+                    <td className="max-w-[260px] px-3 py-3 align-top text-xs text-muted-foreground">{record.pendingInvestigations || record.pendingMedications}</td>
+                    <td className="px-3 py-3 align-top">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">{record.handedOverBy}</span>
                         <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="rounded-full bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-800">{record.takenOverBy}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 align-top">
+                    <td className="px-3 py-3 align-top">
                       <div className="flex flex-col gap-2">
                         <StatusPill tone={toneForStatus(record.status)}>{record.status}</StatusPill>
                         {record.status !== "Acknowledged" ? (
@@ -2313,7 +2386,7 @@ function ClinicalHandoffSection({
   tone,
 }: {
   children: React.ReactNode;
-  description: string;
+  description?: string;
   icon: typeof Activity;
   title: string;
   tone: StatusTone;
@@ -2326,7 +2399,7 @@ function ClinicalHandoffSection({
         </span>
         <div>
           <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+          {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
         </div>
       </div>
       {children}
@@ -2464,11 +2537,13 @@ export function NursingTaskBoardWorkspace() {
   const searchParams = useSearchParams();
   const requestedTaskTab = normalizeTaskBoardTab(searchParams.get("taskTab"));
   const requestedPatientId = searchParams.get("patientId") ?? undefined;
+  const focusedPatient = requestedPatientId ? icuPatients.find((patient) => patient.id === requestedPatientId) : undefined;
+  const focusedPatientLabel = focusedPatient ? taskPatientLabel(focusedPatient) : undefined;
   const [tasks, setTasks] = React.useState<IcuTask[]>(icuTasks);
   const [query, setQuery] = React.useState("");
   const [owner, setOwner] = React.useState("All nurses");
   const [source, setSource] = React.useState("All sources");
-  const [patientFilter, setPatientFilter] = React.useState("All patients");
+  const [patientFilter, setPatientFilter] = React.useState(focusedPatientLabel ?? "All patients");
   const [unitFilter, setUnitFilter] = React.useState("All ICU units");
   const [priorityFilter, setPriorityFilter] = React.useState("All priority");
   const [statusFilter, setStatusFilter] = React.useState("Open tasks");
@@ -2484,6 +2559,7 @@ export function NursingTaskBoardWorkspace() {
     const taskSource = task.source ?? task.createdBy;
     const searchable = `${task.patientName} ${task.bedNo} ${task.title} ${task.remarks} ${task.createdBy} ${task.assignedBy ?? ""} ${task.assignedTo} ${taskSource} ${task.taskType} ${task.assignmentReason ?? ""}`.toLowerCase();
     return searchable.includes(query.toLowerCase())
+      && (!focusedPatient || task.patientId === focusedPatient.id)
       && (owner === "All nurses" || task.assignedTo === owner)
       && (source === "All sources" || taskSource === source)
       && (patientFilter === "All patients" || taskPatientLabel(patient) === patientFilter)
@@ -2560,20 +2636,26 @@ export function NursingTaskBoardWorkspace() {
     setQuery("");
     setOwner("All nurses");
     setSource("All sources");
-    setPatientFilter("All patients");
+    setPatientFilter(focusedPatientLabel ?? "All patients");
     setUnitFilter("All ICU units");
     setPriorityFilter("All priority");
     setStatusFilter("Open tasks");
   };
 
+  React.useEffect(() => {
+    if (focusedPatientLabel) {
+      setPatientFilter(focusedPatientLabel);
+    }
+  }, [focusedPatientLabel]);
+
   return (
     <div className="space-y-4">
       <details className="group overflow-hidden rounded-md border border-border bg-surface shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-foreground">Tasks & assessments summary</span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-              {patientFilter} | {unitFilter} | {priorityFilter} | {visibleTasks.length} visible
+              {(focusedPatientLabel ?? patientFilter)} | {unitFilter} | {priorityFilter} | {visibleTasks.length} visible
             </span>
           </span>
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
@@ -2594,7 +2676,12 @@ export function NursingTaskBoardWorkspace() {
                 <Input className="pl-9" placeholder="Patient, bed, task, source..." value={query} onChange={(event) => setQuery(event.target.value)} />
               </div>
             </label>
-            <NativeSelect label="Patient" value={patientFilter} onChange={setPatientFilter} options={patientOptions} />
+            <NativeSelect
+              label="Patient"
+              value={focusedPatientLabel ?? patientFilter}
+              onChange={focusedPatientLabel ? () => undefined : setPatientFilter}
+              options={focusedPatientLabel ? [focusedPatientLabel] : patientOptions}
+            />
             <NativeSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={unitOptions} />
             <NativeSelect label="Priority" value={priorityFilter} onChange={setPriorityFilter} options={["All priority", "Critical", "High", "Medium", "Routine"]} />
             <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={["Open tasks", "Due / attention", "All status", "Assigned", "Accepted", "Pending", "In progress", "Overdue", "Escalated", "Completed"]} />
@@ -2679,16 +2766,16 @@ function TaskDashboardTable({
           <table className="w-full min-w-[1420px] border-collapse bg-white text-sm">
             <thead className="sticky top-0 z-20">
               <tr className="border-b border-slate-300 bg-white text-[11px] uppercase text-sky-700">
-                <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-2 text-left">Patient</th>
-                <th className="min-w-[140px] px-3 py-2 text-center">Assessment</th>
-                <th className="min-w-[140px] px-3 py-2 text-center">Due task</th>
-                <th className="min-w-[140px] px-3 py-2 text-center">Medication</th>
-                <th className="min-w-[140px] px-3 py-2 text-center">Monitoring</th>
-                <th className="min-w-[140px] px-3 py-2 text-center">I/O</th>
-                <th className="min-w-[140px] px-3 py-2 text-center">Lab / Rad</th>
-                <th className="min-w-[140px] px-3 py-2 text-center">Handover</th>
-                <th className="min-w-[200px] px-3 py-2 text-left">Owner</th>
-                <th className="min-w-[250px] px-3 py-2 text-center">Action</th>
+                <th className="sticky left-0 z-40 min-w-[230px] bg-white px-3 py-3 text-left">Patient</th>
+                <th className="min-w-[140px] px-3 py-3 text-center">Assessment</th>
+                <th className="min-w-[140px] px-3 py-3 text-center">Due task</th>
+                <th className="min-w-[140px] px-3 py-3 text-center">Medication</th>
+                <th className="min-w-[140px] px-3 py-3 text-center">Monitoring</th>
+                <th className="min-w-[140px] px-3 py-3 text-center">I/O</th>
+                <th className="min-w-[140px] px-3 py-3 text-center">Lab / Rad</th>
+                <th className="min-w-[140px] px-3 py-3 text-center">Handover</th>
+                <th className="min-w-[200px] px-4 py-3 text-left">Owner</th>
+                <th className="min-w-[250px] px-3 py-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -2917,7 +3004,7 @@ function TaskAssessmentPreviewDialog({ assessment, onOpenChange }: { assessment:
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-md border border-border bg-surface shadow-soft outline-none">
-            <div className="border-b border-border bg-sky-700 px-3 py-2 text-white">
+            <div className="border-b border-border bg-sky-700 px-4 py-3 text-white">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <Dialog.Title className="text-base font-semibold">{assessment.type}</Dialog.Title>
@@ -2947,7 +3034,7 @@ function TaskAssessmentPreviewDialog({ assessment, onOpenChange }: { assessment:
                 <InfoPanel title="Nursing intervention" rows={[["Intervention", assessment.intervention], ["Recorded by", assessment.nurse]]} />
               </div>
             </div>
-            <div className="flex flex-wrap justify-end gap-2 border-t border-border bg-surface-muted px-3 py-2">
+            <div className="flex flex-wrap justify-end gap-2 border-t border-border bg-surface-muted px-4 py-3">
               <Dialog.Close asChild>
                 <Button variant="outline">Close</Button>
               </Dialog.Close>
@@ -3194,7 +3281,7 @@ function TaskActionDialogContent({
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
       <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-md border border-border bg-surface shadow-soft outline-none">
-        <div className="border-b border-border bg-sky-700 px-3 py-2 text-white">
+        <div className="border-b border-border bg-sky-700 px-4 py-3 text-white">
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-base font-semibold">{taskActionTitle(nextStatus)}</Dialog.Title>
@@ -3241,7 +3328,7 @@ function TaskActionDialogContent({
           </div>
           <TextAreaField label="Action note" value={note} onChange={setNote} placeholder="Capture condition, communication, result, blocker, or completion evidence..." />
         </div>
-        <div className="flex flex-wrap justify-end gap-2 border-t border-border bg-surface-muted px-3 py-2">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-border bg-surface-muted px-4 py-3">
           <Dialog.Close asChild>
             <Button variant="outline">Cancel</Button>
           </Dialog.Close>
@@ -3682,27 +3769,8 @@ function getTaskAssignmentDefaults(source: NurseTaskSource, patient?: IcuPatient
   return { ...base, assignmentReason: "Self-created nursing care task", escalationOwner: "Head Nurse Sana", requiresAcknowledgement: false };
 }
 
-export function MedicationTimelineWorkspace() {
-  const searchParams = useSearchParams();
-  const queryUnit = searchParams.get("unit")?.trim() ?? "";
-  const queryFocus = searchParams.get("focus")?.trim() ?? "";
-  const [orders, setOrders] = React.useState<DoctorMedicationOrder[]>(seededDoctorMedicationOrders);
-  const [doses, setDoses] = React.useState<MedicationDoseRow[]>(() => buildMedicationDoseRows(seededDoctorMedicationOrders));
-  const [patientId, setPatientId] = React.useState("All patients");
-  const [unitFilter, setUnitFilter] = React.useState(queryUnit || "All ICU units");
-  const [status, setStatus] = React.useState<(typeof medicationStatuses)[number]>("All status");
-  const [orderType, setOrderType] = React.useState<(typeof orderTypeOptions)[number]>("All types");
-  const [pharmacy, setPharmacy] = React.useState<(typeof pharmacyOptions)[number]>("All pharmacy");
-  const [medicationDate, setMedicationDate] = React.useState("2026-06-08");
-  const [shift, setShift] = React.useState<(typeof medicationShiftOptions)[number]>("All shifts");
-  const [hour, setHour] = React.useState<(typeof medicationHourOptions)[number]>("All hours");
-  const [query, setQuery] = React.useState("");
-  const [emarQueue, setEmarQueue] = React.useState<MedicationEmarQueue>("Due Now");
-  const [selectedDoseId, setSelectedDoseId] = React.useState<string | null>(null);
-  const [pendingDoseAction, setPendingDoseAction] = React.useState<{ doseId: string; action: MedicationNurseAction } | null>(null);
-  const [pendingOrderAction, setPendingOrderAction] = React.useState<{ orderId: string; action: DoctorOrderStatusAction } | null>(null);
-  const [pendingAmendOrderId, setPendingAmendOrderId] = React.useState<string | null>(null);
-  const [draft, setDraft] = React.useState<MedicationOrderDraft>({
+function createMedicationOrderDraft(): MedicationOrderDraft {
+  return {
     patientId: icuPatients[0]?.id ?? "",
     department: "ICU",
     formularyId: "",
@@ -3710,14 +3778,14 @@ export function MedicationTimelineWorkspace() {
     dose: "",
     route: "IV",
     frequency: "q8h",
-    orderType: "Scheduled" as MedicationOrderType,
+    orderType: "Scheduled",
     scheduleTimes: "08:00, 16:00, 00:00",
     doctor: "Dr. Sameer Mehta",
     indication: "",
     instructions: "",
     highRisk: false,
     doubleVerificationRequired: false,
-    pharmacyStatus: "Available" as PharmacyStatus,
+    pharmacyStatus: "Available",
     startDate: "2026-06-08",
     startTime: "12:00",
     duration: "5 days",
@@ -3729,38 +3797,412 @@ export function MedicationTimelineWorkspace() {
     maxRate: "",
     monitoringFrequency: "",
     approvalReason: "",
-  });
+  };
+}
 
-  const medicationUnitOptions = React.useMemo(() => ["All ICU units", ...Array.from(new Set(icuPatients.map((patient) => patient.unit)))], []);
+type DoctorEntryOrderCategory = "Medication" | "Investigation" | "Imaging" | "Procedure" | "Nursing Care" | "Diet / Fluid" | "Ventilation";
+type DoctorEntryOrderStatus = "Draft" | "Signed" | "Acknowledged" | "Completed" | "Held";
+type DoctorEntryOrderPriority = "Routine" | "High" | "STAT";
+
+type DoctorEntryDraft = {
+  patientId: string;
+  category: DoctorEntryOrderCategory;
+  orderName: string;
+  doseOrDetail: string;
+  route: string;
+  frequency: string;
+  timing: string;
+  assignedTo: string;
+  priority: DoctorEntryOrderPriority;
+  doctor: string;
+  instruction: string;
+};
+
+type DoctorEntryOrder = DoctorEntryDraft & {
+  id: string;
+  bedNo: string;
+  patientName: string;
+  orderText: string;
+  status: DoctorEntryOrderStatus;
+  createdAt: string;
+};
+
+const doctorEntryCategoryOptions: DoctorEntryOrderCategory[] = ["Medication", "Investigation", "Imaging", "Procedure", "Nursing Care", "Diet / Fluid", "Ventilation"];
+
+const doctorEntryAssignments = [
+  "Ward Nurse Kavita",
+  "Ward Nurse Arjun",
+  "Unit Nurse Priya",
+  "Pharmacy",
+  "Diagnostics",
+  "Radiology",
+  "Respiratory Therapist",
+];
+
+const doctorEntryTemplates: Record<DoctorEntryOrderCategory, Array<Pick<DoctorEntryDraft, "orderName" | "doseOrDetail" | "route" | "frequency" | "timing" | "assignedTo" | "priority" | "instruction">>> = {
+  Medication: [
+    { orderName: "Meropenem", doseOrDetail: "1 g", route: "IV", frequency: "q8h", timing: "08:00, 16:00, 00:00", assignedTo: "Ward Nurse Kavita", priority: "High", instruction: "Administer after pharmacy dispense and allergy check." },
+    { orderName: "Noradrenaline", doseOrDetail: "0.05 mcg/kg/min", route: "Infusion", frequency: "Continuous", timing: "Now", assignedTo: "Ward Nurse Kavita", priority: "STAT", instruction: "Titrate to MAP target and document pump check." },
+    { orderName: "Insulin regular", doseOrDetail: "Sliding scale", route: "SC", frequency: "Before meals", timing: "12:00, 18:00", assignedTo: "Ward Nurse Kavita", priority: "High", instruction: "Check blood sugar before administration and double verify dose." },
+    { orderName: "Pantoprazole", doseOrDetail: "40 mg", route: "IV", frequency: "OD", timing: "09:00", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Administer once daily before feeds." },
+    { orderName: "Paracetamol", doseOrDetail: "650 mg", route: "Oral/NG", frequency: "SOS fever", timing: "PRN", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Administer if temperature is above 38 C or pain score is above 5." },
+    { orderName: "Furosemide", doseOrDetail: "20 mg", route: "IV", frequency: "OD", timing: "10:00", assignedTo: "Ward Nurse Kavita", priority: "Routine", instruction: "Review BP, potassium, and urine output before dose." },
+    { orderName: "Enoxaparin", doseOrDetail: "40 mg", route: "SC", frequency: "OD", timing: "20:00", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Hold for bleeding, low platelets, or procedure plan." },
+    { orderName: "Levetiracetam", doseOrDetail: "500 mg", route: "IV", frequency: "BD", timing: "08:00, 20:00", assignedTo: "Ward Nurse Kavita", priority: "Routine", instruction: "Monitor seizure activity and sedation." },
+    { orderName: "Salbutamol nebulization", doseOrDetail: "2.5 mg", route: "Nebulization", frequency: "q6h", timing: "06:00, 12:00, 18:00, 00:00", assignedTo: "Respiratory Therapist", priority: "Routine", instruction: "Record wheeze, SpO2, and heart rate response." },
+    { orderName: "Potassium chloride correction", doseOrDetail: "20 mEq", route: "IV infusion", frequency: "Once", timing: "Now", assignedTo: "Ward Nurse Kavita", priority: "High", instruction: "Administer only with pump and ECG monitoring as per protocol." },
+    { orderName: "Vancomycin", doseOrDetail: "1 g", route: "IV", frequency: "BD", timing: "10:00, 22:00", assignedTo: "Ward Nurse Arjun", priority: "High", instruction: "Send trough level before fourth dose if continued." },
+    { orderName: "Propofol", doseOrDetail: "10-50 mcg/kg/min", route: "Infusion", frequency: "Continuous", timing: "Now", assignedTo: "Ward Nurse Kavita", priority: "STAT", instruction: "Target ordered sedation score and monitor BP closely." },
+  ],
+  Investigation: [
+    { orderName: "ABG with lactate", doseOrDetail: "Arterial sample", route: "Lab", frequency: "Once", timing: "Now", assignedTo: "Diagnostics", priority: "STAT", instruction: "Inform duty doctor immediately if lactate is rising." },
+    { orderName: "CBC, CRP, electrolytes", doseOrDetail: "Blood sample", route: "Lab", frequency: "Daily", timing: "06:00", assignedTo: "Diagnostics", priority: "Routine", instruction: "Attach report to patient results." },
+    { orderName: "Renal function test", doseOrDetail: "Urea, creatinine, electrolytes", route: "Lab", frequency: "Daily", timing: "06:00", assignedTo: "Diagnostics", priority: "Routine", instruction: "Flag rising creatinine or potassium abnormality." },
+    { orderName: "Liver function test", doseOrDetail: "Bilirubin, AST, ALT, ALP, albumin", route: "Lab", frequency: "Once", timing: "Morning sample", assignedTo: "Diagnostics", priority: "Routine", instruction: "Review before hepatotoxic medication continuation." },
+    { orderName: "Coagulation profile", doseOrDetail: "PT/INR, APTT, D-dimer, fibrinogen", route: "Lab", frequency: "Once", timing: "Now", assignedTo: "Diagnostics", priority: "High", instruction: "Escalate abnormal INR or bleeding risk." },
+    { orderName: "Blood culture", doseOrDetail: "Two sets from separate sites", route: "Lab", frequency: "Once", timing: "Before antibiotic dose", assignedTo: "Diagnostics", priority: "High", instruction: "Collect before new antibiotic if clinically possible." },
+    { orderName: "Urine routine and culture", doseOrDetail: "Catheter sample", route: "Lab", frequency: "Once", timing: "Today", assignedTo: "Diagnostics", priority: "Routine", instruction: "Use aseptic sample collection technique." },
+    { orderName: "Procalcitonin", doseOrDetail: "Serum", route: "Lab", frequency: "Once", timing: "Morning sample", assignedTo: "Diagnostics", priority: "High", instruction: "Trend with sepsis plan and antibiotic review." },
+    { orderName: "Troponin I", doseOrDetail: "Serum", route: "Lab", frequency: "Once", timing: "Now", assignedTo: "Diagnostics", priority: "STAT", instruction: "Notify duty doctor if positive or rising." },
+    { orderName: "Blood sugar monitoring", doseOrDetail: "Capillary glucose", route: "Bedside", frequency: "q6h", timing: "06:00, 12:00, 18:00, 00:00", assignedTo: "Ward Nurse Kavita", priority: "Routine", instruction: "Follow insulin correction order if value is out of range." },
+  ],
+  Imaging: [
+    { orderName: "Portable chest X-ray", doseOrDetail: "AP view", route: "Portable", frequency: "Once", timing: "Today", assignedTo: "Radiology", priority: "High", instruction: "Confirm line position and lung fields." },
+    { orderName: "CT brain", doseOrDetail: "Non-contrast", route: "Transport", frequency: "Once", timing: "After stabilization", assignedTo: "Radiology", priority: "High", instruction: "Move only with monitor and oxygen support." },
+    { orderName: "USG abdomen", doseOrDetail: "Bedside ultrasound", route: "Portable", frequency: "Once", timing: "Today", assignedTo: "Radiology", priority: "Routine", instruction: "Assess free fluid, hepatobiliary, and renal status." },
+    { orderName: "Echocardiography", doseOrDetail: "Bedside 2D echo", route: "Portable", frequency: "Once", timing: "Today", assignedTo: "Radiology", priority: "High", instruction: "Assess LV function, RV strain, and volume status." },
+    { orderName: "CT chest", doseOrDetail: "HRCT / contrast as advised", route: "Transport", frequency: "Once", timing: "After renal review", assignedTo: "Radiology", priority: "High", instruction: "Check creatinine and transport readiness before scan." },
+    { orderName: "Doppler lower limb", doseOrDetail: "Venous Doppler", route: "Portable", frequency: "Once", timing: "Today", assignedTo: "Radiology", priority: "Routine", instruction: "Evaluate suspected DVT before anticoagulation decision." },
+    { orderName: "X-ray abdomen", doseOrDetail: "Erect/supine view", route: "Portable", frequency: "Once", timing: "Today", assignedTo: "Radiology", priority: "Routine", instruction: "Review bowel gas pattern and tube position." },
+    { orderName: "CT abdomen", doseOrDetail: "Contrast protocol", route: "Transport", frequency: "Once", timing: "After stabilization", assignedTo: "Radiology", priority: "High", instruction: "Confirm renal function and hemodynamic stability." },
+  ],
+  Procedure: [
+    { orderName: "Central line review", doseOrDetail: "Right IJ line", route: "Bedside", frequency: "Once", timing: "Next round", assignedTo: "Unit Nurse Priya", priority: "Routine", instruction: "Keep sterile tray and consent status ready." },
+    { orderName: "Tracheostomy planning", doseOrDetail: "Airway procedure", route: "OT / bedside", frequency: "Once", timing: "After family consent", assignedTo: "Unit Nurse Priya", priority: "High", instruction: "Coordinate anesthesia, consent, and ventilator readiness." },
+    { orderName: "Arterial line insertion", doseOrDetail: "Radial artery", route: "Bedside", frequency: "Once", timing: "Now", assignedTo: "Unit Nurse Priya", priority: "High", instruction: "Prepare sterile set, pressure bag, and waveform monitoring." },
+    { orderName: "Urinary catheter insertion", doseOrDetail: "Foley catheter", route: "Bedside", frequency: "Once", timing: "Now", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Use aseptic technique and record urine output hourly." },
+    { orderName: "Pleural tap", doseOrDetail: "Diagnostic/therapeutic", route: "Bedside", frequency: "Once", timing: "After consent", assignedTo: "Unit Nurse Priya", priority: "High", instruction: "Keep ultrasound, sterile tray, and sample bottles ready." },
+    { orderName: "Dialysis catheter care", doseOrDetail: "Dressing and patency check", route: "Bedside", frequency: "Once", timing: "Before dialysis", assignedTo: "Ward Nurse Kavita", priority: "Routine", instruction: "Check dressing, bleeding, infection, and line patency." },
+    { orderName: "Wound dressing", doseOrDetail: "Surgical wound", route: "Bedside", frequency: "OD", timing: "Morning", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Document wound status, soakage, and discharge." },
+    { orderName: "Drain removal review", doseOrDetail: "Abdominal drain", route: "Bedside", frequency: "Once", timing: "Next round", assignedTo: "Unit Nurse Priya", priority: "Routine", instruction: "Record last 24-hour output before review." },
+  ],
+  "Nursing Care": [
+    { orderName: "Repeat vitals", doseOrDetail: "BP, SpO2, pulse", route: "Bedside", frequency: "Every 15 minutes", timing: "For 1 hour", assignedTo: "Ward Nurse Kavita", priority: "High", instruction: "Escalate if BP remains below target." },
+    { orderName: "Neuro observation", doseOrDetail: "GCS and pupils", route: "Bedside", frequency: "Hourly", timing: "Next 6 hours", assignedTo: "Ward Nurse Arjun", priority: "High", instruction: "Call duty doctor for drop in GCS." },
+    { orderName: "Strict intake/output", doseOrDetail: "All sources", route: "Bedside chart", frequency: "Hourly", timing: "Current shift", assignedTo: "Ward Nurse Kavita", priority: "High", instruction: "Inform if urine output falls below 0.5 ml/kg/hr." },
+    { orderName: "Pressure sore prevention", doseOrDetail: "Two-hourly position change", route: "Bedside", frequency: "q2h", timing: "All shifts", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Document position change and skin condition." },
+    { orderName: "Oral care", doseOrDetail: "Ventilator oral care", route: "Bedside", frequency: "q4h", timing: "All shifts", assignedTo: "Ward Nurse Kavita", priority: "Routine", instruction: "Use VAP prevention bundle documentation." },
+    { orderName: "Line site check", doseOrDetail: "Central line and arterial line", route: "Bedside", frequency: "Every shift", timing: "Each shift", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Report redness, discharge, loose dressing, or line issue." },
+    { orderName: "Pain score monitoring", doseOrDetail: "NRS / behavioral pain score", route: "Bedside", frequency: "q4h", timing: "All shifts", assignedTo: "Ward Nurse Kavita", priority: "Routine", instruction: "Escalate uncontrolled pain after analgesia." },
+    { orderName: "Fall prevention", doseOrDetail: "High-risk precautions", route: "Bedside", frequency: "Continuous", timing: "All shifts", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Maintain side rails, call bell, and supervised mobilization." },
+  ],
+  "Diet / Fluid": [
+    { orderName: "Fluid restriction", doseOrDetail: "1500 ml/day", route: "I/O chart", frequency: "24 hours", timing: "From now", assignedTo: "Ward Nurse Kavita", priority: "Routine", instruction: "Record oral, IV, tube feed, urine, and drains." },
+    { orderName: "Enteral feed", doseOrDetail: "50 ml/hr", route: "NG tube", frequency: "Continuous", timing: "Start 14:00", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Hold if vomiting, high aspirate, or desaturation." },
+    { orderName: "NPO", doseOrDetail: "Nil per oral", route: "Diet order", frequency: "Until review", timing: "Now", assignedTo: "Ward Nurse Kavita", priority: "High", instruction: "Hold oral feeds and medications unless doctor allows NG route." },
+    { orderName: "Normal saline", doseOrDetail: "100 ml/hr", route: "IV", frequency: "Continuous", timing: "Now", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Review fluid balance and edema every shift." },
+    { orderName: "Ringer lactate bolus", doseOrDetail: "500 ml", route: "IV", frequency: "Once", timing: "Now", assignedTo: "Ward Nurse Kavita", priority: "STAT", instruction: "Recheck BP, pulse, SpO2, and urine output after bolus." },
+    { orderName: "Dextrose saline", doseOrDetail: "75 ml/hr", route: "IV", frequency: "Continuous", timing: "Now", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Monitor blood sugar and sodium." },
+    { orderName: "Tube feed advancement", doseOrDetail: "Increase by 20 ml/hr", route: "NG tube", frequency: "q6h", timing: "If tolerated", assignedTo: "Ward Nurse Kavita", priority: "Routine", instruction: "Hold escalation if vomiting, distension, or high aspirate." },
+    { orderName: "Free water flush", doseOrDetail: "30 ml", route: "NG tube", frequency: "q4h", timing: "All shifts", assignedTo: "Ward Nurse Arjun", priority: "Routine", instruction: "Document flush volume in intake chart." },
+  ],
+  Ventilation: [
+    { orderName: "NIV support", doseOrDetail: "IPAP/EPAP as tolerated", route: "Mask", frequency: "Continuous", timing: "Now", assignedTo: "Respiratory Therapist", priority: "STAT", instruction: "Repeat ABG after setting change." },
+    { orderName: "Weaning trial", doseOrDetail: "Spontaneous breathing trial", route: "Ventilator", frequency: "Once", timing: "Morning round", assignedTo: "Respiratory Therapist", priority: "High", instruction: "Stop trial if distress or hemodynamic instability occurs." },
+    { orderName: "Invasive ventilation", doseOrDetail: "Volume control mode", route: "ET tube", frequency: "Continuous", timing: "Now", assignedTo: "Respiratory Therapist", priority: "STAT", instruction: "Document mode, VT, RR, FiO2, PEEP, and pressures." },
+    { orderName: "Oxygen mask", doseOrDetail: "5 L/min", route: "Face mask", frequency: "Continuous", timing: "Now", assignedTo: "Ward Nurse Kavita", priority: "High", instruction: "Target SpO2 as ordered and escalate if requirement increases." },
+    { orderName: "HFNC", doseOrDetail: "Flow 40 L/min, FiO2 50%", route: "High-flow nasal cannula", frequency: "Continuous", timing: "Now", assignedTo: "Respiratory Therapist", priority: "High", instruction: "Record flow, FiO2, SpO2, and work of breathing." },
+    { orderName: "Suctioning", doseOrDetail: "Closed suction", route: "ET / tracheostomy", frequency: "PRN", timing: "As needed", assignedTo: "Respiratory Therapist", priority: "Routine", instruction: "Use sterile technique and pre-oxygenate if required." },
+    { orderName: "PEEP adjustment", doseOrDetail: "Increase by 2 cmH2O", route: "Ventilator", frequency: "Once", timing: "Now", assignedTo: "Respiratory Therapist", priority: "High", instruction: "Repeat SpO2 and ABG review after adjustment." },
+    { orderName: "Extubation readiness", doseOrDetail: "Cuff leak and SBT review", route: "Ventilator", frequency: "Once", timing: "Morning round", assignedTo: "Respiratory Therapist", priority: "High", instruction: "Keep reintubation equipment ready before trial." },
+  ],
+};
+
+const initialDoctorEntryOrders: DoctorEntryOrder[] = [
+  {
+    id: "doctor-entry-001",
+    patientId: "icu-001",
+    patientName: "Aisha Khan",
+    bedNo: "ICU-A01",
+    category: "Investigation",
+    orderName: "ABG with lactate",
+    doseOrDetail: "Arterial sample",
+    route: "Lab",
+    frequency: "Once",
+    timing: "Now",
+    assignedTo: "Diagnostics",
+    priority: "STAT",
+    doctor: "Dr. Sameer Mehta",
+    instruction: "Inform duty doctor immediately if lactate is rising.",
+    orderText: "ABG with lactate",
+    status: "Signed",
+    createdAt: "Today 08:20",
+  },
+  {
+    id: "doctor-entry-002",
+    patientId: "icu-001",
+    patientName: "Aisha Khan",
+    bedNo: "ICU-A01",
+    category: "Medication",
+    orderName: "Meropenem",
+    doseOrDetail: "1 g",
+    route: "IV",
+    frequency: "q8h",
+    timing: "08:00, 16:00, 00:00",
+    assignedTo: "Ward Nurse Kavita",
+    priority: "High",
+    doctor: "Dr. Sameer Mehta",
+    instruction: "Administer after pharmacy dispense and allergy check.",
+    orderText: "Meropenem 1 g IV q8h",
+    status: "Acknowledged",
+    createdAt: "Today 08:15",
+  },
+  {
+    id: "doctor-entry-005",
+    patientId: "icu-001",
+    patientName: "Aisha Khan",
+    bedNo: "ICU-A01",
+    category: "Ventilation",
+    orderName: "NIV support",
+    doseOrDetail: "IPAP/EPAP as tolerated",
+    route: "Mask",
+    frequency: "Continuous",
+    timing: "Now",
+    assignedTo: "Respiratory Therapist",
+    priority: "STAT",
+    doctor: "Dr. Sameer Mehta",
+    instruction: "Repeat ABG after setting change.",
+    orderText: "NIV support - IPAP/EPAP as tolerated",
+    status: "Signed",
+    createdAt: "Today 08:30",
+  },
+  {
+    id: "doctor-entry-006",
+    patientId: "icu-001",
+    patientName: "Aisha Khan",
+    bedNo: "ICU-A01",
+    category: "Nursing Care",
+    orderName: "Strict intake/output",
+    doseOrDetail: "All sources",
+    route: "Bedside chart",
+    frequency: "Hourly",
+    timing: "Current shift",
+    assignedTo: "Ward Nurse Kavita",
+    priority: "High",
+    doctor: "Dr. Sameer Mehta",
+    instruction: "Inform if urine output falls below 0.5 ml/kg/hr.",
+    orderText: "Strict intake/output - All sources",
+    status: "Acknowledged",
+    createdAt: "Today 08:35",
+  },
+  {
+    id: "doctor-entry-007",
+    patientId: "icu-001",
+    patientName: "Aisha Khan",
+    bedNo: "ICU-A01",
+    category: "Diet / Fluid",
+    orderName: "Ringer lactate bolus",
+    doseOrDetail: "500 ml",
+    route: "IV",
+    frequency: "Once",
+    timing: "Now",
+    assignedTo: "Ward Nurse Kavita",
+    priority: "STAT",
+    doctor: "Dr. Sameer Mehta",
+    instruction: "Recheck BP, pulse, SpO2, and urine output after bolus.",
+    orderText: "Ringer lactate bolus | 500 ml | IV",
+    status: "Completed",
+    createdAt: "Today 08:40",
+  },
+  {
+    id: "doctor-entry-008",
+    patientId: "icu-001",
+    patientName: "Aisha Khan",
+    bedNo: "ICU-A01",
+    category: "Imaging",
+    orderName: "Portable chest X-ray",
+    doseOrDetail: "AP view",
+    route: "Portable",
+    frequency: "Once",
+    timing: "Today",
+    assignedTo: "Radiology",
+    priority: "High",
+    doctor: "Dr. Sameer Mehta",
+    instruction: "Confirm line position and lung fields.",
+    orderText: "Portable chest X-ray - AP view",
+    status: "Signed",
+    createdAt: "Today 08:45",
+  },
+  {
+    id: "doctor-entry-009",
+    patientId: "icu-001",
+    patientName: "Aisha Khan",
+    bedNo: "ICU-A01",
+    category: "Procedure",
+    orderName: "Arterial line insertion",
+    doseOrDetail: "Radial artery",
+    route: "Bedside",
+    frequency: "Once",
+    timing: "Now",
+    assignedTo: "Unit Nurse Priya",
+    priority: "High",
+    doctor: "Dr. Sameer Mehta",
+    instruction: "Prepare sterile set, pressure bag, and waveform monitoring.",
+    orderText: "Arterial line insertion - Radial artery",
+    status: "Draft",
+    createdAt: "Today 08:50",
+  },
+  {
+    id: "doctor-entry-003",
+    patientId: "icu-002",
+    patientName: "Rohan Das",
+    bedNo: "ICU-A02",
+    category: "Imaging",
+    orderName: "Portable chest X-ray",
+    doseOrDetail: "AP view",
+    route: "Portable",
+    frequency: "Once",
+    timing: "Today",
+    assignedTo: "Radiology",
+    priority: "High",
+    doctor: "Dr. Neha Malik",
+    instruction: "Review line position and lower-zone infiltrates.",
+    orderText: "Portable chest X-ray",
+    status: "Completed",
+    createdAt: "Today 07:50",
+  },
+  {
+    id: "doctor-entry-004",
+    patientId: "icu-003",
+    patientName: "Meera Sharma",
+    bedNo: "ICU-B03",
+    category: "Nursing Care",
+    orderName: "Neuro observation",
+    doseOrDetail: "GCS and pupils",
+    route: "Bedside",
+    frequency: "Hourly",
+    timing: "Next 6 hours",
+    assignedTo: "Ward Nurse Arjun",
+    priority: "High",
+    doctor: "Dr. Aman Verma",
+    instruction: "Call duty doctor for drop in GCS.",
+    orderText: "Neuro observation - GCS and pupils",
+    status: "Signed",
+    createdAt: "Today 09:10",
+  },
+];
+
+function createDoctorEntryDraft(category: DoctorEntryOrderCategory = "Medication", patientId = icuPatients[0]?.id ?? ""): DoctorEntryDraft {
+  const patient = icuPatients.find((item) => item.id === patientId) ?? icuPatients[0];
+  const template = doctorEntryTemplates[category][0];
+  return {
+    patientId: patient?.id ?? "",
+    category,
+    orderName: template.orderName,
+    doseOrDetail: template.doseOrDetail,
+    route: template.route,
+    frequency: template.frequency,
+    timing: template.timing,
+    assignedTo: template.assignedTo,
+    priority: template.priority,
+    doctor: patient?.admittingDoctor ?? patient?.dutyDoctor ?? "Dr. Sameer Mehta",
+    instruction: template.instruction,
+  };
+}
+
+function composeDoctorEntryOrderText(draft: DoctorEntryDraft) {
+  if (draft.category === "Medication") {
+    return [draft.orderName, draft.doseOrDetail, draft.route, draft.frequency].filter(Boolean).join(" ");
+  }
+  if (draft.category === "Diet / Fluid") {
+    return [draft.orderName, draft.doseOrDetail, draft.route].filter(Boolean).join(" | ");
+  }
+  return [draft.orderName, draft.doseOrDetail].filter(Boolean).join(" - ");
+}
+
+function doctorEntryStatusTone(status: DoctorEntryOrderStatus): StatusTone {
+  if (status === "Completed" || status === "Acknowledged") return "success";
+  if (status === "Signed") return "info";
+  if (status === "Held") return "warning";
+  return "muted";
+}
+
+function doctorEntryPrimaryLabel(category: DoctorEntryOrderCategory) {
+  if (category === "Medication") return "Medicine";
+  if (category === "Investigation") return "Test / panel";
+  if (category === "Imaging") return "Imaging order";
+  if (category === "Procedure") return "Procedure";
+  if (category === "Nursing Care") return "Care instruction";
+  if (category === "Diet / Fluid") return "Diet / fluid order";
+  return "Ventilation order";
+}
+
+function doctorEntryDetailLabel(category: DoctorEntryOrderCategory) {
+  if (category === "Medication") return "Dose / strength";
+  if (category === "Investigation") return "Specimen / sample";
+  if (category === "Imaging") return "View / protocol";
+  if (category === "Procedure") return "Procedure detail";
+  if (category === "Nursing Care") return "Observation detail";
+  if (category === "Diet / Fluid") return "Amount / rate";
+  return "Setting / parameter";
+}
+
+export function MedicationTimelineWorkspace() {
+  const searchParams = useSearchParams();
+  const queryUnit = searchParams.get("unit")?.trim() ?? "";
+  const queryFocus = searchParams.get("focus")?.trim() ?? "";
+  const requestedPatientId = searchParams.get("patientId") ?? "";
+  const focusedPatient = requestedPatientId ? icuPatients.find((patient) => patient.id === requestedPatientId) : undefined;
+  const [orders, setOrders] = React.useState<DoctorMedicationOrder[]>(seededDoctorMedicationOrders);
+  const [doses, setDoses] = React.useState<MedicationDoseRow[]>(() => buildMedicationDoseRows(seededDoctorMedicationOrders));
+  const [patientId, setPatientId] = React.useState(focusedPatient?.id ?? "All patients");
+  const [unitFilter, setUnitFilter] = React.useState(queryUnit || "All ICU units");
+  const [medicationDate, setMedicationDate] = React.useState("2026-06-08");
+  const [shift, setShift] = React.useState<(typeof medicationShiftOptions)[number]>("All shifts");
+  const [query, setQuery] = React.useState("");
+  const [emarQueue, setEmarQueue] = React.useState<MedicationEmarQueue>("Due Now");
+  const [selectedDoseId, setSelectedDoseId] = React.useState<string | null>(null);
+  const [pendingDoseAction, setPendingDoseAction] = React.useState<{ doseId: string; action: MedicationNurseAction } | null>(null);
+  const [pendingOrderAction, setPendingOrderAction] = React.useState<{ orderId: string; action: DoctorOrderStatusAction } | null>(null);
+  const [pendingAmendOrderId, setPendingAmendOrderId] = React.useState<string | null>(null);
+  const [draft, setDraft] = React.useState<MedicationOrderDraft>(() => createMedicationOrderDraft());
+
+  React.useEffect(() => {
+    setDoses((current) => applyReadyMedicationState(current));
+  }, []);
 
   React.useEffect(() => {
     if (queryUnit) {
       setUnitFilter(queryUnit);
-      setPatientId("All patients");
+      setPatientId(focusedPatient?.id ?? "All patients");
       setSelectedDoseId(null);
       setQuery("");
     }
-  }, [queryUnit]);
+  }, [focusedPatient?.id, queryUnit]);
+
+  React.useEffect(() => {
+    if (focusedPatient) {
+      setPatientId(focusedPatient.id);
+      setSelectedDoseId(null);
+      setQuery("");
+    }
+  }, [focusedPatient?.id]);
 
   React.useEffect(() => {
     if (queryFocus === "medication") {
-      setStatus("All status");
+      setEmarQueue("Due Now");
     }
   }, [queryFocus]);
 
   const visibleDoses = doses.filter((row) => {
     const patient = icuPatients.find((item) => item.id === row.patientId);
     const searchable = `${patient?.patientName ?? ""} ${row.bedNo} ${row.medication} ${row.reason} ${row.doctor} ${row.indication} ${row.scheduledDate} ${row.shift}`.toLowerCase();
-    const rowHour = row.scheduledTime.match(/^\d{2}:/)?.[0]?.slice(0, 2);
     return searchable.includes(query.toLowerCase())
+      && (!focusedPatient || row.patientId === focusedPatient.id)
       && (unitFilter === "All ICU units" || patient?.unit === unitFilter)
       && (patientId === "All patients" || row.patientId === patientId)
-      && (status === "All status" || row.status === status)
-      && (orderType === "All types" || row.orderType === orderType)
-      && (pharmacy === "All pharmacy" || row.pharmacyStatus === pharmacy)
       && (!medicationDate || row.scheduledDate === medicationDate)
-      && (shift === "All shifts" || row.shift === shift)
-      && (hour === "All hours" || rowHour === hour.slice(0, 2));
+      && (shift === "All shifts" || row.shift === shift);
   }).sort((left, right) => {
     const focusRank = medicationExecutiveFocusRank(right, queryFocus) - medicationExecutiveFocusRank(left, queryFocus);
     return focusRank || medicationChartSortValue(left).localeCompare(medicationChartSortValue(right));
@@ -3771,16 +4213,17 @@ export function MedicationTimelineWorkspace() {
   const dueCount = visibleDoses.filter((dose) => isMedicationDueStatus(dose.status)).length;
   const administeredCount = visibleDoses.filter((dose) => dose.status === "Administered").length;
   const heldSkippedCount = visibleDoses.filter((dose) => ["Held", "Skipped", "Missed", "Refused"].includes(dose.status)).length;
+  const highRiskCount = visibleDoses.filter((dose) => dose.highRisk && dose.orderStatus === "Active").length;
+  const pharmacyIssueCount = visibleDoses.filter((dose) => dose.pharmacyStatus !== "Available" && dose.orderStatus === "Active").length;
   const selectedFormularyMedicine = getSelectedFormularyMedicine(draft);
   const doctorOrderScenarios = getDoctorOrderScenarios(draft, orders);
   const hasBlockingDoctorScenario = doctorOrderScenarios.some((scenario) => scenario.blocking);
   const selectedFilterPatient = patientId === "All patients" ? undefined : icuPatients.find((patient) => patient.id === patientId);
   const medicationFilterSummary = [
-    unitFilter,
     selectedFilterPatient ? `${selectedFilterPatient.bedNo} - ${selectedFilterPatient.patientName}` : "All patients",
     medicationDate || "All dates",
-    emarQueue,
-    status,
+    shift,
+    unitFilter,
   ].join(" | ");
   const emarQueueCounts: Record<MedicationEmarQueue, number> = {
     "Due Now": dueCount,
@@ -3790,7 +4233,6 @@ export function MedicationTimelineWorkspace() {
     "PRN": visibleDoses.filter((dose) => dose.orderType === "PRN").length,
     "History": visibleDoses.filter((dose) => ["Administered", "Held", "Skipped", "Missed", "Refused", "Paused", "Stopped"].includes(dose.status)).length,
   };
-
   const updateDoseStatus = (
     doseId: string,
     nextStatus: WorkflowMedicationStatus,
@@ -3854,13 +4296,16 @@ export function MedicationTimelineWorkspace() {
   const markPharmacyAvailable = (orderId: string) => {
     const targetOrder = orders.find((order) => order.id === orderId);
     if (!targetOrder) return;
+    const targetDose = doses.find((dose) => dose.orderId === orderId);
+    if (targetDose) persistReadyMedication(targetDose);
     setOrders((current) => current.map((order) => order.id === orderId ? { ...order, pharmacyStatus: "Available" } : order));
     setDoses((current) => current.map((dose) => dose.orderId === orderId ? {
       ...dose,
       pharmacyStatus: "Available",
-      auditTrail: ["Now: Pharmacy marked medicine available", ...dose.auditTrail],
+      doubleVerification: dose.highRisk ? "Verified" : dose.doubleVerification,
+      auditTrail: ["Now: Medicine received and verified", ...dose.auditTrail],
     } : dose));
-    toast.success(`${targetOrder.medication} received from pharmacy`);
+    toast.success(`${targetOrder.medication} ready for administration`);
   };
 
   const changeOrderStatus = (orderId: string, nextStatus: MedicationOrderStatus, details?: { reason: string; note: string; followUpPlan: string; effectiveTime: string }) => {
@@ -4063,61 +4508,52 @@ export function MedicationTimelineWorkspace() {
 
   return (
     <div className="space-y-4">
-      <details className="group overflow-hidden rounded-md border border-border bg-background shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
+      <details className="group overflow-hidden rounded-md border border-border bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
           <span className="min-w-0">
-            <span className="block text-sm font-semibold text-foreground">Medication filters</span>
+            <span className="block text-sm font-semibold text-foreground">Medication controls</span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">{medicationFilterSummary}</span>
           </span>
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
         </summary>
-        <div className="space-y-3 border-t border-border p-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_minmax(200px,260px)_minmax(240px,360px)]">
+        <div className="grid gap-3 border-t border-border p-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_220px_180px_220px_auto] xl:items-end">
+          <label className="space-y-1 text-sm md:col-span-2 xl:col-span-1">
+            <span className="font-medium text-foreground">Patient</span>
+            <select
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              value={focusedPatient?.id ?? patientId}
+              onChange={(event) => {
+                if (!focusedPatient) setPatientId(event.target.value);
+              }}
+            >
+              {focusedPatient ? null : <option value="All patients">All patients</option>}
+              {(focusedPatient ? [focusedPatient] : icuPatients).map((patient) => (
+                <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Medication date</span>
+            <Input type="date" value={medicationDate} onChange={(event) => setMedicationDate(event.target.value)} />
+          </label>
+          <MedicationLabeledSelect label="Shift" value={shift} onChange={(value) => setShift(value as (typeof medicationShiftOptions)[number])} options={[...medicationShiftOptions]} />
+          <div className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Search</span>
             <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Search dose</span>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input className="pl-9" placeholder="Medicine, patient, bed, doctor..." value={query} onChange={(event) => setQuery(event.target.value)} />
               </div>
             </label>
-            <NativeSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={medicationUnitOptions} />
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Patient</span>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-                value={patientId}
-                onChange={(event) => setPatientId(event.target.value)}
-              >
-                <option value="All patients">All patients</option>
-                {icuPatients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
-                ))}
-              </select>
-            </label>
           </div>
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Medication date</span>
-              <Input type="date" value={medicationDate} onChange={(event) => setMedicationDate(event.target.value)} />
-            </label>
-            <NativeSelect label="Shift" value={shift} onChange={(value) => setShift(value as (typeof medicationShiftOptions)[number])} options={[...medicationShiftOptions]} />
-            <NativeSelect label="Hour" value={hour} onChange={(value) => setHour(value as (typeof medicationHourOptions)[number])} options={[...medicationHourOptions]} />
-            <NativeSelect label="Dose status" value={status} onChange={(value) => setStatus(value as (typeof medicationStatuses)[number])} options={medicationStatuses} />
-            <NativeSelect label="Order type" value={orderType} onChange={(value) => setOrderType(value as (typeof orderTypeOptions)[number])} options={orderTypeOptions} />
-            <NativeSelect label="Pharmacy" value={pharmacy} onChange={(value) => setPharmacy(value as (typeof pharmacyOptions)[number])} options={pharmacyOptions} />
-            <Button className="w-full" variant="outline" onClick={() => {
-              setQuery("");
-              setUnitFilter("All ICU units");
-              setPatientId("All patients");
-              setStatus("All status");
-              setOrderType("All types");
-              setPharmacy("All pharmacy");
-              setMedicationDate("2026-06-08");
-              setShift("All shifts");
-              setHour("All hours");
-              setEmarQueue("Due Now");
-            }}><Filter className="h-4 w-4" />Reset</Button>
-          </div>
+          <Button className="w-full" variant="outline" onClick={() => {
+            setQuery("");
+            setUnitFilter(queryUnit || "All ICU units");
+            setPatientId(focusedPatient?.id ?? "All patients");
+            setMedicationDate("2026-06-08");
+            setShift("All shifts");
+            setEmarQueue("Due Now");
+          }}><Filter className="h-4 w-4" />Reset</Button>
         </div>
       </details>
 
@@ -4149,10 +4585,15 @@ export function MedicationTimelineWorkspace() {
 
         <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
           <CardHeader className="border-b border-slate-200 bg-white">
-            <div>
+            <div className="min-w-0">
               <CardTitle>Medication administration</CardTitle>
             </div>
-            <Badge tone="info">{emarDoses.length} dose(s)</Badge>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Badge tone="warning">{dueCount} due/late</Badge>
+              <Badge tone="critical">{highRiskCount} verify</Badge>
+              <Badge tone="info">{pharmacyIssueCount} pharmacy</Badge>
+              <Badge tone="info">{emarDoses.length} dose(s)</Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <MedicationChartTable
@@ -4220,6 +4661,792 @@ export function MedicationTimelineWorkspace() {
         }}
       />
     </div>
+  );
+}
+
+export function MedicineReceiveVerifyWorkspace() {
+  const searchParams = useSearchParams();
+  const queryPatientId = searchParams.get("patientId") ?? "";
+  const [doses, setDoses] = React.useState<MedicationDoseRow[]>(() => applyReadyMedicationState(buildMedicationDoseRows(seededDoctorMedicationOrders)));
+  const [patientId, setPatientId] = React.useState(queryPatientId && icuPatients.some((patient) => patient.id === queryPatientId) ? queryPatientId : "All patients");
+  const [query, setQuery] = React.useState("");
+  const [queue, setQueue] = React.useState<"Pending" | "Ready" | "All">("Pending");
+
+  React.useEffect(() => {
+    setDoses((current) => applyReadyMedicationState(current));
+  }, []);
+
+  React.useEffect(() => {
+    if (queryPatientId && icuPatients.some((patient) => patient.id === queryPatientId)) {
+      setPatientId(queryPatientId);
+    }
+  }, [queryPatientId]);
+
+  const queueRows = doses.filter((dose) => {
+    const patient = icuPatients.find((item) => item.id === dose.patientId);
+    const ready = dose.pharmacyStatus === "Available" && (!dose.highRisk || dose.doubleVerification === "Verified");
+    const searchable = `${patient?.patientName ?? ""} ${dose.bedNo} ${dose.medication} ${dose.dose} ${dose.route} ${dose.doctor}`.toLowerCase();
+    return searchable.includes(query.toLowerCase())
+      && (patientId === "All patients" || dose.patientId === patientId)
+      && dose.orderStatus === "Active"
+      && (queue === "All" || (queue === "Pending" ? !ready : ready));
+  }).sort((left, right) => {
+    const leftReady = left.pharmacyStatus === "Available" && (!left.highRisk || left.doubleVerification === "Verified");
+    const rightReady = right.pharmacyStatus === "Available" && (!right.highRisk || right.doubleVerification === "Verified");
+    return Number(leftReady) - Number(rightReady) || medicationChartSortValue(left).localeCompare(medicationChartSortValue(right));
+  });
+
+  const pendingCount = doses.filter((dose) => dose.orderStatus === "Active" && (dose.pharmacyStatus !== "Available" || (dose.highRisk && dose.doubleVerification === "Pending"))).length;
+  const readyCount = doses.filter((dose) => dose.orderStatus === "Active" && dose.pharmacyStatus === "Available" && (!dose.highRisk || dose.doubleVerification === "Verified")).length;
+
+  const receiveAndVerify = (doseId: string) => {
+    const target = doses.find((dose) => dose.id === doseId);
+    if (!target) return;
+    persistReadyMedication(target);
+    setDoses((current) => current.map((dose) => dose.id === doseId || dose.orderId === target.orderId ? {
+      ...dose,
+      pharmacyStatus: "Available",
+      doubleVerification: dose.highRisk ? "Verified" : dose.doubleVerification,
+      auditTrail: ["Now: Medicine received and verified for administration", ...dose.auditTrail],
+    } : dose));
+    toast.success(`${target.medication} added to administration queue`);
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 bg-white">
+          <div>
+            <CardTitle>Medicine Receive & Verify</CardTitle>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="warning">{pendingCount} pending</Badge>
+            <Badge tone="success">{readyCount} ready</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_220px_180px_auto] md:items-end">
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Search medicine</span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" placeholder="Patient, bed, medicine, doctor..." value={query} onChange={(event) => setQuery(event.target.value)} />
+              </div>
+            </label>
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Patient</span>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={patientId}
+                onChange={(event) => setPatientId(event.target.value)}
+              >
+                <option value="All patients">All patients</option>
+                {icuPatients.map((patient) => (
+                  <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+                ))}
+              </select>
+            </label>
+            <NativeSelect label="Queue" value={queue} onChange={(value) => setQueue(value as typeof queue)} options={["Pending", "Ready", "All"]} />
+            <Button variant="outline" onClick={() => {
+              setQuery("");
+              setPatientId(queryPatientId || "All patients");
+              setQueue("Pending");
+            }}>Reset</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 bg-white">
+          <CardTitle>Receive queue</CardTitle>
+          <Badge tone="info">{queueRows.length} medicine(s)</Badge>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="min-w-[980px] w-full text-sm">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Patient / Bed</th>
+                  <th className="px-4 py-3 text-left font-semibold">Medicine</th>
+                  <th className="px-4 py-3 text-left font-semibold">Dose / Route</th>
+                  <th className="px-4 py-3 text-left font-semibold">Due Time</th>
+                  <th className="px-4 py-3 text-left font-semibold">Pharmacy</th>
+                  <th className="px-4 py-3 text-left font-semibold">Verification</th>
+                  <th className="px-4 py-3 text-right font-semibold">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {queueRows.map((dose) => {
+                  const patient = icuPatients.find((item) => item.id === dose.patientId);
+                  const ready = dose.pharmacyStatus === "Available" && (!dose.highRisk || dose.doubleVerification === "Verified");
+                  return (
+                    <tr className="hover:bg-slate-50/70" key={dose.id}>
+                      <td className="px-4 py-4">
+                        <p className="font-semibold text-foreground">{patient?.patientName}</p>
+                        <p className="text-xs text-muted-foreground">{dose.bedNo} | {patient?.unit}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="font-semibold text-foreground">{dose.medication}</p>
+                        <p className="text-xs text-muted-foreground">{dose.indication}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="font-semibold text-foreground">{dose.dose}</p>
+                        <p className="text-xs text-muted-foreground">{dose.route} | {dose.frequency}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="font-semibold text-foreground">{dose.scheduledTime}</p>
+                        <p className="text-xs text-muted-foreground">{dose.shift}</p>
+                      </td>
+                      <td className="px-4 py-4"><StatusPill tone={pharmacyStatusTone(dose.pharmacyStatus)}>{dose.pharmacyStatus}</StatusPill></td>
+                      <td className="px-4 py-4"><StatusPill tone={dose.doubleVerification === "Verified" ? "success" : dose.doubleVerification === "Pending" ? "warning" : "info"}>{dose.doubleVerification}</StatusPill></td>
+                      <td className="px-4 py-4 text-right">
+                        {ready ? (
+                          <StatusPill tone="success">Ready for administration</StatusPill>
+                        ) : (
+                          <Button size="sm" onClick={() => receiveAndVerify(dose.id)}>
+                            <Check className="h-4 w-4" />
+                            Receive & verify
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!queueRows.length ? (
+                  <tr>
+                    <td className="px-4 py-8 text-center text-sm text-muted-foreground" colSpan={7}>No medicine in this queue.</td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export function DoctorOrderEntryWorkspace() {
+  const searchParams = useSearchParams();
+  const queryPatientId = searchParams.get("patientId") ?? "";
+  const initialPatientId = icuPatients.some((patient) => patient.id === queryPatientId) ? queryPatientId : (icuPatients[0]?.id ?? "");
+  const [selectedPatientId, setSelectedPatientId] = React.useState(initialPatientId);
+  const [category, setCategory] = React.useState<DoctorEntryOrderCategory>("Medication");
+  const [draft, setDraft] = React.useState<DoctorEntryDraft>(() => createDoctorEntryDraft("Medication"));
+  const [orders, setOrders] = React.useState<DoctorEntryOrder[]>(initialDoctorEntryOrders);
+  const [query, setQuery] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState<"All status" | DoctorEntryOrderStatus>("All status");
+  const [categoryFilter, setCategoryFilter] = React.useState<"All categories" | DoctorEntryOrderCategory>("All categories");
+  const [newOrderOpen, setNewOrderOpen] = React.useState(true);
+  const [templateQuery, setTemplateQuery] = React.useState("");
+  const selectedPatient = icuPatients.find((patient) => patient.id === selectedPatientId) ?? icuPatients[0];
+  const selectedPatientOrders = orders.filter((order) => order.patientId === selectedPatientId);
+  const visibleTemplates = doctorEntryTemplates[category].filter((template) => {
+    const searchable = `${template.orderName} ${template.doseOrDetail} ${template.route} ${template.frequency} ${template.timing} ${template.assignedTo} ${template.instruction}`.toLowerCase();
+    return searchable.includes(templateQuery.toLowerCase());
+  });
+  const visibleOrders = selectedPatientOrders.filter((order) => {
+    const searchable = `${order.orderText} ${order.category} ${order.assignedTo} ${order.doctor} ${order.instruction}`.toLowerCase();
+    return searchable.includes(query.toLowerCase())
+      && (statusFilter === "All status" || order.status === statusFilter)
+      && (categoryFilter === "All categories" || order.category === categoryFilter);
+  });
+
+  const syncPatient = (patientId: string) => {
+    const patient = icuPatients.find((item) => item.id === patientId) ?? icuPatients[0];
+    setSelectedPatientId(patient?.id ?? "");
+    setDraft((current) => ({
+      ...current,
+      patientId: patient?.id ?? "",
+      doctor: patient?.admittingDoctor ?? patient?.dutyDoctor ?? current.doctor,
+    }));
+  };
+
+  React.useEffect(() => {
+    if (queryPatientId && queryPatientId !== selectedPatientId && icuPatients.some((patient) => patient.id === queryPatientId)) {
+      syncPatient(queryPatientId);
+    }
+  }, [queryPatientId, selectedPatientId]);
+
+  const syncCategory = (nextCategory: DoctorEntryOrderCategory) => {
+    setCategory(nextCategory);
+    setTemplateQuery("");
+    setDraft(createDoctorEntryDraft(nextCategory, selectedPatientId));
+  };
+
+  const applyTemplate = (template: (typeof doctorEntryTemplates)[DoctorEntryOrderCategory][number]) => {
+    setDraft((current) => ({
+      ...current,
+      ...template,
+      category,
+      patientId: selectedPatientId,
+      doctor: selectedPatient?.admittingDoctor ?? selectedPatient?.dutyDoctor ?? current.doctor,
+    }));
+  };
+
+  const saveOrder = (status: "Draft" | "Signed") => {
+    if (!selectedPatient || !draft.orderName.trim()) {
+      toast.error("Patient and order are required.");
+      return;
+    }
+    const newOrder: DoctorEntryOrder = {
+      ...draft,
+      id: `doctor-entry-${Date.now()}`,
+      patientId: selectedPatient.id,
+      patientName: selectedPatient.patientName,
+      bedNo: selectedPatient.bedNo,
+      category,
+      orderText: composeDoctorEntryOrderText({ ...draft, category }),
+      status,
+      createdAt: "Now",
+    };
+    setOrders((current) => [newOrder, ...current]);
+    setDraft(createDoctorEntryDraft(category, selectedPatient.id));
+    toast.success(status === "Draft" ? "Order saved as draft" : "Order signed and sent");
+  };
+
+  const updateOrderStatus = (orderId: string, status: DoctorEntryOrderStatus) => {
+    const order = orders.find((item) => item.id === orderId);
+    if (!order) return;
+    setOrders((current) => current.map((item) => item.id === orderId ? { ...item, status } : item));
+    toast.success(`${order.orderText} moved to ${status}`);
+  };
+
+  const nextAction = (order: DoctorEntryOrder) => {
+    if (order.status === "Draft") return { label: "Sign", status: "Signed" as DoctorEntryOrderStatus };
+    if (order.status === "Signed") return { label: "Acknowledge", status: "Acknowledged" as DoctorEntryOrderStatus };
+    if (order.status === "Acknowledged") return { label: "Complete", status: "Completed" as DoctorEntryOrderStatus };
+    return null;
+  };
+
+  return (
+    <div className="space-y-4">
+      {selectedPatient ? (
+        <section className="overflow-x-auto rounded-lg border border-[#dcd8ff] bg-gradient-to-r from-[#7064EC] via-[#6878E8] to-[#6888E8] px-4 py-3 text-white shadow-sm">
+          <div className="flex min-w-max items-center gap-8 text-sm font-bold">
+            <span className="text-base">{selectedPatient.patientName}</span>
+            <span>MR: {selectedPatient.mrn}</span>
+            <span>Age/Sex: {selectedPatient.ageGender}</span>
+            <span>Bed: {selectedPatient.bedNo}</span>
+            <span>Unit: {selectedPatient.unit}</span>
+            <span>Doctor: {selectedPatient.admittingDoctor}</span>
+            <span>Nurse: {selectedPatient.assignedWardNurse}</span>
+          </div>
+        </section>
+      ) : null}
+
+      <Card className="overflow-hidden">
+        <CardContent className="grid gap-3 p-4 lg:grid-cols-[minmax(260px,1fr)_220px_180px] lg:items-end">
+          <div className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Patient / bed</span>
+            <div className="flex h-10 items-center justify-between rounded-md border border-input bg-surface-muted px-3 text-sm">
+              <span className="truncate font-semibold text-foreground">{selectedPatient?.bedNo} - {selectedPatient?.patientName}</span>
+              <LockKeyhole className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Doctor</span>
+            <div className="flex h-10 items-center justify-between rounded-md border border-input bg-surface-muted px-3 text-sm">
+              <span className="truncate font-semibold text-foreground">{draft.doctor}</span>
+              <LockKeyhole className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+          </div>
+          <SelectField label="Send to" value={draft.assignedTo} onChange={(value) => setDraft((current) => ({ ...current, assignedTo: value }))} options={doctorEntryAssignments} />
+        </CardContent>
+      </Card>
+
+      <div className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-surface-muted p-1">
+        {doctorEntryCategoryOptions.map((item) => (
+          <button
+            className={cn(
+              "h-10 shrink-0 rounded-md px-4 text-sm font-semibold transition",
+              category === item ? "bg-white text-primary shadow-sm ring-1 ring-border" : "text-muted-foreground hover:bg-white/70 hover:text-foreground",
+            )}
+            key={item}
+            type="button"
+            onClick={() => syncCategory(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-4">
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border bg-white">
+            <CardTitle>New order</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button aria-label="Toggle new order" size="sm" variant="ghost" onClick={() => setNewOrderOpen((open) => !open)}>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", newOrderOpen ? "rotate-180" : "")} />
+              </Button>
+            </div>
+          </CardHeader>
+          {newOrderOpen ? (
+            <CardContent className="grid gap-4 p-4 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
+              <div className="rounded-md border border-border bg-surface-muted p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">Order library</p>
+                  <Badge tone="info">{visibleTemplates.length}</Badge>
+                </div>
+                <div className="relative mt-3">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="bg-white pl-9" placeholder="Search order..." value={templateQuery} onChange={(event) => setTemplateQuery(event.target.value)} />
+                </div>
+                <div className="mt-3 max-h-[330px] space-y-2 overflow-y-auto pr-1">
+                  {visibleTemplates.map((template) => {
+                    const selected = draft.orderName === template.orderName && draft.doseOrDetail === template.doseOrDetail;
+                    return (
+                      <button
+                        className={cn(
+                          "w-full rounded-md border bg-white px-3 py-2.5 text-left transition hover:border-primary/40 hover:bg-primary/5",
+                          selected ? "border-primary/50 bg-primary/5 shadow-sm" : "border-border",
+                        )}
+                        key={`${category}-${template.orderName}-${template.doseOrDetail}`}
+                        type="button"
+                        onClick={() => applyTemplate(template)}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {composeDoctorEntryOrderText({ ...createDoctorEntryDraft(category, selectedPatientId), ...template, category })}
+                            </p>
+                            <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{template.instruction}</p>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span>{template.timing}</span>
+                          <span>{template.assignedTo}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {!visibleTemplates.length ? <EmptyPanel title="No order found" detail="Change search." /> : null}
+                </div>
+              </div>
+
+              <div className="rounded-md border border-border bg-white p-4">
+                <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+                  <TextField label={doctorEntryPrimaryLabel(category)} value={draft.orderName} onChange={(value) => setDraft((current) => ({ ...current, orderName: value }))} />
+                  <TextField label={doctorEntryDetailLabel(category)} value={draft.doseOrDetail} onChange={(value) => setDraft((current) => ({ ...current, doseOrDetail: value }))} />
+                  <TextField label="Route / mode" value={draft.route} onChange={(value) => setDraft((current) => ({ ...current, route: value }))} />
+                  <TextField label="Frequency" value={draft.frequency} onChange={(value) => setDraft((current) => ({ ...current, frequency: value }))} />
+                  <TextField label="Timing" value={draft.timing} onChange={(value) => setDraft((current) => ({ ...current, timing: value }))} />
+                  <SelectField label="Assigned to" value={draft.assignedTo} onChange={(value) => setDraft((current) => ({ ...current, assignedTo: value }))} options={doctorEntryAssignments} />
+                </div>
+                <div className="mt-3 space-y-3">
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-foreground">Instruction</span>
+                    <textarea
+                      className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={draft.instruction}
+                      onChange={(event) => setDraft((current) => ({ ...current, instruction: event.target.value }))}
+                    />
+                  </label>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button variant="outline" onClick={() => saveOrder("Draft")}><Save className="h-4 w-4" />Save draft</Button>
+                    <Button onClick={() => saveOrder("Signed")}><FileSignature className="h-4 w-4" />Sign & send</Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          ) : null}
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border bg-white">
+            <CardTitle>Patient orders</CardTitle>
+            <Badge tone="info">{visibleOrders.length}</Badge>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="grid gap-3 border-b border-border p-4 lg:grid-cols-[minmax(240px,1fr)_180px_190px_auto] lg:items-end">
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">Search order</span>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="pl-9" placeholder="Order, assignee, doctor..." value={query} onChange={(event) => setQuery(event.target.value)} />
+                </div>
+              </label>
+              <SelectField label="Category" value={categoryFilter} onChange={(value) => setCategoryFilter(value as "All categories" | DoctorEntryOrderCategory)} options={["All categories", ...doctorEntryCategoryOptions]} />
+              <SelectField label="Status" value={statusFilter} onChange={(value) => setStatusFilter(value as "All status" | DoctorEntryOrderStatus)} options={["All status", "Draft", "Signed", "Acknowledged", "Completed", "Held"]} />
+              <Button variant="outline" onClick={() => {
+                setQuery("");
+                setStatusFilter("All status");
+                setCategoryFilter("All categories");
+              }}>Reset</Button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-[980px] w-full text-left text-sm">
+                <thead className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-wide text-primary">
+                  <tr>
+                    <th className="px-4 py-3">Order</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Timing</th>
+                    <th className="px-4 py-3">Assigned to</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {visibleOrders.map((order) => {
+                    const action = nextAction(order);
+                    return (
+                      <tr className="align-middle hover:bg-surface-muted/60" key={order.id}>
+                        <td className="px-4 py-4">
+                          <p className="font-semibold text-foreground">{order.orderText}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{order.instruction}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <Badge tone="info">{order.category}</Badge>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="font-semibold text-foreground">{order.timing}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{order.createdAt}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="font-semibold text-foreground">{order.assignedTo}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{order.doctor}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <StatusPill tone={doctorEntryStatusTone(order.status)}>{order.status}</StatusPill>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex justify-end gap-2">
+                            {action ? (
+                              <Button size="sm" variant={action.status === "Completed" ? "default" : "outline"} onClick={() => updateOrderStatus(order.id, action.status)}>
+                                {action.label}
+                              </Button>
+                            ) : null}
+                            {order.status !== "Completed" && order.status !== "Held" ? (
+                              <Button size="sm" variant="outline" onClick={() => updateOrderStatus(order.id, "Held")}>Hold</Button>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {!visibleOrders.length ? <div className="p-4"><EmptyPanel title="No orders found" detail="Change search or filters." /></div> : null}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function LegacyDoctorMedicationComposerWorkspace() {
+  const [orders, setOrders] = React.useState<DoctorMedicationOrder[]>(seededDoctorMedicationOrders);
+  const [, setDoses] = React.useState<MedicationDoseRow[]>(() => buildMedicationDoseRows(seededDoctorMedicationOrders));
+  const [pendingOrderAction, setPendingOrderAction] = React.useState<{ orderId: string; action: DoctorOrderStatusAction } | null>(null);
+  const [pendingAmendOrderId, setPendingAmendOrderId] = React.useState<string | null>(null);
+  const [draft, setDraft] = React.useState<MedicationOrderDraft>(() => createMedicationOrderDraft());
+  const selectedFormularyMedicine = getSelectedFormularyMedicine(draft);
+  const doctorOrderScenarios = getDoctorOrderScenarios(draft, orders);
+  const hasBlockingDoctorScenario = doctorOrderScenarios.some((scenario) => scenario.blocking);
+
+  const changeOrderStatus = (orderId: string, nextStatus: MedicationOrderStatus, details?: { reason: string; note: string; followUpPlan: string; effectiveTime: string }) => {
+    const targetOrder = orders.find((order) => order.id === orderId);
+    if (!targetOrder) return;
+    const statusNote = details
+      ? `${details.reason} | Effective: ${details.effectiveTime}${details.followUpPlan ? ` | Plan: ${details.followUpPlan}` : ""}${details.note ? ` | Note: ${details.note}` : ""}`
+      : nextStatus === "Active" ? "Doctor resumed order" : `Doctor order ${nextStatus}`;
+    setOrders((current) => current.map((order) => order.id === orderId ? {
+      ...order,
+      status: nextStatus,
+      statusReason: nextStatus === "Active" ? undefined : details?.reason ?? order.statusReason,
+      followUpPlan: nextStatus === "Active" ? undefined : details?.followUpPlan ?? order.followUpPlan,
+      actionTimeline: [`Now: ${nextStatus} - ${statusNote}`, ...(order.actionTimeline ?? [])],
+    } : order));
+    setDoses((current) => current.map((dose) => {
+      if (dose.orderId !== orderId) return dose;
+      const resumedStatus = dose.orderType === "Continuous" ? "Running" : dose.status === "Held" || dose.status === "Stopped" ? "Due" : dose.status;
+      return {
+        ...dose,
+        orderStatus: nextStatus,
+        status: nextStatus === "Held by doctor" ? "Held" : nextStatus === "Discontinued" ? "Stopped" : resumedStatus,
+        reason: nextStatus === "Held by doctor" || nextStatus === "Discontinued" ? statusNote : dose.reason,
+        auditTrail: [`Now: Doctor order ${nextStatus} - ${statusNote}`, ...dose.auditTrail],
+      };
+    }));
+    toast.success(`${targetOrder.medication} order moved to ${nextStatus}`);
+  };
+
+  const requestDoctorOrderAction = (orderId: string, action: DoctorOrderStatusAction) => {
+    setPendingOrderAction({ orderId, action });
+  };
+
+  const addDoctorOrder = (targetStatus: "Draft" | "Active") => {
+    const patient = icuPatients.find((item) => item.id === draft.patientId);
+    if (!patient || !draft.medication.trim() || !draft.dose.trim()) {
+      toast.error("Patient, medicine, and dose are required.");
+      return;
+    }
+    const blockingScenario = getDoctorOrderScenarios(draft, orders).find((scenario) => scenario.blocking);
+    if (targetStatus === "Active" && blockingScenario) {
+      toast.error(blockingScenario.title);
+      return;
+    }
+
+    const scheduleTimes = parseMedicationSchedule(draft.scheduleTimes, draft.orderType);
+    const priority: DoctorMedicationOrder["priority"] = draft.orderType === "STAT" ? "STAT" : draft.highRisk ? "High" : "Routine";
+    const newOrder: DoctorMedicationOrder = {
+      id: `ord-new-${Date.now()}`,
+      patientId: patient.id,
+      bedNo: patient.bedNo,
+      department: draft.department,
+      formularyId: selectedFormularyMedicine?.id,
+      medication: draft.medication.trim(),
+      dose: draft.dose.trim(),
+      route: draft.route,
+      frequency: draft.frequency,
+      orderType: draft.orderType,
+      scheduleTimes,
+      doctor: draft.doctor,
+      indication: draft.indication.trim() || "Doctor medication order",
+      instructions: draft.instructions.trim() || "Follow eMAR safety checks before administration.",
+      priority,
+      highRisk: draft.highRisk,
+      doubleVerificationRequired: draft.doubleVerificationRequired || draft.highRisk,
+      pharmacyStatus: draft.pharmacyStatus,
+      pharmacyLocation: selectedFormularyMedicine?.pharmacyLocation,
+      stockStatus: selectedFormularyMedicine?.availability,
+      scenarioNotes: doctorOrderScenarios.map((scenario) => scenario.title),
+      alternativeMeds: selectedFormularyMedicine?.alternatives,
+      startDate: draft.startDate,
+      startTime: draft.startTime,
+      duration: draft.duration,
+      maxDailyDose: draft.maxDailyDose,
+      minInterval: draft.minInterval,
+      reviewDate: draft.reviewDate,
+      titrationTarget: draft.titrationTarget,
+      minRate: draft.minRate,
+      maxRate: draft.maxRate,
+      monitoringFrequency: draft.monitoringFrequency,
+      approvalReason: draft.approvalReason,
+      signedAt: targetStatus === "Active" ? "Now" : undefined,
+      version: 1,
+      status: targetStatus,
+    };
+    setOrders((current) => [newOrder, ...current]);
+    if (targetStatus === "Active") {
+      const newDoses = buildMedicationDoseRows([newOrder]);
+      setDoses((current) => [...newDoses, ...current]);
+    }
+    setDraft((current) => ({
+      ...current,
+      medication: "",
+      dose: "",
+      formularyId: "",
+      indication: "",
+      instructions: "",
+      highRisk: false,
+      doubleVerificationRequired: false,
+      pharmacyStatus: "Available",
+      maxDailyDose: "",
+      minInterval: "",
+      titrationTarget: "",
+      minRate: "",
+      maxRate: "",
+      monitoringFrequency: "",
+      approvalReason: "",
+    }));
+    toast.success(targetStatus === "Draft"
+      ? `${newOrder.medication} saved as draft`
+      : `${newOrder.medication} signed and sent to Nurse eMAR`);
+  };
+
+  const signDraftOrder = (orderId: string) => {
+    const targetOrder = orders.find((order) => order.id === orderId);
+    if (!targetOrder || targetOrder.status !== "Draft") return;
+    const draftForReview: MedicationOrderDraft = {
+      patientId: targetOrder.patientId,
+      department: targetOrder.department ?? "ICU",
+      formularyId: targetOrder.formularyId ?? "",
+      medication: targetOrder.medication,
+      dose: targetOrder.dose,
+      route: targetOrder.route,
+      frequency: targetOrder.frequency,
+      orderType: targetOrder.orderType,
+      scheduleTimes: targetOrder.scheduleTimes.join(", "),
+      doctor: targetOrder.doctor,
+      indication: targetOrder.indication,
+      instructions: targetOrder.instructions,
+      highRisk: targetOrder.highRisk,
+      doubleVerificationRequired: targetOrder.doubleVerificationRequired,
+      pharmacyStatus: targetOrder.pharmacyStatus,
+      startDate: targetOrder.startDate ?? "2026-06-08",
+      startTime: targetOrder.startTime ?? "12:00",
+      duration: targetOrder.duration ?? "",
+      maxDailyDose: targetOrder.maxDailyDose ?? "",
+      minInterval: targetOrder.minInterval ?? "",
+      reviewDate: targetOrder.reviewDate ?? "",
+      titrationTarget: targetOrder.titrationTarget ?? "",
+      minRate: targetOrder.minRate ?? "",
+      maxRate: targetOrder.maxRate ?? "",
+      monitoringFrequency: targetOrder.monitoringFrequency ?? "",
+      approvalReason: targetOrder.approvalReason ?? "",
+    };
+    const blocker = getDoctorOrderScenarios(draftForReview, orders.filter((order) => order.id !== orderId)).find((scenario) => scenario.blocking);
+    if (blocker) {
+      setDraft(draftForReview);
+      toast.error(`${blocker.title}. Draft loaded for correction.`);
+      return;
+    }
+    const signedOrder = { ...targetOrder, status: "Active" as const, signedAt: "Now" };
+    setOrders((current) => current.map((order) => order.id === orderId ? signedOrder : order));
+    const newDoses = buildMedicationDoseRows([signedOrder]);
+    setDoses((current) => [...newDoses, ...current]);
+    toast.success(`${targetOrder.medication} signed and sent to Nurse eMAR`);
+  };
+
+  const copyOrderToDraft = (orderId: string, amend: DoctorOrderAmendPayload) => {
+    const order = orders.find((item) => item.id === orderId);
+    if (!order) return;
+    const amendmentNote = [
+      `Amendment reason: ${amend.reason}`,
+      amend.changeAreas.length ? `Planned change: ${amend.changeAreas.join(", ")}` : "",
+      `Effective from ${amend.effectiveDate} ${amend.effectiveTime}`,
+      amend.note ? `Doctor note: ${amend.note}` : "",
+      `Based on original order ${order.id}${order.version ? ` v${order.version}` : ""}`,
+    ].filter(Boolean).join("\n");
+    setDraft({
+      patientId: order.patientId,
+      department: order.department ?? "ICU",
+      formularyId: order.formularyId ?? "",
+      medication: order.medication,
+      dose: order.dose,
+      route: order.route,
+      frequency: order.frequency,
+      orderType: order.orderType,
+      scheduleTimes: order.scheduleTimes.join(", "),
+      doctor: order.doctor,
+      indication: order.indication,
+      instructions: `${order.instructions}${order.instructions ? "\n\n" : ""}${amendmentNote}`,
+      highRisk: order.highRisk,
+      doubleVerificationRequired: order.doubleVerificationRequired,
+      pharmacyStatus: order.pharmacyStatus,
+      startDate: amend.effectiveDate,
+      startTime: amend.effectiveTime,
+      duration: order.duration ?? "",
+      maxDailyDose: order.maxDailyDose ?? "",
+      minInterval: order.minInterval ?? "",
+      reviewDate: order.reviewDate ?? "",
+      titrationTarget: order.titrationTarget ?? "",
+      minRate: order.minRate ?? "",
+      maxRate: order.maxRate ?? "",
+      monitoringFrequency: order.monitoringFrequency ?? "",
+      approvalReason: order.approvalReason ?? "",
+    });
+    toast.success(`${order.medication} amendment loaded as editable draft`);
+  };
+
+  return (
+    <div className="space-y-4">
+      <MedicationOrderComposer
+        draft={draft}
+        hasBlockingScenario={hasBlockingDoctorScenario}
+        orders={orders}
+        scenarios={doctorOrderScenarios}
+        selectedMedicine={selectedFormularyMedicine}
+        onCopyOrder={(orderId) => setPendingAmendOrderId(orderId)}
+        onDraftChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+        onHoldOrder={(orderId) => requestDoctorOrderAction(orderId, "Hold")}
+        onResumeOrder={(orderId) => changeOrderStatus(orderId, "Active")}
+        onSaveDraft={() => addDoctorOrder("Draft")}
+        onSignDraft={signDraftOrder}
+        onSignOrder={() => addDoctorOrder("Active")}
+        onStopOrder={(orderId) => requestDoctorOrderAction(orderId, "Discontinue")}
+      />
+
+      <DoctorOrderStatusActionDialog
+        key={pendingOrderAction ? `${pendingOrderAction.orderId}-${pendingOrderAction.action}` : "doctor-order-entry-action-closed"}
+        action={pendingOrderAction?.action ?? null}
+        open={Boolean(pendingOrderAction)}
+        order={orders.find((order) => order.id === pendingOrderAction?.orderId)}
+        onOpenChange={(open) => {
+          if (!open) setPendingOrderAction(null);
+        }}
+        onConfirm={(payload) => {
+          if (!pendingOrderAction) return;
+          changeOrderStatus(
+            pendingOrderAction.orderId,
+            pendingOrderAction.action === "Hold" ? "Held by doctor" : "Discontinued",
+            payload,
+          );
+          setPendingOrderAction(null);
+        }}
+      />
+      <DoctorOrderAmendDialog
+        key={pendingAmendOrderId ?? "doctor-order-entry-amend-closed"}
+        open={Boolean(pendingAmendOrderId)}
+        order={orders.find((order) => order.id === pendingAmendOrderId)}
+        onOpenChange={(open) => {
+          if (!open) setPendingAmendOrderId(null);
+        }}
+        onConfirm={(payload) => {
+          if (!pendingAmendOrderId) return;
+          copyOrderToDraft(pendingAmendOrderId, payload);
+          setPendingAmendOrderId(null);
+        }}
+      />
+    </div>
+  );
+}
+
+function MedicationPatientStrip({
+  activeDoseCount,
+  dueCount,
+  highRiskCount,
+  patient,
+  pharmacyIssueCount,
+  unitFilter,
+}: {
+  activeDoseCount: number;
+  dueCount: number;
+  highRiskCount: number;
+  patient?: IcuPatient;
+  pharmacyIssueCount: number;
+  unitFilter: string;
+}) {
+  return (
+    <div className="max-w-full overflow-x-auto rounded-md border border-[#dcd8ff] bg-gradient-to-r from-[#7064EC] via-[#6878E8] to-[#6888E8] px-4 py-3 text-white shadow-sm">
+      <div className="flex min-w-max items-center gap-6 text-sm font-semibold">
+        <span className="text-base font-bold">{patient?.patientName ?? "All ICU patients"}</span>
+        <span>{patient ? `MR: ${patient.mrn}` : unitFilter}</span>
+        <span>{patient ? `Age/Sex: ${patient.ageGender}` : `${activeDoseCount} active dose(s)`}</span>
+        <span>{patient ? `Bed: ${patient.bedNo}` : `${dueCount} due / late`}</span>
+        <span>{patient ? `Unit: ${patient.unit}` : `${highRiskCount} high-alert`}</span>
+        <span>{patient ? `Doctor: ${patient.dutyDoctor}` : `${pharmacyIssueCount} pharmacy issue(s)`}</span>
+        <span>{patient ? `Nurse: ${patient.assignedWardNurse}` : "Nurse eMAR"}</span>
+      </div>
+    </div>
+  );
+}
+
+function MedicationLabeledSelect({
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  options: string[];
+  value: string;
+}) {
+  return (
+    <label className="space-y-1 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
+      <select
+        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((option) => <option key={option}>{option}</option>)}
+      </select>
+    </label>
   );
 }
 
@@ -4348,7 +5575,7 @@ function MedicationOrderComposer({
           <MedicationContextTile label="Renal / feeding" value={`${patientProfile.renalStatus} / ${patientProfile.feedingStatus}`} tone={patientProfile.renalStatus === "Normal" && patientProfile.feedingStatus !== "NPO" ? "success" : "warning"} />
           <MedicationContextTile label="Active meds" value={`${activeOrdersForPatient.length}`} tone={activeOrdersForPatient.length ? "info" : "success"} />
           <button
-            className="min-h-16 rounded-md border border-primary/30 bg-primary/5 p-3 text-left transition hover:border-primary hover:bg-primary/10"
+            className="min-h-20 rounded-md border border-primary/30 bg-primary/5 p-3 text-left transition hover:border-primary hover:bg-primary/10"
             type="button"
             onClick={() => setOrdersOpen(true)}
           >
@@ -4501,7 +5728,7 @@ function MedicationOrderComposer({
               <label className="space-y-1 text-sm md:col-span-2">
                 <span className="font-medium text-foreground">Instructions</span>
                 <textarea
-                  className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                  className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
                   placeholder="Safety checks, vitals/lab conditions, infusion instruction..."
                   value={draft.instructions}
                   onChange={(event) => onDraftChange({ instructions: event.target.value })}
@@ -4547,7 +5774,7 @@ function MedicationOrderComposer({
 
 function MedicationContextTile({ label, value, tone = "info" }: { label: string; value: string; tone?: StatusTone }) {
   return (
-    <div className="min-h-16 rounded-md border border-border bg-surface p-3">
+    <div className="min-h-20 rounded-md border border-border bg-surface p-3">
       <div className="flex items-start justify-between gap-3">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <span className={cn("mt-0.5 h-2 w-2 shrink-0 rounded-full", toneDotClass(tone))} />
@@ -4620,7 +5847,7 @@ function MedicationPatientOrdersDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(780px,90dvh)] w-[min(980px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
-          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-3 py-2">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
             <div>
               <Dialog.Title className="text-base font-semibold text-foreground">Patient Orders</Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
@@ -4725,7 +5952,7 @@ function DoctorOrderAmendDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/45 backdrop-blur-[1px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[61] flex max-h-[90dvh] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
-          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-3 py-2">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
             <div>
               <Dialog.Title className="text-base font-semibold text-foreground">Copy / Amend Order</Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
@@ -4789,7 +6016,7 @@ function DoctorOrderAmendDialog({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-4 py-3">
             <p className="text-xs text-muted-foreground">{selectedAreas.length ? `${selectedAreas.length} amendment area(s) selected` : "Select amendment area before continuing"}</p>
             <div className="flex gap-2">
               <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
@@ -4856,7 +6083,7 @@ function DoctorOrderStatusActionDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/45 backdrop-blur-[1px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[61] flex max-h-[90dvh] w-[min(720px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
-          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-3 py-2">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
             <div>
               <Dialog.Title className="text-base font-semibold text-foreground">Doctor {isHold ? "hold" : "discontinue"} reason</Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
@@ -4899,7 +6126,7 @@ function DoctorOrderStatusActionDialog({
             <label className="space-y-1 text-sm">
               <span className="font-medium text-foreground">Doctor note</span>
               <textarea
-                className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
                 placeholder="Clinical reason, nurse/pharmacy instruction, adverse effect, lab/vitals context..."
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
@@ -4924,7 +6151,7 @@ function DoctorOrderStatusActionDialog({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-4 py-3">
             <p className="text-xs text-muted-foreground">{allChecksComplete ? "Checks complete" : `${checkLabels.filter((label) => checks[label]).length}/${checkLabels.length} checks complete`}</p>
             <div className="flex gap-2">
               <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
@@ -4961,7 +6188,7 @@ function MedicationChartTable({
   }, [doses]);
 
   if (!orderedDoses.length) {
-    return <EmptyPanel title="No medicine found" detail="No dose is available for the selected filters." />;
+    return <EmptyPanel title="No medicine found" detail="No dose is available for the current selection." />;
   }
 
   return (
@@ -5036,7 +6263,7 @@ function MedicationChartTable({
 }
 
 type MedicationTableAction = {
-  action: MedicationNurseAction | "Receive" | "View";
+  action: MedicationNurseAction;
   label: string;
   variant?: "default" | "outline";
 };
@@ -5058,16 +6285,13 @@ function MedicationActionCell({
 }) {
   const actions = medicationTableActions(dose);
   const runAction = (action: MedicationTableAction["action"]) => {
-    if (action === "Receive") {
-      onMarkPharmacyAvailable(dose.orderId);
-      return;
-    }
-    if (action === "View") {
-      onSelectDose(dose.id);
-      return;
-    }
+    onSelectDose(dose.id);
     onRequestAction(dose.id, action);
   };
+
+  if (!actions.length) {
+    return <span className="text-xs font-semibold text-muted-foreground">Completed</span>;
+  }
 
   return (
     <div className="relative flex min-w-[88px] justify-end">
@@ -5105,36 +6329,14 @@ function MedicationActionCell({
 }
 
 function medicationTableActions(dose: MedicationDoseRow): MedicationTableAction[] {
-  const blockedByPharmacy = dose.pharmacyStatus !== "Available";
-  const needsVerification = dose.highRisk && dose.doubleVerification === "Pending";
-  const isContinuous = dose.orderType === "Continuous";
-  const isClosed = ["Administered", "Skipped", "Missed", "Refused", "Stopped"].includes(dose.status);
+  const isClosed = ["Administered", "Skipped", "Missed", "Refused", "Stopped", "Paused"].includes(dose.status);
   const canAct = dose.orderStatus === "Active" && !isClosed;
-  const actions: MedicationTableAction[] = [];
-
-  if (blockedByPharmacy && canAct) actions.push({ action: "Receive", label: "Receive" });
-  if (needsVerification && canAct) actions.push({ action: "Verify", label: "Verify" });
-
-  if (isContinuous && canAct) {
-    if (dose.status !== "Running") actions.push({ action: "Running", label: "Start" });
-    if (dose.status === "Running") actions.push({ action: "Running", label: "Update" });
-    if (dose.status === "Running") actions.push({ action: "Paused", label: "Pause", variant: "outline" });
-    actions.push({ action: "Stopped", label: "Stop", variant: "outline" });
-  }
-
-  if (!isContinuous && canAct) {
-    if (!blockedByPharmacy && !needsVerification) actions.push({ action: "Administered", label: "Give" });
-    actions.push({ action: "Held", label: "Hold", variant: "outline" });
-    actions.push({ action: "Skipped", label: "Skip", variant: "outline" });
-    if (dose.status === "Late") actions.push({ action: "Missed", label: "Missed", variant: "outline" });
-    actions.push({ action: "Refused", label: "Refuse", variant: "outline" });
-  }
-
-  if (!actions.length || ["Administered", "Held", "Skipped", "Missed", "Refused", "Stopped", "Paused"].includes(dose.status)) {
-    actions.push({ action: "View", label: "View", variant: actions.length ? "outline" : "default" });
-  }
-
-  return actions;
+  if (!canAct) return [];
+  return [
+    { action: "Administered", label: "Administer" },
+    { action: "Held", label: "Hold", variant: "outline" },
+    { action: "Skipped", label: "Skip", variant: "outline" },
+  ];
 }
 
 function medicationChartSortValue(dose: MedicationDoseRow) {
@@ -5219,7 +6421,7 @@ function MedicationDoseCard({
           </>
         ) : !isContinuous && canAct ? (
           <>
-            <Button size="sm" onClick={() => onRequestAction("Administered")}><Check className="h-4 w-4" />Give</Button>
+          <Button size="sm" onClick={() => onRequestAction("Administered")}><Check className="h-4 w-4" />Administer</Button>
             <Button size="sm" variant="outline" onClick={() => onRequestAction("Held")}>Hold</Button>
             <Button size="sm" variant="outline" onClick={() => onRequestAction("Skipped")}>Skip</Button>
             {dose.status === "Late" ? <Button size="sm" variant="outline" onClick={() => onRequestAction("Missed")}>Mark missed</Button> : null}
@@ -5229,97 +6431,6 @@ function MedicationDoseCard({
         {!canAct ? <span className="self-center text-xs text-muted-foreground">No further nursing action required.</span> : null}
       </div>
     </div>
-  );
-}
-
-function MedicationSafetyPanel({
-  dose,
-  runningInfusionCount,
-  onRequestAction,
-  onMarkPharmacyAvailable,
-}: {
-  dose?: MedicationDoseRow;
-  runningInfusionCount: number;
-  onRequestAction: (action: MedicationNurseAction) => void;
-  onMarkPharmacyAvailable: () => void;
-}) {
-  if (!dose) {
-    return (
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>Dose Safety Panel</CardTitle>
-            <CardDescription>Select a medicine dose to act.</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <EmptyPanel title="No dose selected" detail="Select a dose from eMAR timeline." />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const patient = icuPatients.find((item) => item.id === dose.patientId);
-  const checklist: Array<[string, string]> = [
-    ["Patient", `${dose.bedNo} - ${patient?.patientName ?? "Patient"}`],
-    ["Medicine", `${dose.medication} ${dose.dose}`],
-    ["Schedule", `${dose.scheduledDate} ${dose.scheduledTime} | ${dose.shift}`],
-    ["Route/frequency", `${dose.route} | ${dose.frequency}`],
-    ["Doctor", dose.doctor],
-    ["Pharmacy", dose.pharmacyStatus],
-    ["Double check", dose.doubleVerification],
-    ["Running infusions", String(runningInfusionCount)],
-  ];
-  const isContinuous = dose.orderType === "Continuous";
-  const isClosed = ["Administered", "Skipped", "Missed", "Refused", "Stopped"].includes(dose.status);
-  const canAct = dose.orderStatus === "Active" && !isClosed;
-
-  return (
-    <Card>
-      <CardHeader>
-        <div>
-          <CardTitle>Dose Safety Panel</CardTitle>
-          <CardDescription>5-rights, pharmacy, verification, and action note.</CardDescription>
-        </div>
-        <StatusPill tone={medicationStatusTone(dose.status)}>{dose.status}</StatusPill>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <InfoPanel title="Selected dose" rows={checklist} />
-        <div className="rounded-md border border-border bg-background p-3">
-          <p className="text-sm font-semibold text-foreground">Clinical instruction</p>
-          <p className="mt-2 text-xs text-muted-foreground">{dose.instructions}</p>
-          <p className="mt-2 text-xs text-muted-foreground">Indication: {dose.indication}</p>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {dose.pharmacyStatus !== "Available" ? <Button variant="outline" onClick={onMarkPharmacyAvailable}><Syringe className="h-4 w-4" />Mark received</Button> : null}
-          {dose.doubleVerification === "Pending" && canAct ? <Button variant="outline" onClick={() => onRequestAction("Verify")}><ShieldAlert className="h-4 w-4" />Double verify</Button> : null}
-          {isContinuous && canAct ? (
-            <>
-              {dose.status !== "Running" ? <Button onClick={() => onRequestAction("Running")}><Activity className="h-4 w-4" />Start infusion</Button> : null}
-              {dose.status === "Running" ? <Button variant="outline" onClick={() => onRequestAction("Paused")}>Pause</Button> : null}
-              <Button variant="outline" onClick={() => onRequestAction("Stopped")}>Stop</Button>
-            </>
-          ) : !isContinuous && canAct ? (
-            <>
-              <Button onClick={() => onRequestAction("Administered")}><Check className="h-4 w-4" />Give dose</Button>
-              <Button variant="outline" onClick={() => onRequestAction("Held")}>Hold</Button>
-              <Button variant="outline" onClick={() => onRequestAction("Skipped")}>Skip</Button>
-              {dose.status === "Late" ? <Button variant="outline" onClick={() => onRequestAction("Missed")}>Mark missed</Button> : null}
-              <Button variant="outline" onClick={() => onRequestAction("Refused")}>Refuse</Button>
-            </>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-foreground">Audit trail</p>
-          {dose.auditTrail.slice(0, 5).map((item, index) => (
-            <div className="flex gap-2 rounded-md border border-border bg-background p-2 text-xs text-muted-foreground" key={`${item}-${index}`}>
-              <Clock className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -5402,7 +6513,7 @@ function MedicationActionDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
-          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-3 py-2">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
             <div>
               <Dialog.Title className="text-base font-semibold text-foreground">{medicationActionLabel(action)}</Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
@@ -5474,7 +6585,7 @@ function MedicationActionDialog({
               <label className="space-y-1 text-sm">
                 <span className="font-medium text-foreground">PRN indication and pre-assessment</span>
                 <textarea
-                  className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                  className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
                   placeholder="Pain score, temperature, symptom, or clinical trigger..."
                   value={clinicalDetail}
                   onChange={(event) => setClinicalDetail(event.target.value)}
@@ -5486,7 +6597,7 @@ function MedicationActionDialog({
               <label className="space-y-1 text-sm">
                 <span className="font-medium text-foreground">Infusion setup</span>
                 <textarea
-                  className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                  className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
                   placeholder="Pump ID, concentration, rate, line and target..."
                   value={clinicalDetail}
                   onChange={(event) => setClinicalDetail(event.target.value)}
@@ -5498,7 +6609,7 @@ function MedicationActionDialog({
               <label className="space-y-1 text-sm">
                 <span className="font-medium text-foreground">Clinical note</span>
                 <textarea
-                  className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                  className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
                   placeholder="Vitals/lab review, patient response, doctor communication, or additional note..."
                   value={clinicalDetail}
                   onChange={(event) => setClinicalDetail(event.target.value)}
@@ -5507,7 +6618,7 @@ function MedicationActionDialog({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-4 py-3">
             <p className="text-xs text-muted-foreground">{allChecksComplete ? "Safety checklist complete" : `${checkLabels.filter((label) => checks[label]).length}/${checkLabels.length} safety checks complete`}</p>
             <div className="flex gap-2">
               <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
@@ -5533,7 +6644,7 @@ function MedicationContextItem({ label, value }: { label: string; value: string 
 }
 
 function medicationActionLabel(action: MedicationNurseAction) {
-  if (action === "Administered") return "Give dose";
+  if (action === "Administered") return "Administer medicine";
   if (action === "Running") return "Start infusion";
   if (action === "Paused") return "Pause infusion";
   if (action === "Stopped") return "Stop infusion";
@@ -5876,7 +6987,7 @@ export function AlertsEscalationWorkspace() {
             {!visibleRows.length ? <EmptyPanel title="No alert matched" detail="Change search, status, severity, source, owner, patient, or time filter." /> : null}
           </CardContent>
           {visibleRows.length ? (
-            <div className="flex flex-col gap-2 border-t border-border px-3 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <span className="font-semibold">Showing {pageStart}-{pageEnd} of {visibleRows.length}</span>
               <div className="flex items-center gap-2">
                 <Button disabled={currentPage <= 1} size="sm" variant="outline" onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</Button>
@@ -5933,7 +7044,7 @@ export function AlertsEscalationWorkspace() {
                   </div>
                   <label className="mt-3 block space-y-1 text-sm">
                     <span className="font-medium text-foreground">Action / resolution note</span>
-                    <textarea className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={actionNote} onChange={(event) => setActionNote(event.target.value)} />
+                    <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={actionNote} onChange={(event) => setActionNote(event.target.value)} />
                   </label>
                   <div className="mt-3 grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
                     <Button size="sm" onClick={() => changeAlert(selectedAlert.id, "Acknowledged")} disabled={selectedAlert.status !== "New"}><Check className="h-4 w-4" />Ack</Button>
@@ -6156,21 +7267,21 @@ export function WorkflowReportsWorkspace() {
           <table className="min-w-full text-left text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="px-3 py-2">Report</th>
-                <th className="px-3 py-2">Scope</th>
-                <th className="px-3 py-2">Count</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Owner</th>
+                <th className="px-4 py-3">Report</th>
+                <th className="px-4 py-3">Scope</th>
+                <th className="px-4 py-3">Count</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Owner</th>
               </tr>
             </thead>
             <tbody>
               {reportRows.map((row) => (
                 <tr className="border-t border-border" key={row.id}>
-                  <td className="px-3 py-2 font-medium text-foreground">{row.report}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{row.scope}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{row.count}</td>
-                  <td className="px-3 py-2"><StatusPill tone={toneForStatus(row.status)}>{row.status}</StatusPill></td>
-                  <td className="px-3 py-2 text-muted-foreground">{row.owner}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{row.report}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.scope}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.count}</td>
+                  <td className="px-4 py-3"><StatusPill tone={toneForStatus(row.status)}>{row.status}</StatusPill></td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.owner}</td>
                 </tr>
               ))}
             </tbody>
@@ -6252,7 +7363,7 @@ function PatientActionWorkspace({ patient }: { patient?: IcuPatient }) {
         <label className="space-y-1 text-sm">
           <span className="font-medium text-foreground">Quick nursing note</span>
           <textarea
-            className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+            className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
             placeholder="Add observation, action, or handover note..."
             value={note}
             onChange={(event) => setNote(event.target.value)}
@@ -6452,6 +7563,112 @@ function AdmissionReadinessChecklist({ selected, onToggle }: { selected: string[
   );
 }
 
+function AdmissionPatientSearchRows({
+  rows,
+  searchedText,
+  selectedPatientId,
+  onCreate,
+  onSelect,
+}: {
+  rows: AdmissionPatientCandidate[];
+  searchedText: string;
+  selectedPatientId: string;
+  onCreate: () => void;
+  onSelect: (patientId: string) => void;
+}) {
+  if (!rows.length) {
+    return (
+      <div className="flex flex-col gap-3 rounded-md border border-dashed border-border bg-surface p-4 text-sm md:col-span-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-semibold text-foreground">No matching patient found</p>
+          <p className="mt-1 text-xs text-muted-foreground">{searchedText.trim()}</p>
+        </div>
+        <Button type="button" onClick={onCreate}>Create Emergency ICU Admission</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-md border border-border bg-background md:col-span-2">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-3 py-2">
+        <p className="text-xs font-semibold text-muted-foreground">{rows.length} match(es)</p>
+        <Button type="button" variant="outline" onClick={onCreate}>Create Emergency ICU Admission</Button>
+      </div>
+      <div className="grid grid-cols-[minmax(180px,1.2fr)_minmax(180px,1fr)_minmax(160px,0.8fr)_120px] gap-3 border-b border-border bg-surface-muted px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span>Patient</span>
+        <span>Location</span>
+        <span>Status</span>
+        <span className="text-right">Select</span>
+      </div>
+      <div className="max-h-72 overflow-auto">
+        {rows.map((patient) => {
+          const selected = patient.id === selectedPatientId;
+          return (
+            <button
+              className={cn(
+                "grid w-full grid-cols-[minmax(180px,1.2fr)_minmax(180px,1fr)_minmax(160px,0.8fr)_120px] gap-3 border-b border-border px-3 py-3 text-left text-sm last:border-b-0 hover:bg-primary/5",
+                selected ? "bg-primary/5" : "bg-background",
+              )}
+              key={patient.id}
+              type="button"
+              onClick={() => onSelect(patient.id)}
+            >
+              <span className="min-w-0">
+                <span className="block truncate font-semibold text-foreground">{patient.patientName}</span>
+                <span className="block truncate text-xs text-muted-foreground">{patient.mrn} | {patient.ageGender}</span>
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate font-medium text-foreground">{patient.currentLocation}</span>
+                <span className="block truncate text-xs text-muted-foreground">{patient.source}</span>
+              </span>
+              <span className="flex items-center">
+                <StatusPill tone={admissionPatientTone(patient.patientStatus)}>{patient.patientStatus}</StatusPill>
+              </span>
+              <span className="flex justify-end">
+                <span className={cn("rounded-md border px-3 py-1 text-xs font-semibold", selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground")}>
+                  {selected ? "Selected" : "Select"}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EmergencyAdmissionCreatePanel({
+  draft,
+  onCancel,
+  onChange,
+  onCreate,
+}: {
+  draft: EmergencyAdmissionQuickDraft;
+  onCancel: () => void;
+  onChange: (key: keyof EmergencyAdmissionQuickDraft, value: string) => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/5 p-3 md:col-span-2">
+      <div className="mb-3 flex flex-col gap-2 border-b border-primary/20 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-semibold text-foreground">Create Emergency ICU Admission</p>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button type="button" onClick={onCreate}>Create & Select</Button>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <TextField label="Patient name" value={draft.patientName} onChange={(value) => onChange("patientName", value)} placeholder="Patient name" />
+        <TextField label="Age / sex" value={draft.ageGender} onChange={(value) => onChange("ageGender", value)} placeholder="45/M" />
+        <TextField label="Mobile" value={draft.mobile} onChange={(value) => onChange("mobile", value)} placeholder="Mobile number" />
+        <TextField label="Relative / attendant" value={draft.relativeName} onChange={(value) => onChange("relativeName", value)} placeholder="Relative name" />
+        <TextAreaField half label="Diagnosis / reason" value={draft.diagnosis} onChange={(value) => onChange("diagnosis", value)} placeholder="Reason for direct ICU admission" />
+        <TextAreaField half label="Allergy" value={draft.allergy} onChange={(value) => onChange("allergy", value)} placeholder="Known allergy or no known allergy" />
+      </div>
+    </div>
+  );
+}
+
 function AdmissionReview({ draft, blockReason, bed }: { draft: AdmissionDraft; blockReason: string; bed?: IcuAdmissionBedOption }) {
   const readiness = getReadinessValues(draft.readiness);
   return (
@@ -6510,6 +7727,7 @@ function AdmissionReview({ draft, blockReason, bed }: { draft: AdmissionDraft; b
           ["Risk", draft.risk],
           ["Isolation", draft.isolation],
           ["Current medication", draft.currentMedication],
+          ["Allergy", draft.allergy],
           ["High-alert medications", draft.highAlertMedications],
         ]} />
         <InfoPanel title="Medication history" rows={[
@@ -6586,7 +7804,7 @@ function SimpleRows({ rows, empty }: { rows: string[][]; empty: string }) {
 
 function EmptyPanel({ title, detail }: { title: string; detail: string }) {
   return (
-    <div className="rounded-md border border-dashed border-border bg-surface-muted p-4 text-center">
+    <div className="rounded-md border border-dashed border-border bg-surface-muted p-6 text-center">
       <p className="text-sm font-semibold text-foreground">{title}</p>
       <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
     </div>
@@ -6658,7 +7876,7 @@ function TextAreaField({
     <label className={cn("space-y-1 text-sm", half ? "" : "md:col-span-2")}>
       <span className="font-medium text-foreground">{label}</span>
       <textarea
-        className="min-h-16 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+        className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}

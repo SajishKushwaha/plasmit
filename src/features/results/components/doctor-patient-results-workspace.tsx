@@ -4,8 +4,7 @@ import * as React from "react";
 import { ChevronDown, Search, UserRound } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { PatientSummaryBanner } from "@/components/ui/patient-summary-banner";
-import { orderedPatients } from "@/features/doctor-dashboard1/doctor-dashboard1-page";
+import { orderedPatients, patientTone } from "@/features/doctor-dashboard1/doctor-dashboard1-page";
 import { rapidReviewPatients } from "@/features/rapid-review/rapid-review-data";
 import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
 
@@ -15,12 +14,24 @@ export function DoctorPatientResultsWorkspace() {
   const rapidReviewPatient = selectedPatient ? rapidReviewPatients.find((item) => item.id === selectedPatient.rapidReviewPatientId) : undefined;
   const [patientSearchOpen, setPatientSearchOpen] = React.useState(false);
   const [patientQuery, setPatientQuery] = React.useState(selectedPatient ? patientOptionLabel(selectedPatient) : "");
+  const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
 
   React.useEffect(() => {
     if (selectedPatient && !patientSearchOpen) {
       setPatientQuery(patientOptionLabel(selectedPatient));
     }
   }, [patientSearchOpen, selectedPatient]);
+
+  React.useEffect(() => {
+    const updatePatientHeader = () => {
+      setIsPatientHeaderCompact(window.scrollY > 8);
+    };
+
+    updatePatientHeader();
+    window.addEventListener("scroll", updatePatientHeader, { passive: true });
+
+    return () => window.removeEventListener("scroll", updatePatientHeader);
+  }, []);
 
   const filteredPatients = React.useMemo(() => {
     const normalizedQuery = patientQuery.trim().toLowerCase();
@@ -41,14 +52,9 @@ export function DoctorPatientResultsWorkspace() {
   };
 
   return (
-    <div className="space-y-4 py-4">
+    <div className="space-y-4 pb-4 pt-[76px]">
       <Card className="rounded-md border-slate-200 shadow-sm">
-        <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <div className="text-lg font-extrabold text-slate-950">Patient Results</div>
-            <p className="mt-1 text-sm font-semibold text-slate-500">Select one patient to view only that patient's results.</p>
-          </div>
-
+        <CardContent className="flex justify-end p-4">
           <div className="w-full max-w-xl">
             <span className="mb-1.5 block text-xs font-extrabold uppercase tracking-wide text-slate-500">Select Patient</span>
             <div className="relative">
@@ -111,16 +117,7 @@ export function DoctorPatientResultsWorkspace() {
 
       {selectedPatient ? (
         <section className="space-y-4">
-          <PatientSummaryBanner
-            title="Selected Patient Results"
-            fields={[
-              { label: "Name", value: selectedPatient.name },
-              { label: "UHID", value: rapidReviewPatient?.uhid ?? `DASH-${String(selectedPatient.id).padStart(4, "0")}` },
-              { label: "Age/Sex", value: rapidReviewPatient?.ageGender ?? "45/M" },
-              { label: "Ward/Bed", value: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : selectedPatient.bed },
-              { label: "Diagnosis", value: selectedPatient.diagnosis },
-            ]}
-          />
+          <SelectedPatientHeader isCompact={isPatientHeaderCompact} patient={selectedPatient} rapidReviewPatient={rapidReviewPatient} />
           <ResultsCenterView
             defaultDepartment="all"
             key={selectedPatient.id}
@@ -148,6 +145,58 @@ export function DoctorPatientResultsWorkspace() {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+function SelectedPatientHeader({
+  isCompact,
+  patient,
+  rapidReviewPatient,
+}: {
+  isCompact: boolean;
+  patient: (typeof orderedPatients)[number];
+  rapidReviewPatient?: (typeof rapidReviewPatients)[number];
+}) {
+  const tone = patientTone(patient);
+  const statusLabel = tone === "red" ? "Urgent" : tone === "orange" ? "Warning" : "Stable";
+  const statusClass = tone === "red" ? "bg-red-500 text-white" : tone === "orange" ? "bg-amber-400 text-slate-950" : "bg-emerald-500 text-white";
+  const age = rapidReviewPatient?.ageGender?.split("/")[0]?.trim() ? `${rapidReviewPatient.ageGender.split("/")[0].trim()} year(s)` : "35 year(s)";
+  const details = [
+    { label: "MR", value: "94346597930" },
+    { label: "DOB", value: "30-12-1995" },
+    { label: "", value: age },
+    { label: "", value: "75 kg" },
+    { label: "Bed", value: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed },
+    { label: "Blood Group", value: "AB" },
+    { label: "Rh", value: "+ve" },
+    { label: "Isolation Type", value: "Droplet", tone: "orange" },
+    { label: "Allergies", value: "Meropenem", tone: "orange" },
+  ];
+
+  return (
+    <div
+      className={`fixed left-0 right-0 bg-background/95 px-4 py-2 backdrop-blur transition-[top,box-shadow] duration-200 md:px-6 lg:left-[var(--app-sidebar-offset)] ${
+        isCompact ? "top-0 z-50 shadow-sm" : "top-16 z-30"
+      }`}
+    >
+      <div className="flex min-h-12 items-center gap-4 overflow-x-auto rounded-md bg-gradient-to-r from-[#7367f0] to-[#5b8def] px-4 py-2 text-sm font-extrabold text-white shadow-sm">
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="whitespace-nowrap text-base">{patient.name}</span>
+          <span className={`rounded-full px-3 py-1 text-xs ${statusClass}`}>{statusLabel}</span>
+        </div>
+        <div className="flex min-w-max items-center gap-6">
+          {details.map((detail, index) => (
+            <span
+              className={detail.tone === "orange" ? "whitespace-nowrap text-orange-200" : "whitespace-nowrap text-white"}
+              key={`${detail.label}-${detail.value}-${index}`}
+            >
+              {detail.label ? `${detail.label}: ` : ""}
+              {detail.value}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

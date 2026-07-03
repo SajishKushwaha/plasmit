@@ -46,7 +46,10 @@ import {
   Workflow,
 } from "lucide-react";
 
+import { getNursingRoleNavigation } from "@/data/icu-nursing-role-permissions";
 import type { NavigationItem, Role } from "@/types";
+
+const wardNurseDefaultRoute = "/icu-command-center/clinical-workspace/patient-overview";
 
 export const navigationItems: NavigationItem[] = [
   // =====================================================
@@ -81,7 +84,7 @@ export const navigationItems: NavigationItem[] = [
       { id: "unit-nurse-step-11", label: "11. Issue Review", route: "/unit-nurse/issue-review", status: "ready" },
       { id: "unit-nurse-step-12", label: "12. Escalation", route: "/unit-nurse/escalation", status: "ready" },
       { id: "unit-nurse-step-15", label: "15. Submit Handover", route: "/unit-nurse/handover-submit", status: "ready" },
-      { id: "unit-nurse-ward", label: "Ward Nurse Flow", route: "/ward-nurse", status: "ready" },
+      { id: "unit-nurse-ward", label: "Ward Nurse Flow", route: wardNurseDefaultRoute, status: "ready" },
       { id: "unit-nurse-head", label: "Head Nurse Flow", route: "/head-nurse", status: "ready" },
     ],
   },
@@ -101,31 +104,18 @@ export const navigationItems: NavigationItem[] = [
       { id: "head-nurse-step-12", label: "12. Escalation", route: "/head-nurse/escalation", status: "ready" },
       { id: "head-nurse-step-16", label: "16. Verify Handover", route: "/head-nurse/handover-verification", status: "ready" },
       { id: "head-nurse-unit-flow", label: "Unit Nurse Flow", route: "/unit-nurse", status: "ready" },
-      { id: "head-nurse-ward-flow", label: "Ward Nurse Flow", route: "/ward-nurse", status: "ready" },
+      { id: "head-nurse-ward-flow", label: "Ward Nurse Flow", route: wardNurseDefaultRoute, status: "ready" },
     ],
   },
   {
     id: "ward-nurse-dashboard",
     label: "Ward Nurse",
     icon: BedDouble,
-    route: "/ward-nurse",
+    route: wardNurseDefaultRoute,
     group: "Main",
     allowedRoles: ["Ward Nurse"],
     status: "ready",
-    children: [
-      { id: "ward-nurse-step-5", label: "5. Accept Assignment", route: "/ward-nurse/accept-assignment", status: "ready" },
-      { id: "ward-nurse-step-6", label: "6. Assessment", route: "/ward-nurse/assessment", status: "ready" },
-      { id: "ward-nurse-step-7a", label: "7. Vitals Update", route: "/ward-nurse/vitals", status: "ready" },
-      { id: "ward-nurse-step-7b", label: "7. Medication", route: "/ward-nurse/medication", status: "ready" },
-      { id: "ward-nurse-step-7c", label: "7. Intake / Output", route: "/ward-nurse/intake-output", status: "ready" },
-      { id: "ward-nurse-step-7d", label: "7. Doctor Orders", route: "/ward-nurse/doctor-orders", status: "ready" },
-      { id: "ward-nurse-step-7e", label: "7. Notes", route: "/ward-nurse/notes", status: "ready" },
-      { id: "ward-nurse-step-10", label: "10. Raise Issue", route: "/ward-nurse/raise-issue", status: "ready" },
-      { id: "ward-nurse-step-13", label: "13. Close Escalation", route: "/ward-nurse/close-escalation", status: "ready" },
-      { id: "ward-nurse-step-14", label: "14. Discharge Checklist", route: "/ward-nurse/discharge-checklist", status: "ready" },
-      { id: "ward-nurse-step-17", label: "17. Accept Handover", route: "/ward-nurse/next-shift-accept", status: "ready" },
-      { id: "ward-nurse-unit-flow", label: "Unit Nurse Review", route: "/unit-nurse/issue-review", status: "ready" },
-    ],
+    children: getNursingRoleNavigation("Ward Nurse"),
   },
 
   // =====================================================

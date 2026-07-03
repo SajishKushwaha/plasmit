@@ -90,8 +90,6 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
   const selectedNote = visibleNotes.find((note) => note.id === selectedNoteId) ?? visibleNotes[0];
   const uhid = rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`;
   const wardBed = rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed;
-  const doctorCountLabel = Math.max(notes.filter((note) => note.kind === "doctor").length, 18);
-  const carePlanCountLabel = Math.max(notes.filter((note) => note.kind === "care-plan").length, 6);
 
   function openDrawer(kind: ProgressNoteKind) {
     setActiveKind(kind);
@@ -155,34 +153,29 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
   }, [selectedNoteId, visibleNotes]);
 
   return (
-    <div className={cn("bg-[#f5f7fb] text-[#242735]", compact ? "min-h-0 rounded-lg bg-white" : "-m-1 min-h-[680px]")}>
-      <div className={cn("mx-auto", compact ? "max-w-none px-0 py-0" : "max-w-[1540px] px-4 py-5 sm:px-6")}>
-        <div className={cn("flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between", compact && "border-b border-[#d8deea] bg-[#f8faff] px-4 py-3")}>
-          <div className={cn(compact && "min-w-0")}>
-            
+    <div className={cn("text-[#242735]", compact ? "min-h-0 rounded-lg bg-white" : "min-h-[680px] bg-transparent")}>
+      <div className={cn("mx-auto", compact ? "max-w-none px-0 py-0" : "max-w-[1540px] px-5 py-4 sm:px-6")}>
+        <div className={cn("flex flex-col gap-3 border border-border bg-white shadow-sm lg:flex-row lg:items-center lg:justify-between", compact ? "rounded-t-lg border-x-0 border-t-0 px-4 py-3" : "rounded-xl px-4 py-3")}>
+          <div className="overflow-x-auto">
+            <div className="inline-flex min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
+              <ProgressListTab active={activeKind === "doctor"} compact={compact} label="Doctor Notes" onClick={() => setActiveKind("doctor")} />
+              <ProgressListTab active={activeKind === "care-plan"} compact={compact} label="Care Plans" onClick={() => setActiveKind("care-plan")} />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button className={cn("rounded-md bg-[#0b4aa2] font-extrabold text-white shadow-sm hover:bg-[#073f8c]", compact ? "h-10 px-4 text-sm" : "h-12 px-6 text-base")} type="button" onClick={() => openDrawer("doctor")}>
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button className={cn("rounded-md bg-primary font-extrabold text-primary-foreground shadow-sm hover:bg-primary/90", compact ? "h-10 px-4 text-sm" : "h-12 px-6 text-base")} type="button" onClick={() => openDrawer("doctor")}>
               <Plus className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
-              Add Doctor Note
+               Doctor Note
             </Button>
             <Button className={cn("rounded-md border-[#8e94a4] font-extrabold text-[#202533]", compact ? "h-10 px-4 text-sm" : "h-12 px-5 text-base")} type="button" variant="outline" onClick={() => openDrawer("care-plan")}>
-              <ClipboardList className={cn("text-[#0b4aa2]", compact ? "h-4 w-4" : "h-5 w-5")} />
-              Add Care Plan
+              <Plus className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
+               Care Plan
             </Button>
           </div>
         </div>
 
-     
-
-        <div className={cn("border-y border-[#cbd0dc] bg-white/70", compact ? "mt-4" : "mt-5")}>
-          <div className={cn("mx-auto flex overflow-x-auto", compact ? "max-w-none gap-6 px-4" : "max-w-[1180px] gap-8 px-0")}>
-            <ProgressListTab active={activeKind === "doctor"} compact={compact} label={`Doctor Notes (${doctorCountLabel})`} onClick={() => setActiveKind("doctor")} />
-            <ProgressListTab active={activeKind === "care-plan"} compact={compact} label={`Care Plans (${carePlanCountLabel})`} onClick={() => setActiveKind("care-plan")} />
-          </div>
-        </div>
-
-        <div className={cn("mx-auto space-y-0 bg-white/40", compact ? "max-h-[56dvh] max-w-none overflow-y-auto px-4" : "max-w-[1180px]")}>
+        <div className={cn("mx-auto grid gap-3", compact ? "max-h-[56dvh] max-w-none overflow-y-auto px-4 py-4" : "mt-4 max-w-[1360px]")}>
           {visibleNotes.map((note, index) => (
             <ProgressTimelineNote
               active={selectedNote?.id === note.id}
@@ -264,7 +257,7 @@ function DividerBlock({ compact, label, strong = false, value }: { compact: bool
   return (
     <div className={cn("min-w-0 border-l border-[#aeb4c2]", compact ? "pl-4" : "pl-8")}>
       <div className="text-xs font-extrabold uppercase text-[#202533]">{label}</div>
-      <div className={cn("mt-1 truncate font-extrabold", compact ? "text-sm" : "text-base", strong ? "text-[#0b4aa2]" : "text-[#191d27]")}>{value}</div>
+      <div className={cn("mt-1 truncate font-extrabold", compact ? "text-sm" : "text-base", strong ? "text-primary" : "text-[#191d27]")}>{value}</div>
     </div>
   );
 }
@@ -282,15 +275,14 @@ function ProgressListTab({ active, compact, label, onClick }: { active: boolean;
   return (
     <button
       className={cn(
-        "relative text-center font-extrabold transition hover:text-[#0b4aa2]",
-        compact ? "h-14 min-w-[180px] px-3 text-sm" : "h-20 min-w-[210px] px-5 text-base",
-        active ? "text-[#0b4aa2]" : "text-[#373c49]",
+        "rounded-lg text-center font-extrabold transition hover:bg-white/70 hover:text-primary",
+        compact ? "h-10 min-w-[170px] px-3 text-sm" : "h-11 min-w-[190px] px-4 text-sm",
+        active ? "bg-white text-primary shadow-sm" : "bg-transparent text-[#373c49]",
       )}
       onClick={onClick}
       type="button"
     >
       {label}
-      <span className={cn("absolute bottom-0 left-0 h-1 w-full rounded-t-full bg-[#0b4aa2] transition", active ? "opacity-100" : "opacity-0")} />
     </button>
   );
 }
@@ -316,7 +308,11 @@ function ProgressTimelineNote({
 }) {
   return (
     <article
-      className={cn("relative cursor-pointer border-b border-[#c4c9d5] focus:outline-none focus:ring-2 focus:ring-[#0b4aa2]/20", compact ? "px-2 py-5" : "px-0 py-8", active && "bg-white")}
+      className={cn(
+        "relative cursor-pointer rounded-xl border bg-white shadow-sm transition hover:border-primary/30 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20",
+        compact ? "px-4 py-4" : "px-5 py-5",
+        active ? "border-primary/35 shadow-md" : "border-border",
+      )}
       onClick={onClick}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -327,25 +323,25 @@ function ProgressTimelineNote({
       role="button"
       tabIndex={0}
     >
-        <div className={cn("grid gap-5", compact ? "xl:grid-cols-[1fr_minmax(300px,0.85fr)]" : "lg:grid-cols-[1fr_minmax(320px,0.95fr)]")}>
+        <div className={cn("grid gap-5", compact ? "xl:grid-cols-[1fr_minmax(300px,0.85fr)]" : "lg:grid-cols-[1fr_minmax(340px,0.9fr)]")}>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm font-extrabold uppercase tracking-[0.16em] text-[#0b4aa2]">{note.title}</span>
+            <div className="flex flex-wrap items-center gap-2 pr-0 lg:pr-36">
+              <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-primary">{note.title}</span>
               <span className="inline-flex items-center gap-2 text-sm font-extrabold text-[#1c202b]">
-                <UserRound className="h-6 w-6 rounded-full bg-[#d6e2ee] p-1 text-[#0b4aa2]" />
+                <UserRound className="h-6 w-6 rounded-full bg-primary/10 p-1 text-primary" />
                 {note.author}
               </span>
               <span className="text-sm font-semibold text-[#656b78]">{note.timestamp}</span>
             </div>
 
             {note.subjective ? (
-              <ProgressTextBlock className="mt-6" label="Subjective" value={note.subjective} />
+              <ProgressTextBlock className="mt-5" label="Subjective" value={note.subjective} />
             ) : null}
-            <ProgressTextBlock className="mt-5" label="Objective" value={note.objective} />
+            <ProgressTextBlock className="mt-4" label="Objective" value={note.objective} />
 
-            <div className="mt-8 flex flex-wrap gap-5">
+            <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-border pt-3">
               <button
-                className="text-sm font-extrabold text-[#0b4aa2]"
+                className="text-sm font-extrabold text-primary"
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -378,12 +374,12 @@ function ProgressTimelineNote({
             </div>
           </div>
 
-          <div className={cn("min-w-0", !primary && "hidden lg:block")}>
+          <div className={cn("min-w-0 rounded-lg bg-surface-muted/50 p-4", !primary && "hidden lg:block")}>
             <ProgressTextBlock label="Assessment" value={note.assessment} />
-            <ProgressTextBlock className="mt-5" label="Plan" value={note.plan} />
+            <ProgressTextBlock className="mt-4" label="Plan" value={note.plan} />
           </div>
 
-          <div className="absolute right-4 mt-0 hidden items-center gap-4 lg:flex">
+          <div className="absolute right-4 top-5 hidden items-center gap-3 lg:flex">
             <span className={cn("inline-flex items-center gap-1.5 text-xs font-extrabold uppercase", statusTextClass(note.status))}>
               <CheckCircle2 className="h-4 w-4" />
               {note.status}
@@ -398,8 +394,8 @@ function ProgressTimelineNote({
 function ProgressTextBlock({ className, label, value }: { className?: string; label: string; value: string }) {
   return (
     <div className={className}>
-      <h3 className="text-base font-extrabold uppercase tracking-wide text-[#202533]">{label}</h3>
-      <p className="mt-2 max-w-[720px] text-base font-semibold leading-7 text-[#2f3440]">{value}</p>
+      <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#202533]">{label}</h3>
+      <p className="mt-2 max-w-[720px] text-sm font-semibold leading-6 text-[#2f3440]">{value}</p>
     </div>
   );
 }
@@ -431,7 +427,7 @@ function ProgressNoteDrawer({
     <div className="fixed inset-0 z-[80] bg-black/45" role="presentation">
       <section
         aria-label={isCarePlan ? "New care plan" : "New doctor note"}
-        className="fixed inset-y-0 right-0 flex w-full max-w-[1120px] flex-col overflow-hidden bg-[#f7f8ff] shadow-[-24px_0_50px_rgba(15,23,42,0.22)]"
+        className="fixed inset-y-0 right-0 flex w-full max-w-[1120px] flex-col overflow-hidden bg-white shadow-[-24px_0_50px_rgba(15,23,42,0.22)]"
         role="dialog"
       >
         <div className="flex items-center justify-between px-7 py-6">
@@ -443,17 +439,20 @@ function ProgressNoteDrawer({
 
         <div className="min-h-0 flex-1 overflow-y-auto pb-28">
           <div className="px-7">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-[#e1e4ee] px-4 py-3">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-base font-bold text-[#4a5060]">
-                <span className="font-extrabold text-[#1f2430]">{patient.name}</span>
+            <div
+              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#7367f0]/40 px-4 py-3 text-white shadow-[0_8px_20px_rgba(115,103,240,0.18)]"
+              style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}
+            >
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-base font-bold text-white/85">
+                <span className="font-extrabold text-white">{patient.name}</span>
                 <span>MRN: {uhid}</span>
                 <span>{wardBed}</span>
               </div>
-              <div className="max-w-full truncate text-base font-extrabold text-[#0755bf]">{patient.diagnosis}</div>
+              <div className="max-w-full truncate text-base font-extrabold text-white">{patient.diagnosis}</div>
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 bg-[#b6c8ff] px-7 py-3 text-base font-extrabold text-[#3c4973]">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-y border-slate-200 bg-slate-50 px-7 py-3 text-base font-extrabold text-slate-700">
             <span className="uppercase tracking-wide">Current Vitals</span>
             <div className="flex flex-wrap gap-x-8 gap-y-1">
               <span>BP: {patient.abps.value}/{patient.abpd.value}</span>
@@ -510,13 +509,13 @@ function ProgressNoteDrawer({
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between border-t border-[#cdd3e2] bg-[#f0f3ff] px-8 py-5">
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between border-t border-slate-200 bg-white px-8 py-5">
           <button className="text-base font-extrabold text-[#7b8190]" onClick={onClose} type="button">Cancel</button>
           <div className="flex gap-4">
-            <Button className="h-12 rounded-md border-[#9ba3b5] px-8 text-base font-extrabold text-[#0755bf]" type="button" variant="outline" onClick={onSave} disabled={!hasDraftContent(form)}>
+            <Button className="h-12 rounded-md border-slate-300 px-8 text-base font-extrabold text-slate-700 hover:bg-slate-50" type="button" variant="outline" onClick={onSave} disabled={!hasDraftContent(form)}>
               {isEditing ? "Save Changes" : "Save Draft"}
             </Button>
-            <Button className="h-12 rounded-md bg-[#0755d8] px-9 text-base font-extrabold text-white shadow-sm hover:bg-[#0649ba]" type="button" onClick={onSave} disabled={!hasDraftContent(form)}>
+            <Button className="h-12 rounded-md bg-slate-800 px-9 text-base font-extrabold text-white shadow-sm hover:bg-slate-700" type="button" onClick={onSave} disabled={!hasDraftContent(form)}>
               Sign & Save Note
             </Button>
           </div>
@@ -561,7 +560,7 @@ function ProgressNoteFullView({
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
           <div className="flex flex-wrap items-center gap-3 border-b border-[#d8deea] pb-4">
             <span className="inline-flex items-center gap-2 text-sm font-extrabold text-[#1c202b]">
-              <UserRound className="h-6 w-6 rounded-full bg-[#d6e2ee] p-1 text-[#0b4aa2]" />
+              <UserRound className="h-6 w-6 rounded-full bg-primary/10 p-1 text-primary" />
               {note.author}
             </span>
             <span className="text-sm font-semibold text-[#656b78]">{note.designation}</span>
@@ -602,8 +601,8 @@ function ProgressNoteFullView({
 
 function DrawerSection({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-[#c5cbdb] bg-[#fbfbff]">
-      <div className="flex items-center justify-between border-b border-[#c5cbdb] bg-[#f2f4ff] px-5 py-4">
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
         <h3 className="text-base font-extrabold uppercase text-[#202533]">{title}</h3>
         <ChevronDown className="h-6 w-6 text-[#111827]" />
       </div>
@@ -623,21 +622,21 @@ function Field({ children, label }: { children: React.ReactNode; label: string }
 
 function fieldClass(extra?: string) {
   return cn(
-    "h-12 w-full rounded-md border border-[#c5cbdb] bg-white px-3 text-base font-semibold text-[#242735] outline-none transition placeholder:text-[#242735] focus:border-[#0755d8] focus:ring-2 focus:ring-[#0755d8]/15",
+    "h-12 w-full rounded-md border border-slate-300 bg-white px-3 text-base font-semibold text-[#242735] outline-none transition placeholder:text-slate-500 focus:border-slate-500 focus:ring-2 focus:ring-slate-200",
     extra,
   );
 }
 
 function textAreaClass(extra?: string) {
   return cn(
-    "w-full resize-y rounded-md border border-[#c5cbdb] bg-white px-4 py-4 text-base font-semibold leading-7 text-[#242735] outline-none transition placeholder:text-[#242735] focus:border-[#0755d8] focus:ring-2 focus:ring-[#0755d8]/15",
+    "w-full resize-y rounded-md border border-slate-300 bg-white px-4 py-4 text-base font-semibold leading-7 text-[#242735] outline-none transition placeholder:text-slate-500 focus:border-slate-500 focus:ring-2 focus:ring-slate-200",
     extra,
   );
 }
 
 function statusTextClass(status: ProgressNote["status"]) {
   if (status === "Signed") return "text-[#137243]";
-  if (status === "Reviewed") return "text-[#0755bf]";
+  if (status === "Reviewed") return "text-primary";
   return "text-[#9a5a00]";
 }
 

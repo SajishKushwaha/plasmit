@@ -1305,6 +1305,9 @@ function VitalsGraphOneSection({
   legends: VitalsGraphOneLegend[];
   children: React.ReactNode;
 }) {
+  const useMobilePairedLegend = legends.length > 1;
+  const makeFirstLegendFullWidth = title === "Glucose";
+
   return (
     <div className={cn("grid overflow-hidden rounded-md border border-border", !graphOnly && "lg:grid-cols-[190px_minmax(0,1fr)]")}>
       {graphOnly ? (
@@ -1316,8 +1319,8 @@ function VitalsGraphOneSection({
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h4 className="text-sm font-semibold text-foreground">{title}</h4>
           {subtitle ? <p className="mt-1 text-xs leading-4 text-muted-foreground">{subtitle}</p> : null}
-          <div className="mt-4 space-y-2.5">
-            {legends.map((legend) => {
+          <div className={cn("mt-4", useMobilePairedLegend ? "grid grid-cols-2 gap-x-3 gap-y-2.5 lg:block lg:space-y-2.5" : "space-y-2.5")}>
+            {legends.map((legend, index) => {
               const content = (
                 <>
                 <span className="mt-0.5 h-4 w-6 shrink-0 rounded-sm border border-slate-900/20 shadow-sm" style={{ backgroundColor: legend.color }} />
@@ -1333,6 +1336,7 @@ function VitalsGraphOneSection({
                   <button
                     className={cn(
                       "flex w-full items-start gap-2.5 rounded-lg border p-2 text-left text-xs transition focus:outline-none focus:ring-2 focus:ring-ring/20",
+                      makeFirstLegendFullWidth && index === 0 && "col-span-2 lg:col-span-1",
                       legend.active ? "border-primary bg-background shadow-sm" : "border-transparent hover:border-border hover:bg-background/70",
                     )}
                     key={legend.label}
@@ -1345,7 +1349,7 @@ function VitalsGraphOneSection({
               }
 
               return (
-                <div className="flex items-start gap-2.5 text-xs" key={legend.label}>
+                <div className={cn("flex items-start gap-2.5 text-xs", makeFirstLegendFullWidth && index === 0 && "col-span-2 lg:col-span-1")} key={legend.label}>
                   {content}
                 </div>
               );

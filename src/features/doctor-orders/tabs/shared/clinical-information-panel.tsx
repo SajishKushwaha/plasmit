@@ -51,7 +51,7 @@ export function ClinicalInformationPanel({
                   type="button"
                   className={[
                     "border-l border-input px-3 py-1 text-xs font-medium first:border-l-0",
-                    activeProblemView === mode ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                    activeProblemView === mode ? "bg-white text-primary shadow-sm" : "text-muted-foreground",
                   ].join(" ")}
                   onClick={() => onActiveProblemViewChange(mode)}
                 >

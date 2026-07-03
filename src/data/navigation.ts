@@ -515,6 +515,19 @@ export const dashboardQuickActions = [
 export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
 
+  if (role === "Ward Nurse") {
+    return (getNursingRoleNavigation(role) ?? []).map((item) => ({
+      id: item.id,
+      label: item.label,
+      icon: HeartPulse,
+      route: item.route,
+      group: "ICU",
+      allowedRoles: ["Ward Nurse"],
+      status: item.status,
+      children: item.children,
+    }));
+  }
+
   if (role === "Super Admin") {
     return roleItems.filter((item) => ["nursing", "radiology-mnt", "results", "surgery"].includes(item.id));
   }

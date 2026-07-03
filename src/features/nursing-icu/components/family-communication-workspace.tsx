@@ -286,7 +286,7 @@ export function FamilyCommunicationWorkspace() {
         {metrics.map((item) => <CommunicationMetric key={item.label} {...item} />)}
       </div>
 
-      <div className="grid grid-cols-3 gap-1 rounded-md border border-border bg-white p-1 shadow-sm">
+      <div className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-surface-muted/70 p-1 shadow-sm">
         <SectionTab active={activeSection === "logs"} count={visibleLogs.length} label="Communication Logs" onClick={() => setActiveSection("logs")} />
         <SectionTab active={activeSection === "follow-ups"} count={followUps.length} label="Follow-ups" onClick={() => setActiveSection("follow-ups")} />
         <SectionTab active={activeSection === "review"} count={logs.filter((row) => row.reviewStatus !== "Reviewed").length} label="Review" onClick={() => setActiveSection("review")} />
@@ -348,14 +348,14 @@ function SectionTab({ active, count, label, onClick }: { active: boolean; count:
     <button
       aria-pressed={active}
       className={cn(
-        "flex min-w-0 items-center justify-center gap-1 rounded px-2 py-2 text-xs font-semibold transition sm:text-sm",
-        active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+        "flex min-w-0 items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-bold transition sm:text-sm",
+        active ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
       )}
       onClick={onClick}
       type="button"
     >
       <span className="truncate">{label}</span>
-      <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", active ? "bg-white/20" : "bg-surface-muted")}>{count}</span>
+      <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", active ? "bg-primary/10 text-primary" : "bg-surface-muted")}>{count}</span>
     </button>
   );
 }

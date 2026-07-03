@@ -432,7 +432,6 @@ function NursingIcuModulePageInner({
   const hiddenModuleTabPages: NursingIcuPageId[] = ["dashboard", "executive-dashboard", "executive-drilldown", "executive-documentation", "executive-owner", "executive-action", "notifications-tasks", "patient-search", "patient-overview", "progress-notes", "doctor-order-entry", "orders-care-plans", "family-communication", "arrival-bed-allocation", "smart-bed-view", "icu-operations", "device-monitoring", "edge-device-management", "connectivity-dashboard", "signal-health", "patient-risk-center", "patient-risk-drilldown", "early-warning-scores", "alerts", "doctor-rounds", "icu-round-2", "escalation-center", "remote-command-center", "remote-consultations", "escalated-cases", "tele-icu-readiness", "tele-icu-local-team", "tele-icu-remote-md", "tele-icu-sla", "escalated-trigger", "escalated-severity", "escalated-source", "escalated-owner-chain", "escalated-sla", "escalated-action", "escalated-outcome", "head-nurse-console", "ward-nurse-activities", "shift-handover", "tasks", "intake-output", "medicine-receive-verify", "medication-administration", "patient-medication"];
   const useNurseEntryReviewTabs = page === "vitals" || page === "nurse-review";
   const hideModuleTabs = chromeLessPage || hiddenModuleTabPages.includes(page) || useNurseEntryReviewTabs || isCleanCommandPage;
-  const showPageHeader = !chromeLessPage;
   const streamlinedPage = (hideModuleTabs && !isCleanCommandPage) || page === "intake-output" || page === "head-nurse-console" || page === "ward-nurse-activities";
   const [unit, setUnit] = React.useState("All ICU units");
   const [status, setStatus] = React.useState("All status");
@@ -455,24 +454,6 @@ function NursingIcuModulePageInner({
 
   return (
     <div className="min-w-0 max-w-full space-y-4 pb-8">
-      {showPageHeader ? (
-        <PageHeader
-          eyebrow="Nursing / ICU"
-          title={meta.title}
-          description={meta.description}
-          variant="primary"
-          actions={(
-            <>
-              <Button className="border-white/30 bg-white/15 text-white shadow-none hover:bg-white/25" variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button>
-              <Button className="border-white/30 bg-white/15 text-white shadow-none hover:bg-white/25" variant="outline" onClick={() => recordAction("Nursing / ICU data refreshed") }><RefreshCcw className="h-4 w-4" />Refresh</Button>
-              <Button className="border border-white/30 bg-white text-[#7367f0] shadow-sm hover:bg-white/90" onClick={() => {
-                setQuickAddOpen(true);
-              }}><Plus className="h-4 w-4" />Add record</Button>
-            </>
-          )}
-        />
-      ) : null}
-
       {useNurseEntryReviewTabs ? <NurseEntryReviewTabs activePage={page} /> : null}
       {!hideModuleTabs ? <NursingIcuTabs activePage={page} /> : null}
 
@@ -594,22 +575,25 @@ export function IcuCommandCenterPatientPage({
   return (
     <div className="min-w-0 max-w-full space-y-4 pb-8">
       {patient ? (
-        <section className="overflow-x-auto rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-blue-50 px-4 py-3 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
-          <div className="flex min-w-max items-center gap-3 text-sm font-semibold text-slate-700">
-            <span className="pr-1 text-base font-bold text-slate-950">{patient.patientName}</span>
+        <section
+          className="overflow-x-auto rounded-xl border border-[#7367f0]/40 px-4 py-3 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)]"
+          style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}
+        >
+          <div className="flex min-w-max items-center gap-3 text-sm font-semibold text-white/85">
+            <span className="pr-1 text-base font-bold text-white">{patient.patientName}</span>
             <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-700 shadow-sm">
               {patient.criticalityScore >= 8 ? "Urgent" : patient.currentStatus}
             </span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">MR: {patient.mrn}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">Age/Sex: {patient.ageGender}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">Bed: {patient.bedNo}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">Unit: {patient.unit}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">Doctor: {patient.admittingDoctor}</span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">Nurse: {patient.assignedWardNurse}</span>
-            <Link className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 shadow-sm transition duration-150 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700" href="/icu-command-center">
+            <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">MR: {patient.mrn}</span>
+            <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">Age/Sex: {patient.ageGender}</span>
+            <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">Bed: {patient.bedNo}</span>
+            <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">Unit: {patient.unit}</span>
+            <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">Doctor: {patient.admittingDoctor}</span>
+            <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">Nurse: {patient.assignedWardNurse}</span>
+            <Link className="inline-flex h-9 items-center justify-center rounded-xl border border-white/25 bg-white/15 px-4 text-xs font-semibold text-white shadow-sm transition duration-150 hover:bg-white/25" href="/icu-command-center">
               Back
             </Link>
-            <Link className="inline-flex h-9 items-center justify-center rounded-xl border border-blue-600 bg-blue-600 px-4 text-xs font-semibold text-white shadow-[0_10px_22px_rgba(37,99,235,0.18)] transition duration-150 hover:bg-blue-700" href={icuPatientDailyChartHref(patient.id)}>
+            <Link className="inline-flex h-9 items-center justify-center rounded-xl border border-white/30 bg-white px-4 text-xs font-semibold text-[#7367f0] shadow-sm transition duration-150 hover:bg-white/90" href={icuPatientDailyChartHref(patient.id)}>
               ICU Daily Chart
             </Link>
           </div>
@@ -840,13 +824,13 @@ export function IcuDailyChartPage({ patientId }: { patientId: string }) {
                       aria-current={active ? "page" : undefined}
                       className={cn(
                         "flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm font-bold transition",
-                        active ? "border-primary bg-primary-soft text-primary shadow-sm" : "border-transparent text-muted-foreground hover:border-border hover:bg-surface-muted hover:text-foreground",
+                        active ? "border-transparent bg-white text-primary shadow-sm" : "border-transparent text-slate-600 hover:border-border hover:bg-white/70 hover:text-slate-900",
                       )}
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       type="button"
                     >
-                      <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px]", active ? "bg-primary text-primary-foreground" : "bg-surface-muted text-muted-foreground")}>{index + 1}</span>
+                      <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px]", active ? "bg-primary/10 text-primary" : "bg-surface-muted text-muted-foreground")}>{index + 1}</span>
                       <span className="truncate">{tab.label}</span>
                     </button>
                   );
@@ -1888,14 +1872,15 @@ function NurseEntryReviewTabs({ activePage }: { activePage: NursingIcuPageId }) 
   ];
 
   return (
-    <div className="flex w-full min-w-0 overflow-x-auto rounded-md border border-border bg-surface p-1 sm:w-max">
+    <div className="flex w-full min-w-0 gap-1 overflow-x-auto rounded-lg bg-surface-muted/70 p-1 sm:w-max">
       {tabs.map((tab) => {
         const active = tab.id === activePage;
         return (
           <Link
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "inline-flex h-9 shrink-0 items-center justify-center rounded px-4 text-sm font-semibold transition hover:text-foreground",
-              active ? "bg-primary text-primary-foreground shadow-sm hover:text-primary-foreground" : "text-muted-foreground hover:bg-surface-muted",
+              "inline-flex h-10 min-w-[132px] shrink-0 items-center justify-center rounded-lg bg-transparent px-3 text-sm font-bold transition",
+              active ? "bg-white text-primary shadow-sm hover:bg-white" : "text-slate-600 hover:bg-white/70 hover:text-slate-900",
             )}
             href={tab.route}
             key={tab.id}
@@ -8640,7 +8625,7 @@ function OrdersCarePlansCommand() {
               <button
                 className={cn(
                   "flex h-12 min-w-44 items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold transition",
-                  activeTab === tab.id ? "bg-white text-violet-600 shadow-sm" : "text-slate-600 hover:bg-white/70 hover:text-slate-900",
+                  activeTab === tab.id ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:bg-white/70 hover:text-slate-900",
                 )}
                 key={tab.id}
                 type="button"
@@ -16018,8 +16003,8 @@ function IcuPatientTabLink({ active, children, href }: { active: boolean; childr
   return (
     <Link
       className={cn(
-        "inline-flex min-h-9 shrink-0 items-center justify-center rounded-xl px-3 text-sm font-semibold outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-sky-300",
-        active ? "bg-primary text-white shadow-[0_8px_18px_rgba(37,99,235,0.18)]" : "text-slate-600 hover:bg-white hover:text-sky-700",
+        "inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-bold outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-primary/30",
+        active ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
       )}
       href={href}
     >
@@ -16217,7 +16202,7 @@ function IcuPatientCommandProfile({
     <div className="space-y-4">
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
       <Tabs className="p-0" value={safeInitialTab}>
-        <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-none border-b border-slate-100 bg-slate-50 px-4 py-3">
+        <TabsList className="flex h-auto w-full min-w-max gap-1 overflow-x-auto rounded-none border-b border-slate-100 bg-surface-muted/70 px-4 py-3">
           {visiblePatientTabs.map((tab) => (
             <IcuPatientTabLink active={safeInitialTab === tab.id} href={icuPatientDetailHref(patient.id, tab.id)} key={tab.id}>
               {tab.label}
@@ -16243,7 +16228,7 @@ function IcuPatientCommandProfile({
 
         <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="monitoring">
           <Tabs value={initialMonitoringTab}>
-            <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1.5">
+            <TabsList className="flex h-auto w-full min-w-max gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-surface-muted/70 p-1">
               <IcuPatientTabLink active={initialMonitoringTab === "monitoring-overview"} href={icuPatientDetailHref(patient.id, "monitoring", "monitoring-overview")}>Monitoring Overview</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "24h-chart"} href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}>24h Chart</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "ventilation"} href={icuPatientDetailHref(patient.id, "monitoring", "ventilation")}>Ventilation</IcuPatientTabLink>
@@ -21279,16 +21264,19 @@ function NurseVitalsEntryForm() {
 
   return (
     <div className="min-w-0 space-y-3">
-      <div className="max-w-full overflow-x-auto rounded-md border border-[#dcd8ff] bg-gradient-to-r from-[#7064EC] via-[#6878E8] to-[#6888E8] px-4 py-3 text-white shadow-sm">
-        <div className="flex min-w-max items-center gap-6 text-sm font-semibold">
-          <span className="text-base font-bold">{selectedPatient?.patientName ?? "Patient not selected"}</span>
-          <span className="rounded-full border border-white/35 bg-white/15 px-2.5 py-1 text-xs">{riskLevel}</span>
-          <span>MR: {selectedPatient?.mrn ?? "-"}</span>
-          <span>Age/Sex: {selectedPatient?.ageGender ?? "-"}</span>
-          <span>Bed: {selectedPatient?.bedNo ?? "-"}</span>
-          <span>Unit: {selectedPatient?.unit ?? "-"}</span>
-          <span>Doctor: {selectedPatient?.admittingDoctor ?? "-"}</span>
-          <span>Nurse: {recordedBy}</span>
+      <div
+        className="max-w-full overflow-x-auto rounded-xl border border-[#7367f0]/40 px-4 py-3 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)]"
+        style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}
+      >
+        <div className="flex min-w-max items-center gap-6 text-sm font-semibold text-white/90">
+          <span className="text-base font-bold text-white">{selectedPatient?.patientName ?? "Patient not selected"}</span>
+          <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-bold uppercase text-red-700">{riskLevel}</span>
+          <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">MR: {selectedPatient?.mrn ?? "-"}</span>
+          <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Age/Sex: {selectedPatient?.ageGender ?? "-"}</span>
+          <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Bed: {selectedPatient?.bedNo ?? "-"}</span>
+          <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Unit: {selectedPatient?.unit ?? "-"}</span>
+          <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Doctor: {selectedPatient?.admittingDoctor ?? "-"}</span>
+          <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Nurse: {recordedBy}</span>
         </div>
       </div>
 
@@ -27458,15 +27446,15 @@ function IcuDischargeWorkflowContent({
         </div>
 
         <div className="space-y-4">
-          <div className="flex flex-wrap gap-2 rounded-lg border border-border bg-surface-muted p-2">
+          <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-surface-muted/70 p-1">
             {[
               { id: "workflow", label: "Workflow" },
               { id: "summary", label: "Discharge Summary" },
             ].map((tab) => (
               <button
                 className={cn(
-                  "inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold transition",
-                  activeTab === tab.id ? "bg-primary text-primary-foreground shadow-sm" : "bg-background text-muted-foreground hover:text-foreground",
+                  "inline-flex h-9 items-center rounded-lg px-4 text-sm font-bold transition",
+                  activeTab === tab.id ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
                 )}
                 key={tab.id}
                 type="button"

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "reac
 import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, ChevronDown, Menu, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +15,21 @@ import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
 
-function childIsActive(child: NavigationChildItem, pathname: string): boolean {
-  return pathname === child.route || (child.children?.some((nestedChild) => childIsActive(nestedChild, pathname)) ?? false);
+function routeSearchMatches(routeSearch: string, currentSearch: string) {
+  if (!routeSearch) return true;
+  const routeParams = new URLSearchParams(routeSearch);
+  const currentParams = new URLSearchParams(currentSearch);
+  return Array.from(routeParams.entries()).every(([key, value]) => currentParams.get(key) === value);
+}
+
+function routeIsActive(route: string, pathname: string, currentSearch = "") {
+  const [routePath = "/"] = route.split("#");
+  const [routePathname = "/", routeSearch = ""] = routePath.split("?");
+  return pathname === routePathname && routeSearchMatches(routeSearch, currentSearch);
+}
+
+function childIsActive(child: NavigationChildItem, pathname: string, currentSearch = ""): boolean {
+  return routeIsActive(child.route, pathname, currentSearch) || (child.children?.some((nestedChild) => childIsActive(nestedChild, pathname, currentSearch)) ?? false);
 }
 
 function getDashboard1PoctMode(child: NavigationChildItem) {
@@ -30,10 +43,12 @@ export function MobileNavigation() {
   const [roleOpen, setRoleOpen] = useState(false);
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { role, roles, setRole } = useRole();
   const visibleItems = useMemo(() => getNavigationItemsForRole(role), [role]);
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
+  const currentSearch = searchParams.toString() ? `?${searchParams.toString()}` : "";
   const warmRoute = useCallback((route: string) => {
     const href = normalizeNavigationHref(route);
     if (!href || href === pathname) return;
@@ -55,7 +70,7 @@ export function MobileNavigation() {
 
   const renderChildItem = (child: NavigationChildItem, depth = 0) => {
     const hasNestedChildren = Boolean(child.children?.length);
-    const active = childIsActive(child, pathname);
+    const active = childIsActive(child, pathname, currentSearch);
     const expanded = openItems[child.id] ?? active;
     const poctMode = getDashboard1PoctMode(child);
 
@@ -179,13 +194,13 @@ export function MobileNavigation() {
                     .map((item) => {
                       const Icon = item.icon;
                       const hasChildren = Boolean(item.children?.length);
-                      const childActive = item.children?.some((child) => childIsActive(child, pathname)) ?? false;
+                      const childActive = item.children?.some((child) => childIsActive(child, pathname, currentSearch)) ?? false;
                       const moreSpecificRouteActive = visibleItems.some((candidate) => (
                         candidate.id !== item.id &&
                         candidate.route.startsWith(`${item.route}/`) &&
-                        (pathname === candidate.route || pathname.startsWith(`${candidate.route}/`))
+                        (routeIsActive(candidate.route, pathname, currentSearch) || pathname.startsWith(`${candidate.route.split("?")[0]}/`))
                       ));
-                      const active = pathname === item.route || childActive || (!moreSpecificRouteActive && item.route !== "/dashboard" && pathname.startsWith(`${item.route}/`));
+                      const active = routeIsActive(item.route, pathname, currentSearch) || childActive || (!moreSpecificRouteActive && item.route !== "/dashboard" && pathname.startsWith(`${item.route.split("?")[0]}/`));
                       const expanded = openItems[item.id] ?? active;
 
                       if (hasChildren) {

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import {
   ChevronDown,
@@ -18,15 +18,24 @@ import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
 
-function routeIsActive(route: string, pathname: string, currentHash: string) {
-  const [routePath = "/", routeHash] = route.split("#");
-  const routePathname = routePath || "/";
-  const routeCurrentHash = routeHash ? `#${routeHash}` : "";
-  return pathname === routePathname && (routeCurrentHash ? currentHash === routeCurrentHash : !currentHash);
+function routeSearchMatches(routeSearch: string, currentSearch: string) {
+  if (!routeSearch) return true;
+  const routeParams = new URLSearchParams(routeSearch);
+  const currentParams = new URLSearchParams(currentSearch);
+  return Array.from(routeParams.entries()).every(([key, value]) => currentParams.get(key) === value);
 }
 
-function childIsActive(child: NavigationChildItem, pathname: string, currentHash: string): boolean {
-  return routeIsActive(child.route, pathname, currentHash) || (child.children?.some((nestedChild) => childIsActive(nestedChild, pathname, currentHash)) ?? false);
+function routeIsActive(route: string, pathname: string, currentHash: string, currentSearch = "") {
+  const [routePath = "/", routeHash] = route.split("#");
+  const [routePathname = "/", routeSearch = ""] = routePath.split("?");
+  const routeCurrentHash = routeHash ? `#${routeHash}` : "";
+  return pathname === routePathname
+    && routeSearchMatches(routeSearch, currentSearch)
+    && (routeCurrentHash ? currentHash === routeCurrentHash : !currentHash);
+}
+
+function childIsActive(child: NavigationChildItem, pathname: string, currentHash: string, currentSearch = ""): boolean {
+  return routeIsActive(child.route, pathname, currentHash, currentSearch) || (child.children?.some((nestedChild) => childIsActive(nestedChild, pathname, currentHash, currentSearch)) ?? false);
 }
 
 function getDashboard1PoctMode(child: NavigationChildItem) {
@@ -43,10 +52,12 @@ export function AppSidebar({
   onCollapsedChange: (collapsed: boolean) => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { role } = useRole();
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const [currentHash, setCurrentHash] = useState("");
+  const currentSearch = searchParams.toString() ? `?${searchParams.toString()}` : "";
 
   useEffect(() => {
     const updateHash = () => setCurrentHash(window.location.hash);
@@ -62,6 +73,7 @@ export function AppSidebar({
     () => Array.from(new Set(visibleItems.map((item) => item.group))),
     [visibleItems],
   );
+  const wardNurseSidebar = role === "Ward Nurse";
   const warmRoute = useCallback((route: string) => {
     const href = normalizeNavigationHref(route);
     if (!href || href === pathname) return;
@@ -83,7 +95,7 @@ export function AppSidebar({
 
   const renderChildItem = (child: NavigationChildItem, depth = 0) => {
     const hasNestedChildren = Boolean(child.children?.length);
-    const active = childIsActive(child, pathname, currentHash);
+    const active = childIsActive(child, pathname, currentHash, currentSearch);
     const expanded = openItems[child.id] ?? active;
     const poctMode = getDashboard1PoctMode(child);
 
@@ -182,16 +194,14 @@ export function AppSidebar({
                   const Icon = item.icon;
                   const hasChildren = Boolean(item.children?.length);
                   const [itemPath = "/", itemHash] = item.route.split("#");
-                  const itemRoutePath = itemPath || "/";
+                  const [itemRoutePath = "/"] = itemPath.split("?");
                   const itemRouteHash = itemHash ? `#${itemHash}` : "";
-                  const exactRouteActive =
-                    pathname === itemRoutePath &&
-                    (itemRouteHash ? currentHash === itemRouteHash : !currentHash);
-                  const childActive = item.children?.some((child) => childIsActive(child, pathname, currentHash)) ?? false;
+                  const exactRouteActive = routeIsActive(item.route, pathname, currentHash, currentSearch);
+                  const childActive = item.children?.some((child) => childIsActive(child, pathname, currentHash, currentSearch)) ?? false;
                   const moreSpecificRouteActive = visibleItems.some((candidate) => {
                     if (candidate.id === item.id) return false;
                     const [candidatePath = "/", candidateHash] = candidate.route.split("#");
-                    const candidateRoutePath = candidatePath || "/";
+                    const [candidateRoutePath = "/"] = candidatePath.split("?");
                     const candidateRouteHash = candidateHash ? `#${candidateHash}` : "";
                     const candidateMatches =
                       pathname === candidateRoutePath ||
@@ -220,7 +230,7 @@ export function AppSidebar({
                         <button
                           className={cn(
                             "group flex h-10 w-full items-center gap-3 rounded-lg px-2.5 text-sm font-semibold outline-none transition hover:bg-primary-soft hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/25",
-                            active && "bg-gradient-to-r from-[#7367f0] to-[#5b8def] text-sidebar-active-foreground shadow-[0_8px_20px_rgba(115,103,240,0.24)] hover:text-white",
+                            active && (wardNurseSidebar ? "bg-primary-soft text-primary hover:text-primary" : "bg-gradient-to-r from-[#7367f0] to-[#5b8def] text-sidebar-active-foreground shadow-[0_8px_20px_rgba(115,103,240,0.24)] hover:text-white"),
                             neuroIcu && !active && "hover:bg-[linear-gradient(90deg,rgba(79,110,247,0.10),rgba(124,107,255,0.10))] hover:text-[#4F6EF7]",
                             neuroIcu && active && "bg-[linear-gradient(90deg,#4F6EF7,#7C6BFF)] shadow-[0_10px_26px_rgba(79,110,247,0.34),0_0_0_1px_rgba(124,107,255,0.22)]",
                           )}
@@ -245,7 +255,7 @@ export function AppSidebar({
                       aria-label={collapsed ? item.label : undefined}
                       className={cn(
                         "group flex h-10 items-center gap-3 rounded-lg px-2.5 text-sm font-semibold outline-none transition hover:bg-primary-soft hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/25",
-                        active && "bg-gradient-to-r from-[#7367f0] to-[#5b8def] text-sidebar-active-foreground shadow-[0_8px_20px_rgba(115,103,240,0.24)] hover:text-white",
+                        active && (wardNurseSidebar ? "bg-primary-soft text-primary hover:text-primary" : "bg-gradient-to-r from-[#7367f0] to-[#5b8def] text-sidebar-active-foreground shadow-[0_8px_20px_rgba(115,103,240,0.24)] hover:text-white"),
                         neuroIcu && !active && "hover:bg-[linear-gradient(90deg,rgba(79,110,247,0.10),rgba(124,107,255,0.10))] hover:text-[#4F6EF7]",
                         neuroIcu && active && "bg-[linear-gradient(90deg,#4F6EF7,#7C6BFF)] shadow-[0_10px_26px_rgba(79,110,247,0.34),0_0_0_1px_rgba(124,107,255,0.22)]",
                         collapsed && "justify-center",

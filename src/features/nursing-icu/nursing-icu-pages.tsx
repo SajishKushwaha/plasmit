@@ -16003,7 +16003,7 @@ function IcuPatientTabLink({ active, children, href }: { active: boolean; childr
   return (
     <Link
       className={cn(
-        "inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-bold outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-primary/30",
+        "inline-flex min-h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-bold outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-primary/30",
         active ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
       )}
       href={href}
@@ -16202,13 +16202,15 @@ function IcuPatientCommandProfile({
     <div className="space-y-4">
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
       <Tabs className="p-0" value={safeInitialTab}>
-        <TabsList className="flex h-auto w-full min-w-max gap-1 overflow-x-auto rounded-none border-b border-slate-100 bg-surface-muted/70 px-4 py-3">
-          {visiblePatientTabs.map((tab) => (
-            <IcuPatientTabLink active={safeInitialTab === tab.id} href={icuPatientDetailHref(patient.id, tab.id)} key={tab.id}>
-              {tab.label}
-            </IcuPatientTabLink>
-          ))}
-        </TabsList>
+        <div className="overflow-x-auto border-b border-slate-100 bg-surface-muted/70">
+          <TabsList className="flex h-auto w-max min-w-full gap-1 rounded-none bg-transparent px-4 py-3">
+            {visiblePatientTabs.map((tab) => (
+              <IcuPatientTabLink active={safeInitialTab === tab.id} href={icuPatientDetailHref(patient.id, tab.id)} key={tab.id}>
+                {tab.label}
+              </IcuPatientTabLink>
+            ))}
+          </TabsList>
+        </div>
 
         <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="overview">
           {initialProfileAction === "verification" ? <IcuPatientProfileVerificationPanel allergyCount={allergyCount} latestVital={latestVital} patient={patient} /> : null}

@@ -7511,7 +7511,7 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
           <table className="w-full min-w-[1320px] border-collapse bg-white text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-950">
               <tr>
-                <th className="w-[220px] px-5 py-3.5 text-left">Patient / Bed</th>
+                <th className="sticky left-0 z-30 w-[220px] bg-slate-50 px-5 py-3.5 text-left shadow-[8px_0_14px_-16px_rgba(15,23,42,0.55)]">Patient / Bed</th>
                 <th className="w-[170px] px-3 py-3.5 text-center">Profile Verification</th>
                 <th className="w-[190px] px-3 py-3.5 text-center">Assessment / Vitals</th>
                 <th className="w-[160px] px-3 py-3.5 text-center">Medication</th>
@@ -7532,7 +7532,7 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
 
                 return (
                   <tr className="border-b border-slate-200 align-middle last:border-b-0 hover:bg-slate-50/70" key={row.patient.id}>
-                    <td className={cn("border-r border-slate-200 px-5 py-4", "border-l-4", wardNurseRowAccentClass(patientDashboardTone(row.patient)))}>
+                    <td className={cn("sticky left-0 z-20 border-r border-slate-200 bg-white px-5 py-4 shadow-[8px_0_14px_-16px_rgba(15,23,42,0.55)]", "border-l-4", wardNurseRowAccentClass(patientDashboardTone(row.patient)))}>
                       <Link className="block rounded-md p-1 transition hover:bg-white hover:shadow-sm" href={icuPatientDetailHref(row.patient.id, "overview")}>
                         <p className={cn("truncate text-base font-black", dashboardToneTextClass(patientDashboardTone(row.patient)))}>{row.patient.patientName}</p>
                         <p className="mt-2 truncate text-sm font-black text-slate-950">{row.patient.bedNo} | {activeWardUnit}</p>

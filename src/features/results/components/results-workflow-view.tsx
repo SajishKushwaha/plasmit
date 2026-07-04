@@ -3,6 +3,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, FileText, FlaskConical, Image as ImageIcon, Plus, Printer, Search, X, Zap } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,15 @@ function formatRecordDateScope(records: ResultRecord[]) {
   const dateKeys = Array.from(new Set(records.map((result) => getDateKey(result.orderedAt))));
   if (dateKeys.length !== 1) return "All selected dates";
   return dateFormatter.format(new Date(`${dateKeys[0]}T00:00:00`));
+}
+
+function getResultDateKey(result: ResultRecord) {
+  return getDateKey(result.completedAt ?? result.orderedAt);
+}
+
+function latestDateRecords(records: ResultRecord[]) {
+  const latestDateKey = [...records].map(getResultDateKey).sort((first, second) => second.localeCompare(first))[0];
+  return latestDateKey ? records.filter((result) => getResultDateKey(result) === latestDateKey) : records;
 }
 
 function dateValueParts(value: string) {
@@ -766,7 +776,10 @@ export function ResultsWorkflowView({
 
   function printReports(recordsToPrint: ResultRecord[], title: string) {
     if (recordsToPrint.length === 0) return;
-    setPrintPayload({ records: recordsToPrint, title });
+    const printRecords = recordsToPrint[0]?.department === "laboratory" && recordsToPrint.length > 1
+      ? latestDateRecords(recordsToPrint)
+      : recordsToPrint;
+    setPrintPayload({ records: printRecords, title });
   }
 
   return (
@@ -1192,9 +1205,10 @@ type LaboratoryAllViewTab = "details" | "comparison";
 function LaboratoryAllViewTabs({ comparisonRecords, records }: { comparisonRecords: ResultRecord[]; records: ResultRecord[] }) {
   const [activeTab, setActiveTab] = useState<LaboratoryAllViewTab>("details");
   const tabs: Array<{ id: LaboratoryAllViewTab; label: string }> = [
-    { id: "details", label: "All Laboratory Details" },
+    { id: "details", label: "Latest Date Results" },
     { id: "comparison", label: "Comparison View" },
   ];
+  const latestRecords = latestDateRecords(records);
 
   return (
     <div className="space-y-4">
@@ -1217,11 +1231,11 @@ function LaboratoryAllViewTabs({ comparisonRecords, records }: { comparisonRecor
           ))}
         </div>
         <div className="text-xs font-semibold text-muted-foreground">
-          {activeTab === "details" ? `${records.length} laboratory report(s)` : `${Array.from(new Set(comparisonRecords.map((result) => getDateKey(result.completedAt ?? result.orderedAt)))).slice(-3).length} date comparison`}
+          {activeTab === "details" ? `${latestRecords.length} latest report(s)` : `${Array.from(new Set(comparisonRecords.map((result) => getDateKey(result.completedAt ?? result.orderedAt)))).slice(-3).length} date comparison`}
         </div>
       </div>
 
-      {activeTab === "details" ? <LaboratoryAllDetailsView records={records} /> : null}
+      {activeTab === "details" ? <LaboratoryAllDetailsView records={latestRecords} /> : null}
       {activeTab === "comparison" ? <LaboratoryDateWiseComparison records={comparisonRecords} /> : null}
     </div>
   );
@@ -1233,8 +1247,10 @@ function LaboratoryAllDetailsView({ records }: { records: ResultRecord[] }) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-white">
       <div className="flex flex-col gap-1 border-b border-border bg-surface-muted px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm font-bold text-foreground">All Laboratory Details</div>
-        <div className="text-xs font-semibold text-muted-foreground">{records.length} report(s)</div>
+        <div className="text-sm font-bold text-foreground">Latest Date Results</div>
+        <div className="text-xs font-semibold text-muted-foreground">
+          {sortedRecords[0] ? `${formatDate(sortedRecords[0].completedAt ?? sortedRecords[0].orderedAt)} | ${records.length} report(s)` : "No reports"}
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[960px] border-collapse text-left text-xs">
@@ -1766,7 +1782,7 @@ function ReportPrintView({ patientContext, payload }: { patientContext?: Results
         }
       `}</style>
 
-      {payload && firstResult ? (
+      {typeof document !== "undefined" && payload && firstResult ? createPortal(
         <div className="result-print-root">
           <div className="result-print-header">
             <div className="result-print-title">LABORATORY REPORT</div>
@@ -1792,7 +1808,9 @@ function ReportPrintView({ patientContext, payload }: { patientContext?: Results
           </section>
 
           <section className="mt-5">
-            <div className="mb-2 text-sm font-bold uppercase tracking-wide text-primary">{getDepartmentLabel(firstResult.department)} Details</div>
+            <div className="mb-2 text-sm font-bold uppercase tracking-wide text-primary">
+              {allLaboratoryPrint ? "Latest Date Results" : `${getDepartmentLabel(firstResult.department)} Details`}
+            </div>
             {allLaboratoryPrint ? (
               <AllLaboratoryPrintTable records={payload.records} />
             ) : (
@@ -1865,7 +1883,8 @@ function ReportPrintView({ patientContext, payload }: { patientContext?: Results
             </div>
           </div>
           <div className="result-print-page">Page 1 of 1</div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </>
   );

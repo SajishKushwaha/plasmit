@@ -8,6 +8,7 @@ import { useRole } from "@/components/providers/role-provider";
 import { cn } from "@/lib/utils";
 
 const wardNurseRoute = "/icu-command-center/clinical-workspace/patient-overview";
+const headNurseRoute = "/icu-command-center/nursing/station";
 
 export function RoleSwitcher({ className, portal = true }: { className?: string; portal?: boolean }) {
   const { role, setRole, roles } = useRole();
@@ -30,7 +31,7 @@ export function RoleSwitcher({ className, portal = true }: { className?: string;
     } else if (nextRole === "Unit Nurse") {
       router.push("/unit-nurse");
     } else if (nextRole === "Head Nurse") {
-      router.push("/head-nurse");
+      router.push(headNurseRoute);
     } else if (nextRole === "Ward Nurse") {
       router.push(wardNurseRoute);
     } else if (nextRole === "Nurse ICU") {

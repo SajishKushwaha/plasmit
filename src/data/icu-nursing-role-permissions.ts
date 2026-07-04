@@ -22,6 +22,7 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
       "/icu-command-center/nursing/station",
       "/icu-command-center/patients/admissions",
       "/icu-command-center/patients/smart-bed-view",
+      "/icu-command-center/patients/unit-staff-availability",
       "/icu-command-center/patients/discharges",
       "/icu-command-center/notifications-tasks",
       "/icu-command-center/critical-care/escalation-center",
@@ -32,22 +33,10 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
     ],
     patientTabs: ["overview", "results", "events", "shift-summary"],
     navigation: [
-      navChild("head-nurse-nursing", "Nursing Command", "/icu-command-center/nursing/station", [
-        navChild("head-nurse-overview", "Nursing Dashboard", "/icu-command-center/nursing/station"),
-        navChild("head-nurse-admissions", "New Admission Queue", "/icu-command-center/patients/admissions"),
-        navChild("head-nurse-units", "Unit & Staff Availability", "/icu-command-center/patients/smart-bed-view"),
-        navChild("head-nurse-handover-review", "Handover Verification", "/icu-command-center/patients/icu-001?tab=shift-summary"),
-      ]),
-      navChild("head-nurse-control", "Control & Audit", "/icu-command-center/notifications-tasks", [
-        navChild("head-nurse-pending", "Pending Critical Items", "/icu-command-center/notifications-tasks"),
-        navChild("head-nurse-escalation", "Escalation Oversight", "/icu-command-center/critical-care/escalation-center"),
-        navChild("head-nurse-discharges", "Final Review / Closure", "/icu-command-center/patients/discharges"),
-      ]),
-      navChild("head-nurse-reports", "Reports", "/icu-command-center/analytics/clinical", [
-        navChild("head-nurse-quality", "Quality Audit", "/icu-command-center/analytics/clinical"),
-        navChild("head-nurse-operations", "Nursing Reports", "/icu-command-center/analytics/operational"),
-        navChild("head-nurse-audit", "Audit Logs", "/icu-command-center/administration/audit-logs"),
-      ]),
+      navChild("head-nurse-overview", "Dashboard", "/icu-command-center/nursing/station"),
+      navChild("head-nurse-admissions", "New Admission Queue", "/icu-command-center/patients/admissions"),
+      navChild("head-nurse-units", "Unit & Staff Availability", "/icu-command-center/patients/unit-staff-availability"),
+      navChild("head-nurse-pending", "Control & Audit", "/icu-command-center/notifications-tasks"),
     ],
   },
   UNIT_NURSE: {
@@ -90,6 +79,7 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
       "/icu-command-center/nursing/nurse-entry",
       "/icu-command-center/nursing/intake-output",
       "/icu-command-center/nursing/medicine-receive-verify",
+      "/icu-command-center/nursing/order",
       "/icu-command-center/nursing/medication-administration",
       "/icu-command-center/nursing/early-warning-score",
       "/icu-command-center/nursing/shift-handover",
@@ -110,6 +100,7 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
       ]),
       navChild("ward-nurse-work", "Nursing Work", "/icu-command-center/nursing/medication-administration?patientId=icu-001", [
         navChild("ward-nurse-medication-receive", "Medicine Receive & Verify", "/icu-command-center/nursing/medicine-receive-verify?patientId=icu-001"),
+        navChild("ward-nurse-order", "Order", "/icu-command-center/nursing/order"),
         navChild("ward-nurse-medication", "Medicine Administration", "/icu-command-center/nursing/medication-administration?patientId=icu-001"),
         navChild("ward-nurse-notes", "Nursing Notes", "/icu-command-center/nursing/nursing-notes"),
       ]),

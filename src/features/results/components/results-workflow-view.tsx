@@ -946,7 +946,12 @@ export function ResultsWorkflowView({
         </div>
       )}
 
-      <ReportViewModal payload={reportModal} onClose={() => setReportModal(null)} onPrint={(recordsToPrint, title) => printReports(recordsToPrint, title)} />
+      <ReportViewModal
+        patientContext={patientContext}
+        payload={reportModal}
+        onClose={() => setReportModal(null)}
+        onPrint={(recordsToPrint, title) => printReports(recordsToPrint, title)}
+      />
       <ReportPrintView patientContext={patientContext} payload={printPayload} />
     </div>
   );
@@ -1054,19 +1059,24 @@ function ResultTable({
 function ReportViewModal({
   onClose,
   onPrint,
+  patientContext,
   payload,
 }: {
   onClose: () => void;
   onPrint: (records: ResultRecord[], title: string) => void;
+  patientContext?: ResultsPatientContext;
   payload: ReportModalState;
 }) {
   const title = payload?.type === "single" ? payload.result.testName : payload ? `All ${getDepartmentLabel(payload.department)} Reports` : "";
-  const description =
+  const patientName = patientContext?.name ?? (payload?.type === "single" ? payload.result.patientName : payload?.records[0]?.patientName);
+  const reportScope =
     payload?.type === "single"
       ? `${getDepartmentLabel(payload.result.department)} result details | ${formatDateTime(payload.result.completedAt ?? payload.result.orderedAt)}`
       : payload
         ? `${formatRecordDateScope(payload.records)} | ${payload.records.length} ${getDepartmentLabel(payload.department).toLowerCase()} report(s)`
         : "";
+  const description =
+    patientName && reportScope ? `${patientName} | ${reportScope}` : patientName || reportScope;
   const [laboratoryOrderOpen, setLaboratoryOrderOpen] = useState(false);
   const showLaboratoryOrderAction = payload?.type === "all" && payload.department === "laboratory";
   const orderPatientContext = showLaboratoryOrderAction ? toOrderPatientContext(payload.records[0]) : undefined;
@@ -1085,7 +1095,7 @@ function ReportViewModal({
               <div className="flex items-start justify-between gap-3 border-b border-border p-4">
                 <div>
                   <Dialog.Title className="text-lg font-bold text-foreground">{title}</Dialog.Title>
-                  <Dialog.Description className="text-sm text-muted-foreground">{description}</Dialog.Description>
+                  <Dialog.Description className="text-sm font-semibold text-foreground">{description}</Dialog.Description>
                 </div>
                 <div className="flex gap-2">
                   {showLaboratoryOrderAction ? (
@@ -1312,15 +1322,15 @@ function LaboratoryDateWiseComparison({ records }: { records: ResultRecord[] }) 
     <div className="space-y-3">
       <div className="overflow-hidden rounded-lg border border-border bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[960px] border-collapse text-left text-xs">
             <thead>
               <tr className="bg-surface-muted/80 uppercase tracking-wide text-muted-foreground">
-                <th className="w-[280px] border-b border-r border-border px-4 py-3 text-sm font-bold">Laboratory Parameter</th>
-                <th className="w-[190px] border-b border-r border-border px-4 py-3 text-sm font-bold">Normal Range</th>
+                <th className="w-[280px] border-b border-r border-border px-3 py-2 font-bold">Laboratory Parameter</th>
+                <th className="w-[190px] border-b border-r border-border px-3 py-2 font-bold">Normal Range</th>
                 {dateKeys.map((dateKey) => (
-                  <th className="min-w-[150px] border-b border-r border-border px-4 py-3 text-center" key={dateKey}>
-                    <span className="block text-sm font-extrabold text-foreground">{formatComparisonDate(dateKey)}</span>
-                    <span className="mt-0.5 block text-xs font-semibold italic normal-case text-muted-foreground">{comparisonDateSubtitle(dateKey, dateKeys)}</span>
+                  <th className="min-w-[150px] border-b border-r border-border px-3 py-2 text-center" key={dateKey}>
+                    <span className="block text-xs font-extrabold text-foreground">{formatComparisonDate(dateKey)}</span>
+                    <span className="mt-0.5 block text-[11px] font-semibold italic normal-case text-muted-foreground">{comparisonDateSubtitle(dateKey, dateKeys)}</span>
                   </th>
                 ))}
               </tr>
@@ -1363,23 +1373,23 @@ function RowsForLaboratoryComparisonSection({
   return (
     <>
       <tr className="bg-surface-muted/80">
-        <td className="border-b border-border px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground" colSpan={dateKeys.length + 2}>
+        <td className="border-b border-border px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground" colSpan={dateKeys.length + 2}>
           {section.name}
         </td>
       </tr>
       {section.rows.map((row) => (
-        <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/50" key={row.key}>
-          <td className="whitespace-nowrap border-r border-border px-4 py-2.5 text-sm font-extrabold text-foreground">{row.parameter}</td>
-          <td className="border-r border-border px-4 py-2.5 font-mono text-sm font-bold text-muted-foreground">{row.range}</td>
+        <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/40" key={row.key}>
+          <td className="whitespace-nowrap border-r border-border px-3 py-2 font-extrabold text-foreground">{row.parameter}</td>
+          <td className="border-r border-border px-3 py-2 font-mono font-bold text-muted-foreground">{row.range}</td>
           {dateKeys.map((dateKey) => {
             const value = row.valuesByDate[dateKey];
             const arrow = row.arrowByDate[dateKey];
             return (
-              <td className="border-r border-border px-4 py-2.5 text-center" key={`${row.key}-${dateKey}`}>
+              <td className="border-r border-border px-3 py-2 text-center" key={`${row.key}-${dateKey}`}>
                 {value ? (
-                  <span className={cn("inline-flex items-center justify-center gap-1.5 text-sm font-extrabold", comparisonValueClass(value))}>
+                  <span className={cn("inline-flex items-center justify-center gap-1 text-xs font-extrabold", comparisonValueClass(value))}>
                     {value.value}
-                    <span className={cn("text-base", comparisonArrowClass(value, arrow))}>
+                    <span className={cn("text-sm", comparisonArrowClass(value, arrow))}>
                       {arrow === "up" ? "↑" : arrow === "down" ? "↓" : arrow === "same" ? "→" : ""}
                     </span>
                   </span>

@@ -7567,7 +7567,7 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
                       <WardNurseQueueCell
                         disabled={!profileVerified}
                         detail={row.activeOrders[0]?.instruction ?? row.activeTasks[0]?.title ?? "No open order"}
-                        href={icuPatientDetailHref(row.patient.id, "orders", undefined, "ordersTab=pending-work&locked=1")}
+                        href={`/icu-command-center/nursing/order?patientId=${row.patient.id}&locked=1`}
                         title={row.activeOrders.length + row.activeTasks.length ? `${row.activeOrders.length + row.activeTasks.length} item(s)` : "Clear"}
                         tone={orderTone}
                       />

@@ -15,6 +15,7 @@ export type IcuPatient = {
   admittingDoctor: string;
   consultingDoctor: string;
   dutyDoctor: string;
+  assignedHeadNurse: string;
   assignedUnitNurse: string;
   assignedWardNurse: string;
   admissionSource: IcuAdmissionSource;
@@ -183,6 +184,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Sameer Mehta",
     consultingDoctor: "Dr. Kavita Rao",
     dutyDoctor: "Dr. Aman Verma",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Emergency",
@@ -205,6 +207,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Neha Malik",
     consultingDoctor: "Dr. Ritu Anand",
     dutyDoctor: "Dr. Mohan Singh",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Meera",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Post-surgical unit",
@@ -227,6 +230,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Imran Shah",
     consultingDoctor: "Dr. Ritu Anand",
     dutyDoctor: "Dr. Aman Verma",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "General ward",
@@ -249,6 +253,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Sameer Mehta",
     consultingDoctor: "Dr. Mohan Singh",
     dutyDoctor: "Dr. Neha Malik",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Meera",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Direct ICU admission",
@@ -271,6 +276,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Kavita Rao",
     consultingDoctor: "Dr. Sameer Mehta",
     dutyDoctor: "Dr. Mohan Singh",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Post-surgical unit",
@@ -293,6 +299,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Sameer Mehta",
     consultingDoctor: "Dr. Ritu Anand",
     dutyDoctor: "Dr. Aman Verma",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Meera",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Emergency",
@@ -315,6 +322,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Sameer Mehta",
     consultingDoctor: "Dr. Ritu Anand",
     dutyDoctor: "Dr. Aman Verma",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Emergency",
@@ -337,6 +345,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Kavita Rao",
     consultingDoctor: "Dr. Sameer Mehta",
     dutyDoctor: "Dr. Neha Malik",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "General ward",
@@ -359,6 +368,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Mohan Singh",
     consultingDoctor: "Dr. Neha Malik",
     dutyDoctor: "Dr. Aman Verma",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Emergency",
@@ -381,6 +391,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Neha Malik",
     consultingDoctor: "Dr. Imran Shah",
     dutyDoctor: "Dr. Mohan Singh",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Post-surgical unit",
@@ -403,6 +414,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Imran Shah",
     consultingDoctor: "Dr. Ritu Anand",
     dutyDoctor: "Dr. Aman Verma",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Emergency",
@@ -425,6 +437,7 @@ export const icuPatients: IcuPatient[] = [
     admittingDoctor: "Dr. Sameer Mehta",
     consultingDoctor: "Dr. Kavita Rao",
     dutyDoctor: "Dr. Neha Malik",
+    assignedHeadNurse: "Head Nurse Anjali",
     assignedUnitNurse: "Unit Nurse Priya",
     assignedWardNurse: "Ward Nurse Kavita",
     admissionSource: "Emergency",

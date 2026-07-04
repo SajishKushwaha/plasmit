@@ -557,6 +557,14 @@ function FluidBalanceGraph({ series }: { series: GraphPoint[] }) {
     <Card className="overflow-hidden border-slate-200">
       <CardHeader className="border-b border-slate-100 bg-white">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Fluid Balance Graph</CardTitle>
+            <CardDescription>Blue intake is plotted above the baseline and green output below it.</CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="info">Intake</Badge>
+            <Badge tone="success">Output</Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">

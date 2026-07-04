@@ -97,14 +97,12 @@ export const navigationItems: NavigationItem[] = [
     allowedRoles: ["Head Nurse"],
     status: "ready",
     children: [
-      { id: "head-nurse-step-1", label: "1. Admission Queue", route: "/head-nurse/admission-queue", status: "ready" },
-      { id: "head-nurse-step-2", label: "2. Admission Review", route: "/head-nurse/admission-review", status: "ready" },
-      { id: "head-nurse-step-3", label: "3. Unit Assignment", route: "/head-nurse/unit-assignment", status: "ready" },
-      { id: "head-nurse-step-9", label: "9. Audit & Control", route: "/head-nurse/audit-control", status: "ready" },
-      { id: "head-nurse-step-12", label: "12. Escalation", route: "/head-nurse/escalation", status: "ready" },
-      { id: "head-nurse-step-16", label: "16. Verify Handover", route: "/head-nurse/handover-verification", status: "ready" },
-      { id: "head-nurse-unit-flow", label: "Unit Nurse Flow", route: "/unit-nurse", status: "ready" },
-      { id: "head-nurse-ward-flow", label: "Ward Nurse Flow", route: wardNurseDefaultRoute, status: "ready" },
+      { id: "head-nurse-dashboard", label: "Dashboard", route: "/head-nurse", status: "ready" },
+      { id: "head-nurse-admissions", label: "New Admission Queue", route: "/head-nurse/admission-queue", status: "ready" },
+      { id: "head-nurse-review", label: "Review New Admission", route: "/head-nurse/admission-review", status: "ready" },
+      { id: "head-nurse-assignment", label: "Assign Patient to Unit Nurse", route: "/head-nurse/unit-assignment", status: "ready" },
+      { id: "head-nurse-audit", label: "Audit and Control", route: "/head-nurse/audit-control", status: "ready" },
+      { id: "head-nurse-handover", label: "Verify Handover", route: "/head-nurse/handover-verification", status: "ready" },
     ],
   },
   {
@@ -515,14 +513,14 @@ export const dashboardQuickActions = [
 export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
 
-  if (role === "Ward Nurse") {
+  if (role === "Head Nurse" || role === "Ward Nurse") {
     return (getNursingRoleNavigation(role) ?? []).map((item) => ({
       id: item.id,
       label: item.label,
       icon: HeartPulse,
       route: item.route,
       group: "ICU",
-      allowedRoles: ["Ward Nurse"],
+      allowedRoles: [role],
       status: item.status,
       children: item.children,
     }));

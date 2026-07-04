@@ -26,6 +26,7 @@ export type ResultsPatientContext = {
   name?: string;
   mrn?: string;
   consultantDoctor?: string;
+  patientId?: string;
   uhid?: string;
   wardBed?: string;
 };
@@ -161,6 +162,10 @@ function resultValueClass(value: ResultValue) {
   return "text-foreground";
 }
 
+function ResultStatusBadge({ status }: { status: ResultStatus }) {
+  return <Badge tone={statusTone[status]}>{status}</Badge>;
+}
+
 function getPatientAgeGender(result: ResultRecord, patientContext?: ResultsPatientContext) {
   const ageSex = patientContext?.ageSex ?? result.ageSex;
   const [age, gender] = ageSex.split("/").map((part) => part.trim()).filter(Boolean);
@@ -192,9 +197,41 @@ function matchesDateFilter(result: ResultRecord, selectedDate: string, rangeStar
   return selectedDate === "all" || dateKey === selectedDate;
 }
 
-function buildAdditionalPatientReports(records: ResultRecord[]) {
+function hashResultScope(value: string) {
+  return value.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
+}
+
+function patientResultSeed(patientContext?: ResultsPatientContext) {
+  return hashResultScope(patientContext?.patientId ?? patientContext?.mrn ?? patientContext?.uhid ?? patientContext?.name ?? "default");
+}
+
+function buildAdditionalPatientReports(records: ResultRecord[], seed = 0) {
   const anchor = records[0];
   if (!anchor) return [];
+
+  const reportSuffix = (anchor.mrn || anchor.patientName || `patient-${seed}`).replace(/[^a-zA-Z0-9]/g, "").slice(-8) || String(seed);
+  const hba1c = (5.8 + (seed % 8) / 10).toFixed(1);
+  const estimatedAverageGlucose = String(118 + (seed % 36));
+  const hemoglobinBaseline = (11.2 + (seed % 9) / 10).toFixed(1);
+  const hemoglobinPrevious = (12.0 + (seed % 7) / 10).toFixed(1);
+  const wbcBaseline = (13.8 + (seed % 8)).toFixed(1);
+  const wbcPrevious = (10.8 + (seed % 7)).toFixed(1);
+  const plateletBaseline = String(176 + (seed % 70));
+  const plateletPrevious = String(204 + (seed % 62));
+  const creatinineBaseline = (1.6 + (seed % 10) / 10).toFixed(1);
+  const creatinineCurrent = (1.1 + (seed % 9) / 10).toFixed(1);
+  const bunBaseline = String(28 + (seed % 18));
+  const bunCurrent = String(20 + (seed % 16));
+  const sgptBaseline = String(44 + (seed % 28));
+  const sgotBaseline = String(34 + (seed % 18));
+  const sgptCurrent = String(30 + (seed % 24));
+  const sgotCurrent = String(24 + (seed % 16));
+  const radiologyPair = [
+    ["CT Brain Plain", "No acute intracranial hemorrhage. Mild age-related cortical atrophy.", "ACC-CT"],
+    ["USG Abdomen", "Mild fatty liver changes. No free fluid detected.", "ACC-USG"],
+    ["Portable Chest X-Ray", "Mild basal haziness, no pneumothorax.", "ACC-XR"],
+    ["CT Abdomen Plain", "No obstructive uropathy. Bowel gas pattern non-specific.", "ACC-CTA"],
+  ][seed % 4];
 
   const base = {
     ageSex: anchor.ageSex,
@@ -210,7 +247,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
   return [
     {
       ...base,
-      id: "RES-2026-1001-HBA1C",
+      id: `RES-2026-${reportSuffix}-HBA1C`,
       department: "laboratory" as const,
       testName: "HbA1c",
       orderedAt: "2026-05-23T13:10:00",
@@ -218,11 +255,11 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       completedAt: "2026-05-23T14:05:00",
       status: "Completed" as const,
       imageAvailable: false,
-      resultSummary: "HbA1c 6.2%. Glycemic control requires routine follow-up.",
+      resultSummary: `HbA1c ${hba1c}%. Glycemic control requires routine follow-up.`,
       specimen: "EDTA whole blood",
       values: [
-        { name: "HbA1c", value: "6.2", unit: "%", range: "< 5.7", flag: "High" as const },
-        { name: "Estimated Average Glucose", value: "131", unit: "mg/dL", range: "70 - 140", flag: "Normal" as const },
+        { name: "HbA1c", value: hba1c, unit: "%", range: "< 5.7", flag: Number(hba1c) > 6.4 ? "Critical" as const : "High" as const },
+        { name: "Estimated Average Glucose", value: estimatedAverageGlucose, unit: "mg/dL", range: "70 - 140", flag: Number(estimatedAverageGlucose) > 140 ? "High" as const : "Normal" as const },
       ],
       timeline: [
         { label: "Order created", at: "13:10", by: "ICU Desk" },
@@ -232,7 +269,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RES-2026-1001-CBC-18",
+      id: `RES-2026-${reportSuffix}-CBC-18`,
       department: "laboratory" as const,
       testName: "Complete Blood Count",
       orderedAt: "2026-05-18T08:10:00",
@@ -243,9 +280,9 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       resultSummary: "CBC baseline captured for longitudinal monitoring.",
       specimen: "EDTA whole blood",
       values: [
-        { name: "Hemoglobin", value: "11.8", unit: "g/dL", range: "13.0 - 17.0", flag: "Low" as const },
-        { name: "WBC Count", value: "18.4", unit: "10^3/uL", range: "4.0 - 11.0", flag: "High" as const },
-        { name: "Platelets", value: "198", unit: "10^3/uL", range: "150 - 450", flag: "Normal" as const },
+        { name: "Hemoglobin", value: hemoglobinBaseline, unit: "g/dL", range: "13.0 - 17.0", flag: Number(hemoglobinBaseline) < 13 ? "Low" as const : "Normal" as const },
+        { name: "WBC Count", value: wbcBaseline, unit: "10^3/uL", range: "4.0 - 11.0", flag: Number(wbcBaseline) > 11 ? "High" as const : "Normal" as const },
+        { name: "Platelets", value: plateletBaseline, unit: "10^3/uL", range: "150 - 450", flag: "Normal" as const },
       ],
       timeline: [
         { label: "Order created", at: "08:10", by: "ICU Desk" },
@@ -255,7 +292,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RES-2026-1001-CBC-21",
+      id: `RES-2026-${reportSuffix}-CBC-21`,
       department: "laboratory" as const,
       testName: "Complete Blood Count",
       orderedAt: "2026-05-21T07:50:00",
@@ -266,9 +303,9 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       resultSummary: "CBC repeated. WBC trending down, hemoglobin improving.",
       specimen: "EDTA whole blood",
       values: [
-        { name: "Hemoglobin", value: "12.4", unit: "g/dL", range: "13.0 - 17.0", flag: "Low" as const },
-        { name: "WBC Count", value: "15.2", unit: "10^3/uL", range: "4.0 - 11.0", flag: "High" as const },
-        { name: "Platelets", value: "224", unit: "10^3/uL", range: "150 - 450", flag: "Normal" as const },
+        { name: "Hemoglobin", value: hemoglobinPrevious, unit: "g/dL", range: "13.0 - 17.0", flag: Number(hemoglobinPrevious) < 13 ? "Low" as const : "Normal" as const },
+        { name: "WBC Count", value: wbcPrevious, unit: "10^3/uL", range: "4.0 - 11.0", flag: Number(wbcPrevious) > 11 ? "High" as const : "Normal" as const },
+        { name: "Platelets", value: plateletPrevious, unit: "10^3/uL", range: "150 - 450", flag: "Normal" as const },
       ],
       timeline: [
         { label: "Order created", at: "07:50", by: "ICU Desk" },
@@ -278,7 +315,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RES-2026-1001-RENAL-18",
+      id: `RES-2026-${reportSuffix}-RENAL-18`,
       department: "laboratory" as const,
       testName: "Renal Function Panel",
       orderedAt: "2026-05-18T09:00:00",
@@ -289,8 +326,8 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       resultSummary: "Renal markers elevated; monitor hydration and nephrology plan.",
       specimen: "Serum",
       values: [
-        { name: "Creatinine", value: "2.4", unit: "mg/dL", range: "0.7 - 1.3", flag: "High" as const },
-        { name: "BUN", value: "42", unit: "mg/dL", range: "7 - 20", flag: "High" as const },
+        { name: "Creatinine", value: creatinineBaseline, unit: "mg/dL", range: "0.7 - 1.3", flag: Number(creatinineBaseline) > 1.3 ? "High" as const : "Normal" as const },
+        { name: "BUN", value: bunBaseline, unit: "mg/dL", range: "7 - 20", flag: Number(bunBaseline) > 20 ? "High" as const : "Normal" as const },
         { name: "Sodium", value: "136", unit: "mmol/L", range: "135 - 145", flag: "Normal" as const },
       ],
       timeline: [
@@ -301,7 +338,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RES-2026-1001-RENAL-23",
+      id: `RES-2026-${reportSuffix}-RENAL-23`,
       department: "laboratory" as const,
       testName: "Renal Function Panel",
       orderedAt: "2026-05-23T07:40:00",
@@ -312,8 +349,8 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       resultSummary: "Renal function improving but still above reference range.",
       specimen: "Serum",
       values: [
-        { name: "Creatinine", value: "1.8", unit: "mg/dL", range: "0.7 - 1.3", flag: "High" as const },
-        { name: "BUN", value: "34", unit: "mg/dL", range: "7 - 20", flag: "High" as const },
+        { name: "Creatinine", value: creatinineCurrent, unit: "mg/dL", range: "0.7 - 1.3", flag: Number(creatinineCurrent) > 1.3 ? "High" as const : "Normal" as const },
+        { name: "BUN", value: bunCurrent, unit: "mg/dL", range: "7 - 20", flag: Number(bunCurrent) > 20 ? "High" as const : "Normal" as const },
         { name: "Sodium", value: "138", unit: "mmol/L", range: "135 - 145", flag: "Normal" as const },
       ],
       timeline: [
@@ -324,7 +361,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RES-2026-1001-LFT-18",
+      id: `RES-2026-${reportSuffix}-LFT-18`,
       department: "laboratory" as const,
       testName: "Liver Function Test",
       orderedAt: "2026-05-18T08:30:00",
@@ -336,8 +373,8 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       resultSummary: "Mildly elevated SGPT, bilirubin within reference range.",
       specimen: "Serum",
       values: [
-        { name: "SGPT", value: "62", unit: "U/L", range: "7 - 56", flag: "High" as const },
-        { name: "SGOT", value: "44", unit: "U/L", range: "8 - 40", flag: "High" as const },
+        { name: "SGPT", value: sgptBaseline, unit: "U/L", range: "7 - 56", flag: Number(sgptBaseline) > 56 ? "High" as const : "Normal" as const },
+        { name: "SGOT", value: sgotBaseline, unit: "U/L", range: "8 - 40", flag: Number(sgotBaseline) > 40 ? "High" as const : "Normal" as const },
         { name: "Bilirubin Total", value: "0.9", unit: "mg/dL", range: "0.1 - 1.2", flag: "Normal" as const },
       ],
       timeline: [
@@ -348,7 +385,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RES-2026-1001-LFT-23",
+      id: `RES-2026-${reportSuffix}-LFT-23`,
       department: "laboratory" as const,
       testName: "Liver Function Test",
       orderedAt: "2026-05-23T08:30:00",
@@ -359,8 +396,8 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       resultSummary: "Liver enzymes improving, bilirubin stable.",
       specimen: "Serum",
       values: [
-        { name: "SGPT", value: "48", unit: "U/L", range: "7 - 56", flag: "Normal" as const },
-        { name: "SGOT", value: "36", unit: "U/L", range: "8 - 40", flag: "Normal" as const },
+        { name: "SGPT", value: sgptCurrent, unit: "U/L", range: "7 - 56", flag: Number(sgptCurrent) > 56 ? "High" as const : "Normal" as const },
+        { name: "SGOT", value: sgotCurrent, unit: "U/L", range: "8 - 40", flag: Number(sgotCurrent) > 40 ? "High" as const : "Normal" as const },
         { name: "Bilirubin Total", value: "0.8", unit: "mg/dL", range: "0.1 - 1.2", flag: "Normal" as const },
       ],
       timeline: [
@@ -371,16 +408,16 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RAD-2026-1001-CT",
+      id: `RAD-2026-${reportSuffix}-PRIMARY`,
       department: "radiology" as const,
-      testName: "CT Brain Plain",
+      testName: radiologyPair[0],
       orderedAt: "2026-05-22T12:15:00",
       completedAt: "2026-05-22T12:55:00",
       status: "Completed" as const,
       priority: "Urgent" as const,
       imageAvailable: true,
-      accessionNo: "ACC-CT-240118",
-      resultSummary: "No acute intracranial hemorrhage. Mild age-related cortical atrophy.",
+      accessionNo: `${radiologyPair[2]}-${reportSuffix}`,
+      resultSummary: radiologyPair[1],
       values: [
         { name: "Image status", value: "Available", flag: "Normal" as const },
         { name: "Finding flag", value: "Non-critical", flag: "Normal" as const },
@@ -393,15 +430,15 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "RAD-2026-1001-USG",
+      id: `RAD-2026-${reportSuffix}-FOLLOWUP`,
       department: "radiology" as const,
-      testName: "USG Abdomen",
+      testName: seed % 2 === 0 ? "USG Abdomen" : "Portable Chest X-Ray",
       orderedAt: "2026-05-21T16:20:00",
       completedAt: "2026-05-21T16:58:00",
       status: "Completed" as const,
       imageAvailable: true,
-      accessionNo: "ACC-USG-240118",
-      resultSummary: "Mild fatty liver changes. No free fluid detected.",
+      accessionNo: `ACC-FU-${reportSuffix}`,
+      resultSummary: seed % 2 === 0 ? "Mild fatty liver changes. No free fluid detected." : "Follow-up portable chest film reviewed. Lines and tubes position satisfactory.",
       values: [
         { name: "Image status", value: "Available", flag: "Normal" as const },
         { name: "Report status", value: "Verified", flag: "Normal" as const },
@@ -414,7 +451,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "POCT-2026-1001-ABG",
+      id: `POCT-2026-${reportSuffix}-ABG`,
       department: "poct" as const,
       testName: "Arterial Blood Gas",
       orderedAt: "2026-05-23T15:20:00",
@@ -422,11 +459,11 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
       status: "Completed" as const,
       priority: "Urgent" as const,
       imageAvailable: false,
-      resultSummary: "pH 7.39, lactate 1.8 mmol/L. No critical abnormality.",
+      resultSummary: `pH 7.${35 + (seed % 8)}, lactate ${(1.2 + (seed % 12) / 10).toFixed(1)} mmol/L. No critical abnormality.`,
       specimen: "Arterial blood",
       values: [
-        { name: "pH", value: "7.39", range: "7.35 - 7.45", flag: "Normal" as const },
-        { name: "Lactate", value: "1.8", unit: "mmol/L", range: "0.5 - 2.2", flag: "Normal" as const },
+        { name: "pH", value: `7.${35 + (seed % 8)}`, range: "7.35 - 7.45", flag: "Normal" as const },
+        { name: "Lactate", value: (1.2 + (seed % 12) / 10).toFixed(1), unit: "mmol/L", range: "0.5 - 2.2", flag: seed % 12 > 9 ? "High" as const : "Normal" as const },
         { name: "Device QC", value: "Passed", flag: "Normal" as const },
       ],
       timeline: [
@@ -436,7 +473,7 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
     },
     {
       ...base,
-      id: "POCT-2026-1001-ECG",
+      id: `POCT-2026-${reportSuffix}-ECG`,
       department: "poct" as const,
       testName: "Bedside ECG",
       orderedAt: "2026-05-21T10:05:00",
@@ -459,14 +496,17 @@ function buildAdditionalPatientReports(records: ResultRecord[]) {
 function scopedPatientRecords(patientContext?: ResultsPatientContext) {
   if (!patientContext?.mrn && !patientContext?.name) return resultRecords;
 
+  const seed = patientResultSeed(patientContext);
   const normalizedName = patientContext.name?.trim().toLowerCase();
   const matches = resultRecords.filter((result) => {
     const matchesMrn = patientContext.mrn ? result.mrn === patientContext.mrn : false;
     const matchesName = normalizedName ? result.patientName.toLowerCase() === normalizedName : false;
     return matchesMrn || matchesName;
   });
+  const fallbackStart = seed % resultRecords.length;
+  const fallbackRecords = Array.from({ length: Math.min(6, resultRecords.length) }, (_, index) => resultRecords[(fallbackStart + index) % resultRecords.length]);
 
-  const scopedRecords = (matches.length ? matches : resultRecords.slice(0, 6)).map((result) => ({
+  const scopedRecords = (matches.length ? matches : fallbackRecords).map((result) => ({
     ...result,
     ageSex: patientContext.ageSex ?? result.ageSex,
     mrn: patientContext.uhid ?? patientContext.mrn ?? result.mrn,
@@ -474,7 +514,7 @@ function scopedPatientRecords(patientContext?: ResultsPatientContext) {
     location: patientContext.wardBed ?? result.location,
   }));
 
-  return [...scopedRecords, ...buildAdditionalPatientReports(scopedRecords)];
+  return [...scopedRecords, ...buildAdditionalPatientReports(scopedRecords, seed)];
 }
 
 function DateRangeCalendar({
@@ -899,15 +939,6 @@ export function ResultsWorkflowView({
   );
 }
 
-function MetricPill({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface-muted px-3 py-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="text-lg font-bold text-foreground">{value}</div>
-    </div>
-  );
-}
-
 function ResultCategorySection({
   allReports,
   icon: Icon,
@@ -965,10 +996,11 @@ function ResultTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-left text-sm">
+      <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="bg-surface-muted text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
             <th className="px-4 py-3">{getReportColumnLabel(reports)}</th>
+            <th className="w-[150px] px-4 py-3">Status</th>
             <th className="w-[240px] px-4 py-3 text-right">
               <div className="flex items-center justify-end gap-2">
                 {allViewAction}
@@ -983,6 +1015,9 @@ function ResultTable({
               <td className="px-4 py-3">
                 <div className="font-semibold text-foreground">{result.testName}</div>
                 <div className="text-xs text-muted-foreground">{result.priority} priority</div>
+              </td>
+              <td className="px-4 py-3">
+                <ResultStatusBadge status={result.status} />
               </td>
               <td className="px-4 py-3">
                 <div className="flex justify-end gap-2">
@@ -1152,14 +1187,13 @@ function AllCategoryView({ comparisonRecords, department, records }: { compariso
   );
 }
 
-type LaboratoryAllViewTab = "details" | "comparison" | "trends";
+type LaboratoryAllViewTab = "details" | "comparison";
 
 function LaboratoryAllViewTabs({ comparisonRecords, records }: { comparisonRecords: ResultRecord[]; records: ResultRecord[] }) {
   const [activeTab, setActiveTab] = useState<LaboratoryAllViewTab>("details");
   const tabs: Array<{ id: LaboratoryAllViewTab; label: string }> = [
     { id: "details", label: "All Laboratory Details" },
     { id: "comparison", label: "Comparison View" },
-    { id: "trends", label: "Trend Analysis" },
   ];
 
   return (
@@ -1189,7 +1223,6 @@ function LaboratoryAllViewTabs({ comparisonRecords, records }: { comparisonRecor
 
       {activeTab === "details" ? <LaboratoryAllDetailsView records={records} /> : null}
       {activeTab === "comparison" ? <LaboratoryDateWiseComparison records={comparisonRecords} /> : null}
-      {activeTab === "trends" ? <LaboratoryTrendAnalysis records={comparisonRecords} /> : null}
     </div>
   );
 }
@@ -1204,10 +1237,11 @@ function LaboratoryAllDetailsView({ records }: { records: ResultRecord[] }) {
         <div className="text-xs font-semibold text-muted-foreground">{records.length} report(s)</div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[820px] border-collapse text-left text-xs">
+        <table className="w-full min-w-[960px] border-collapse text-left text-xs">
           <thead className="bg-surface-muted/80 uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="w-[210px] border-b border-r border-border px-3 py-2">Report</th>
+              <th className="w-[140px] border-b border-r border-border px-3 py-2">Status</th>
               <th className="border-b border-r border-border px-3 py-2">Test</th>
               <th className="w-[160px] border-b border-r border-border px-3 py-2">Value</th>
               <th className="w-[150px] border-b border-border px-3 py-2">Range</th>
@@ -1221,6 +1255,9 @@ function LaboratoryAllDetailsView({ records }: { records: ResultRecord[] }) {
                     <>
                       <td className="border-r border-border px-3 py-2 align-top" rowSpan={result.values.length}>
                         <div className="font-extrabold text-foreground">{result.testName}</div>
+                      </td>
+                      <td className="border-r border-border px-3 py-2 align-top" rowSpan={result.values.length}>
+                        <ResultStatusBadge status={result.status} />
                       </td>
                     </>
                   ) : null}
@@ -1241,10 +1278,11 @@ function LaboratoryAllDetailsView({ records }: { records: ResultRecord[] }) {
 }
 
 function LaboratoryDateWiseComparison({ records }: { records: ResultRecord[] }) {
-  const dateKeys = Array.from(new Set(records.map((result) => getDateKey(result.completedAt ?? result.orderedAt))))
+  const chronologicalDateKeys = Array.from(new Set(records.map((result) => getDateKey(result.completedAt ?? result.orderedAt))))
     .sort()
     .slice(-3);
-  const sections = buildLaboratoryComparisonSections(records, dateKeys);
+  const dateKeys = [...chronologicalDateKeys].reverse();
+  const sections = buildLaboratoryComparisonSections(records, dateKeys, chronologicalDateKeys);
   const criticalCount = sections.reduce(
     (total, section) => total + section.rows.filter((row) => row.trend === "Elevated" || row.trend === "Critical" || row.trend === "Watch").length,
     0,
@@ -1260,13 +1298,13 @@ function LaboratoryDateWiseComparison({ records }: { records: ResultRecord[] }) 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] border-collapse text-left text-sm">
             <thead>
-              <tr className="bg-surface-muted text-muted-foreground">
+              <tr className="bg-surface-muted/80 uppercase tracking-wide text-muted-foreground">
                 <th className="w-[280px] border-b border-r border-border px-4 py-3 text-sm font-bold">Laboratory Parameter</th>
                 <th className="w-[190px] border-b border-r border-border px-4 py-3 text-sm font-bold">Normal Range</th>
                 {dateKeys.map((dateKey) => (
-                  <th className="min-w-[150px] border-b border-r border-border bg-primary/10 px-4 py-3 text-center" key={dateKey}>
-                    <span className="block text-base font-extrabold text-primary">{formatComparisonDate(dateKey)}</span>
-                    <span className="mt-0.5 block text-xs font-semibold italic normal-case text-primary/75">{comparisonDateSubtitle(dateKey, dateKeys)}</span>
+                  <th className="min-w-[150px] border-b border-r border-border px-4 py-3 text-center" key={dateKey}>
+                    <span className="block text-sm font-extrabold text-foreground">{formatComparisonDate(dateKey)}</span>
+                    <span className="mt-0.5 block text-xs font-semibold italic normal-case text-muted-foreground">{comparisonDateSubtitle(dateKey, dateKeys)}</span>
                   </th>
                 ))}
               </tr>
@@ -1325,7 +1363,7 @@ function RowsForLaboratoryComparisonSection({
                 {value ? (
                   <span className={cn("inline-flex items-center justify-center gap-1.5 text-sm font-extrabold", comparisonValueClass(value))}>
                     {value.value}
-                    <span className={cn("text-base", arrow === "up" && "text-primary", arrow === "down" && "text-primary", arrow === "same" && "text-muted-foreground")}>
+                    <span className={cn("text-base", comparisonArrowClass(value, arrow))}>
                       {arrow === "up" ? "↑" : arrow === "down" ? "↓" : arrow === "same" ? "→" : ""}
                     </span>
                   </span>
@@ -1342,28 +1380,34 @@ function RowsForLaboratoryComparisonSection({
 }
 
 function comparisonValueClass(value: ResultValue) {
-  if (value.flag === "Critical" || value.flag === "High" || value.flag === "Low") return "text-primary";
-  return "text-foreground";
+  return resultValueClass(value);
 }
 
-function buildLaboratoryComparisonSections(records: ResultRecord[], dateKeys: string[]) {
+function comparisonArrowClass(value: ResultValue, arrow?: "up" | "down" | "same") {
+  if (!arrow || arrow === "same") return "text-muted-foreground";
+  if (value.flag === "Critical" || value.flag === "High") return "text-danger";
+  if (value.flag === "Low") return "text-info";
+  return "text-muted-foreground";
+}
+
+function buildLaboratoryComparisonSections(records: ResultRecord[], displayDateKeys: string[], chronologicalDateKeys: string[]) {
   return Object.entries(groupRecordsByTestName(records))
     .sort(([first], [second]) => first.localeCompare(second))
     .map(([testName, items]) => {
       const valueNames = Array.from(new Set(items.flatMap((result) => result.values.map((value) => value.name))));
       const rows = valueNames.map((valueName) => {
-        const valuesByDate = dateKeys.reduce<Record<string, ResultValue | undefined>>((values, dateKey) => {
+        const valuesByDate = displayDateKeys.reduce<Record<string, ResultValue | undefined>>((values, dateKey) => {
           const resultForDate = items
             .filter((result) => getDateKey(result.completedAt ?? result.orderedAt) === dateKey)
             .sort((first, second) => new Date(second.completedAt ?? second.orderedAt).getTime() - new Date(first.completedAt ?? first.orderedAt).getTime())[0];
           values[dateKey] = resultForDate?.values.find((value) => value.name === valueName);
           return values;
         }, {});
-        const orderedValues = dateKeys.map((dateKey) => valuesByDate[dateKey]);
+        const orderedValues = chronologicalDateKeys.map((dateKey) => valuesByDate[dateKey]);
         const firstValue = items.flatMap((result) => result.values).find((value) => value.name === valueName);
-        const arrowByDate = dateKeys.reduce<Record<string, "up" | "down" | "same" | undefined>>((arrows, dateKey, index) => {
+        const arrowByDate = displayDateKeys.reduce<Record<string, "up" | "down" | "same" | undefined>>((arrows, dateKey, index) => {
           const current = numericResultValue(valuesByDate[dateKey]);
-          const previous = numericResultValue(index > 0 ? valuesByDate[dateKeys[index - 1]] : undefined);
+          const previous = numericResultValue(index < displayDateKeys.length - 1 ? valuesByDate[displayDateKeys[index + 1]] : undefined);
           arrows[dateKey] = current === null || previous === null ? undefined : current > previous ? "up" : current < previous ? "down" : "same";
           return arrows;
         }, {});
@@ -1411,9 +1455,9 @@ function formatComparisonDate(dateKey: string) {
 
 function comparisonDateSubtitle(dateKey: string, dateKeys: string[]) {
   const index = dateKeys.indexOf(dateKey);
-  if (index === dateKeys.length - 1) return "Current";
-  if (index === 0) return "Baseline";
-  return `Previous ${dateKeys.length - index - 1}`;
+  if (index === 0) return "Current";
+  if (index === dateKeys.length - 1) return "Baseline";
+  return `Previous ${index}`;
 }
 
 function ComparisonSummaryCard({ label, tone, value }: { label: string; tone: "danger" | "info" | "warning"; value: string }) {
@@ -1435,102 +1479,6 @@ function ComparisonSummaryCard({ label, tone, value }: { label: string; tone: "d
       </div>
     </div>
   );
-}
-
-function LaboratoryTrendAnalysis({ records }: { records: ResultRecord[] }) {
-  const rows = buildLaboratoryTrendRows(records);
-  const criticalCount = rows.filter((row) => row.latestFlag === "Critical" || row.latestFlag === "High").length;
-  const improvingCount = rows.filter((row) => row.trend === "Improving").length;
-  const lastUpdate = records
-    .map((result) => result.completedAt ?? result.orderedAt)
-    .sort((first, second) => second.localeCompare(first))[0];
-
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-3">
-        <MetricPill label="Critical Flags" value={criticalCount} />
-        <MetricPill label="Improving Parameters" value={improvingCount} />
-        <div className="rounded-lg border border-border bg-surface-muted px-3 py-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Last Update</div>
-          <div className="text-lg font-bold text-foreground">{lastUpdate ? formatDateTime(lastUpdate) : "-"}</div>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-lg border border-border bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="bg-white text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Laboratory Parameter</th>
-                <th className="px-4 py-3">Normal Range</th>
-                <th className="px-4 py-3 text-center">First Result</th>
-                <th className="px-4 py-3 text-center">Latest Result</th>
-                <th className="px-4 py-3 text-center">Change</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr className="border-t border-border hover:bg-surface-muted/50" key={row.key}>
-                  <td className="px-4 py-3">
-                    <div className="font-bold text-foreground">{row.parameter}</div>
-                    <div className="text-xs font-semibold text-muted-foreground">{row.reportName}</div>
-                  </td>
-                  <td className="px-4 py-3 text-xs font-medium text-muted-foreground">{row.range}</td>
-                  <td className="px-4 py-3 text-center font-bold text-foreground">{row.firstDisplay}</td>
-                  <td className={cn("px-4 py-3 text-center font-bold", row.latestClass)}>{row.latestDisplay}</td>
-                  <td className="px-4 py-3 text-center font-bold text-foreground">{row.changeDisplay}</td>
-                </tr>
-              ))}
-              {!rows.length ? (
-                <tr>
-                  <td className="px-4 py-8 text-center text-sm text-muted-foreground" colSpan={5}>No numeric laboratory values available for trend analysis.</td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function buildLaboratoryTrendRows(records: ResultRecord[]) {
-  const grouped = records.reduce<Record<string, Array<{ result: ResultRecord; value: ResultValue; numeric: number }>>>((groups, result) => {
-    result.values.forEach((value) => {
-      const numeric = Number.parseFloat(value.value.replace(/,/g, ""));
-      if (!Number.isFinite(numeric)) return;
-      const key = `${result.testName}::${value.name}`;
-      groups[key] = [...(groups[key] ?? []), { result, value, numeric }];
-    });
-    return groups;
-  }, {});
-
-  return Object.entries(grouped).map(([key, items]) => {
-    const sorted = [...items].sort((first, second) => new Date(first.result.completedAt ?? first.result.orderedAt).getTime() - new Date(second.result.completedAt ?? second.result.orderedAt).getTime());
-    const first = sorted[0];
-    const latest = sorted[sorted.length - 1];
-    const change = latest.numeric - first.numeric;
-    const trend = trendLabel(change, latest.value.flag);
-
-    return {
-      key,
-      reportName: latest.result.testName,
-      parameter: latest.value.name,
-      range: latest.value.range ?? "-",
-      firstDisplay: `${first.value.value}${first.value.unit ? ` ${first.value.unit}` : ""}`,
-      latestDisplay: `${latest.value.value}${latest.value.unit ? ` ${latest.value.unit}` : ""}`,
-      latestFlag: latest.value.flag,
-      latestClass: resultValueClass(latest.value),
-      changeDisplay: `${change > 0 ? "+" : ""}${Number.isInteger(change) ? change : change.toFixed(1)}`,
-      trend,
-    };
-  });
-}
-
-function trendLabel(change: number, flag?: ResultValue["flag"]) {
-  if (flag === "Critical" || flag === "High") return change < 0 ? "Recovering" : "Elevated";
-  if (Math.abs(change) < 0.1) return "Stable";
-  return change < 0 ? "Improving" : "Rising";
 }
 
 function LaboratoryReportView({ result }: { result: ResultRecord }) {

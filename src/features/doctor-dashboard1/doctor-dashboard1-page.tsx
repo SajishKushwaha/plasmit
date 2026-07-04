@@ -399,6 +399,7 @@ export function DoctorDashboard1Page() {
       </CenterModal>
 
       <CenterModal
+        bodyClassName="overflow-hidden p-0"
         className="h-[min(92dvh,900px)] w-[min(96vw,1180px)]"
         description={radiologyPatient ? `${radiologyPatient.name} | ${radiologyPatient.bed} | ${radiologyPatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setRadiologyPatient(null)}
@@ -839,6 +840,7 @@ function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
         dob: "30-12-1995",
         mrn: getDashboardResultPatientMrn(patient.id),
         name: patient.name,
+        patientId: String(patient.id),
         uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
         wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
       }}
@@ -853,14 +855,14 @@ function DashboardRadiologyReportPopup({ patient }: { patient: Dashboard1Patient
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <div className="relative min-h-0 flex-1 overflow-hidden rounded-md border border-slate-200 bg-slate-100 shadow-sm">
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <div className="relative min-h-0 flex-1 overflow-y-auto bg-slate-100 px-3 py-3 shadow-sm sm:px-5 sm:py-4">
           <iframe
-            className="h-[68dvh] w-full bg-white"
-            src={`${RADIOLOGY_REPORT_URL}#toolbar=1&navpanes=0`}
+            className="h-[calc(92dvh-88px)] min-h-[18000px] w-full rounded-md border border-slate-200 bg-white sm:min-h-[920px] md:h-full md:min-h-full"
+            src={`${RADIOLOGY_REPORT_URL}#toolbar=1&navpanes=0&zoom=page-width`}
             title={`Radiology report for ${patient.name}`}
           />
-          <div className="group absolute bottom-4 right-4 z-10">
+          <div className="group sticky bottom-4 z-10 ml-auto mt-[-60px] flex h-11 w-11 justify-end">
             <Button
               aria-label="Add radiology order"
               className="h-11 w-11 rounded-full p-0 shadow-lg"

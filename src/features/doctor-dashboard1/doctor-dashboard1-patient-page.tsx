@@ -216,6 +216,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
               <ResultsCenterView
                 autoOpenAllDepartment={requestedResultsAutoView === "laboratory-all" ? "laboratory" : undefined}
                 defaultDepartment="all"
+                key={`results-${patient.id}`}
                 patientContext={{
                   ageSex: rapidReviewPatient?.ageGender,
                   allergy: "Meropenem",
@@ -225,6 +226,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
                   dob: "30-12-1995",
                   mrn: getResultPatientMrn(patient.id),
                   name: patient.name,
+                  patientId: String(patient.id),
                   uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
                   wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
                 }}

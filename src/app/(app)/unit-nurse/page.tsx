@@ -1,5 +1,5 @@
 import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
 
 export default function UnitNurseRoute() {
-  return <NursingIcuModulePage page="arrival-bed-allocation" />;
+  return <NursingIcuModulePage page="unit-nurse-console" />;
 }

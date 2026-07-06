@@ -79,11 +79,17 @@ export const navigationItems: NavigationItem[] = [
     allowedRoles: ["Unit Nurse"],
     status: "ready",
     children: [
-      { id: "unit-nurse-step-4", label: "4. Ward Assignment", route: "/unit-nurse/ward-assignment", status: "ready" },
-      { id: "unit-nurse-step-8", label: "8. Pending Monitor", route: "/unit-nurse/monitoring", status: "ready" },
-      { id: "unit-nurse-step-11", label: "11. Issue Review", route: "/unit-nurse/issue-review", status: "ready" },
-      { id: "unit-nurse-step-12", label: "12. Escalation", route: "/unit-nurse/escalation", status: "ready" },
-      { id: "unit-nurse-step-15", label: "15. Submit Handover", route: "/unit-nurse/handover-submit", status: "ready" },
+      { id: "unit-nurse-dashboard-link", label: "Unit Nurse Dashboard", route: "/unit-nurse", status: "ready" },
+      { id: "unit-nurse-assigned", label: "Assigned Patients", route: "/icu-command-center/nursing/assigned-patients", status: "ready" },
+      { id: "unit-nurse-linking", label: "Bed & Ward Nurse Link", route: "/icu-command-center/nursing/bed-ward-nurse-link", status: "ready" },
+      { id: "unit-nurse-pending-vitals", label: "Pending Vitals", route: "/icu-command-center/nursing/pending-vitals", status: "ready" },
+      { id: "unit-nurse-pending-medicines", label: "Pending Medicines", route: "/icu-command-center/nursing/pending-medicines", status: "ready" },
+      { id: "unit-nurse-pending-orders", label: "Pending Doctor Orders", route: "/icu-command-center/nursing/pending-doctor-orders", status: "ready" },
+      { id: "unit-nurse-pending-tasks", label: "Pending Nursing Tasks", route: "/icu-command-center/nursing/pending-nursing-tasks", status: "ready" },
+      { id: "unit-nurse-first-review", label: "First-Level Review", route: "/icu-command-center/nursing/first-level-review", status: "ready" },
+      { id: "unit-nurse-escalation-decision", label: "Escalation Decision", route: "/icu-command-center/nursing/escalation-decision", status: "ready" },
+      { id: "unit-nurse-escalation-tracking", label: "Escalation Tracking", route: "/icu-command-center/nursing/escalation-tracking", status: "ready" },
+      { id: "unit-nurse-handover", label: "Shift Handover", route: "/icu-command-center/nursing/shift-handover?view=summary", status: "ready" },
       { id: "unit-nurse-ward", label: "Ward Nurse Flow", route: wardNurseDefaultRoute, status: "ready" },
       { id: "unit-nurse-head", label: "Head Nurse Flow", route: "/head-nurse", status: "ready" },
     ],
@@ -513,7 +519,7 @@ export const dashboardQuickActions = [
 export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   const roleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
 
-  if (role === "Head Nurse" || role === "Ward Nurse") {
+  if (role === "Head Nurse" || role === "Unit Nurse" || role === "Ward Nurse") {
     return (getNursingRoleNavigation(role) ?? []).map((item) => ({
       id: item.id,
       label: item.label,

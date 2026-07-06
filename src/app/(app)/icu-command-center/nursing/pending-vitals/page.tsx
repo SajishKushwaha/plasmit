@@ -1,5 +1,5 @@
 import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
 
-export default function UnitNurseMonitoringRoute() {
+export default function PendingVitalsRoute() {
   return <NursingIcuModulePage page="unit-pending-vitals" />;
 }

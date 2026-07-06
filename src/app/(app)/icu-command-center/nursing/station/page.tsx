@@ -1,5 +1,5 @@
-import { HeadNurseDashboard } from "@/features/nursing-icu/components/dashboard/dashboard";
+import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
 
 export default function IcuCommandCenterRoute() {
-  return <HeadNurseDashboard />;
+  return <NursingIcuModulePage page="unit-nurse-console" />;
 }

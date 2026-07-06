@@ -240,7 +240,26 @@ export function DoctorDashboard1Page() {
 
       <Card className="overflow-hidden rounded-md border-slate-200 shadow-sm">
         <CardContent className="p-0">
-          <div className="max-w-full overflow-x-auto">
+          <div className="space-y-3 p-3 md:hidden">
+            {visiblePatients.map((patient) => (
+              <DashboardMobilePatientCard
+                key={patient.id}
+                patient={patient}
+                onOpenCollaborate={() => setCollaboratePatient(patient)}
+                onOpenEvents={() => setEventPatient(patient)}
+                onOpenLabResults={() => setLabResultsPatient(patient)}
+                onOpenMedication={() => setMedicationPatient(patient)}
+                onOpenProgressNote={() => setShiftSummaryPatient(patient)}
+                onOpenRadiology={() => setRadiologyPatient(patient)}
+              />
+            ))}
+            {!visiblePatients.length ? (
+              <div className="rounded-lg border border-slate-200 bg-white px-3 py-8 text-center text-sm font-semibold text-slate-500">
+                No patient matched this search.
+              </div>
+            ) : null}
+          </div>
+          <div className="hidden max-w-full overflow-x-auto md:block">
             <table className="w-full min-w-[1460px] border-collapse text-left text-xs">
               <thead>
                 <tr className="h-14 border-b border-slate-200 bg-white text-slate-700">
@@ -420,11 +439,12 @@ export function DoctorDashboard1Page() {
       </CenterModal>
 
       <CenterModal
-        className="w-[min(94vw,640px)]"
-        description={eventPatient ? `${eventPatient.bed} | ${eventPatient.diagnosis}` : undefined}
+        bodyClassName="overflow-hidden p-0"
+        className="h-[min(92dvh,640px)] w-[min(94vw,640px)]"
+        description={eventPatient ? `Events | ${eventPatient.bed} | ${eventPatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setEventPatient(null)}
         open={Boolean(eventPatient)}
-        title="Events"
+        title={eventPatient ? eventPatient.name : "Events"}
       >
         {eventPatient ? <DashboardEventsPopup patient={eventPatient} /> : null}
       </CenterModal>
@@ -434,6 +454,194 @@ export function DoctorDashboard1Page() {
 
 function HeaderCell({ className, children }: { className?: string; children: React.ReactNode }) {
   return <th className={cn("px-3 py-3 text-center align-middle text-xs font-extrabold text-slate-900", className)}>{children}</th>;
+}
+
+function DashboardMobilePatientCard({
+  patient,
+  onOpenCollaborate,
+  onOpenEvents,
+  onOpenLabResults,
+  onOpenMedication,
+  onOpenProgressNote,
+  onOpenRadiology,
+}: {
+  patient: Dashboard1Patient;
+  onOpenCollaborate: () => void;
+  onOpenEvents: () => void;
+  onOpenLabResults: () => void;
+  onOpenMedication: () => void;
+  onOpenProgressNote: () => void;
+  onOpenRadiology: () => void;
+}) {
+  const tone = patientTone(patient);
+  const vitalItems = [
+    { label: "HR", value: patient.hr.value, tone: patient.hr.tone },
+    { label: "SpO2", value: patient.spo2.value, tone: patient.spo2.tone },
+    { label: "ABPS", value: patient.abps.value, tone: patient.abps.tone },
+    { label: "ABPD", value: patient.abpd.value, tone: patient.abpd.tone },
+    { label: "Temp", value: patient.temperature.value, tone: patient.temperature.tone },
+  ];
+  const labBadge = patient.hr.tone === "red" || patient.spo2.tone === "red" ? 2 : patient.hr.tone === "orange" ? 1 : undefined;
+  const medicationBadge = patient.abps.tone !== "green" ? 1 : undefined;
+
+  return (
+    <article className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
+      <div className="flex items-start justify-between gap-3 px-3.5 py-3">
+        <div className="min-w-0">
+          <Link
+            className={cn("block truncate text-base font-extrabold leading-6", mobilePatientNameClass(tone))}
+            href={`/doctor-dashboard1/patients/${patient.id}`}
+          >
+            {patient.name}
+          </Link>
+          <div className="mt-0.5 truncate text-xs font-semibold text-[#64748b]">
+            {mobilePatientUhid(patient)} · Bed {mobilePatientBed(patient)}
+          </div>
+        </div>
+        <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold", mobilePatientStatusClass(tone))}>
+          {mobilePatientStatus(tone)}
+        </span>
+      </div>
+
+      <div className="border-t border-[#e5e7eb] px-3 py-3">
+        <div className="grid grid-cols-5 gap-2">
+          {vitalItems.map((item) => (
+            <MobileVitalBadge key={item.label} {...item} />
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-6 gap-2 border-t border-[#f1f5f9] px-3 py-3">
+        <MobileDashboardAction
+          badge={labBadge}
+          icon={FlaskConical}
+          label={`Open laboratory results for ${patient.name}`}
+          onClick={onOpenLabResults}
+          tone="dark"
+        />
+        <MobileDashboardAction
+          badge={medicationBadge}
+          icon={Pill}
+          label={`Open medication and intervention for ${patient.name}`}
+          onClick={onOpenMedication}
+          tone="dark"
+        />
+        <MobileDashboardAction
+          icon={ClipboardList}
+          label={`Open progress note for ${patient.name}`}
+          onClick={onOpenProgressNote}
+          tone="dark"
+        />
+        <MobileDashboardAction
+          icon={FileText}
+          label={`Open radiology report for ${patient.name}`}
+          onClick={onOpenRadiology}
+          tone="dark"
+        />
+        <MobileDashboardAction
+          icon={Activity}
+          label={`Open events for ${patient.name}`}
+          onClick={onOpenEvents}
+          tone="red"
+        />
+        <MobileDashboardAction
+          disabled
+          icon={PhoneCall}
+          label={`Collaborate unavailable for ${patient.name}`}
+          onClick={onOpenCollaborate}
+          tone="disabled"
+        />
+      </div>
+    </article>
+  );
+}
+
+function MobileVitalBadge({ label, value, tone }: { label: string; value: string | number; tone: VitalTone }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-1.5">
+      <span className="truncate text-[10px] font-bold text-[#64748b]">{label}</span>
+      <span
+        className={cn(
+          "inline-flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-extrabold",
+          tone === "green" && "bg-[#008d0c] text-white shadow-[0_4px_9px_rgba(15,23,42,0.22)]",
+          tone === "orange" && "bg-[#ffa600] text-white shadow-[0_4px_9px_rgba(15,23,42,0.22)]",
+          tone === "red" && "bg-[#ff0808] text-white shadow-[0_4px_9px_rgba(15,23,42,0.22)]",
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function MobileDashboardAction({
+  badge,
+  disabled = false,
+  icon: Icon,
+  label,
+  onClick,
+  tone,
+}: {
+  badge?: number;
+  disabled?: boolean;
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+  tone: "dark" | "red" | "disabled";
+}) {
+  return (
+    <button
+      aria-label={label}
+      className={mobileDashboardActionClassName(tone)}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      <Icon className="h-4 w-4" />
+      {badge ? (
+        <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-extrabold text-white">
+          {badge}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function mobileDashboardActionClassName(tone: "dark" | "red" | "disabled") {
+  return cn(
+    "relative mx-auto inline-flex h-9 w-9 min-w-0 items-center justify-center rounded-full text-white shadow-[0_4px_9px_rgba(15,23,42,0.20)] transition active:scale-95",
+    tone === "dark" && "bg-[#4a4a4a]",
+    tone === "red" && "bg-[#ff443e]",
+    tone === "disabled" && "cursor-not-allowed bg-[#c9c9c9] opacity-100",
+  );
+}
+
+function mobilePatientNameClass(tone: PatientTone) {
+  if (tone === "red") return "text-[#dc2626]";
+  if (tone === "orange") return "text-[#f97316]";
+  return "text-[#2563eb]";
+}
+
+function mobilePatientStatus(tone: PatientTone) {
+  if (tone === "red") return "Urgent";
+  if (tone === "orange") return "Warning";
+  return "Stable";
+}
+
+function mobilePatientStatusClass(tone: PatientTone) {
+  if (tone === "red") return "bg-[#fff1f2] text-[#fb7185]";
+  if (tone === "orange") return "bg-[#fff7ed] text-[#f97316]";
+  return "bg-[#f8fafc] text-[#64748b]";
+}
+
+function mobilePatientUhid(patient: Dashboard1Patient) {
+  return `UHID-${String(45820 + patient.id).padStart(5, "0")}`;
+}
+
+function mobilePatientBed(patient: Dashboard1Patient) {
+  const match = patient.bed.match(/ICU[-_\s]*([A-Za-z0-9]+)/i);
+  if (match?.[1]) return `ICU-${match[1].replace(/[^A-Za-z0-9]/g, "")}`;
+  return patient.bed;
 }
 
 function VitalPill({ value, tone, href }: { value: string | number; tone: VitalTone; href: string }) {
@@ -671,10 +879,8 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
   const selectedEvent = events[selectedEventIndex] ?? events[0];
 
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-white shadow-sm">
-      <div className="bg-primary px-4 py-3 text-base font-semibold text-primary-foreground">{patient.name}</div>
-
-      <div className="flex items-center border-b border-border bg-white text-sm font-semibold text-muted-foreground">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-white shadow-sm">
+      <div className="flex shrink-0 items-center border-b border-border bg-white text-sm font-semibold text-muted-foreground">
         <button
           className="flex h-12 w-12 cursor-pointer items-center justify-center border-r border-border text-xl text-muted-foreground transition hover:bg-slate-100 hover:text-foreground"
           type="button"
@@ -713,9 +919,9 @@ function DashboardEventsPopup({ patient }: { patient: Dashboard1Patient }) {
         </button>
       </div>
 
-      <div className="max-h-[68dvh] overflow-y-auto p-4">
-        <div className="overflow-hidden rounded-sm border border-primary/20">
-          <table className="w-full text-center text-sm">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
+        <div className="overflow-x-auto rounded-sm border border-primary/20">
+          <table className="w-full min-w-[480px] text-center text-sm">
             <thead>
               <tr className="bg-primary text-primary-foreground">
                 <th className="px-3 py-3 font-semibold">Priority</th>

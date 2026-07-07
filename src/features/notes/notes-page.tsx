@@ -683,17 +683,6 @@ const categories: CategoryConfig[] = [
     soft: "bg-orange-50 dark:bg-orange-950/35",
     specialties: ["Physiotherapy", "Dietitian", "Social Worker", "Occupational Therapy", "Speech Therapy", "Psychology"],
   },
-  {
-    id: "special-instruction",
-    label: "Special Instruction Notes",
-    shortLabel: "Special Instruction",
-    description: "Progress, handover, family meeting and care coordination notes",
-    count: 0,
-    icon: FilePenLine,
-    accent: "text-sky-600",
-    soft: "bg-sky-50 dark:bg-sky-950/35",
-    specialties: ["General", "Follow Up", "Phone Call Note", "Family Meeting", "Handover", "Case Management", "Morning Round", "Evening Round", "Consultant", "Care Coordination", "Patient Education"],
-  },
 ];
 
 const notesCategories = categories;
@@ -1137,6 +1126,7 @@ function buildNoteTitle({
   pharmacy: PharmacyDocumentation;
   specialty: string;
 }) {
+  if (category === "ED Notes") return "ED Note";
   if (category === "Medical Notes") return `${medicalNoteType} - ${specialty}`;
   if (category === "Surgery Notes") return `${medicalNoteType} - ${specialty}`;
   if (category === "Operative Notes") return `Operative Note - ${specialty}`;
@@ -1278,7 +1268,7 @@ export function NotesPage() {
     if (notesLoaded) window.localStorage.setItem("notes-data", JSON.stringify(notes));
   }, [notes, notesLoaded]);
 
-  const visibleNotes = notes;
+  const visibleNotes = notes.filter((note) => note.category !== "Special Instruction Notes");
 
   const filteredNotes = React.useMemo(
     () =>
@@ -2285,6 +2275,7 @@ function NewNoteModal({
     : isPharmacyNote
       ? "Pharmacy note is required."
       : "Clinical note is required.";
+  const edClinicalError = "ED clinical note is required.";
   const hasPatientVisitContext = isMedicalNote || isSurgeryNote || isOperativeNote || isAdmissionNote || isPharmacyNote || isAlliedHealthNote || shouldSaveSpecialInstruction;
   const isAmendment = isMedicalNote && editingNote?.status === "Signed";
   const observedPainTotal = painScale === "NRS" ? undefined : calculateObservedPainScore(painScale, painDomainScores);
@@ -2457,6 +2448,29 @@ function NewNoteModal({
     setAdmission((current) => ({ ...current, [field]: value }));
   }
 
+  function hasEdClinicalDocumentation() {
+    return Boolean(
+      subjective.trim() ||
+        assessment.trim() ||
+        objective.trim() ||
+        medicalAssessment.trim() ||
+        plan.trim(),
+    );
+  }
+
+  function buildEdClinicalContent() {
+    return [
+      ["Current Issues", subjective.trim()],
+      ["Assessment", assessment.trim()],
+      ["Clinical Exam", objective.trim()],
+      ["Impression", medicalAssessment.trim()],
+      ["Treatment Plan", plan.trim()],
+    ]
+      .filter(([, value]) => value)
+      .map(([label, value]) => `${label}:\n${value}`)
+      .join("\n\n");
+  }
+
   function submitNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (hasCustomSpecialty && specialty === "Others" && !customMedicalSpecialty.trim()) {
@@ -2479,7 +2493,11 @@ function NewNoteModal({
       setFormError("Name of surgery is required.");
       return;
     }
-    if (!isOperativeNote && !isAdmissionNote && !content.trim()) {
+    if (isEDNote && !hasEdClinicalDocumentation()) {
+      setFormError(edClinicalError);
+      return;
+    }
+    if (!isOperativeNote && !isAdmissionNote && !isEDNote && !content.trim()) {
       setFormError(contentError);
       return;
     }
@@ -2509,11 +2527,11 @@ function NewNoteModal({
           ? operative.surgeonName.trim()
           : author.trim(),
       designation: isEDNote ? designation.trim() : undefined,
-      assessment: isNurseNote ? assessment.trim() : undefined,
+      assessment: isNurseNote || isEDNote ? assessment.trim() : undefined,
       bloodPressureDiastolic: isNurseNote ? bloodPressureDiastolic : undefined,
       bloodPressureSystolic: isNurseNote ? bloodPressureSystolic : undefined,
       category,
-      content: isOperativeNote ? undefined : content.trim(),
+      content: isOperativeNote ? undefined : isEDNote ? buildEdClinicalContent() : content.trim(),
       communication: isNurseNote ? communication.trim() : undefined,
       followUpPlan: isNurseNote ? followUpPlan.trim() : undefined,
       intervention: isNurseNote ? intervention.trim() : undefined,
@@ -2543,15 +2561,15 @@ function NewNoteModal({
       admission: isAdmissionNote ? admission : undefined,
       authenticatedSigner: hasPatientVisitContext ? authenticatedSigner.trim() : undefined,
       encounterId: hasPatientVisitContext ? encounterId.trim() : undefined,
-      medicalAssessment: isMedicalNote ? medicalAssessment.trim() : undefined,
+      medicalAssessment: isMedicalNote || isEDNote ? medicalAssessment.trim() : undefined,
       medicalNoteType: hasSharedClinicalNoteType ? medicalNoteType : undefined,
       customMedicalNoteType:
         hasSharedClinicalNoteType && medicalNoteType === "Others" ? customMedicalNoteType.trim() : undefined,
       transplantType: isSurgeryNote && savedSpecialty === "Transplant Surgery" && transplantType ? transplantType : undefined,
       medicalNoteSection: isMedicalNote ? medicalNoteSection : undefined,
-      objective: isMedicalNote ? objective.trim() : undefined,
+      objective: isMedicalNote || isEDNote ? objective.trim() : undefined,
       patientId: hasPatientVisitContext ? patientId.trim() : undefined,
-      plan: isMedicalNote ? plan.trim() : undefined,
+      plan: isMedicalNote || isEDNote ? plan.trim() : undefined,
       practitionerId: undefined,
       priority,
       pharmacy: isPharmacyNote ? pharmacy : undefined,
@@ -2565,7 +2583,7 @@ function NewNoteModal({
       signedBy: isSigned && signatureAttested ? (hasPatientVisitContext ? authenticatedSigner.trim() : signedBy.trim()) : undefined,
       specialty: savedSpecialty,
       status: nextStatus,
-      subjective: isMedicalNote ? subjective.trim() : undefined,
+      subjective: isMedicalNote || isEDNote ? subjective.trim() : undefined,
       title: title.trim() || (isOperativeNote ? `Operative Note - ${operative.surgeryName.trim()}` : generatedTitle),
     });
   }
@@ -2730,6 +2748,7 @@ function NewNoteModal({
 
         {isNurseNote ? (
           <div className="grid items-start gap-3 sm:grid-cols-2">
+            <FormField label="Name"><Input onChange={(event) => setAuthor(event.target.value)} placeholder="Enter name" value={author} /></FormField>
             <FormField label="Designation"><Input onChange={(event) => setSpecialty(event.target.value)} placeholder="Enter designation" value={specialty} /></FormField>
             <FormField label="Time"><Input onChange={(event) => setServiceDateTime(`${serviceDateTime.slice(0,10)}T${event.target.value}`)} type="time" value={serviceDateTime.slice(11,16)} /></FormField>
             <FormField label="Date"><Input onChange={(event) => setServiceDateTime(`${event.target.value}T${serviceDateTime.slice(11,16)}`)} type="date" value={serviceDateTime.slice(0,10)} /></FormField>
@@ -2967,7 +2986,62 @@ function NewNoteModal({
             </div>
         ) : null}
 
-        {!isOperativeNote && !isAdmissionNote && !isNurseNote ? (
+        {isEDNote ? (
+          <div className="grid items-start gap-3 sm:grid-cols-2">
+            <ClinicalTextArea
+              label="Current Issues"
+              onChange={(value) => {
+                setSubjective(value);
+                if (formError === edClinicalError) setFormError("");
+              }}
+              placeholder="Enter current issues..."
+              value={subjective}
+            />
+            <ClinicalTextArea
+              label="Assessment"
+              onChange={(value) => {
+                setAssessment(value);
+                if (formError === edClinicalError) setFormError("");
+              }}
+              placeholder="Enter assessment..."
+              value={assessment}
+            />
+            <ClinicalTextArea
+              label="Clinical Exam"
+              onChange={(value) => {
+                setObjective(value);
+                if (formError === edClinicalError) setFormError("");
+              }}
+              placeholder="Enter clinical exam..."
+              value={objective}
+            />
+            <ClinicalTextArea
+              label="Impression"
+              onChange={(value) => {
+                setMedicalAssessment(value);
+                if (formError === edClinicalError) setFormError("");
+              }}
+              placeholder="Enter impression..."
+              value={medicalAssessment}
+            />
+            <div className="sm:col-span-2">
+              <ClinicalTextArea
+                label="Treatment Plan"
+                onChange={(value) => {
+                  setPlan(value);
+                  if (formError === edClinicalError) setFormError("");
+                }}
+                placeholder="Enter treatment plan..."
+                value={plan}
+              />
+            </div>
+            {formError === edClinicalError ? (
+              <span className="sm:col-span-2 text-xs font-medium text-destructive">{formError}</span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!isOperativeNote && !isAdmissionNote && !isNurseNote && !isEDNote ? (
         <FormField label={isNurseNote ? "Nursing note" : isPharmacyNote ? "Pharmacy note" : "Clinical note"}>
           <textarea
             autoFocus
@@ -3054,7 +3128,11 @@ function NewNoteModal({
                   setFormError("Name of surgery is required.");
                   return;
                 }
-                if (!isOperativeNote && !content.trim()) {
+                if (isEDNote && !hasEdClinicalDocumentation()) {
+                  setFormError(edClinicalError);
+                  return;
+                }
+                if (!isOperativeNote && !isAdmissionNote && !isEDNote && !content.trim()) {
                   setFormError(contentError);
                   return;
                 }
@@ -4605,6 +4683,20 @@ function NoteDetailsModal({
               ) : null}
             </>
           ) : null}
+          {hasStructuredEdNote(note) ? (
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground">ED Clinical Documentation</h4>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                <NarrativeField label="Current Issues" value={note.subjective} />
+                <NarrativeField label="Assessment" value={note.assessment} />
+                <NarrativeField label="Clinical Exam" value={note.objective} />
+                <NarrativeField label="Impression" value={note.medicalAssessment} />
+                <div className="sm:col-span-2">
+                  <NarrativeField label="Treatment Plan" value={note.plan} />
+                </div>
+              </div>
+            </div>
+          ) : null}
           {note.category === "Surgery Notes" ? (
             <div>
               <h4 className="text-xs font-semibold text-muted-foreground">Surgery Document Context</h4>
@@ -4668,10 +4760,10 @@ function NoteDetailsModal({
               </div>
             </div>
           ) : null}
-          {note.content || (!hasStructuredNursingNote(note) && !hasStructuredObservations(note) && !hasStructuredMedicalNote(note) && !note.pharmacy && !note.alliedHealth && !note.additionalProgress && !note.operative) ? (
+          {(!hasStructuredEdNote(note) && note.content) || (!hasStructuredNursingNote(note) && !hasStructuredObservations(note) && !hasStructuredMedicalNote(note) && !hasStructuredEdNote(note) && !note.pharmacy && !note.alliedHealth && !note.additionalProgress && !note.operative) ? (
             <div>
               <h4 className="text-xs font-semibold text-muted-foreground">
-                {hasStructuredNursingNote(note) || hasStructuredMedicalNote(note) || note.pharmacy || note.alliedHealth || note.additionalProgress || note.operative
+                {hasStructuredNursingNote(note) || hasStructuredMedicalNote(note) || hasStructuredEdNote(note) || note.pharmacy || note.alliedHealth || note.additionalProgress || note.operative
                   ? "Additional Narrative"
                   : note.category === "Nurse Notes"
                     ? "Nursing Note"
@@ -5257,6 +5349,10 @@ function hasStructuredNursingNote(note: Note) {
 
 function hasStructuredMedicalNote(note: Note) {
   return Boolean(note.subjective || note.objective || note.medicalAssessment || note.plan);
+}
+
+function hasStructuredEdNote(note: Note) {
+  return note.category === "ED Notes" && Boolean(note.subjective || note.assessment || note.objective || note.medicalAssessment || note.plan);
 }
 
 function hasStructuredObservations(note: Note) {

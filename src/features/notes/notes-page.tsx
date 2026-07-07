@@ -37,6 +37,10 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type NoteCategory =
+  | "ED Notes"
+  | "Procedural Notes"
+  | "ICU Notes"
+  | "Admission Notes"
   | "Nurse Notes"
   | "Medical Notes"
   | "Surgery Notes"
@@ -289,8 +293,18 @@ type OperativeDocumentation = {
   durationHours?: string;
   durationMinutes?: string;
   operativeDate: string;
+  operationTime: string;
+  anaesthetistName: string;
   operativeFindings: string;
   plan: string;
+};
+
+type AdmissionDocumentation = {
+  [field: string]: string;
+  history: string; pastMedical: string; pastSurgical: string; allergies: string;
+  medication: string; familyHistory: string; socialHistory: string; clinicalExamination: string;
+  impression: string; provisionalDiagnosis: string; treatmentPlan: string; writtenByRole: string;
+  discussedWithConsultant: string; consultantDetails: string;
 };
 
 type Note = {
@@ -299,6 +313,7 @@ type Note = {
   category: NoteCategory;
   specialty: string;
   author: string;
+  designation?: string;
   date: string;
   status: NoteStatus;
   priority: "High" | "Medium" | "Low";
@@ -343,6 +358,7 @@ type Note = {
   alliedHealth?: AlliedHealthDocumentation;
   additionalProgress?: AdditionalProgressDocumentation;
   operative?: OperativeDocumentation;
+  admission?: AdmissionDocumentation;
 };
 
 type CategoryConfig = {
@@ -597,6 +613,10 @@ function calculateObservedPainScore(scale: PainScale, scores: PainAssessment["sc
 }
 
 const categories: CategoryConfig[] = [
+  { id: "ed", label: "ED Notes", shortLabel: "ED", description: "Emergency department assessment and progress notes", count: 0, icon: HeartPulse, accent: "text-red-600", soft: "bg-red-50 dark:bg-red-950/35", specialties: medicalSpecialties },
+  { id: "procedural", label: "Procedural Notes", shortLabel: "Procedural", description: "Procedure details, findings and follow-up", count: 0, icon: ClipboardList, accent: "text-cyan-600", soft: "bg-cyan-50 dark:bg-cyan-950/35", specialties: medicalSpecialties },
+  { id: "icu", label: "ICU Notes", shortLabel: "ICU", description: "Critical care assessment and clinical progress", count: 0, icon: HeartPulse, accent: "text-indigo-600", soft: "bg-indigo-50 dark:bg-indigo-950/35", specialties: medicalSpecialties },
+  { id: "admission", label: "Admission Notes", shortLabel: "Admission", description: "Admission history, examination, diagnosis and treatment plan", count: 0, icon: FilePenLine, accent: "text-teal-600", soft: "bg-teal-50 dark:bg-teal-950/35", specialties: medicalSpecialties },
   {
     id: "medical",
     label: "Medical Notes",
@@ -953,8 +973,16 @@ const emptyOperativeDocumentation: OperativeDocumentation = {
   surgeryName: "",
   duration: "",
   operativeDate: "",
+  operationTime: "",
+  anaesthetistName: "",
   operativeFindings: "",
   plan: "",
+};
+
+const emptyAdmissionDocumentation: AdmissionDocumentation = {
+  history: "", pastMedical: "", pastSurgical: "", allergies: "", medication: "", familyHistory: "",
+  socialHistory: "", clinicalExamination: "", impression: "", provisionalDiagnosis: "", treatmentPlan: "",
+  writtenByRole: "Consultant", discussedWithConsultant: "No", consultantDetails: "",
 };
 
 function toDateTimeLocalValue(date = new Date()) {
@@ -1757,7 +1785,6 @@ function NotesFilterPanel(props: {
         </form>
 
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(280px,1.35fr)_repeat(5,minmax(130px,1fr))]">
-          <FilterRadioGroup label="Priority" name="notes-overview-priority" value={props.priority} options={["All Priorities", "High", "Medium", "Low"]} onChange={props.onPriorityChange} />
           <FilterSelect label="Signed by" value={props.signer} options={["All Signers", ...allSigners]} onChange={props.onSignerChange} />
           <FilterSelect label="Visit scope" value={props.visitScope} options={["All Patient Visits", "Current Visit", "Specific Visit"]} onChange={props.onVisitScopeChange} />
           <FilterSelect label="Follow-up" value={props.followUpFilter} options={["All Follow-up", "Required", "Not Required", "Overdue"]} onChange={props.onFollowUpFilterChange} />
@@ -2012,7 +2039,7 @@ function FilterView(props: {
       [...props.notes].sort((left, right) => {
         if (sortOrder === "Oldest first") return compareNoteDates(left, right);
         if (sortOrder === "Priority") return priorityRank(left.priority) - priorityRank(right.priority);
-        if (sortOrder === "Note title") return left.title.localeCompare(right.title);
+                if (sortOrder === "Note title") return left.title.localeCompare(right.title);
         return compareNoteDates(right, left);
       }),
     [props.notes, sortOrder],
@@ -2100,7 +2127,6 @@ function FilterView(props: {
             <FilterSelect label="Signed by" value={props.signer} options={["All Signers", ...allSigners]} onChange={props.onSignerChange} />
             <div className="grid gap-3 sm:grid-cols-2">
               <FilterSelect label="Status" value={props.status} options={["All Status", "Signed", "Draft", "Pending Review"]} onChange={props.onStatusChange} />
-              <FilterRadioGroup label="Priority" name="notes-filter-priority" value={props.priority} options={["All Priorities", "High", "Medium", "Low"]} onChange={props.onPriorityChange} />
               <FilterSelect label="Follow-up" value={props.followUpFilter} options={["All Follow-up", "Required", "Not Required", "Overdue"]} onChange={props.onFollowUpFilterChange} />
               <FilterSelect label="Escalation" value={props.escalationFilter} options={["All Escalation", "Required", "Not Required"]} onChange={props.onEscalationFilterChange} />
             </div>
@@ -2137,7 +2163,7 @@ function FilterView(props: {
             <p className="text-xs text-muted-foreground">{props.notes.length} matching clinical notes</p>
           </div>
           <div className="grid w-full grid-cols-[minmax(150px,1fr)_92px] gap-3 lg:w-auto">
-            <FilterSelect className="min-w-0" label="Sort" value={sortOrder} options={["Newest first", "Oldest first", "Priority", "Note title"]} onChange={setSortOrder} />
+            <FilterSelect className="min-w-0" label="Sort" value={sortOrder} options={["Newest first", "Oldest first", "Note title"]} onChange={setSortOrder} />
             <FilterSelect className="min-w-0" label="Per page" value={String(pageSize)} options={["10", "25", "50", "100"]} onChange={(value) => setPageSize(Number(value))} />
           </div>
         </div>
@@ -2190,6 +2216,7 @@ function NewNoteModal({
   const [customMedicalSpecialty, setCustomMedicalSpecialty] = React.useState("");
   const [customSpecialtyPopupOpen, setCustomSpecialtyPopupOpen] = React.useState(false);
   const [author, setAuthor] = React.useState("Nurse Mary");
+  const [designation, setDesignation] = React.useState("");
   const [priority, setPriority] = React.useState<Note["priority"]>("Medium");
   const [content, setContent] = React.useState("");
   const [formError, setFormError] = React.useState("");
@@ -2235,17 +2262,19 @@ function NewNoteModal({
   const [pharmacy, setPharmacy] = React.useState<PharmacyDocumentation>(emptyPharmacyDocumentation);
   const [alliedHealth, setAlliedHealth] = React.useState<AlliedHealthDocumentation>(emptyAlliedHealthDocumentation);
   const [additionalProgress, setAdditionalProgress] = React.useState<AdditionalProgressDocumentation>(emptyAdditionalProgressDocumentation);
-  const [specialInstructionEnabled, setSpecialInstructionEnabled] = React.useState(false);
   const [operative, setOperative] = React.useState<OperativeDocumentation>(emptyOperativeDocumentation);
+  const [admission, setAdmission] = React.useState<AdmissionDocumentation>(emptyAdmissionDocumentation);
   const selectedCategory = categories.find((item) => item.label === category) ?? categories[0];
   const isNurseNote = category === "Nurse Notes";
+  const isEDNote = category === "ED Notes";
+  const isAdmissionNote = category === "Admission Notes";
   const isMedicalNote = category === "Medical Notes";
   const isSurgeryNote = category === "Surgery Notes";
   const isOperativeNote = category === "Operative Notes";
   const isPharmacyNote = category === "Pharmacy Notes";
   const isAlliedHealthNote = category === "Allied Health Notes";
   const isAdditionalProgressNote = category === "Special Instruction Notes";
-  const shouldSaveSpecialInstruction = isAdditionalProgressNote || specialInstructionEnabled;
+  const shouldSaveSpecialInstruction = isAdditionalProgressNote;
   const hasSharedClinicalNoteType = isMedicalNote || isSurgeryNote;
   const hasSurgerySpecialty = isSurgeryNote || isOperativeNote;
   const hasCustomSpecialty = isMedicalNote || hasSurgerySpecialty;
@@ -2256,7 +2285,7 @@ function NewNoteModal({
     : isPharmacyNote
       ? "Pharmacy note is required."
       : "Clinical note is required.";
-  const hasPatientVisitContext = isMedicalNote || isSurgeryNote || isOperativeNote || isPharmacyNote || isAlliedHealthNote || shouldSaveSpecialInstruction;
+  const hasPatientVisitContext = isMedicalNote || isSurgeryNote || isOperativeNote || isAdmissionNote || isPharmacyNote || isAlliedHealthNote || shouldSaveSpecialInstruction;
   const isAmendment = isMedicalNote && editingNote?.status === "Signed";
   const observedPainTotal = painScale === "NRS" ? undefined : calculateObservedPainScore(painScale, painDomainScores);
   const savedPainScore = painScale === "NRS" ? painScore : observedPainTotal?.toString() ?? "";
@@ -2299,6 +2328,7 @@ function NewNoteModal({
     setCustomMedicalSpecialty(isCustomMedicalSpecialty || isCustomSurgerySpecialty ? savedSpecialty : "");
     setCustomSpecialtyPopupOpen(false);
     setAuthor(editingNote?.author ?? defaultAuthor);
+    setDesignation(editingNote?.designation ?? "");
     setPriority(editingNote?.priority ?? "Medium");
     setContent(editingNote?.content ?? "");
     setFormError("");
@@ -2356,7 +2386,6 @@ function NewNoteModal({
       ...editingNote?.additionalProgress,
       amendmentReason: "",
     });
-    setSpecialInstructionEnabled(Boolean(editingNote?.additionalProgress) || nextCategory.label === "Special Instruction Notes");
     setOperative({
       ...emptyOperativeDocumentation,
       operativeDate: editingNote?.operative?.operativeDate ?? toDateTimeLocalValue().slice(0, 10),
@@ -2369,6 +2398,7 @@ function NewNoteModal({
           editingNote?.operative?.durationMinutes ? `${editingNote.operative.durationMinutes} minute(s)` : "",
         ].filter(Boolean).join(" "),
     });
+    setAdmission({ ...emptyAdmissionDocumentation, ...editingNote?.admission });
   }, [editingNote, initialCategory, initialMedicalNoteSection, open]);
 
   function changeSpecialty(value: string) {
@@ -2423,6 +2453,10 @@ function NewNoteModal({
     setOperative((current) => ({ ...current, [field]: value }));
   }
 
+  function updateAdmission<K extends keyof AdmissionDocumentation>(field: K, value: AdmissionDocumentation[K]) {
+    setAdmission((current) => ({ ...current, [field]: value }));
+  }
+
   function submitNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (hasCustomSpecialty && specialty === "Others" && !customMedicalSpecialty.trim()) {
@@ -2445,7 +2479,7 @@ function NewNoteModal({
       setFormError("Name of surgery is required.");
       return;
     }
-    if (!isOperativeNote && !content.trim()) {
+    if (!isOperativeNote && !isAdmissionNote && !content.trim()) {
       setFormError(contentError);
       return;
     }
@@ -2474,6 +2508,7 @@ function NewNoteModal({
       author: isOperativeNote
           ? operative.surgeonName.trim()
           : author.trim(),
+      designation: isEDNote ? designation.trim() : undefined,
       assessment: isNurseNote ? assessment.trim() : undefined,
       bloodPressureDiastolic: isNurseNote ? bloodPressureDiastolic : undefined,
       bloodPressureSystolic: isNurseNote ? bloodPressureSystolic : undefined,
@@ -2505,6 +2540,7 @@ function NewNoteModal({
       additionalProgress: shouldSaveSpecialInstruction ? additionalProgress : undefined,
       alliedHealth: isAlliedHealthNote ? { ...alliedHealth, sessionDateTime: serviceDateTime } : undefined,
       operative: isOperativeNote ? operative : undefined,
+      admission: isAdmissionNote ? admission : undefined,
       authenticatedSigner: hasPatientVisitContext ? authenticatedSigner.trim() : undefined,
       encounterId: hasPatientVisitContext ? encounterId.trim() : undefined,
       medicalAssessment: isMedicalNote ? medicalAssessment.trim() : undefined,
@@ -2547,7 +2583,7 @@ function NewNoteModal({
       }
     >
       <form className="notes-select-safe min-w-0 space-y-3" noValidate onSubmit={submitNote}>
-        {hasPatientVisitContext ? (
+        {hasPatientVisitContext && !isAdmissionNote ? (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border bg-surface-muted/30 px-3 py-2">
             <div className="text-xs">
               <span className="text-muted-foreground">Patient</span>
@@ -2562,13 +2598,15 @@ function NewNoteModal({
         ) : null}
 
         <div className="grid items-start gap-3 sm:grid-cols-2">
-          {isMedicalNote && medicalNoteSection === "ED Notes" ? (
+          {(isMedicalNote && medicalNoteSection === "ED Notes") || isEDNote ? (
             <FormField label="Name">
               <Input onChange={(event) => setAuthor(event.target.value)} placeholder="Enter name" value={author} />
             </FormField>
           ) : null}
-          <PriorityRadioGroup onChange={setPriority} value={priority} />
-          {!isAdditionalProgressNote && !isPharmacyNote ? (
+          {isEDNote ? <FormField label="Designation">
+            <Input onChange={(event) => setDesignation(event.target.value)} placeholder="Enter designation" value={designation} />
+          </FormField> : null}
+          {!isAdditionalProgressNote && !isPharmacyNote && !isNurseNote && !isAdmissionNote ? (
             <FormField label="Specialty">
               {isSurgeryNote ? (
                 <SurgerySpecialtyField
@@ -2612,7 +2650,7 @@ function NewNoteModal({
               ) : null}
             </FormField>
           ) : null}
-          {!isOperativeNote ? (
+          {!isOperativeNote && !isNurseNote && !isAdmissionNote ? (
             <div className={cn((isAdditionalProgressNote || isPharmacyNote) && "sm:col-span-2")}>
               <FormField label="Date and time">
                 <Input onChange={(event) => setServiceDateTime(event.target.value)} type="datetime-local" value={serviceDateTime} />
@@ -2663,6 +2701,12 @@ function NewNoteModal({
                 <FormField label="Date">
                   <Input onChange={(event) => updateOperative("operativeDate", event.target.value)} type="date" value={operative.operativeDate} />
                 </FormField>
+                <FormField label="Time of Operation">
+                  <Input onChange={(event) => updateOperative("operationTime", event.target.value)} type="time" value={operative.operationTime} />
+                </FormField>
+                <FormField label="Name of Anaesthetist">
+                  <Input onChange={(event) => updateOperative("anaesthetistName", event.target.value)} placeholder="Enter anaesthetist name" value={operative.anaesthetistName} />
+                </FormField>
               </div>
             </FormSection>
             <section className="rounded-lg border border-border bg-surface-muted/25 p-4">
@@ -2674,7 +2718,27 @@ function NewNoteModal({
           </>
         ) : null}
 
+        {isAdmissionNote ? (
+          <section><div className="grid items-start gap-3 sm:grid-cols-2">
+            <FormField label="Date"><Input onChange={(event) => setServiceDateTime(`${event.target.value}T${serviceDateTime.slice(11,16)}`)} type="date" value={serviceDateTime.slice(0,10)} /></FormField>
+            <FormField label="Time"><Input onChange={(event) => setServiceDateTime(`${serviceDateTime.slice(0,10)}T${event.target.value}`)} type="time" value={serviceDateTime.slice(11,16)} /></FormField>
+            {([ ["history", "History"], ["pastMedical", "Past Medical"], ["pastSurgical", "Past Surgical"], ["allergies", "Allergies"], ["medication", "Medication"], ["familyHistory", "Family History"], ["socialHistory", "Social History"], ["clinicalExamination", "Clinical Examination"], ["impression", "Impression"], ["provisionalDiagnosis", "Provisional Diagnosis"], ["treatmentPlan", "Treatment Plan"] ] as Array<[keyof AdmissionDocumentation, string]>).map(([field, label]) => <ClinicalTextArea key={field} label={label} onChange={(value) => updateAdmission(field, value)} placeholder={`Enter ${label.toLowerCase()}...`} value={admission[field]} />)}
+            <FormField label="Note Written by"><SearchableSelect className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" onChange={(event) => updateAdmission("writtenByRole", event.target.value)} value={admission.writtenByRole}><option>Consultant</option><option>Resident</option><option>Plan</option></SearchableSelect></FormField>
+            <FormField label="Discussed with Consultant?"><SearchableSelect className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" onChange={(event) => updateAdmission("discussedWithConsultant", event.target.value)} value={admission.discussedWithConsultant}><option>No</option><option>Yes</option></SearchableSelect></FormField>
+          </div></section>
+        ) : null}
+
         {isNurseNote ? (
+          <div className="grid items-start gap-3 sm:grid-cols-2">
+            <FormField label="Designation"><Input onChange={(event) => setSpecialty(event.target.value)} placeholder="Enter designation" value={specialty} /></FormField>
+            <FormField label="Time"><Input onChange={(event) => setServiceDateTime(`${serviceDateTime.slice(0,10)}T${event.target.value}`)} type="time" value={serviceDateTime.slice(11,16)} /></FormField>
+            <FormField label="Date"><Input onChange={(event) => setServiceDateTime(`${event.target.value}T${serviceDateTime.slice(11,16)}`)} type="date" value={serviceDateTime.slice(0,10)} /></FormField>
+            <ClinicalTextArea label="Clinical Progress" onChange={setContent} placeholder="Enter clinical progress..." value={content} />
+            <ClinicalTextArea label="Clinical Assessment" onChange={setAssessment} placeholder="Enter clinical assessment..." value={assessment} />
+          </div>
+        ) : null}
+
+        {isNurseNote && false ? (
             <div className="grid items-start gap-3 sm:grid-cols-2">
               <FormField label="Temperature">
                 <Input min="25" max="50" step="0.1" onChange={(event) => setTemperature(event.target.value)} placeholder="36.8 °C" type="number" value={temperature} />
@@ -2869,18 +2933,6 @@ function NewNoteModal({
             </div>
         ) : null}
 
-        {!isAdditionalProgressNote ? (
-          <label className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary/40 hover:bg-primary/5">
-            <input
-              checked={specialInstructionEnabled}
-              className="h-4 w-4 rounded border-input"
-              onChange={(event) => setSpecialInstructionEnabled(event.target.checked)}
-              type="checkbox"
-            />
-            <span>Special Instruction Note</span>
-          </label>
-        ) : null}
-
         {shouldSaveSpecialInstruction ? (
             <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
             <div className="mb-3 text-sm font-semibold text-foreground">Special Instruction Note</div>
@@ -2915,7 +2967,7 @@ function NewNoteModal({
             </div>
         ) : null}
 
-        {!isOperativeNote ? (
+        {!isOperativeNote && !isAdmissionNote && !isNurseNote ? (
         <FormField label={isNurseNote ? "Nursing note" : isPharmacyNote ? "Pharmacy note" : "Clinical note"}>
           <textarea
             autoFocus
@@ -4508,17 +4560,16 @@ function NoteDetailsModal({
       {note ? (
         <div className="space-y-4">
           <div className="grid gap-3 rounded-md border border-border bg-surface-muted/45 p-3 sm:grid-cols-2 lg:grid-cols-4">
-            {note.category === "Medical Notes" && (note.medicalNoteSection ?? "ED Notes") === "ED Notes" ? (
+            {note.category === "ED Notes" || (note.category === "Medical Notes" && (note.medicalNoteSection ?? "ED Notes") === "ED Notes") ? (
               <DetailField label="Name" value={note.author} />
             ) : null}
+            {note.category === "ED Notes" ? <DetailField label="Designation" value={note.designation || "Not recorded"} /> : null}
             <DetailField label="Date & Time" value={note.date} />
             <div>
               <div className="text-[11px] font-semibold text-muted-foreground">Status</div>
               <div className="mt-1"><StatusLabel status={note.status} /></div>
             </div>
             <div>
-              <div className="text-[11px] font-semibold text-muted-foreground">Priority</div>
-              <div className="mt-1 text-xs"><PriorityLabel priority={note.priority} /></div>
             </div>
           </div>
           {note.category === "Medical Notes" ? (
@@ -4569,6 +4620,7 @@ function NoteDetailsModal({
             </div>
           ) : null}
           {note.category === "Operative Notes" && note.operative ? <OperativeNoteDetails note={note} /> : null}
+          {note.category === "Admission Notes" && note.admission ? <AdmissionNoteDetails note={note} /> : null}
           {note.category === "Pharmacy Notes" && note.pharmacy ? <PharmacyNoteDetails note={note} /> : null}
           {note.category === "Allied Health Notes" && note.alliedHealth ? <AlliedHealthNoteDetails note={note} /> : null}
           {note.additionalProgress ? <AdditionalProgressNoteDetails note={note} /> : null}
@@ -4740,6 +4792,8 @@ function OperativeNoteDetails({ note }: { note: Note }) {
           <DetailField label="Name of Surgery" value={operative.surgeryName || "Not recorded"} />
           <DetailField label="Duration" value={duration} />
           <DetailField label="Date" value={formatServiceDateTime(operative.operativeDate)} />
+          <DetailField label="Time of Operation" value={operative.operationTime || "Not recorded"} />
+          <DetailField label="Name of Anaesthetist" value={operative.anaesthetistName || "Not recorded"} />
           <DetailField label="Authenticated Signer" value={note.authenticatedSigner || note.signedBy || "Not authenticated"} />
         </div>
       </div>
@@ -4751,6 +4805,129 @@ function OperativeNoteDetails({ note }: { note: Note }) {
       </div>
     </>
   );
+}
+
+const admissionTabs = [
+  { id: "admission", label: "Admission History & Physical" },
+  { id: "past", label: "Past History" },
+  { id: "personal", label: "Personal History" },
+  { id: "family", label: "Family History" },
+  { id: "general", label: "General Examination" },
+  { id: "systemic", label: "Systemic Examination" },
+  { id: "neuro", label: "Neurological" },
+  { id: "diagnosis", label: "Diagnosis & Investigations" },
+  { id: "plan", label: "Plan of Care" },
+  { id: "reassessment", label: "Re-assessment" },
+] as const;
+
+export function AdmissionPdfAssessmentForm({ admission, onChange }: { admission: Record<string, string>; onChange: (field: string, value: string) => void }) {
+  const [tab, setTab] = React.useState<(typeof admissionTabs)[number]["id"]>("admission");
+  const text = (field: string, label: string) => <ClinicalTextArea key={field} label={label} onChange={(value) => onChange(field, value)} placeholder="" value={admission[field] ?? ""} />;
+  const input = (field: string, label: string, type = "text") => <FormField key={field} label={label}><Input onChange={(event) => onChange(field, event.target.value)} type={type} value={admission[field] ?? ""} /></FormField>;
+  const select = (field: string, label: string, options = ["No", "Yes"]) => <FormField key={field} label={label}><SearchableSelect className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" onChange={(event) => onChange(field, event.target.value)} value={admission[field] ?? ""}><option value="">Select</option>{options.map((option) => <option key={option}>{option}</option>)}</SearchableSelect></FormField>;
+  const yesNo = (field: string, label: string) => <div className="grid grid-cols-[minmax(120px,1fr)_auto_auto] items-center gap-5 border-b border-border/60 py-2 text-xs" key={field}><span className="font-medium">{label}</span>{["Yes", "No"].map((value) => <label className="flex items-center gap-2" key={value}><input checked={admission[field] === value} name={field} onChange={() => onChange(field, value)} type="radio" />{value}</label>)}</div>;
+  const checklist = (field: string, values: string[]) => { const selected = (admission[field] ?? "").split("|").filter(Boolean); return <div className="space-y-1.5">{values.map((value) => <label className="flex items-center gap-2 text-xs" key={value}><input checked={selected.includes(value)} onChange={() => onChange(field, selected.includes(value) ? selected.filter((item) => item !== value).join("|") : [...selected, value].join("|"))} type="checkbox" />{value}</label>)}</div>; };
+
+  return <section className="space-y-4">
+    <div className="overflow-x-auto border-b border-border">
+      <div className="flex min-w-max gap-1">
+        {admissionTabs.map((item) => <button className={cn("border-b-2 px-3 py-2 text-xs font-semibold", tab === item.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")} key={item.id} onClick={() => setTab(item.id)} type="button">{item.label}</button>)}
+      </div>
+    </div>
+    <div className="grid items-start gap-3 sm:grid-cols-2">
+      {tab === "admission" ? <>
+        <div className="rounded-lg border border-border bg-surface-muted/20 p-4 sm:col-span-2">
+          <div className="mb-3 text-xs font-bold uppercase tracking-wide">Patient Details</div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{input("patientName", "Name")}{input("patientAge", "Age")}{input("patientSex", "Sex")}{input("bedNumber", "Bed No.")}{input("ipNumber", "I.P. No.")}{input("consultant", "Consultant")}</div>
+        </div>
+        {input("startTime", "Start Time", "time")}{select("allergyStatus", "Allergies", ["None", "Yes"])}
+        {text("allergyDetails", "Drugs / Food / Latex / Dyes / Contrast / Other")}{text("allergyReaction", "Reaction")}
+        <div className="grid overflow-hidden rounded-lg border border-border sm:col-span-2 sm:grid-cols-3 lg:grid-cols-6">
+          {([ ["Neuro", ["Weakness", "Blackouts", "Decreased Vision", "Headaches"]], ["Cardio", ["Oedema", "SOB", "Palpitations", "Chest Pain"]], ["Resp.", ["Cough", "SOB", "Haemoptysis", "Wheeze", "Sputum"]], ["Gastro", ["Vomiting/Nausea", "Diarrhoea", "Heartburn", "Weight Loss", "Bleeding", "Jaundice"]], ["GU", ["Haematuria", "Frequency", "Hesitancy", "Burning", "Incontinence"]], ["Other", ["Rash", "Urticaria", "Bone Pain", "Joint Pain"]] ] as const).map(([name, items]) => <div className="border-b border-border p-3 sm:border-r" key={name}><div className="mb-2 text-xs font-bold">{name}</div>{checklist(`review${name}`, [...items])}</div>)}
+        </div>
+        {text("presentComplaints", "Present Complaints")}{text("history", "History of Present Illness")}
+        <div className="overflow-x-auto rounded-lg border border-border sm:col-span-2">
+          <div className="border-b border-border bg-surface-muted/50 px-3 py-2 text-xs font-bold uppercase">Current Treatment</div>
+          <table className="w-full min-w-[720px] border-collapse text-xs">
+            <thead className="bg-surface-muted/30 text-muted-foreground"><tr>{["Name of Medication", "Dose", "Route", "Frequency", "To be continued in Hospital - Yes / No"].map((heading) => <th className="border-b border-r border-border px-2 py-2 text-left font-semibold last:border-r-0" key={heading}>{heading}</th>)}</tr></thead>
+            <tbody>{[1, 2, 3, 4, 5].map((row) => <tr key={row}>
+              {(["medication", "dose", "route", "frequency"] as const).map((field) => <td className="border-b border-r border-border p-1.5" key={field}><Input aria-label={`${field} ${row}`} className="shadow-none" onChange={(event) => onChange(`treatment${row}${field}`, event.target.value)} value={admission[`treatment${row}${field}`] ?? ""} /></td>)}
+              <td className="border-b border-border p-1.5"><select aria-label={`Continue treatment ${row}`} className="h-9 w-full rounded-md border border-input bg-background px-2" onChange={(event) => onChange(`treatment${row}continue`, event.target.value)} value={admission[`treatment${row}continue`] ?? ""}><option value="">Select</option><option>Yes</option><option>No</option></select></td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+      </> : null}
+      {tab === "past" ? <>
+        <div className="overflow-x-auto rounded-lg border border-border sm:col-span-2">
+          <div className="border-b border-border bg-surface-muted/50 px-3 py-2 text-xs font-bold uppercase">Past History</div>
+          <table className="w-full min-w-[620px] border-collapse text-xs">
+            <thead className="bg-surface-muted/30 text-muted-foreground"><tr><th className="border-b border-r border-border px-3 py-2 text-left">Condition</th><th className="border-b border-r border-border px-3 py-2 text-left">Yes / No</th><th className="border-b border-border px-3 py-2 text-left">If Yes, Since When</th></tr></thead>
+            <tbody>{(["Hypertension", "Diabetes", "Tuberculosis", "IHD", "Others"] as const).map((condition) => <tr key={condition}>
+              <td className="border-b border-r border-border px-3 py-2 font-medium">{condition}</td>
+              <td className="border-b border-r border-border px-3 py-2"><div className="flex gap-5">{["Yes", "No"].map((value) => <label className="flex items-center gap-2" key={value}><input checked={admission[`past${condition}`] === value} name={`past${condition}`} onChange={() => onChange(`past${condition}`, value)} type="radio" />{value}</label>)}</div></td>
+              <td className="border-b border-border p-1.5"><Input disabled={admission[`past${condition}`] !== "Yes"} onChange={(event) => onChange(`past${condition}Since`, event.target.value)} value={admission[`past${condition}Since`] ?? ""} /></td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+      </> : null}
+      {tab === "personal" ? <>
+        <div className="rounded-lg border border-border p-4 sm:col-span-2"><div className="mb-2 text-xs font-bold uppercase">Personal History</div>{(["Smoking", "Alcohol", "Drugs", "Tobacco"] as const).map((item) => yesNo(`personal${item}`, item))}</div>
+        {input("personalHistoryDetails", "If Yes - Since / Per day / Frequency")}
+        {select("diet", "Diet", ["Veg", "Non-Veg"])}
+        {input("menarcheAge", "MH: Menarchy - Yrs.")}{select("menstrualRegular", "Regular")}{select("menstrualFlow", "Flow", ["Scanty", "Moderate", "Severe"])}{input("menstrualDuration", "Duration - days")}
+        {select("pregnancy", "Pregnancy")}{input("gravida", "Gravida")}{input("para", "Para")}{select("normalDelivery", "Normal Delivery")}
+        <div className="rounded-md border border-border bg-surface-muted/30 p-3 text-xs leading-5 sm:col-span-2">I hereby declare that the facts recorded above are based on my narration and are accurate to the best of my knowledge.</div>
+        {input("declarantName", "Name of Patient / Relative / Accompanying Person")}{input("relationship", "Relationship with Patient")}
+        {input("declarationSignature", "Signature")}{input("declarationDate", "Date", "date")}
+      </> : null}
+      {tab === "family" ? <div className="rounded-lg border border-border p-4 sm:col-span-2"><div className="mb-2 text-xs font-bold uppercase">Family History</div>{(["Hypertension", "Heart disease", "Diabetes", "Tuberculosis", "Epilepsy", "Asthma", "Stroke", "Arthritis/Gout", "Cancer", "Any other chronic disease"] as const).map((item) => yesNo(`family${item}`, item))}</div> : null}
+      {tab === "general" ? <>
+        {text("generalAppearance", "General Appearance")}{input("temperature", "Temp")}{input("pulse", "Pulse")}{input("respiratoryRate", "R/R")}
+        {input("bloodPressure", "Blood Pressure")}{select("pallor", "Pallor")}{select("jaundice", "Jaundice")}{select("cyanosis", "Cyanosis")}
+        {select("peripheralOedema", "Peripheral Oedema")}{text("oedemaSite", "Pedal / Sacral / Face")}{text("headNeck", "Head / Eyes / Ears / Nose / Throat / Neck")}
+      </> : null}
+      {tab === "systemic" ? <>
+        {input("heartRate", "Heart - HR")}{select("heartRhythm", "Heart - Rhythm", ["Regular", "Irregular"])}{input("heartBp", "Heart - BP")}{select("jvp", "JVP", ["Elevated", "Not elevated", "Not visible"])}{text("heartSounds", "HS / Any Murmur")}
+        {select("dyspnoea", "Dyspnoea")}{input("dyspnoeaDegree", "Degree")}{input("spo2", "SpO₂")}{input("oxygen", "Air/O₂ @ L/mt")}{input("chestRr", "Chest/Lung - RR")}{text("auscultation", "On Auscultation")}
+        {text("abdomen", "Abdomen: Soft / Rigidity / Guarding / Distension / Liver / Spleen / Kidneys / Ascitis / Bowel Sound")}{text("skin", "Skin")}{text("extremitiesSpine", "Extremities / Spine")}
+      </> : null}
+      {tab === "neuro" ? <>
+        {text("cranialNerves", "Cranial Nerves Iâ€“XII")}{text("limbTone", "Limb Tone")}{text("limbPower", "Limb Power (RUL, LUL, RLL, LLL)")}
+        {text("reflexes", "Reflexes")}{text("coordination", "Coordination")}{text("sensation", "Sensation")}
+        {text("neuroFindings", "Further Comments / Findings")}{input("amtsScore", "AMTS Score /10")}{input("gcsScore", "GCS Score /15")}
+      </> : null}
+      {tab === "diagnosis" ? <>
+        {text("lymphatic", "Lymphatic")}{select("rectalStatus", "Rectal Examination", ["Declined", "Not indicated"])}{text("rectalExamination", "Rectal Examination Findings")}{select("breastStatus", "Examination of Breasts", ["Declined", "Not indicated"])}{text("breastExamination", "Examination of Breasts Findings")}
+        {select("pelvicStatus", "Pelvic Examination / External Genitalia", ["Declined", "Not indicated"])}{text("pelvicExamination", "Pelvic Examination / External Genitalia Findings")}{text("provisionalDiagnosis", "Provisional Diagnosis")}
+        {text("laboratoryInvestigations", "Investigation: CBC / ECG / CXR / ABG / HbA1C / Blood Sugar / LFT / RFT / TFT / Viral Markers / Lipid Profile / Trop-T / Blood Group / Urine R/E/C&S / Coagulation Screen")}
+        {text("imagingInvestigations", "X-Ray / CT Scan / MRI / USG / ECHO / Others")}{text("finalDiagnosis", "Final Diagnosis")}
+        {text("plannedSurgery", "Surgery Planned During Hospitalization")}
+      </> : null}
+      {tab === "plan" ? <>
+        <div className="sm:col-span-2">{text("treatmentPlan", "Plan of Care")}</div>
+        {input("rmoName", "Name of RMO / Registrar")}{input("rmoSignature", "RMO / Registrar Signature")}{input("rmoTime", "Time", "time")}{input("rmoDate", "Date", "date")}
+        {input("consultantName", "History Verified by Consultant - Name")}{input("consultantSignature", "Consultant Signature")}{input("consultantTime", "Consultant Time", "time")}{input("consultantDate", "Consultant Date", "date")}
+      </> : null}
+      {tab === "reassessment" ? <div className="sm:col-span-2">{text("reassessment", "Re-assessment or Modification in Plan of Care")}</div> : null}
+    </div>
+  </section>;
+}
+
+function AdmissionNoteDetails({ note }: { note: Note }) {
+  const admission = note.admission;
+  if (!admission) return null;
+  return <div className="grid gap-3 sm:grid-cols-2">
+    <NarrativeField label="History" value={admission.history} /><NarrativeField label="Past Medical" value={admission.pastMedical} />
+    <NarrativeField label="Past Surgical" value={admission.pastSurgical} /><NarrativeField label="Allergies" value={admission.allergies} />
+    <NarrativeField label="Medication" value={admission.medication} /><NarrativeField label="Family History" value={admission.familyHistory} />
+    <NarrativeField label="Social History" value={admission.socialHistory} /><NarrativeField label="Clinical Examination" value={admission.clinicalExamination} />
+    <NarrativeField label="Impression" value={admission.impression} /><NarrativeField label="Provisional Diagnosis" value={admission.provisionalDiagnosis} />
+    <NarrativeField label="Treatment Plan" value={admission.treatmentPlan} />
+    <div className="grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2">
+      <DetailField label="Note Written by" value={admission.writtenByRole} /><DetailField label="Discussed with Consultant?" value={admission.discussedWithConsultant} />
+      <DetailField label="Date & Time" value={formatServiceDateTime(note.serviceDateTime)} />
+    </div>
+  </div>;
 }
 
 function PharmacyNoteDetails({ note }: { note: Note }) {
@@ -5124,7 +5301,7 @@ function NotesTable({ actions, notes: rows, compact = false }: { actions: NoteTa
       <table className="w-full min-w-[780px] border-collapse text-xs">
         <thead className="bg-surface-muted/70 text-muted-foreground">
           <tr>
-            {["Note Title", "Category", "Specialty", "Date & Time", "Status", "Priority", "Actions"].map((heading) => (
+            {["Note Title", "Category", "Specialty", "Date & Time", "Status", "Actions"].map((heading) => (
               <th className="border-b border-border px-3 py-2 text-left text-[11px] font-semibold" key={heading}>{heading}</th>
             ))}
           </tr>
@@ -5137,7 +5314,6 @@ function NotesTable({ actions, notes: rows, compact = false }: { actions: NoteTa
               <td className="border-b border-border px-3 py-2.5">{note.specialty}</td>
               <td className="whitespace-nowrap border-b border-border px-3 py-2.5 text-muted-foreground">{note.date}</td>
               <td className="border-b border-border px-3 py-2.5"><StatusLabel status={note.status} /></td>
-              <td className="border-b border-border px-3 py-2.5"><PriorityLabel priority={note.priority} /></td>
               <td className="border-b border-border px-3 py-2.5">
                 <div className="flex items-center gap-1">
                   <button

@@ -63,6 +63,8 @@ import {
   MedicationTimelineWorkspace,
   NursingTaskBoardWorkspace,
   PatientBoardWorkspace,
+  RaiseIssueToUnitNurseWorkspace,
+  ShiftPendingSummaryWorkspace,
   ShiftHandoverWorkspace,
   WorkflowReportsWorkspace,
 } from "@/features/nursing-icu/components/nursing-icu-workflow";
@@ -144,6 +146,8 @@ type NursingIcuPageId =
   | "patient-board"
   | "arrival-bed-allocation"
   | "shift-handover"
+  | "shift-pending-summary"
+  | "raise-issue"
   | "tasks"
   | "monitoring-chart"
   | "vitals"
@@ -244,6 +248,8 @@ const pageMeta: Record<NursingIcuPageId, { title: string; description: string; i
   "patient-board": { title: "ICU Patient Board", description: "Bed-wise patient board for monitoring, medication, notes, transfer, and discharge actions.", icon: BedDouble },
   "arrival-bed-allocation": { title: "Patient Arrival & Bed Allocation", description: "Unit nurse workflow for ICU arrival, bed allocation, nurse assignment, doctor assignment, and initial condition capture.", icon: Plus },
   "shift-handover": { title: "Shift Handover", description: "Outgoing and incoming nurse handover with checklist, pending tasks, IV fluids, transfusion, alerts, and acknowledgement.", icon: ClipboardCheck },
+  "shift-pending-summary": { title: "Shift Pending Summary", description: "Patient-wise pending care, active issues, medicines, tests, and next-shift follow-up.", icon: ClipboardCheck },
+  "raise-issue": { title: "Raise Issue to Unit Nurse", description: "Ward nurse issue escalation to unit nurse with selected patient context.", icon: AlertTriangle },
   tasks: { title: "Nurse Task List", description: "Task board for medication, vitals, IV checks, transfusion monitoring, sample collection, hygiene, and documentation.", icon: ListChecks },
   "monitoring-chart": { title: "ICU Monitoring Chart", description: "24-hour ICU chart with vitals, GCS, oxygen support, ventilator status, urine output, medications, notes, and audit cues.", icon: Activity },
   vitals: { title: "Nurse Entry", description: "Capture vitals, oxygen support, GCS, pain score, blood sugar, weight, notes, trends, and abnormal highlights.", icon: HeartPulse },
@@ -453,7 +459,7 @@ function NursingIcuModulePageInner({
   const chromeLessPage = page === "transfer-discharge";
   const cleanCommandPages: NursingIcuPageId[] = ["operational-analytics", "clinical-analytics", "device-analytics", "pilot-outcome", "adoption-analytics", "users-roles", "configuration", "audit-logs"];
   const isCleanCommandPage = cleanCommandPages.includes(page);
-  const hiddenModuleTabPages: NursingIcuPageId[] = ["dashboard", "executive-dashboard", "executive-drilldown", "executive-documentation", "executive-owner", "executive-action", "notifications-tasks", "patient-search", "patient-overview", "progress-notes", "doctor-order-entry", "orders-care-plans", "family-communication", "arrival-bed-allocation", "smart-bed-view", "icu-operations", "device-monitoring", "edge-device-management", "connectivity-dashboard", "signal-health", "patient-risk-center", "patient-risk-drilldown", "early-warning-scores", "alerts", "doctor-rounds", "icu-round-2", "escalation-center", "remote-command-center", "remote-consultations", "escalated-cases", "tele-icu-readiness", "tele-icu-local-team", "tele-icu-remote-md", "tele-icu-sla", "escalated-trigger", "escalated-severity", "escalated-source", "escalated-owner-chain", "escalated-sla", "escalated-action", "escalated-outcome", "head-nurse-console", "unit-nurse-console", "unit-assigned-patients", "unit-bed-nurse-link", "unit-pending-vitals", "unit-pending-medicines", "unit-pending-orders", "unit-pending-tasks", "unit-critical-alerts", "unit-first-level-review", "unit-escalation-decision", "unit-escalation-tracking", "ward-nurse-activities", "shift-handover", "tasks", "medicine-receive-verify", "medication-administration", "patient-medication"];
+  const hiddenModuleTabPages: NursingIcuPageId[] = ["dashboard", "executive-dashboard", "executive-drilldown", "executive-documentation", "executive-owner", "executive-action", "notifications-tasks", "patient-search", "patient-overview", "progress-notes", "doctor-order-entry", "orders-care-plans", "family-communication", "arrival-bed-allocation", "smart-bed-view", "icu-operations", "device-monitoring", "edge-device-management", "connectivity-dashboard", "signal-health", "patient-risk-center", "patient-risk-drilldown", "early-warning-scores", "alerts", "doctor-rounds", "icu-round-2", "escalation-center", "remote-command-center", "remote-consultations", "escalated-cases", "tele-icu-readiness", "tele-icu-local-team", "tele-icu-remote-md", "tele-icu-sla", "escalated-trigger", "escalated-severity", "escalated-source", "escalated-owner-chain", "escalated-sla", "escalated-action", "escalated-outcome", "head-nurse-console", "unit-nurse-console", "unit-assigned-patients", "unit-bed-nurse-link", "unit-pending-vitals", "unit-pending-medicines", "unit-pending-orders", "unit-pending-tasks", "unit-critical-alerts", "unit-first-level-review", "unit-escalation-decision", "unit-escalation-tracking", "ward-nurse-activities", "shift-handover", "shift-pending-summary", "raise-issue", "tasks", "medicine-receive-verify", "medication-administration", "patient-medication"];
   const useNurseEntryReviewTabs = page === "vitals" || page === "nurse-review";
   const hideModuleTabs = chromeLessPage || hiddenModuleTabPages.includes(page) || useNurseEntryReviewTabs || isCleanCommandPage;
   const streamlinedPage = (hideModuleTabs && !isCleanCommandPage) || page === "intake-output" || page === "medicine-receive-verify" || page === "head-nurse-console" || page === "unit-nurse-console" || page === "unit-assigned-patients" || page === "unit-bed-nurse-link" || page === "unit-pending-vitals" || page === "unit-pending-medicines" || page === "unit-pending-orders" || page === "unit-pending-tasks" || page === "unit-critical-alerts" || page === "unit-first-level-review" || page === "unit-escalation-decision" || page === "unit-escalation-tracking" || page === "ward-nurse-activities";
@@ -558,6 +564,8 @@ function NursingIcuModulePageInner({
       {page === "patient-board" ? <PatientBoardWorkspace patients={filteredPatients} /> : null}
       {page === "arrival-bed-allocation" ? <AdmissionWizardWorkspace /> : null}
       {page === "shift-handover" ? (handoverView === "summary" ? <UnitShiftSummary /> : <ShiftHandoverWorkspace />) : null}
+      {page === "shift-pending-summary" ? <ShiftPendingSummaryWorkspace /> : null}
+      {page === "raise-issue" ? <RaiseIssueToUnitNurseWorkspace /> : null}
       {page === "tasks" ? <NursingTaskBoardWorkspace /> : null}
       {page === "monitoring-chart" ? <MonitoringChart /> : null}
       {page === "vitals" ? <VitalsCharting /> : null}
@@ -8609,16 +8617,38 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
   const activeWardNurse = getActiveWardNurseName();
   const activeWardUnit = getActiveWardNurseUnit();
   const assignedPatients = sourcePatients.filter((patient) => patient.assignedWardNurse === activeWardNurse);
-  const rows = assignedPatients.map(buildWardNursePatientWorkRow);
+  const seededUnverifiedPatientIds = React.useMemo(() => new Set(assignedPatients.slice(0, 3).map((patient) => patient.id)), [activeWardNurse, assignedPatients.length]);
+  const verificationStorageKey = React.useMemo(() => `ward-nurse-session-verification:${activeWardNurse}`, [activeWardNurse]);
+  const [verifiedProfileIds, setVerifiedProfileIds] = React.useState<Set<string>>(() => readWardNurseSessionVerifiedIds(verificationStorageKey));
+  const [verificationRow, setVerificationRow] = React.useState<WardNursePatientWorkRow | null>(null);
+  const [search, setSearch] = React.useState("");
+  const rows = assignedPatients
+    .map(buildWardNursePatientWorkRow)
+    .sort((first, second) => {
+      const firstVerified = !seededUnverifiedPatientIds.has(first.patient.id) || verifiedProfileIds.has(first.patient.id);
+      const secondVerified = !seededUnverifiedPatientIds.has(second.patient.id) || verifiedProfileIds.has(second.patient.id);
+      if (firstVerified !== secondVerified) return firstVerified ? 1 : -1;
+      return first.patient.bedNo.localeCompare(second.patient.bedNo);
+    });
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredRows = normalizedSearch
+    ? rows.filter((row) => wardNursePatientSearchText(row, activeWardUnit).includes(normalizedSearch))
+    : rows;
   const pageSize = 10;
   const [page, setPage] = React.useState(1);
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const pageStart = (page - 1) * pageSize;
-  const visibleRows = rows.slice(pageStart, pageStart + pageSize);
+  const visibleRows = filteredRows.slice(pageStart, pageStart + pageSize);
 
   React.useEffect(() => {
     setPage(1);
-  }, [activeWardNurse, assignedPatients.length]);
+    setVerifiedProfileIds(readWardNurseSessionVerifiedIds(verificationStorageKey));
+    setVerificationRow(null);
+  }, [activeWardNurse, assignedPatients.length, verificationStorageKey]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   return (
     <div className="space-y-2">
@@ -8628,25 +8658,36 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
             <h2 className="text-xl font-black tracking-tight text-slate-950">My Assigned Patients</h2>
             <p className="mt-0.5 text-sm font-semibold text-slate-500">{activeWardNurse} | {activeWardUnit}</p>
           </div>
-          <span className="inline-flex w-fit items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-sm font-black text-sky-700">{assignedPatients.length} patient(s)</span>
+          <div className="flex flex-col gap-2 sm:min-w-[340px] sm:items-end">
+            <span className="inline-flex w-fit items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-sm font-black text-sky-700">{filteredRows.length} patient(s)</span>
+            <div className="relative w-full sm:max-w-[340px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <Input
+                className="h-10 pl-9 text-sm font-semibold"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search patient, bed, MRN..."
+                value={search}
+              />
+            </div>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1320px] border-collapse bg-white text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-950">
               <tr>
-                <th className="w-[220px] px-5 py-3.5 text-left">Patient / Bed</th>
+                <th className="sticky left-0 z-30 w-[220px] bg-slate-50 px-5 py-3.5 text-left shadow-[8px_0_14px_-16px_rgba(15,23,42,0.55)]">Patient / Bed</th>
                 <th className="w-[170px] px-3 py-3.5 text-center">Profile Verification</th>
                 <th className="w-[190px] px-3 py-3.5 text-center">Assessment / Vitals</th>
                 <th className="w-[160px] px-3 py-3.5 text-center">Medication</th>
                 <th className="w-[205px] px-3 py-3.5 text-center">Doctor Orders</th>
-                <th className="w-[180px] px-3 py-3.5 text-center">I/O & Events</th>
+                <th className="w-[180px] px-3 py-3.5 text-center">Events</th>
                 <th className="w-[180px] px-3 py-3.5 text-center">Handover / Issue</th>
                 <th className="w-[155px] px-3 py-3.5 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
               {visibleRows.map((row) => {
-                const profileTone: WardNurseCompactTone = row.latestVital ? "success" : "warning";
+                const profileVerified = !seededUnverifiedPatientIds.has(row.patient.id) || verifiedProfileIds.has(row.patient.id);
                 const assessmentTone: WardNurseCompactTone = row.latestVital?.abnormal ? "danger" : row.latestVital ? "success" : "warning";
                 const medicationTone: WardNurseCompactTone = row.dueMeds.some((med) => med.status === "Late") ? "danger" : row.dueMeds.length ? "warning" : "success";
                 const orderTone: WardNurseCompactTone = row.activeOrders.length + row.activeTasks.length ? "warning" : "success";
@@ -8655,7 +8696,7 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
 
                 return (
                   <tr className="border-b border-slate-200 align-middle last:border-b-0 hover:bg-slate-50/70" key={row.patient.id}>
-                    <td className={cn("border-r border-slate-200 px-5 py-4", "border-l-4", wardNurseRowAccentClass(patientDashboardTone(row.patient)))}>
+                    <td className={cn("sticky left-0 z-20 border-r border-slate-200 bg-white px-5 py-4 shadow-[8px_0_14px_-16px_rgba(15,23,42,0.55)]", "border-l-4", wardNurseRowAccentClass(patientDashboardTone(row.patient)))}>
                       <Link className="block rounded-md p-1 transition hover:bg-white hover:shadow-sm" href={icuPatientDetailHref(row.patient.id, "overview")}>
                         <p className={cn("truncate text-base font-black", dashboardToneTextClass(patientDashboardTone(row.patient)))}>{row.patient.patientName}</p>
                         <p className="mt-2 truncate text-sm font-black text-slate-950">{row.patient.bedNo} | {activeWardUnit}</p>
@@ -8663,84 +8704,89 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
                       </Link>
                     </td>
                     <td className="px-3 py-4 text-center">
-                      <WardNurseQueueCell
-                        detail={row.latestVital ? `${row.patient.assignedWardNurse} | allergies checked` : "Initial assessment pending"}
-                        href={icuPatientDetailHref(row.patient.id, "overview")}
-                        title={row.latestVital ? "Verified" : "Verify now"}
-                        tone={profileTone}
+                      <WardNurseProfileVerificationCell
+                        onVerifyNow={() => setVerificationRow(row)}
+                        verified={profileVerified}
                       />
                     </td>
                     <td className="px-3 py-4 text-center">
                       <WardNurseQueueCell
+                        disabled={!profileVerified}
                         detail={row.latestVital ? `${row.latestVital.time} | SpO2 ${row.latestVital.spo2}% | BP ${row.latestVital.bp}` : "No vitals entered"}
-                        href={`/icu-command-center/nursing/nurse-entry?patientId=${row.patient.id}`}
+                        href={`/icu-command-center/nursing/nurse-entry?patientId=${row.patient.id}&locked=1`}
                         title={row.latestVital?.abnormal ? "Review vitals" : row.latestVital ? "Updated" : "Enter vitals"}
                         tone={assessmentTone}
                       />
                     </td>
                     <td className="px-3 py-4 text-center">
                       <WardNurseQueueCell
+                        disabled={!profileVerified}
                         detail={row.dueMeds[0] ? `${row.dueMeds[0].scheduledTime} | ${row.dueMeds[0].medication}` : "No due medicine"}
-                        href={`/icu-command-center/nursing/medication-administration?patientId=${row.patient.id}`}
+                        href={`/icu-command-center/nursing/medication-administration?patientId=${row.patient.id}&focus=medication&locked=1`}
                         title={row.dueMeds.length ? `${row.dueMeds.length} due` : "Clear"}
                         tone={medicationTone}
                       />
                     </td>
                     <td className="px-3 py-4 text-center">
                       <WardNurseQueueCell
+                        disabled={!profileVerified}
                         detail={row.activeOrders[0]?.instruction ?? row.activeTasks[0]?.title ?? "No open order"}
-                        href={`/icu-command-center/nursing/tasks-assessments?taskTab=dashboard&patientId=${row.patient.id}`}
-                        title={`${row.activeOrders.length + row.activeTasks.length} item(s)`}
+                        href={`/icu-command-center/nursing/order?patientId=${row.patient.id}&locked=1`}
+                        title={row.activeOrders.length + row.activeTasks.length ? `${row.activeOrders.length + row.activeTasks.length} item(s)` : "Clear"}
                         tone={orderTone}
                       />
                     </td>
                     <td className="px-3 py-4 text-center">
                       <WardNurseQueueCell
+                        disabled={!profileVerified}
                         detail={row.openAlerts[0]?.message ?? (row.pendingIo.length ? "I/O needs review" : "No open event")}
-                        href={icuPatientDetailHref(row.patient.id, "events")}
+                        href={icuPatientDetailHref(row.patient.id, "events", undefined, `${row.openAlerts.length ? "eventFocus=open-alerts" : "eventFocus=action-needed"}&locked=1`)}
                         title={row.openAlerts.length ? `${row.openAlerts.length} alert(s)` : row.pendingIo.length ? "I/O review" : "Clear"}
                         tone={eventTone}
                       />
                     </td>
                     <td className="px-3 py-4 text-center">
                       <WardNurseQueueCell
+                        disabled={!profileVerified}
                         detail={row.openAlerts.length || row.activeTasks.length ? "Carry forward if not closed" : "Ready for handover"}
-                        href="/icu-command-center/nursing/shift-handover?view=summary"
+                        href={`/icu-command-center/nursing/shift-handover?patientId=${row.patient.id}&locked=1`}
                         title={row.openAlerts.length || row.activeTasks.length ? "Pending" : "Ready"}
                         tone={handoverTone}
                       />
                     </td>
                     <td className="px-3 py-4 text-center">
                       <div className="flex items-center justify-center gap-3">
-                        <Link className="group flex flex-col items-center gap-1.5" href={icuPatientDetailHref(row.patient.id, "overview")}>
-                          <span className="inline-flex size-10 items-center justify-center rounded-full bg-slate-800 text-white shadow-sm transition group-hover:bg-sky-700">
-                            <Eye className="size-4" aria-hidden="true" />
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-700">Open</span>
-                        </Link>
-                        <Link className="group flex flex-col items-center gap-1.5" href={icuPatientDetailHref(row.patient.id, "collaborate")}>
-                          <span className="inline-flex size-10 items-center justify-center rounded-full bg-slate-800 text-white shadow-sm transition group-hover:bg-sky-700">
-                            <ExternalLink className="size-4" aria-hidden="true" />
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-700">Raise issue</span>
-                        </Link>
+                        <WardNurseRoundAction
+                          disabled={!profileVerified}
+                          href={icuPatientDetailHref(row.patient.id, "overview", undefined, "locked=1")}
+                          icon={Eye}
+                          label="Open"
+                        />
+                        <WardNurseRoundAction
+                          disabled={!profileVerified}
+                          href={icuPatientDetailHref(row.patient.id, "collaborate", undefined, "action=raise-unit-issue&locked=1")}
+                          icon={ExternalLink}
+                          label="Raise Issue"
+                        />
                       </div>
                     </td>
                   </tr>
                 );
               })}
-              {!rows.length ? (
+              {!filteredRows.length ? (
                 <tr>
-                  <td className="px-3 py-10 text-center text-sm font-semibold text-slate-500" colSpan={8}>No ICU patient is assigned to {activeWardNurse}.</td>
+                  <td className="px-3 py-10 text-center text-sm font-semibold text-slate-500" colSpan={8}>
+                    {rows.length ? "No assigned patient matches this search." : `No ICU patient is assigned to ${activeWardNurse}.`}
+                  </td>
                 </tr>
               ) : null}
             </tbody>
           </table>
         </div>
-        {rows.length > pageSize ? (
+        {filteredRows.length > pageSize ? (
           <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-3 text-xs font-semibold text-slate-600 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Showing {pageStart + 1}-{Math.min(pageStart + visibleRows.length, rows.length)} of {rows.length}
+              Showing {pageStart + 1}-{Math.min(pageStart + visibleRows.length, filteredRows.length)} of {filteredRows.length}
             </span>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}>
@@ -8754,7 +8800,60 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
           </div>
         ) : null}
       </div>
+      <WardNursePatientVerificationDialog
+        activeWardNurse={activeWardNurse}
+        onOpenChange={(open) => {
+          if (!open) setVerificationRow(null);
+        }}
+        onVerify={(patientId) => {
+          setVerifiedProfileIds((current) => {
+            const next = new Set(current);
+            next.add(patientId);
+            writeWardNurseSessionVerifiedIds(verificationStorageKey, next);
+            return next;
+          });
+          toast.success("Patient profile verified");
+          setVerificationRow(null);
+          window.location.href = `/icu-command-center/nursing/nurse-entry?patientId=${patientId}&locked=1`;
+        }}
+        row={verificationRow}
+      />
     </div>
+  );
+}
+
+function WardNurseRoundAction({
+  disabled,
+  href,
+  icon: Icon,
+  label,
+}: {
+  disabled?: boolean;
+  href: string;
+  icon: typeof Eye;
+  label: string;
+}) {
+  const content = (
+    <>
+      <span className={cn("inline-flex size-10 items-center justify-center rounded-full text-white shadow-sm transition", disabled ? "bg-slate-300" : "bg-slate-800 group-hover:bg-sky-700")}>
+        <Icon className="size-4" aria-hidden="true" />
+      </span>
+      <span className={cn("text-[11px] font-bold", disabled ? "text-slate-400" : "text-slate-700")}>{label}</span>
+    </>
+  );
+
+  if (disabled) {
+    return (
+      <button className="flex cursor-not-allowed flex-col items-center gap-1.5" disabled title="Verify patient profile first" type="button">
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link className="group flex flex-col items-center gap-1.5" href={href}>
+      {content}
+    </Link>
   );
 }
 
@@ -8765,10 +8864,33 @@ function buildWardNursePatientWorkRow(patient: IcuPatient): WardNursePatientWork
     latestVital: [...patientVitals].reverse()[0],
     openAlerts: icuAlerts.filter((row) => row.patientId === patient.id && row.status !== "Resolved"),
     activeTasks: icuTasks.filter((row) => row.patientId === patient.id && row.status !== "Completed"),
-    dueMeds: medicationRows.filter((row) => row.patientId === patient.id && ["Due", "Late", "Received", "Verified"].includes(row.status)),
+    dueMeds: medicationRows.filter((row) => row.patientId === patient.id && ["Due", "Late"].includes(row.status)),
     activeOrders: doctorInstructions.filter((row) => row.patientId === patient.id && row.status !== "Completed"),
     pendingIo: intakeOutputRows.filter((row) => row.patientId === patient.id && row.status !== "Signed"),
   };
+}
+
+function wardNursePatientSearchText(row: WardNursePatientWorkRow, activeWardUnit: string) {
+  return [
+    row.patient.patientName,
+    row.patient.mrn,
+    row.patient.bedNo,
+    row.patient.ageGender,
+    row.patient.unit,
+    activeWardUnit,
+    row.patient.diagnosis,
+    row.patient.currentStatus,
+    row.latestVital?.bp,
+    row.latestVital?.spo2,
+    row.latestVital?.note,
+    ...row.dueMeds.map((medication) => `${medication.medication} ${medication.status} ${medication.scheduledTime}`),
+    ...row.activeOrders.map((order) => `${order.instruction} ${order.status} ${order.doctor}`),
+    ...row.activeTasks.map((task) => `${task.title} ${task.status} ${task.assignedTo}`),
+    ...row.openAlerts.map((alert) => `${alert.type} ${alert.message} ${alert.severity}`),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 }
 
 type WardNurseCompactTone = "success" | "warning" | "danger" | "neutral";
@@ -8781,13 +8903,372 @@ function getActiveWardNurseUnit() {
   return "General ICU";
 }
 
-function WardNurseQueueCell({ detail, href, title, tone }: { detail: string; href: string; title: string; tone: WardNurseCompactTone }) {
+function readWardNurseSessionVerifiedIds(storageKey: string) {
+  if (typeof window === "undefined") return new Set<string>();
+  try {
+    const stored = window.sessionStorage.getItem(storageKey);
+    const ids = stored ? JSON.parse(stored) : [];
+    return new Set<string>(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function writeWardNurseSessionVerifiedIds(storageKey: string, ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(storageKey, JSON.stringify(Array.from(ids)));
+  } catch {
+    // Session verification is demo-only; storage failure should not block care flow.
+  }
+}
+
+function WardNurseQueueCell({
+  detail,
+  disabled,
+  href,
+  title,
+  tone,
+}: {
+  detail: string;
+  disabled?: boolean;
+  href: string;
+  title: string;
+  tone: WardNurseCompactTone;
+}) {
   void detail;
+  const pill = (
+    <span
+      className={cn(
+        "mx-auto inline-flex min-w-20 items-center justify-center rounded-md px-3 py-1.5 text-xs font-black text-white shadow-sm",
+        disabled ? "bg-slate-300 text-white shadow-none" : wardNurseSolidToneClass(tone),
+      )}
+    >
+      {disabled ? "Locked" : title}
+    </span>
+  );
+
+  if (disabled) {
+    return (
+      <button
+        className="mx-auto flex min-h-10 max-w-[170px] cursor-not-allowed items-center justify-center rounded-md px-1.5 py-1 text-center"
+        disabled
+        title="Verify patient profile first"
+        type="button"
+      >
+        {pill}
+      </button>
+    );
+  }
+
   return (
     <Link className="mx-auto flex min-h-10 max-w-[170px] items-center justify-center rounded-md px-1.5 py-1 text-center transition hover:bg-slate-50" href={href}>
-      <span className={cn("mx-auto inline-flex min-w-20 items-center justify-center rounded-md px-3 py-1.5 text-xs font-black text-white shadow-sm", wardNurseSolidToneClass(tone))}>{title}</span>
+      {pill}
     </Link>
   );
+}
+
+function WardNurseProfileVerificationCell({ onVerifyNow, verified }: { onVerifyNow: () => void; verified: boolean }) {
+  if (verified) {
+    return (
+      <span className="mx-auto inline-flex min-h-10 max-w-[170px] items-center justify-center rounded-md px-1.5 py-1 text-center">
+        <span className={cn("inline-flex min-w-20 items-center justify-center rounded-md px-3 py-1.5 text-xs font-black text-white shadow-sm", wardNurseSolidToneClass("success"))}>Verified</span>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      className="mx-auto flex min-h-10 max-w-[170px] items-center justify-center rounded-md px-1.5 py-1 text-center transition hover:bg-slate-50"
+      onClick={onVerifyNow}
+      type="button"
+    >
+      <span className={cn("inline-flex min-w-24 items-center justify-center rounded-md px-3 py-1.5 text-xs font-black text-white shadow-sm", wardNurseSolidToneClass("warning"))}>Verify now</span>
+    </button>
+  );
+}
+
+function WardNursePatientVerificationDialog({
+  activeWardNurse,
+  onOpenChange,
+  onVerify,
+  row,
+}: {
+  activeWardNurse: string;
+  onOpenChange: (open: boolean) => void;
+  onVerify: (patientId: string) => void;
+  row: WardNursePatientWorkRow | null;
+}) {
+  if (!row) return <Dialog.Root open={false} onOpenChange={onOpenChange} />;
+
+  const patient = row.patient;
+  const sections = wardNursePatientVerificationSections(row);
+  const patientPhoto = wardNursePatientDummyPhoto(patient);
+
+  return (
+    <Dialog.Root open={Boolean(row)} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[94dvh] w-[min(1180px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
+            <div>
+              <Dialog.Title className="text-xl font-black tracking-tight text-slate-950">Patient Verification</Dialog.Title>
+              <Dialog.Description className="mt-1 text-sm font-semibold text-slate-500">Verify patient details before care or medication.</Dialog.Description>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 sm:flex">
+                <ShieldAlert className="size-4" aria-hidden="true" />
+                Pending verification
+              </div>
+              <Dialog.Close asChild>
+                <Button size="icon" variant="outline"><X className="size-4" aria-hidden="true" /></Button>
+              </Dialog.Close>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/70 p-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="grid gap-4 lg:grid-cols-[minmax(260px,1.1fr)_repeat(4,minmax(0,1fr))] lg:items-center">
+                <div className="flex items-center gap-4">
+                  <img
+                    alt={`${patient.patientName} profile`}
+                    className="size-20 shrink-0 rounded-xl border border-slate-200 bg-slate-100 object-cover shadow-sm"
+                    src={patientPhoto}
+                  />
+                  <div className="min-w-0">
+                    <p className={cn("truncate text-lg font-black", dashboardToneTextClass(patientDashboardTone(patient)))}>{patient.patientName}</p>
+                    <p className="mt-1 text-sm font-bold text-slate-700">{patient.mrn}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">{patient.ageGender} | {patient.currentStatus}</p>
+                  </div>
+                </div>
+                <WardNurseVerificationHeaderItem icon={BedDouble} label="Ward / Bed" value={`${patient.unit} / ${patient.bedNo}`} />
+                <WardNurseVerificationHeaderItem icon={Stethoscope} label="Consultant Doctor" value={patient.consultingDoctor} />
+                <WardNurseVerificationHeaderItem icon={ClipboardCheck} label="Admission No." value={wardNurseAdmissionNo(patient)} />
+                <WardNurseVerificationHeaderItem icon={Clock3} label="Admission Time" value={patient.admissionTime} />
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+              {sections.map((section) => {
+                const Icon = section.icon;
+                return (
+                  <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm" key={section.title}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className={cn("inline-flex size-11 shrink-0 items-center justify-center rounded-full", wardNurseVerificationIconClass(section.tone))}>
+                          <Icon className="size-5" aria-hidden="true" />
+                        </span>
+                        <h3 className="truncate text-base font-black text-slate-950">{section.title}</h3>
+                      </div>
+                      <span className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-800">Check</span>
+                    </div>
+                    <div className="mt-4 space-y-2.5">
+                      {section.rows.map(([label, value]) => (
+                        <div className="grid grid-cols-[18px_minmax(120px,0.9fr)_minmax(0,1.1fr)] items-center gap-2 text-sm" key={label}>
+                          <CheckCircle2 className="size-4 text-emerald-600" aria-hidden="true" />
+                          <span className="font-semibold text-slate-500">{label}</span>
+                          <span className="min-w-0 truncate text-right font-bold text-slate-900" title={value}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {section.note ? (
+                      <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                        {section.note}
+                      </div>
+                    ) : null}
+                  </section>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid gap-3 border-t border-slate-200 bg-white p-4 lg:grid-cols-[220px_220px_minmax(0,1fr)_180px] lg:items-center">
+            <WardNurseVerificationFooterItem label="Verification by" value={activeWardNurse} />
+            <WardNurseVerificationFooterItem label="Verification time" value="Current shift" />
+            <Input className="h-11" placeholder="Notes if any..." />
+            <Button className="h-11 font-black" onClick={() => onVerify(patient.id)}>
+              <CheckCircle2 className="mr-2 size-4" aria-hidden="true" />
+              Verify
+            </Button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function wardNursePatientDummyPhoto(patient: IcuPatient) {
+  const initials = patient.patientName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const isFemale = patient.ageGender.toLowerCase().includes("/f");
+  const skin = isFemale ? "#F2C9B5" : "#D7A27F";
+  const hair = isFemale ? "#1F2937" : "#111827";
+  const shirt = patientDashboardTone(patient) === "danger" || patientDashboardTone(patient) === "critical" ? "#0EA5E9" : "#2563EB";
+  const background = isFemale ? "#EFF6FF" : "#F8FAFC";
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+      <rect width="96" height="96" rx="16" fill="${background}"/>
+      <circle cx="48" cy="40" r="22" fill="${skin}"/>
+      <path d="M25 40c1-18 10-27 25-27 14 0 22 9 22 24 0 5-1 8-2 10-6-10-16-12-24-12-10 0-16 4-21 10-1-2-1-3 0-5z" fill="${hair}"/>
+      <circle cx="40" cy="42" r="2.6" fill="#111827"/>
+      <circle cx="56" cy="42" r="2.6" fill="#111827"/>
+      <path d="M39 54c5 4 13 4 18 0" fill="none" stroke="#7F1D1D" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M16 96c4-22 18-32 32-32s28 10 32 32H16z" fill="${shirt}"/>
+      <text x="48" y="88" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="white">${initials}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function WardNurseVerificationHeaderItem({ icon: Icon, label, value }: { icon: typeof UserRound; label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500">
+        <Icon className="size-4" aria-hidden="true" />
+        {label}
+      </div>
+      <p className="mt-1 truncate text-sm font-black text-slate-950" title={value}>{value}</p>
+    </div>
+  );
+}
+
+function WardNurseVerificationFooterItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <p className="text-xs font-bold uppercase text-slate-500">{label}</p>
+      <p className="mt-1 truncate text-sm font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+type WardNurseVerificationSection = {
+  title: string;
+  icon: typeof UserRound;
+  tone: "blue" | "violet" | "red" | "amber" | "teal" | "slate";
+  rows: Array<[string, string]>;
+  note?: string;
+};
+
+function wardNursePatientVerificationSections(row: WardNursePatientWorkRow): WardNurseVerificationSection[] {
+  const patient = row.patient;
+  const allergyRows = nursingAllergyRows.filter((allergy) => allergy.patientId === patient.id);
+  const relevantAllergies = allergyRows.filter((allergy) => allergy.severity !== "Low");
+  const transfusion = transfusionRows.find((item) => item.patientId === patient.id);
+  const bloodGroup = transfusion?.bloodGroup ?? "Not recorded";
+  const lastTransfusion =
+    transfusion?.startTime && transfusion.startTime.toLowerCase() !== "pending" ? transfusion.startTime : "";
+  const isolationType = wardNurseIsolationType(patient);
+  const fallRisk = patient.criticalityScore >= 8 || patient.currentStatus === "Ventilated" ? "High risk" : patient.criticalityScore >= 6 ? "Moderate risk" : "Routine";
+
+  return [
+    {
+      title: "1. Identity Verification",
+      icon: UserRound,
+      tone: "blue",
+      rows: [
+        ["Patient Name", patient.patientName],
+        ["UHID / MRN", patient.mrn],
+        ["Age / Sex", patient.ageGender],
+        ["Wristband / QR", `${patient.bedNo} matched`],
+      ],
+    },
+    {
+      title: "2. Allergy Verification",
+      icon: AlertTriangle,
+      tone: relevantAllergies.length ? "red" : "violet",
+      rows: [
+        ["Drug Allergy", relevantAllergies[0]?.allergen ?? "NKDA"],
+        ["Reaction", relevantAllergies[0]?.reaction ?? "None recorded"],
+        ["Severity", relevantAllergies[0]?.severity ?? "Low"],
+        ["Allergy Status", relevantAllergies.length ? `${relevantAllergies.length} alert` : "Clear"],
+      ],
+      note: relevantAllergies[0]?.action,
+    },
+    {
+      title: "3. Blood Group Verification",
+      icon: Droplets,
+      tone: "red",
+      rows: [
+        ["Blood Group", bloodGroup],
+        ["Rh Type", wardNurseRhType(bloodGroup)],
+        ["Transfusion Alert", transfusion?.status ?? "No active transfusion"],
+        ["Last Transfusion", lastTransfusion],
+      ],
+    },
+    {
+      title: "4. Admission Verification",
+      icon: ClipboardCheck,
+      tone: "amber",
+      rows: [
+        ["Admission No.", wardNurseAdmissionNo(patient)],
+        ["Admission Time", patient.admissionTime],
+        ["Ward / Bed", `${patient.unit} / ${patient.bedNo}`],
+        ["Admission Type", patient.admissionSource],
+      ],
+    },
+    {
+      title: "5. Isolation Verification",
+      icon: ShieldAlert,
+      tone: "amber",
+      rows: [
+        ["Isolation Required", isolationType === "Standard" ? "No" : "Yes"],
+        ["Isolation Type", isolationType],
+        ["Infection", wardNurseInfectionLabel(patient)],
+        ["Isolation Since", isolationType === "Standard" ? "-" : patient.admissionTime],
+      ],
+      note: isolationType === "Standard" ? undefined : "Use PPE and follow isolation protocol.",
+    },
+    {
+      title: "6. Fall Risk & Code Status",
+      icon: Activity,
+      tone: "teal",
+      rows: [
+        ["Fall Risk", fallRisk],
+        ["Code Status", "Full code"],
+        ["Precautions", patient.ventilatorStatus === "Room air" ? "Side rails" : "Airway support"],
+        ["Latest Vitals", row.latestVital ? `SpO2 ${row.latestVital.spo2}% | BP ${row.latestVital.bp}` : "Pending"],
+      ],
+    },
+  ];
+}
+
+function wardNurseAdmissionNo(patient: IcuPatient) {
+  return `ADM-${patient.mrn.replace(/\D/g, "").slice(-6) || patient.id.replace(/\D/g, "")}`;
+}
+
+function wardNurseRhType(bloodGroup: string) {
+  if (bloodGroup.includes("+")) return "Positive";
+  if (bloodGroup.includes("-")) return "Negative";
+  return "Not recorded";
+}
+
+function wardNurseIsolationType(patient: IcuPatient) {
+  const text = `${patient.diagnosis} ${patient.currentStatus}`.toLowerCase();
+  if (text.includes("septic") || text.includes("infection")) return "Contact isolation";
+  if (text.includes("respiratory") || text.includes("copd")) return "Droplet precautions";
+  if (text.includes("transplant")) return "Protective isolation";
+  return "Standard";
+}
+
+function wardNurseInfectionLabel(patient: IcuPatient) {
+  const text = patient.diagnosis.toLowerCase();
+  if (text.includes("septic")) return "Sepsis watch";
+  if (text.includes("respiratory") || text.includes("copd")) return "Respiratory";
+  if (text.includes("transplant")) return "Immunosuppression";
+  return "Not recorded";
+}
+
+function wardNurseVerificationIconClass(tone: WardNurseVerificationSection["tone"]) {
+  if (tone === "red") return "bg-red-50 text-red-600";
+  if (tone === "amber") return "bg-amber-50 text-amber-600";
+  if (tone === "violet") return "bg-violet-50 text-violet-600";
+  if (tone === "teal") return "bg-teal-50 text-teal-600";
+  if (tone === "blue") return "bg-sky-50 text-sky-600";
+  return "bg-slate-100 text-slate-600";
 }
 
 function wardNurseSolidToneClass(tone: WardNurseCompactTone) {

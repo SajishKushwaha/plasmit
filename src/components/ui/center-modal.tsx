@@ -2,6 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ export function CenterModal({
   children,
   className,
   bodyClassName,
+  scrollToTopOnOpen = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -22,7 +24,16 @@ export function CenterModal({
   children: React.ReactNode;
   className?: string;
   bodyClassName?: string;
+  scrollToTopOnOpen?: boolean;
 }) {
+  const bodyRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open || !scrollToTopOnOpen) return;
+    const frame = requestAnimationFrame(() => bodyRef.current?.scrollTo({ top: 0 }));
+    return () => cancelAnimationFrame(frame);
+  }, [open, scrollToTopOnOpen]);
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -44,7 +55,7 @@ export function CenterModal({
               </Button>
             </Dialog.Close>
           </div>
-          <div className={cn("min-h-0 flex-1 overflow-auto p-3 sm:p-5", bodyClassName)}>{children}</div>
+          <div className={cn("min-h-0 flex-1 overflow-auto p-3 sm:p-5", bodyClassName)} ref={bodyRef}>{children}</div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

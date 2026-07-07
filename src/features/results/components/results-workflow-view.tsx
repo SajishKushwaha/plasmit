@@ -659,19 +659,23 @@ function DateRangeCalendar({
 export function ResultsWorkflowView({
   autoOpenAllDepartment,
   autoOpenLatestDateOnly = false,
+  defaultLatestDateOnly = false,
   initialDepartment = "all",
   defaultDepartment = initialDepartment,
   criticalOnly = false,
   patientContext,
+  showPoctTab = true,
   viewTitle = "Results Center",
   viewDescription = "Laboratory, radiology, and POCT reports organized for IPD review.",
 }: {
   autoOpenAllDepartment?: ResultDepartment;
   autoOpenLatestDateOnly?: boolean;
+  defaultLatestDateOnly?: boolean;
   initialDepartment?: DepartmentFilter;
   defaultDepartment?: DepartmentFilter;
   criticalOnly?: boolean;
   patientContext?: ResultsPatientContext;
+  showPoctTab?: boolean;
   viewTitle?: string;
   viewDescription?: string;
 }) {
@@ -687,6 +691,10 @@ export function ResultsWorkflowView({
   const [printPayload, setPrintPayload] = useState<PrintPayload | null>(null);
   const hasAutoOpenedAllDepartment = useRef(false);
   const dateFilterRef = useRef<HTMLDivElement | null>(null);
+  const visibleDepartments = useMemo(
+    () => (showPoctTab ? departments : departments.filter((department) => department.id !== "poct")),
+    [showPoctTab],
+  );
 
   const records = useMemo(() => scopedPatientRecords(patientContext), [patientContext]);
   const availableDates = useMemo(() => {
@@ -774,6 +782,18 @@ export function ResultsWorkflowView({
     hasAutoOpenedAllDepartment.current = true;
   }, [autoOpenAllDepartment, autoOpenLatestDateOnly, criticalOnly, records]);
 
+  useEffect(() => {
+    if (!defaultLatestDateOnly || selectedDate !== "all") return;
+    const latestDateKey = records
+      .filter((result) => !criticalOnly || result.status === "Critical")
+      .map((result) => getDateKey(result.orderedAt))
+      .sort((first, second) => second.localeCompare(first))[0];
+
+    if (!latestDateKey) return;
+    setSelectedDate(latestDateKey);
+    setOpenGroups((current) => ({ ...current, [latestDateKey]: true }));
+  }, [criticalOnly, defaultLatestDateOnly, records, selectedDate]);
+
   function printReports(recordsToPrint: ResultRecord[], title: string) {
     if (recordsToPrint.length === 0) return;
     const printRecords = recordsToPrint[0]?.department === "laboratory" && recordsToPrint.length > 1
@@ -788,9 +808,9 @@ export function ResultsWorkflowView({
        
 
         <div className="sticky top-[var(--app-header-offset,0px)] z-20 border-b border-border bg-white/95 p-3 backdrop-blur">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {departments.map((department) => {
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-wrap gap-2">
+              {visibleDepartments.map((department) => {
                 const Icon = department.icon;
                 const active = activeDepartment === department.id;
                 const count = counts[department.id];
@@ -811,12 +831,8 @@ export function ResultsWorkflowView({
                 );
               })}
             </div>
-            <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[620px] xl:grid-cols-[minmax(260px,1fr)_260px]">
-              <label className="relative min-w-0">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input className="h-10 pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search report name, report ID..." />
-              </label>
-              <div className="relative min-w-0" ref={dateFilterRef}>
+            <div className="flex w-full shrink-0 sm:w-[260px]">
+              <div className="relative w-full min-w-0" ref={dateFilterRef}>
                 <button
                   className="flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-left text-sm font-semibold text-foreground outline-none transition hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/20"
                   onClick={() => {
@@ -893,6 +909,11 @@ export function ResultsWorkflowView({
           <CardContent className="p-8 text-center">
             <div className="text-base font-semibold text-foreground">No reports found</div>
             <p className="mt-1 text-sm text-muted-foreground">Try a different report name, report ID, date, or tab.</p>
+            {query ? (
+              <Button className="mt-4" variant="outline" onClick={() => setQuery("")}>
+                Clear search
+              </Button>
+            ) : null}
           </CardContent>
         </Card>
       ) : (
@@ -901,17 +922,28 @@ export function ResultsWorkflowView({
             const expanded = openGroups[group.dateKey] ?? index === 0;
             return (
               <section className="overflow-hidden rounded-xl border border-border bg-white shadow-sm transition-all duration-200" key={group.dateKey}>
-                <button
-                  className="flex w-full items-center justify-between gap-3 border-b border-border bg-surface-muted/50 px-4 py-3 text-left transition hover:bg-surface-muted"
-                  onClick={() => setOpenGroups((current) => ({ ...current, [group.dateKey]: !expanded }))}
-                  type="button"
-                >
-                  <div>
+                <div className="flex flex-col gap-3 border-b border-border bg-surface-muted/50 px-4 py-3 transition hover:bg-surface-muted sm:flex-row sm:items-center">
+                  <button
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => setOpenGroups((current) => ({ ...current, [group.dateKey]: !expanded }))}
+                    type="button"
+                  >
                     <div className="text-base font-bold text-foreground">{group.label}</div>
                     <div className="text-xs text-muted-foreground">{group.records.length} report(s) in this date group</div>
-                  </div>
-                  <ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform duration-200", expanded && "rotate-180")} />
-                </button>
+                  </button>
+                  <label className="relative w-full min-w-0 sm:w-[min(440px,46%)]">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input className="h-10 bg-white pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search report name, report ID..." />
+                  </label>
+                  <button
+                    aria-label={expanded ? `Collapse ${group.label}` : `Expand ${group.label}`}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-white"
+                    onClick={() => setOpenGroups((current) => ({ ...current, [group.dateKey]: !expanded }))}
+                    type="button"
+                  >
+                    <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", expanded && "rotate-180")} />
+                  </button>
+                </div>
                 {expanded ? (
                   <div className="space-y-4 p-4 transition-all duration-200">
                     {(activeDepartment === "all" ? departmentCards : departmentCards.filter((card) => card.id === activeDepartment)).map((card) => {

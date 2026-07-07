@@ -1,11 +1,11 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
 import * as React from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import * as Popover from "@radix-ui/react-popover";
 import { useSearchParams } from "next/navigation";
 import {
+  Check,
   CheckCircle2,
   CheckCheck,
   ChevronDown,
@@ -36,15 +36,89 @@ import { CenterModal } from "@/components/ui/center-modal";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-type NoteCategory = "Nurse Notes" | "Medical Notes" | "Pharmacy Notes" | "Allied Health Notes" | "Additional Progress Notes";
+type NoteCategory =
+  | "Nurse Notes"
+  | "Medical Notes"
+  | "Surgery Notes"
+  | "Operative Notes"
+  | "Pharmacy Notes"
+  | "Allied Health Notes"
+  | "Special Instruction Notes";
 type NoteStatus = "Signed" | "Draft" | "Pending Review";
-type MedicalNoteType = "Progress Note" | "Consult Note" | "Discharge Summary" | "Admission History and Physical" | "Procedure Note";
+type GlucoseUnit = "mg/dL" | "mmol/L";
+type PainScale = "NRS" | "CPOT" | "FLACC";
+type CpotAirwayStatus = "INTUBATED" | "NOT_INTUBATED";
+type PainDomainKey =
+  | "cpotFacial"
+  | "cpotBody"
+  | "cpotMuscle"
+  | "cpotDomain4"
+  | "flaccFace"
+  | "flaccLegs"
+  | "flaccActivity"
+  | "flaccCry"
+  | "flaccConsolability";
+type PainAssessment = {
+  scale: PainScale;
+  airwayStatus?: CpotAirwayStatus;
+  scores: Partial<Record<PainDomainKey, number>>;
+  total?: number;
+  severity?: string;
+};
+type PainScoreOption = {
+  score: number;
+  label: string;
+  guidance?: string;
+};
+type NrsPainRange = {
+  id: "none" | "mild" | "moderate" | "severe";
+  label: string;
+  range: string;
+  score: number;
+  condition: string;
+  description: string;
+};
+type TransplantType =
+  | "Kidney transplant"
+  | "Liver transplant"
+  | "Heart transplant"
+  | "Lung transplant"
+  | "Bone marrow (stem cell) transplant";
+type MedicalNoteSection = "ED Notes" | "Physician Notes";
+type MedicalNoteType =
+  | "Progress Note"
+  | "Procedure Note"
+  | "Consultant Notes"
+  | "Family Meeting Notes"
+  | "Pain Medicine Notes"
+  | "Morning Ward Round"
+  | "Afternoon Ward Round"
+  | "Evening Ward Round"
+  | "Operating Notes"
+  | "Surgical Notes"
+  | "Anesthesia Notes"
+  | "End-of-Life Care Notes"
+  | "Others";
 type PharmacyNoteType = "Medication Review" | "Medication Reconciliation" | "Drug Interaction" | "Dose Adjustment" | "Adverse Drug Reaction" | "Medication Counseling" | "Anticoagulation Review" | "Renal Dose Review";
-type AlliedNoteType = "Initial Assessment" | "Treatment Session" | "Progress Review" | "Discharge Summary";
-type AdditionalNoteType = "General Progress Note" | "Follow-up Note" | "Care Coordination Note" | "Patient Education Note" | "Phone Call Note" | "Family Communication Note" | "Handover Note" | "Case Management Note";
+type AlliedNoteType = "Assessment Notes" | "Family Meeting Notes";
+type AdditionalNoteType =
+  | "General Progress Note"
+  | "Follow-up Note"
+  | "Phone Call Note"
+  | "Family Meeting Notes"
+  | "Handover Note"
+  | "Case Management Note"
+  | "Morning Round"
+  | "Evening Round"
+  | "Consultant Notes"
+  | "Care Coordination Note"
+  | "Patient Education Note";
 
 type PharmacyDocumentation = {
   noteType: PharmacyNoteType;
+  medicationPreviousToAdmission: string;
+  medicationCurrently: string;
+  medicationAtDischarge: string;
   medicationName: string;
   medicationCode: string;
   dose: string;
@@ -206,6 +280,19 @@ type AdditionalProgressDocumentation = {
   amendmentReason: string;
 };
 
+type OperativeDocumentation = {
+  surgeonName: string;
+  assistantName: string;
+  otNurseName: string;
+  surgeryName: string;
+  duration: string;
+  durationHours?: string;
+  durationMinutes?: string;
+  operativeDate: string;
+  operativeFindings: string;
+  plan: string;
+};
+
 type Note = {
   id: number;
   title: string;
@@ -226,16 +313,26 @@ type Note = {
   bloodPressureDiastolic?: string;
   pulse?: string;
   painScore?: string;
+  painAssessment?: PainAssessment;
+  temperature?: string;
+  respiratoryRate?: string;
+  spo2?: string;
+  glucose?: string;
+  glucoseMmolL?: string;
+  glucoseUnit?: GlucoseUnit;
+  consciousnessLevel?: string;
+  patientPosition?: string;
   signedBy?: string;
   signedAt?: string;
   signatureAttested?: boolean;
   medicalNoteType?: MedicalNoteType;
+  customMedicalNoteType?: string;
+  transplantType?: TransplantType;
+  medicalNoteSection?: MedicalNoteSection;
   subjective?: string;
   objective?: string;
   medicalAssessment?: string;
   plan?: string;
-  primaryDiagnosis?: string;
-  secondaryDiagnoses?: string;
   practitionerId?: string;
   patientId?: string;
   encounterId?: string;
@@ -245,6 +342,7 @@ type Note = {
   pharmacy?: PharmacyDocumentation;
   alliedHealth?: AlliedHealthDocumentation;
   additionalProgress?: AdditionalProgressDocumentation;
+  operative?: OperativeDocumentation;
 };
 
 type CategoryConfig = {
@@ -266,18 +364,239 @@ type NoteTableActions = {
   onView: (note: Note) => void;
 };
 
-const categories: CategoryConfig[] = [
+const medicalOtherSpecialty = "Others";
+const medicalSpecialties = [
+  "Neurology",
+  "Respiratory Medicine",
+  "Cardiology",
+  "Hepatology",
+  "Infectious Diseases",
+  "Dermatology",
+  "Ophthalmology",
+  "Palliative Care",
+  "Rehabilitation",
+  "Geriatrics",
+  "Radiology",
+  "General Medicine",
+  "Rheumatology",
+  "Immunology",
+  "Gastroenterology",
+  "Reproductive Medicine",
+  "Obstetrics & Gynecology",
+  "Pediatrics",
+  "Endocrinology",
+  "Nephrology",
+  "Psychiatry",
+  "Psychology",
+  "Pain Medicine",
+  medicalOtherSpecialty,
+];
+const diagnosisOtherOption = "Others";
+const medicalDiagnosisBySpecialty: Record<string, string[]> = {
+  Neurology: ["Acute ischemic stroke", "Transient ischemic attack", "Seizure disorder", "Migraine", "Parkinson disease", "Peripheral neuropathy", "Dementia", "Multiple sclerosis"],
+  "Respiratory Medicine": ["Bronchial asthma", "COPD exacerbation", "Pneumonia", "Pleural effusion", "Pulmonary embolism", "Interstitial lung disease", "Tuberculosis"],
+  Cardiology: ["Hypertension", "Stable angina", "Acute coronary syndrome", "Heart failure", "Atrial fibrillation", "Valvular heart disease", "Cardiomyopathy"],
+  Hepatology: ["Acute hepatitis", "Chronic liver disease", "Cirrhosis", "Ascites", "Hepatic encephalopathy", "Portal hypertension"],
+  "Infectious Diseases": ["Sepsis", "Dengue fever", "Malaria", "Enteric fever", "Urinary tract infection", "Cellulitis", "COVID-19"],
+  Dermatology: ["Eczema", "Psoriasis", "Urticaria", "Cellulitis", "Fungal infection", "Drug rash"],
+  Ophthalmology: ["Conjunctivitis", "Cataract", "Glaucoma", "Diabetic retinopathy", "Uveitis"],
+  "Palliative Care": ["Cancer pain", "End-of-life care needs", "Dyspnea management", "Symptom control", "Goals of care discussion"],
+  Rehabilitation: ["Post-stroke rehabilitation", "Post-operative rehabilitation", "Mobility impairment", "Functional decline", "Deconditioning"],
+  Geriatrics: ["Frailty syndrome", "Delirium", "Dementia", "Falls risk", "Polypharmacy", "Functional decline"],
+  Radiology: ["Imaging review pending", "Abnormal radiology finding", "No acute imaging abnormality", "Follow-up imaging advised"],
+  "General Medicine": ["Fever under evaluation", "Anemia", "Electrolyte imbalance", "Diabetes mellitus", "Hypertension", "Acute kidney injury"],
+  Rheumatology: ["Rheumatoid arthritis", "Systemic lupus erythematosus", "Osteoarthritis", "Gout", "Vasculitis"],
+  Immunology: ["Allergic reaction", "Immunodeficiency evaluation", "Autoimmune disorder", "Drug hypersensitivity"],
+  Gastroenterology: ["Acute gastroenteritis", "GERD", "Peptic ulcer disease", "Inflammatory bowel disease", "GI bleeding", "Pancreatitis"],
+  "Reproductive Medicine": ["Infertility evaluation", "PCOS", "Ovulatory dysfunction", "Endometriosis", "Recurrent pregnancy loss"],
+  "Obstetrics & Gynecology": ["Antenatal review", "Abnormal uterine bleeding", "Pelvic inflammatory disease", "Ovarian cyst", "Pregnancy-related hypertension"],
+  Pediatrics: ["Acute febrile illness", "Bronchiolitis", "Pediatric asthma", "Gastroenteritis", "Seizure episode", "Growth concern"],
+  Endocrinology: ["Diabetes mellitus", "Hypothyroidism", "Hyperthyroidism", "Diabetic ketoacidosis", "Adrenal insufficiency"],
+  Nephrology: ["Acute kidney injury", "Chronic kidney disease", "Nephrotic syndrome", "Glomerulonephritis", "Electrolyte disorder"],
+  Psychiatry: ["Major depressive disorder", "Anxiety disorder", "Bipolar disorder", "Psychosis", "Substance use disorder"],
+  Psychology: ["Adjustment disorder", "Anxiety symptoms", "Depressive symptoms", "Stress-related concerns", "Cognitive assessment"],
+  "Pain Medicine": ["Acute pain syndrome", "Chronic pain syndrome", "Neuropathic pain", "Cancer pain", "Post-operative pain"],
+};
+const surgeryOtherSpecialty = "Others";
+const surgerySpecialties = [
+  "Neurosurgery",
+  "Ophthalmology",
+  "ENT",
+  "Cardiothoracic Surgery",
+  "Thoracic Surgery",
+  "Hepatobiliary Surgery",
+  "General Surgery",
+  "Colorectal Surgery",
+  "Upper GI Surgery",
+  "Lower GI Surgery",
+  "Vascular Surgery",
+  "Orthopedic Surgery",
+  "Interventional Radiology",
+  "Gynecology",
+  "Transplant Surgery",
+  "Plastic and Reconstructive Surgery",
+  "Maxillo-facial Surgery",
+  "Urology",
+  surgeryOtherSpecialty,
+];
+
+const cpotDomains: Array<{ key: PainDomainKey; label: string; options: PainScoreOption[] }> = [
   {
-    id: "nurse",
-    label: "Nurse Notes",
-    shortLabel: "Nurse",
-    description: "Nursing assessment, care notes and shift notes",
-    count: 32,
-    icon: HeartPulse,
-    accent: "text-blue-600",
-    soft: "bg-blue-50 dark:bg-blue-950/35",
-    specialties: ["ICU", "Cardiology", "Cardiac Assessment", "Cardiac Rehab", "Burns", "Breast Care", "Aged Care"],
+    key: "cpotFacial",
+    label: "Facial expression",
+    options: [
+      { score: 0, label: "Relaxed, neutral", guidance: "No muscular tension observed in the face" },
+      { score: 1, label: "Tense", guidance: "Frowning, brow lowering, orbit tightening" },
+      { score: 2, label: "Grimacing", guidance: "Eyelids tightly closed, mouth open, or teeth clenched" },
+    ],
   },
+  {
+    key: "cpotBody",
+    label: "Body movements",
+    options: [
+      { score: 0, label: "Absence of movements / normal position", guidance: "Does not move at all or remains in normal position" },
+      { score: 1, label: "Protection", guidance: "Slow cautious movements; touching/rubbing the pain site; guarding" },
+      { score: 2, label: "Restlessness / agitation", guidance: "Pulling tubes, attempting to sit up, thrashing, not following commands, or striking at staff" },
+    ],
+  },
+  {
+    key: "cpotMuscle",
+    label: "Muscle tension",
+    options: [
+      { score: 0, label: "Relaxed", guidance: "No resistance to passive movements" },
+      { score: 1, label: "Tense, rigid", guidance: "Resistance to passive movements" },
+      { score: 2, label: "Very tense or rigid", guidance: "Strong resistance to passive movements; unable to complete them" },
+    ],
+  },
+];
+
+const cpotVentilatorOptions: PainScoreOption[] = [
+  { score: 0, label: "Tolerating ventilator / movement", guidance: "Alarms not activated; ventilation easy" },
+  { score: 1, label: "Coughing but tolerating", guidance: "Coughing; alarms may activate but stop spontaneously" },
+  { score: 2, label: "Fighting ventilator", guidance: "Asynchrony, blocking ventilation, alarms frequently activated" },
+];
+
+const cpotVocalizationOptions: PainScoreOption[] = [
+  { score: 0, label: "Talking in normal tone or no sound" },
+  { score: 1, label: "Sighing, moaning" },
+  { score: 2, label: "Crying out, sobbing" },
+];
+
+const flaccDomains: Array<{ key: PainDomainKey; label: string; options: PainScoreOption[] }> = [
+  {
+    key: "flaccFace",
+    label: "Face",
+    options: [
+      { score: 0, label: "No particular expression or smile" },
+      { score: 1, label: "Occasional grimace or frown; withdrawn, disinterested" },
+      { score: 2, label: "Frequent to constant frown, clenched jaw, quivering chin" },
+    ],
+  },
+  {
+    key: "flaccLegs",
+    label: "Legs",
+    options: [
+      { score: 0, label: "Normal position or relaxed" },
+      { score: 1, label: "Uneasy, restless, tense" },
+      { score: 2, label: "Kicking, or legs drawn up" },
+    ],
+  },
+  {
+    key: "flaccActivity",
+    label: "Activity",
+    options: [
+      { score: 0, label: "Lying quietly, normal position, moves easily" },
+      { score: 1, label: "Squirming, shifting back and forth, tense" },
+      { score: 2, label: "Arched, rigid, or jerking" },
+    ],
+  },
+  {
+    key: "flaccCry",
+    label: "Cry",
+    options: [
+      { score: 0, label: "No cry (awake or asleep)" },
+      { score: 1, label: "Moans or whimpers; occasional complaint" },
+      { score: 2, label: "Crying steadily, screams or sobs; frequent complaints" },
+    ],
+  },
+  {
+    key: "flaccConsolability",
+    label: "Consolability",
+    options: [
+      { score: 0, label: "Content, relaxed" },
+      { score: 1, label: "Reassured by occasional touching/hugging/talking; distractible" },
+      { score: 2, label: "Difficult to console or comfort" },
+    ],
+  },
+];
+
+const nrsPainRanges: NrsPainRange[] = [
+  {
+    id: "none",
+    label: "No pain",
+    range: "0",
+    score: 0,
+    condition: "Comfortable",
+    description: "No pain reported at rest or movement.",
+  },
+  {
+    id: "mild",
+    label: "Mild pain",
+    range: "1-3",
+    score: 2,
+    condition: "Discomforting but tolerable",
+    description: "Pain is present but does not significantly limit activity.",
+  },
+  {
+    id: "moderate",
+    label: "Moderate pain",
+    range: "4-6",
+    score: 5,
+    condition: "Distressing and activity-limiting",
+    description: "Pain interferes with comfort, sleep, or movement.",
+  },
+  {
+    id: "severe",
+    label: "Severe pain",
+    range: "7-10",
+    score: 8,
+    condition: "Intense to unbearable",
+    description: "Pain is severe, very intense, or excruciating.",
+  },
+];
+
+const nrsScalePoints = [
+  { score: 0, label: "No pain", expression: "smile", tone: "bg-emerald-500", rangeId: "none" },
+  { score: 1, label: "Very mild", expression: "smile", tone: "bg-lime-400", rangeId: "mild" },
+  { score: 2, label: "Discomforting", expression: "slight-smile", tone: "bg-lime-400", rangeId: "mild" },
+  { score: 3, label: "Tolerable", expression: "neutral", tone: "bg-yellow-300", rangeId: "mild" },
+  { score: 4, label: "Distressing", expression: "neutral", tone: "bg-yellow-300", rangeId: "moderate" },
+  { score: 5, label: "Very distressing", expression: "concerned", tone: "bg-orange-400", rangeId: "moderate" },
+  { score: 6, label: "Intense", expression: "frown", tone: "bg-orange-400", rangeId: "moderate" },
+  { score: 7, label: "Very intense", expression: "frown", tone: "bg-red-400", rangeId: "severe" },
+  { score: 8, label: "Utterly horrible", expression: "deep-frown", tone: "bg-red-500", rangeId: "severe" },
+  { score: 9, label: "Excruciating unbearable", expression: "cry", tone: "bg-red-600", rangeId: "severe" },
+  { score: 10, label: "Unimaginable unspeakable", expression: "cry", tone: "bg-red-700", rangeId: "severe" },
+] as const;
+
+function getPainSeverity(scale: PainScale, total: number) {
+  if (scale === "CPOT") return total >= 3 ? "Significant pain present" : "Acceptable / minimal pain";
+  if (total === 0) return scale === "FLACC" ? "Relaxed and comfortable" : "No pain";
+  if (total <= 3) return scale === "FLACC" ? "Mild discomfort" : "Mild pain";
+  if (total <= 6) return "Moderate pain";
+  return scale === "FLACC" ? "Severe discomfort / pain" : "Severe pain";
+}
+
+function calculateObservedPainScore(scale: PainScale, scores: PainAssessment["scores"]) {
+  const keys =
+    scale === "CPOT"
+      ? (["cpotFacial", "cpotBody", "cpotMuscle", "cpotDomain4"] as PainDomainKey[])
+      : (["flaccFace", "flaccLegs", "flaccActivity", "flaccCry", "flaccConsolability"] as PainDomainKey[]);
+  if (!keys.every((key) => scores[key] !== undefined)) return undefined;
+  return keys.reduce((total, key) => total + (scores[key] ?? 0), 0);
+}
+
+const categories: CategoryConfig[] = [
   {
     id: "medical",
     label: "Medical Notes",
@@ -287,7 +606,40 @@ const categories: CategoryConfig[] = [
     icon: Stethoscope,
     accent: "text-emerald-600",
     soft: "bg-emerald-50 dark:bg-emerald-950/35",
-    specialties: ["Cardiology", "ICU", "Neurology", "Oncology", "Orthopedics", "General Medicine", "Emergency Medicine"],
+    specialties: medicalSpecialties,
+  },
+  {
+    id: "surgery",
+    label: "Surgery Notes",
+    shortLabel: "Surgical",
+    description: "Pre-operative, operative and post-operative surgical documentation",
+    count: 0,
+    icon: Stethoscope,
+    accent: "text-rose-600",
+    soft: "bg-rose-50 dark:bg-rose-950/35",
+    specialties: surgerySpecialties,
+  },
+  {
+    id: "operative",
+    label: "Operative Notes",
+    shortLabel: "Operative",
+    description: "Structured operative team, procedure, findings and post-operative plan",
+    count: 0,
+    icon: ClipboardList,
+    accent: "text-fuchsia-600",
+    soft: "bg-fuchsia-50 dark:bg-fuchsia-950/35",
+    specialties: surgerySpecialties,
+  },
+  {
+    id: "nurse",
+    label: "Nurse Notes",
+    shortLabel: "Nurse",
+    description: "Nursing assessment, care notes and shift notes",
+    count: 32,
+    icon: HeartPulse,
+    accent: "text-blue-600",
+    soft: "bg-blue-50 dark:bg-blue-950/35",
+    specialties: ["ICU Nurse", "Ward Nurse", "ED Nurse"],
   },
   {
     id: "pharmacy",
@@ -298,58 +650,64 @@ const categories: CategoryConfig[] = [
     icon: Pill,
     accent: "text-violet-600",
     soft: "bg-violet-50 dark:bg-violet-950/35",
-    specialties: ["General", "ICU", "Cardiology", "Oncology", "Renal", "Anticoagulation", "Nutrition Support"],
+    specialties: ["Pharmacy"],
   },
   {
     id: "allied",
     label: "Allied Health Notes",
     shortLabel: "Allied Health",
-    description: "Therapy, nutrition, social work and allied health",
+    description: "Therapy, nutrition, social worker and allied health",
     count: 18,
     icon: UsersRound,
     accent: "text-orange-600",
     soft: "bg-orange-50 dark:bg-orange-950/35",
-    specialties: ["Physiotherapy", "Nutrition", "Social Work", "Occupational Therapy", "Speech Therapy", "Psychology", "Rehabilitation"],
+    specialties: ["Physiotherapy", "Dietitian", "Social Worker", "Occupational Therapy", "Speech Therapy", "Psychology"],
   },
   {
-    id: "additional",
-    label: "Additional Progress Notes",
-    shortLabel: "Additional",
-    description: "Additional progress and follow-up notes",
-    count: 11,
-    icon: ClipboardList,
-    accent: "text-cyan-600",
-    soft: "bg-cyan-50 dark:bg-cyan-950/35",
-    specialties: ["General", "Follow Up", "Care Coordination", "Patient Education", "Phone Call Note", "Family Communication", "Handover", "Case Management"],
+    id: "special-instruction",
+    label: "Special Instruction Notes",
+    shortLabel: "Special Instruction",
+    description: "Progress, handover, family meeting and care coordination notes",
+    count: 0,
+    icon: FilePenLine,
+    accent: "text-sky-600",
+    soft: "bg-sky-50 dark:bg-sky-950/35",
+    specialties: ["General", "Follow Up", "Phone Call Note", "Family Meeting", "Handover", "Case Management", "Morning Round", "Evening Round", "Consultant", "Care Coordination", "Patient Education"],
   },
 ];
+
+const notesCategories = categories;
+
+function getCategoryDisplayLabel(category: string) {
+  return category === "Surgery Notes" ? "Surgical Notes" : category;
+}
 
 const initialNotes: Note[] = [
   { id: 1, title: "Pain Management Note", category: "Nurse Notes", specialty: "ICU", author: "Nurse Mary", date: "26 May 2026, 09:30 AM", status: "Signed", priority: "High" },
   { id: 2, title: "Shift Assessment", category: "Nurse Notes", specialty: "ICU", author: "Nurse Mary", date: "26 May 2026, 06:30 AM", status: "Signed", priority: "Medium" },
   { id: 3, title: "Care Plan Note", category: "Nurse Notes", specialty: "Cardiology", author: "Nurse Anna", date: "25 May 2026, 10:15 PM", status: "Draft", priority: "Low" },
-  { id: 4, title: "Progress Note", category: "Medical Notes", specialty: "Cardiology", author: "Dr. Smith", date: "26 May 2026, 08:15 AM", status: "Signed", priority: "Medium" },
-  { id: 5, title: "Consult Note", category: "Medical Notes", specialty: "Neurology", author: "Dr. William", date: "25 May 2026, 03:20 PM", status: "Signed", priority: "Low" },
-  { id: 6, title: "Discharge Summary", category: "Medical Notes", specialty: "Cardiology", author: "Dr. Smith", date: "25 May 2026, 11:00 AM", status: "Draft", priority: "High" },
+  { id: 4, title: "Progress Note", category: "Medical Notes", medicalNoteSection: "ED Notes", specialty: "Cardiology", author: "Dr. Smith", date: "26 May 2026, 08:15 AM", status: "Signed", priority: "Medium" },
+  { id: 5, title: "Consultant Notes", category: "Medical Notes", medicalNoteSection: "Physician Notes", specialty: "Neurology", author: "Dr. William", date: "25 May 2026, 03:20 PM", status: "Signed", priority: "Low" },
+  { id: 6, title: "Morning Ward Round", category: "Medical Notes", medicalNoteSection: "Physician Notes", specialty: "Cardiology", author: "Dr. Smith", date: "25 May 2026, 11:00 AM", status: "Draft", priority: "High" },
   { id: 7, title: "Medication Review", category: "Pharmacy Notes", specialty: "General", author: "Pharmacist John", date: "25 May 2026, 04:45 PM", status: "Signed", priority: "Medium" },
   { id: 8, title: "Drug Interaction Note", category: "Pharmacy Notes", specialty: "ICU", author: "Pharmacist John", date: "25 May 2026, 01:20 PM", status: "Pending Review", priority: "High" },
   { id: 9, title: "Medication Counseling", category: "Pharmacy Notes", specialty: "General", author: "Pharmacist Anna", date: "24 May 2026, 10:30 AM", status: "Draft", priority: "Low" },
   { id: 10, title: "Physiotherapy Session", category: "Allied Health Notes", specialty: "Physiotherapy", author: "John PT", date: "25 May 2026, 02:20 PM", status: "Draft", priority: "Low" },
-  { id: 11, title: "Nutrition Assessment", category: "Allied Health Notes", specialty: "Nutrition", author: "Dietitian Mary", date: "25 May 2026, 11:40 AM", status: "Signed", priority: "Medium" },
-  { id: 12, title: "Social Work Assessment", category: "Allied Health Notes", specialty: "Social Work", author: "Social Worker", date: "24 May 2026, 03:30 PM", status: "Signed", priority: "Low" },
-  { id: 13, title: "Follow Up Note", category: "Additional Progress Notes", specialty: "Follow Up", author: "Nurse Mary", date: "24 May 2026, 11:10 AM", status: "Draft", priority: "Low" },
-  { id: 14, title: "Care Coordination Note", category: "Additional Progress Notes", specialty: "Care Coordination", author: "Nurse Anna", date: "24 May 2026, 09:40 AM", status: "Signed", priority: "Medium" },
-  { id: 15, title: "Patient Education Note", category: "Additional Progress Notes", specialty: "Patient Education", author: "Nurse Mary", date: "23 May 2026, 04:20 PM", status: "Signed", priority: "Low" },
+  { id: 11, title: "Dietitian Assessment", category: "Allied Health Notes", specialty: "Dietitian", author: "Dietitian Mary", date: "25 May 2026, 11:40 AM", status: "Signed", priority: "Medium" },
+  { id: 12, title: "Social Worker Assessment", category: "Allied Health Notes", specialty: "Social Worker", author: "Social Worker", date: "24 May 2026, 03:30 PM", status: "Signed", priority: "Low" },
+  { id: 13, title: "Follow Up Note", category: "Special Instruction Notes", specialty: "Follow Up", author: "Nurse Mary", date: "24 May 2026, 11:10 AM", status: "Draft", priority: "Low" },
+  { id: 14, title: "Morning Round", category: "Special Instruction Notes", specialty: "Morning Round", author: "Dr. Anna", date: "24 May 2026, 09:40 AM", status: "Signed", priority: "Medium" },
+  { id: 15, title: "Evening Round", category: "Special Instruction Notes", specialty: "Evening Round", author: "Dr. Mary", date: "23 May 2026, 04:20 PM", status: "Signed", priority: "Low" },
   { id: 101, title: "Cardiac Assessment Note", category: "Nurse Notes", specialty: "Cardiac Assessment", author: "Nurse Priya", date: "23 May 2026, 02:15 PM", status: "Signed", priority: "High", content: "Cardiac assessment completed. Rhythm stable, peripheral perfusion adequate and chest discomfort absent at rest." },
   { id: 102, title: "Cardiac Rehabilitation Note", category: "Nurse Notes", specialty: "Cardiac Rehab", author: "Nurse Priya", date: "23 May 2026, 12:30 PM", status: "Draft", priority: "Medium", content: "Patient completed supervised mobilisation and tolerated the planned cardiac rehabilitation activity without distress." },
   { id: 103, title: "Burn Wound Care Note", category: "Nurse Notes", specialty: "Burns", author: "Nurse Mary", date: "22 May 2026, 05:10 PM", status: "Signed", priority: "High", content: "Burn dressing changed using aseptic technique. Wound bed clean with no new signs of infection." },
   { id: 104, title: "Breast Care Nursing Note", category: "Nurse Notes", specialty: "Breast Care", author: "Nurse Anna", date: "22 May 2026, 03:45 PM", status: "Pending Review", priority: "Medium", content: "Post-procedure breast care reviewed. Patient advised on wound observation, support garment use and warning signs." },
   { id: 105, title: "Aged Care Review", category: "Nurse Notes", specialty: "Aged Care", author: "Nurse Mary", date: "22 May 2026, 10:20 AM", status: "Signed", priority: "Medium", content: "Falls risk, skin integrity, hydration and orientation reviewed. Assistance required for transfers and personal care." },
-  { id: 106, title: "ICU Medical Progress Note", category: "Medical Notes", specialty: "ICU", author: "Dr. Smith", date: "23 May 2026, 01:40 PM", status: "Signed", priority: "High", content: "Hemodynamically stable in ICU. Continue close respiratory monitoring and current supportive management.", medicalNoteType: "Progress Note" },
-  { id: 107, title: "Oncology Consult Note", category: "Medical Notes", specialty: "Oncology", author: "Dr. Mehta", date: "22 May 2026, 04:35 PM", status: "Pending Review", priority: "High", content: "Oncology review completed. Treatment response and current blood results discussed with the patient.", medicalNoteType: "Consult Note" },
-  { id: 108, title: "Orthopedic Progress Note", category: "Medical Notes", specialty: "Orthopedics", author: "Dr. William", date: "22 May 2026, 02:25 PM", status: "Signed", priority: "Medium", content: "Pain and limb function improving. Continue protected mobilisation and repeat imaging as planned.", medicalNoteType: "Progress Note" },
-  { id: 109, title: "General Medicine Review", category: "Medical Notes", specialty: "General Medicine", author: "Dr. Smith", date: "22 May 2026, 11:50 AM", status: "Draft", priority: "Medium", content: "General medical review completed. Chronic conditions remain stable and medication plan was reconciled.", medicalNoteType: "Progress Note" },
-  { id: 110, title: "Emergency Medicine Note", category: "Medical Notes", specialty: "Emergency Medicine", author: "Dr. Rao", date: "21 May 2026, 08:15 PM", status: "Signed", priority: "High", content: "Emergency assessment completed. Immediate causes of deterioration addressed and patient transferred for ongoing monitoring.", medicalNoteType: "Procedure Note" },
+  { id: 106, title: "Respiratory Medical Progress Note", category: "Medical Notes", medicalNoteSection: "ED Notes", specialty: "Respiratory Medicine", author: "Dr. Smith", date: "23 May 2026, 01:40 PM", status: "Signed", priority: "High", content: "Hemodynamically stable. Continue close respiratory monitoring and current supportive management.", medicalNoteType: "Progress Note" },
+  { id: 107, title: "Palliative Care Consultant Note", category: "Medical Notes", medicalNoteSection: "Physician Notes", specialty: "Palliative Care", author: "Dr. Mehta", date: "22 May 2026, 04:35 PM", status: "Pending Review", priority: "High", content: "Palliative care review completed. Treatment goals and symptom control discussed with the patient.", medicalNoteType: "Consultant Notes" },
+  { id: 108, title: "Cardiology Progress Note", category: "Medical Notes", medicalNoteSection: "Physician Notes", specialty: "Cardiology", author: "Dr. William", date: "22 May 2026, 02:25 PM", status: "Signed", priority: "Medium", content: "Pain and function improving. Continue protected mobilisation and repeat imaging as planned.", medicalNoteType: "Progress Note" },
+  { id: 109, title: "Geriatrics Review", category: "Medical Notes", medicalNoteSection: "Physician Notes", specialty: "Geriatrics", author: "Dr. Smith", date: "22 May 2026, 11:50 AM", status: "Draft", priority: "Medium", content: "Medical review completed. Chronic conditions remain stable and medication plan was reconciled.", medicalNoteType: "Progress Note" },
+  { id: 110, title: "ED Procedure Note", category: "Medical Notes", medicalNoteSection: "ED Notes", specialty: "Radiology", author: "Dr. Rao", date: "21 May 2026, 08:15 PM", status: "Signed", priority: "High", content: "Emergency assessment completed. Immediate causes of deterioration addressed and patient transferred for ongoing monitoring.", medicalNoteType: "Procedure Note" },
   { id: 111, title: "Cardiology Medication Review", category: "Pharmacy Notes", specialty: "Cardiology", author: "Pharmacist John", date: "23 May 2026, 10:35 AM", status: "Signed", priority: "Medium", content: "Cardiac medicines reviewed for dose, duplication and blood pressure effect. No immediate medication safety issue identified." },
   { id: 112, title: "Oncology Medication Safety Note", category: "Pharmacy Notes", specialty: "Oncology", author: "Pharmacist Anna", date: "22 May 2026, 05:25 PM", status: "Pending Review", priority: "High", content: "Anticancer supportive medicines reviewed against current laboratory results and interaction risks." },
   { id: 113, title: "Renal Dose Review", category: "Pharmacy Notes", specialty: "Renal", author: "Pharmacist John", date: "22 May 2026, 01:15 PM", status: "Signed", priority: "High", content: "Renal function reviewed. Dose adjustment recommended for medicines cleared primarily by the kidneys." },
@@ -358,20 +716,43 @@ const initialNotes: Note[] = [
   { id: 116, title: "Occupational Therapy Assessment", category: "Allied Health Notes", specialty: "Occupational Therapy", author: "Therapist Neha", date: "23 May 2026, 09:20 AM", status: "Signed", priority: "Medium", content: "Daily living activities and home safety needs assessed. Adaptive equipment recommendations discussed." },
   { id: 117, title: "Speech Therapy Review", category: "Allied Health Notes", specialty: "Speech Therapy", author: "Therapist Riya", date: "22 May 2026, 03:10 PM", status: "Pending Review", priority: "High", content: "Speech clarity and swallow safety reviewed. Modified texture and supervised intake remain recommended." },
   { id: 118, title: "Psychology Session Note", category: "Allied Health Notes", specialty: "Psychology", author: "Dr. Kapoor", date: "22 May 2026, 11:30 AM", status: "Draft", priority: "Medium", content: "Patient discussed treatment-related anxiety. Grounding strategies and short-term coping plan were introduced." },
-  { id: 119, title: "Rehabilitation Progress Review", category: "Allied Health Notes", specialty: "Rehabilitation", author: "Rehab Clinician", date: "21 May 2026, 02:50 PM", status: "Signed", priority: "Medium", content: "Multidisciplinary rehabilitation goals reviewed. Mobility and self-care tolerance continue to improve." },
-  { id: 120, title: "General Progress Update", category: "Additional Progress Notes", specialty: "General", author: "Nurse Anna", date: "23 May 2026, 08:45 AM", status: "Signed", priority: "Medium", content: "General condition remains stable. Current care plan continues with routine observations and symptom review." },
-  { id: 121, title: "Phone Call Note", category: "Additional Progress Notes", specialty: "Phone Call Note", author: "Nurse Mary", date: "22 May 2026, 06:05 PM", status: "Signed", priority: "Medium", content: "Family member contacted by phone and updated on the current care plan, visiting guidance and next review." },
-  { id: 122, title: "Family Communication Note", category: "Additional Progress Notes", specialty: "Family Communication", author: "Nurse Anna", date: "22 May 2026, 02:40 PM", status: "Pending Review", priority: "Medium", content: "Patient consent confirmed and progress discussed with family. Questions about discharge support were addressed." },
-  { id: 123, title: "Clinical Handover Note", category: "Additional Progress Notes", specialty: "Handover", author: "Nurse Mary", date: "21 May 2026, 07:00 PM", status: "Signed", priority: "High", content: "Shift handover completed using SBAR. Pending investigations, mobility assistance and escalation criteria communicated." },
-  { id: 124, title: "Case Management Note", category: "Additional Progress Notes", specialty: "Case Management", author: "Case Manager", date: "21 May 2026, 01:25 PM", status: "Draft", priority: "Medium", content: "Discharge needs, family support and community service referrals reviewed. Follow-up actions assigned to the care team." },
+  { id: 119, title: "Physiotherapy Plan", category: "Allied Health Notes", specialty: "Physiotherapy", author: "Physiotherapist", date: "21 May 2026, 02:50 PM", status: "Signed", priority: "Medium", content: "Mobility and self-care goals reviewed. Activity tolerance continues to improve." },
+  { id: 120, title: "General Progress Update", category: "Special Instruction Notes", specialty: "General", author: "Nurse Anna", date: "23 May 2026, 08:45 AM", status: "Signed", priority: "Medium", content: "General condition remains stable. Current care plan continues with routine observations and symptom review." },
+  { id: 121, title: "Phone Call Note", category: "Special Instruction Notes", specialty: "Phone Call Note", author: "Nurse Mary", date: "22 May 2026, 06:05 PM", status: "Signed", priority: "Medium", content: "Family member contacted by phone and updated on the current care plan, visiting guidance and next review." },
+  { id: 122, title: "Family Meeting Notes", category: "Special Instruction Notes", specialty: "Family Meeting", author: "Nurse Anna", date: "22 May 2026, 02:40 PM", status: "Pending Review", priority: "Medium", content: "Patient consent confirmed and progress discussed with family. Questions about discharge support were addressed." },
+  { id: 123, title: "Clinical Handover Note", category: "Special Instruction Notes", specialty: "Handover", author: "Nurse Mary", date: "21 May 2026, 07:00 PM", status: "Signed", priority: "High", content: "Shift handover completed using SBAR. Pending investigations, mobility assistance and escalation criteria communicated." },
+  { id: 124, title: "Case Management Note", category: "Special Instruction Notes", specialty: "Case Management", author: "Case Manager", date: "21 May 2026, 01:25 PM", status: "Draft", priority: "Medium", content: "Discharge needs, family support and community service referrals reviewed. Follow-up actions assigned to the care team." },
+  { id: 125, title: "Surgical Notes - General Surgery", category: "Surgery Notes", specialty: "General Surgery", author: "Dr. Surgeon", date: "21 May 2026, 11:30 AM", status: "Draft", priority: "High", content: "Post-operative condition, procedure outcome, monitoring instructions and immediate care plan documented.", medicalNoteType: "Surgical Notes" },
 ];
 
 const medicalNoteTypes: MedicalNoteType[] = [
-  "Progress Note",
-  "Consult Note",
-  "Discharge Summary",
-  "Admission History and Physical",
+  "Consultant Notes",
+  "Morning Ward Round",
+  "Afternoon Ward Round",
+  "Evening Ward Round",
+  "Surgical Notes",
+  "Anesthesia Notes",
+  "Pain Medicine Notes",
   "Procedure Note",
+  "Progress Note",
+  "Family Meeting Notes",
+  "Others",
+  "End-of-Life Care Notes",
+];
+
+const surgeryNoteTypes: MedicalNoteType[] = [
+  ...medicalNoteTypes.filter((type) => type !== "Others" && type !== "End-of-Life Care Notes"),
+  "Operating Notes",
+  "Others",
+  "End-of-Life Care Notes",
+];
+
+const transplantTypes: TransplantType[] = [
+  "Kidney transplant",
+  "Liver transplant",
+  "Heart transplant",
+  "Lung transplant",
+  "Bone marrow (stem cell) transplant",
 ];
 
 const pharmacyNoteTypes: PharmacyNoteType[] = [
@@ -385,21 +766,25 @@ const pharmacyNoteTypes: PharmacyNoteType[] = [
   "Renal Dose Review",
 ];
 
-const alliedNoteTypes: AlliedNoteType[] = ["Initial Assessment", "Treatment Session", "Progress Review", "Discharge Summary"];
+const alliedNoteTypes: AlliedNoteType[] = ["Assessment Notes", "Family Meeting Notes"];
 
 const additionalNoteTypes: AdditionalNoteType[] = [
   "General Progress Note",
   "Follow-up Note",
-  "Care Coordination Note",
-  "Patient Education Note",
   "Phone Call Note",
-  "Family Communication Note",
+  "Family Meeting Notes",
   "Handover Note",
   "Case Management Note",
+  "Morning Round",
+  "Evening Round",
+  "Consultant Notes",
 ];
 
 const emptyPharmacyDocumentation: PharmacyDocumentation = {
   noteType: "Medication Review",
+  medicationPreviousToAdmission: "",
+  medicationCurrently: "",
+  medicationAtDischarge: "",
   medicationName: "",
   medicationCode: "",
   dose: "",
@@ -422,7 +807,7 @@ const emptyPharmacyDocumentation: PharmacyDocumentation = {
 };
 
 const emptyAlliedHealthDocumentation: AlliedHealthDocumentation = {
-  noteType: "Initial Assessment",
+  noteType: "Assessment Notes",
   referralReason: "",
   initialAssessment: "",
   functionalStatus: "",
@@ -561,6 +946,17 @@ const emptyAdditionalProgressDocumentation: AdditionalProgressDocumentation = {
   amendmentReason: "",
 };
 
+const emptyOperativeDocumentation: OperativeDocumentation = {
+  surgeonName: "",
+  assistantName: "",
+  otNurseName: "",
+  surgeryName: "",
+  duration: "",
+  operativeDate: "",
+  operativeFindings: "",
+  plan: "",
+};
+
 function toDateTimeLocalValue(date = new Date()) {
   const offset = date.getTimezoneOffset();
   return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
@@ -572,14 +968,130 @@ function inferMedicalNoteType(title?: string): MedicalNoteType {
 
 function inferAdditionalNoteType(specialty?: string, title?: string): AdditionalNoteType {
   const source = `${specialty ?? ""} ${title ?? ""}`.toLowerCase();
-  if (source.includes("care coordination")) return "Care Coordination Note";
-  if (source.includes("patient education")) return "Patient Education Note";
+  if (source.includes("morning")) return "Morning Round";
+  if (source.includes("evening")) return "Evening Round";
+  if (source.includes("consultant")) return "Consultant Notes";
   if (source.includes("phone call")) return "Phone Call Note";
-  if (source.includes("family")) return "Family Communication Note";
+  if (source.includes("family")) return "Family Meeting Notes";
   if (source.includes("handover")) return "Handover Note";
   if (source.includes("case management")) return "Case Management Note";
   if (source.includes("follow up") || source.includes("follow-up")) return "Follow-up Note";
   return "General Progress Note";
+}
+
+function convertGlucoseMgDlToMmolL(value: string) {
+  const numericValue = Number(value);
+  return value && Number.isFinite(numericValue) ? (numericValue / 18.0182).toFixed(1) : "";
+}
+
+function convertGlucoseMmolLToMgDl(value: string) {
+  const numericValue = Number(value);
+  return value && Number.isFinite(numericValue) ? (numericValue * 18.0182).toFixed(0) : "";
+}
+
+function normalizeNote(note: Note): Note {
+  const legacyCategory = note.category as string;
+  const legacyMedicalType = note.medicalNoteType as string | undefined;
+  const legacyMedicalSection = note.medicalNoteSection as string | undefined;
+  const legacyAlliedType = note.alliedHealth?.noteType as string | undefined;
+  const legacyAdditionalType = note.additionalProgress?.noteType as string | undefined;
+  let specialty = note.specialty;
+
+  if (legacyCategory === "Nurse Notes") {
+    if (specialty === "ICU") specialty = "ICU Nurse";
+    else if (!["ICU Nurse", "Ward Nurse", "ED Nurse"].includes(specialty)) specialty = "Ward Nurse";
+  } else if (legacyCategory === "Medical Notes" || legacyCategory === "Medical (ED Notes)") {
+    const medicalSpecialtyMap: Record<string, string> = {
+      ICU: "Respiratory Medicine",
+      Oncology: "Palliative Care",
+      "Palliative Medicine": "Palliative Care",
+      Cardiothoracic: "Cardiology",
+      Orthopedics: "Rehabilitation",
+      "Emergency Medicine": "Radiology",
+      "Others (Free Text)": "Others",
+    };
+    specialty = medicalSpecialtyMap[specialty] ?? specialty;
+  } else if (legacyCategory === "Surgery Notes" || legacyCategory === "Operative Notes") {
+    if (specialty === "Others (Free Text)") specialty = "Others";
+  } else if (legacyCategory === "Pharmacy Notes") {
+    specialty = "Pharmacy";
+  } else if (legacyCategory === "Allied Health Notes") {
+    if (specialty === "Nutrition") specialty = "Dietitian";
+    if (specialty === "Rehabilitation") specialty = "Physiotherapy";
+    if (specialty === "Social Work") specialty = "Social Worker";
+  } else if (legacyCategory === "Additional Progress Notes" || legacyCategory === "Special Instruction Notes") {
+    const additionalSpecialtyMap: Record<string, string> = {
+      "Care Coordination": "Consultant Notes",
+      "Patient Education": "Morning Round",
+      "Family Communication": "Family Meeting",
+    };
+    specialty = additionalSpecialtyMap[specialty] ?? specialty;
+  }
+
+  const medicalNoteType =
+    legacyMedicalType === "Discharge Summary" ||
+    legacyMedicalType === "Admission History and Physical" ||
+    legacyMedicalType === "Consult Note"
+      ? "Consultant Notes"
+      : legacyMedicalType === "Others (Free Text)"
+        ? "Others"
+        : legacyCategory === "Medical Notes" && legacyMedicalType === "Operating Notes"
+          ? "Procedure Note"
+          : note.medicalNoteType ?? (legacyCategory === "Surgery Notes" ? "Surgical Notes" : undefined);
+  const alliedHealth = note.alliedHealth
+    ? {
+        ...note.alliedHealth,
+        noteType: (legacyAlliedType === "Family Meeting Notes" ? "Family Meeting Notes" : "Assessment Notes") as AlliedNoteType,
+      }
+    : undefined;
+  const additionalTypeMap: Record<string, AdditionalNoteType> = {
+    "Care Coordination Note": "Consultant Notes",
+    "Patient Education Note": "Morning Round",
+    "Family Communication Note": "Family Meeting Notes",
+  };
+  const additionalProgress = note.additionalProgress
+    ? { ...note.additionalProgress, noteType: additionalTypeMap[legacyAdditionalType ?? ""] ?? note.additionalProgress.noteType }
+    : undefined;
+
+  return {
+    ...note,
+    category:
+      legacyCategory === "Medical (ED Notes)"
+        ? "Medical Notes"
+        : legacyCategory === "Additional Progress Notes"
+          ? "Special Instruction Notes"
+          : note.category,
+    specialty,
+    glucoseUnit: note.glucoseUnit ?? (note.glucoseMmolL && !note.glucose ? "mmol/L" : "mg/dL"),
+    glucoseMmolL: note.glucoseMmolL ?? (note.glucose ? convertGlucoseMgDlToMmolL(note.glucose) : undefined),
+    medicalNoteType,
+    medicalNoteSection:
+      legacyCategory === "Medical Notes" || legacyCategory === "Medical (ED Notes)"
+        ? legacyMedicalSection === "Physical Notes"
+          ? "Physician Notes"
+          : note.medicalNoteSection ?? "ED Notes"
+        : undefined,
+    alliedHealth,
+    additionalProgress,
+  };
+}
+
+function ensureUniqueNoteIds(notes: Note[]) {
+  const usedIds = new Set<number>();
+  let nextId = Math.max(0, ...notes.map((note) => note.id)) + 1;
+
+  return notes.map((note) => {
+    if (!usedIds.has(note.id)) {
+      usedIds.add(note.id);
+      return note;
+    }
+
+    while (usedIds.has(nextId)) nextId += 1;
+    const noteWithUniqueId = { ...note, id: nextId };
+    usedIds.add(nextId);
+    nextId += 1;
+    return noteWithUniqueId;
+  });
 }
 
 function buildNoteTitle({
@@ -593,22 +1105,29 @@ function buildNoteTitle({
   additionalProgress: AdditionalProgressDocumentation;
   alliedHealth: AlliedHealthDocumentation;
   category: NoteCategory;
-  medicalNoteType: MedicalNoteType;
+  medicalNoteType: string;
   pharmacy: PharmacyDocumentation;
   specialty: string;
 }) {
   if (category === "Medical Notes") return `${medicalNoteType} - ${specialty}`;
-  if (category === "Pharmacy Notes") return `${pharmacy.noteType} - ${pharmacy.medicationName.trim() || specialty}`;
+  if (category === "Surgery Notes") return `${medicalNoteType} - ${specialty}`;
+  if (category === "Operative Notes") return `Operative Note - ${specialty}`;
+  if (category === "Pharmacy Notes") return pharmacy.noteType;
   if (category === "Allied Health Notes") return `${specialty} ${alliedHealth.noteType}`;
-  if (category === "Additional Progress Notes") return additionalProgress.noteType;
+  if (category === "Special Instruction Notes") return additionalProgress.noteType;
   return `${specialty} Nursing Note`;
 }
 
 function getNoteType(note: Note) {
-  if (note.medicalNoteType) return note.medicalNoteType;
+  if (note.medicalNoteType) {
+    return note.medicalNoteType === "Others"
+      ? note.customMedicalNoteType || note.medicalNoteType
+      : note.medicalNoteType;
+  }
   if (note.pharmacy?.noteType) return note.pharmacy.noteType;
   if (note.alliedHealth?.noteType) return note.alliedHealth.noteType;
-  if (note.additionalProgress?.noteType) return note.additionalProgress.noteType;
+  if (note.operative) return "Operative Note";
+  if (note.category === "Special Instruction Notes" && note.additionalProgress?.noteType) return note.additionalProgress.noteType;
   return note.title;
 }
 
@@ -650,12 +1169,12 @@ function priorityRank(priority: Note["priority"]) {
 
 export function NotesPage() {
   const searchParams = useSearchParams();
-  const [notes, setNotes] = React.useState<Note[]>(initialNotes);
+  const [notes, setNotes] = React.useState<Note[]>(() => initialNotes.map(normalizeNote));
   const [notesLoaded, setNotesLoaded] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("all");
   const [specialty, setSpecialty] = React.useState("All Specialties");
-  const [category, setCategory] = React.useState("All Categories");
-  const [author, setAuthor] = React.useState("All Authors");
+  const [category, setCategory] = React.useState<string>("All Categories");
+  const [author, setAuthor] = React.useState("");
   const [status, setStatus] = React.useState("All Status");
   const [priority, setPriority] = React.useState("All Priorities");
   const [query, setQuery] = React.useState("");
@@ -672,6 +1191,7 @@ export function NotesPage() {
   const [notice, setNotice] = React.useState("");
   const [newNoteOpen, setNewNoteOpen] = React.useState(false);
   const [newNoteCategory, setNewNoteCategory] = React.useState<NoteCategory>("Nurse Notes");
+  const [newMedicalNoteSection, setNewMedicalNoteSection] = React.useState<MedicalNoteSection>("ED Notes");
   const [filterLockedCategory, setFilterLockedCategory] = React.useState<NoteCategory | null>(null);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [viewingNote, setViewingNote] = React.useState<Note | null>(null);
@@ -702,9 +1222,11 @@ export function NotesPage() {
     const savedNotes = window.localStorage.getItem(storageKey) ?? window.localStorage.getItem(legacyStorageKey);
     if (savedNotes) {
       try {
-        const parsedNotes = JSON.parse(savedNotes) as Note[];
-        const specialtySeeds = initialNotes.filter((note) => note.id >= 101);
-        const mergedNotes = [
+        const parsedNotes = (JSON.parse(savedNotes) as Note[])
+          .filter((note) => (note.category as string) !== "Discharge Summary")
+          .map(normalizeNote);
+        const specialtySeeds = initialNotes.filter((note) => note.id >= 101).map(normalizeNote);
+        const mergedNotes = ensureUniqueNoteIds([
           ...parsedNotes,
           ...specialtySeeds.filter(
             (seed) =>
@@ -712,7 +1234,7 @@ export function NotesPage() {
                 (note) => note.category === seed.category && note.specialty === seed.specialty,
               ),
           ),
-        ];
+        ]);
         setNotes(mergedNotes);
         window.localStorage.setItem(storageKey, JSON.stringify(mergedNotes));
         window.localStorage.removeItem(legacyStorageKey);
@@ -728,9 +1250,11 @@ export function NotesPage() {
     if (notesLoaded) window.localStorage.setItem("notes-data", JSON.stringify(notes));
   }, [notes, notesLoaded]);
 
+  const visibleNotes = notes;
+
   const filteredNotes = React.useMemo(
     () =>
-      notes.filter((note) => {
+      visibleNotes.filter((note) => {
         const searchableText = JSON.stringify(note).toLowerCase();
         const noteDate = getFilterDate(note, dateType);
         const matchesFromDate = !fromDate || (noteDate !== null && noteDate >= startOfDate(fromDate));
@@ -747,7 +1271,7 @@ export function NotesPage() {
           (!noteId.trim() || String(note.id) === noteId.trim()) &&
           (category === "All Categories" || note.category === category) &&
           (specialty === "All Specialties" || note.specialty === specialty) &&
-          (author === "All Authors" || note.author === author) &&
+          (author === "" || note.author === author) &&
           (status === "All Status" || note.status === status) &&
           (priority === "All Priorities" || note.priority === priority) &&
           (noteType === "All Note Types" || getNoteType(note) === noteType) &&
@@ -764,13 +1288,13 @@ export function NotesPage() {
             (escalationFilter === "Not Required" && !escalationRequired))
         );
       }),
-    [author, category, dateType, escalationFilter, followUpFilter, fromDate, noteId, noteType, notes, priority, query, signer, specialty, status, toDate, visitId, visitScope],
+    [author, category, dateType, escalationFilter, followUpFilter, fromDate, noteId, noteType, priority, query, signer, specialty, status, toDate, visitId, visitScope, visibleNotes],
   );
 
   function resetFilters() {
     setCategory(filterLockedCategory ?? activeCategory?.label ?? "All Categories");
     setSpecialty("All Specialties");
-    setAuthor("All Authors");
+    setAuthor("");
     setStatus("All Status");
     setPriority("All Priorities");
     setQuery("");
@@ -800,9 +1324,10 @@ export function NotesPage() {
     }
   }
 
-  function openNewNote(category?: NoteCategory) {
+  function openNewNote(category?: NoteCategory, medicalNoteSection: MedicalNoteSection = "ED Notes") {
     setEditingNote(null);
     setNewNoteCategory(category ?? "Nurse Notes");
+    setNewMedicalNoteSection(medicalNoteSection);
     setNewNoteOpen(true);
   }
 
@@ -834,6 +1359,7 @@ export function NotesPage() {
   function editNote(note: Note) {
     setEditingNote(note);
     setNewNoteCategory(note.category);
+    setNewMedicalNoteSection(note.medicalNoteSection ?? "ED Notes");
     setNewNoteOpen(true);
   }
 
@@ -872,7 +1398,7 @@ export function NotesPage() {
   };
 
   return (
-    <div className="space-y-4 py-4">
+    <div className="notes-select-safe min-w-0 space-y-4 py-4">
       <section className="flex flex-col gap-3 border-b border-border pb-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary">JD</div>
@@ -884,17 +1410,12 @@ export function NotesPage() {
             <p className="mt-0.5 truncate text-xs text-muted-foreground">MRN: 10000098 &nbsp; | &nbsp; Male &nbsp; | &nbsp; 65 Y &nbsp; | &nbsp; DOB: 12/05/1959</p>
           </div>
         </div>
-        <div className="grid min-w-0 grid-cols-1 divide-y rounded-md border border-border bg-surface sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="grid min-w-0 grid-cols-3 divide-x rounded-md border border-border bg-surface">
           <PatientFact label="Allergies" value="Penicillin, Peanuts" tone="text-danger" />
           <PatientFact label="Location" value="ICU - 01, Bed 5" tone="text-blue-600" />
           <PatientFact label="Encounter" value="ENC123456789" tone="text-emerald-600" />
         </div>
       </section>
-
-      <div>
-        <h2 className="text-base font-semibold">Notes Center</h2>
-        <p className="text-xs text-muted-foreground">Create, view and manage all types of clinical notes</p>
-      </div>
 
       {notice ? (
         <div className="flex items-center justify-between rounded-md border border-success/25 bg-success/10 px-3 py-2 text-xs text-success">
@@ -906,7 +1427,7 @@ export function NotesPage() {
       {activeTab === "all" ? (
         <AllNotesOverview
           actions={tableActions}
-          allNotes={notes}
+          allNotes={visibleNotes}
           author={author}
           category={category}
           dateType={dateType}
@@ -948,7 +1469,8 @@ export function NotesPage() {
       ) : (
         <CategoryView
           category={categories.find((item) => item.id === activeTab) ?? categories[0]}
-          notes={notes}
+          key={`${activeTab}-${requestedSpecialty ?? ""}`}
+          notes={visibleNotes}
           onNewNote={openNewNote}
           onShowAll={() => changeTab("all")}
           specialty={specialty}
@@ -959,6 +1481,7 @@ export function NotesPage() {
       <NewNoteModal
         editingNote={editingNote}
         initialCategory={newNoteCategory}
+        initialMedicalNoteSection={newMedicalNoteSection}
         onOpenChange={(nextOpen) => {
           setNewNoteOpen(nextOpen);
           if (!nextOpen) setEditingNote(null);
@@ -1064,12 +1587,12 @@ function AllNotesOverview({
 }) {
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-        {categories.map((category) => {
+      <div className="horizontal-scrollbar grid grid-flow-col auto-cols-[220px] gap-4 overflow-x-auto pb-3 sm:auto-cols-[240px]">
+        {notesCategories.map((category) => {
           const Icon = category.icon;
           return (
             <button
-              className="group min-h-44 rounded-lg border border-border bg-surface p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+              className="group flex min-h-36 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
               key={category.id}
               onClick={() => onOpenCategory(category.id)}
               type="button"
@@ -1077,9 +1600,8 @@ function AllNotesOverview({
               <span className={cn("flex h-10 w-10 items-center justify-center rounded-full", category.soft, category.accent)}>
                 <Icon className="h-5 w-5" />
               </span>
-              <span className="mt-4 block text-sm font-semibold">{category.label}</span>
-              <span className="mt-1 block min-h-8 text-xs leading-4 text-muted-foreground">{category.description}</span>
-              <span className={cn("mt-4 flex items-center gap-1 text-xs font-semibold", category.accent)}>
+              <span className="mt-4 block text-sm font-semibold">{getCategoryDisplayLabel(category.label)}</span>
+              <span className={cn("mt-auto flex items-center gap-1 pt-5 text-xs font-semibold", category.accent)}>
                 {allNotes.filter((note) => note.category === category.label).length} Notes <ChevronRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
               </span>
             </button>
@@ -1184,7 +1706,6 @@ function NotesFilterPanel(props: {
   const [searchDraft, setSearchDraft] = React.useState(props.query);
   const [filtersExpanded, setFiltersExpanded] = React.useState(props.initiallyExpanded);
   const allSpecialties = Array.from(new Set(props.allNotes.map((note) => note.specialty)));
-  const allAuthors = Array.from(new Set(props.allNotes.map((note) => note.author)));
   const allSigners = Array.from(new Set(props.allNotes.map((note) => note.signedBy).filter((value): value is string => Boolean(value))));
   const allNoteTypes = Array.from(new Set(props.allNotes.map(getNoteType)));
 
@@ -1217,7 +1738,6 @@ function NotesFilterPanel(props: {
           <SlidersHorizontal className="h-4 w-4 text-primary" />
           <div>
             <h3 className="text-sm font-semibold">Filter Notes</h3>
-            <p className="text-xs text-muted-foreground">{filtersExpanded ? "Hide filters" : "Click to show all filters"}</p>
           </div>
         </div>
         <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", filtersExpanded && "rotate-180")} />
@@ -1230,7 +1750,7 @@ function NotesFilterPanel(props: {
           <FormField label="Note ID">
             <Input onChange={(event) => props.onNoteIdChange(event.target.value)} placeholder="ID" type="number" value={props.noteId} />
           </FormField>
-          <FilterSelect label="Category" value={props.category} options={["All Categories", ...categories.map((item) => item.label)]} onChange={props.onCategoryChange} />
+          <FilterSelect label="Category" value={props.category} options={["All Categories", ...notesCategories.map((item) => item.label)]} onChange={props.onCategoryChange} />
           <FilterSelect label="Note type" value={props.noteType} options={["All Note Types", ...allNoteTypes]} onChange={props.onNoteTypeChange} />
           <FilterSelect label="Specialty" value={props.specialty} options={["All Specialties", ...allSpecialties]} onChange={props.onSpecialtyChange} />
           <FilterSelect label="Status" value={props.status} options={["All Status", "Signed", "Draft", "Pending Review"]} onChange={props.onStatusChange} />
@@ -1238,7 +1758,6 @@ function NotesFilterPanel(props: {
 
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(280px,1.35fr)_repeat(5,minmax(130px,1fr))]">
           <FilterRadioGroup label="Priority" name="notes-overview-priority" value={props.priority} options={["All Priorities", "High", "Medium", "Low"]} onChange={props.onPriorityChange} />
-          <FilterSelect label="Author" value={props.author} options={["All Authors", ...allAuthors]} onChange={props.onAuthorChange} />
           <FilterSelect label="Signed by" value={props.signer} options={["All Signers", ...allSigners]} onChange={props.onSignerChange} />
           <FilterSelect label="Visit scope" value={props.visitScope} options={["All Patient Visits", "Current Visit", "Specific Visit"]} onChange={props.onVisitScopeChange} />
           <FilterSelect label="Follow-up" value={props.followUpFilter} options={["All Follow-up", "Required", "Not Required", "Overdue"]} onChange={props.onFollowUpFilterChange} />
@@ -1281,12 +1800,22 @@ function CategoryView({
   actions: NoteTableActions;
   category: CategoryConfig;
   notes: Note[];
-  onNewNote: (category: NoteCategory) => void;
-  onShowAll: () => void;
+  onNewNote: (category: NoteCategory, medicalNoteSection?: MedicalNoteSection) => void;
+  onShowAll?: () => void;
   specialty: string;
 }) {
+  const requestedMedicalSection = useSearchParams().get("specialty");
+  const [medicalNoteSection, setMedicalNoteSection] = React.useState<MedicalNoteSection>(
+    requestedMedicalSection === "Physician Notes" || requestedMedicalSection === "Physical Notes" ? "Physician Notes" : "ED Notes",
+  );
+  const [medicalSectionChooserOpen, setMedicalSectionChooserOpen] = React.useState(false);
+
   const categoryNotes = notes.filter((note) => note.category === category.label);
-  const visibleNotes = specialty === "All Specialties" ? categoryNotes : categoryNotes.filter((note) => note.specialty === specialty);
+  const sectionNotes =
+    category.label === "Medical Notes"
+      ? categoryNotes.filter((note) => (note.medicalNoteSection ?? "ED Notes") === medicalNoteSection)
+      : categoryNotes;
+  const visibleNotes = specialty === "All Specialties" ? sectionNotes : sectionNotes.filter((note) => note.specialty === specialty);
   const Icon = category.icon;
 
   return (
@@ -1297,22 +1826,84 @@ function CategoryView({
             <Icon className="h-4 w-4" />
           </span>
           <div>
-            <h3 className="text-sm font-semibold">{category.label}</h3>
-            <p className="text-xs text-muted-foreground">{category.description}</p>
+            <h3 className="text-sm font-semibold">{getCategoryDisplayLabel(category.label)}</h3>
           </div>
         </div>
         <div className="flex items-center gap-2 sm:ml-auto">
-          <Button size="sm" variant="outline" onClick={onShowAll}>
-            All Notes
-          </Button>
-          <Button size="sm" onClick={() => onNewNote(category.label)}>
+          {onShowAll ? (
+            <Button size="sm" variant="outline" onClick={onShowAll}>
+              All Notes
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            onClick={() => {
+              if (category.label === "Medical Notes") {
+                setMedicalSectionChooserOpen(true);
+                return;
+              }
+              onNewNote(category.label);
+            }}
+          >
             <Plus className="h-4 w-4" /> New Note
           </Button>
         </div>
       </div>
       <div className="min-h-[420px] min-w-0">
+        {category.label === "Medical Notes" ? (
+          <div className="grid gap-3 border-b border-border bg-surface-muted/20 p-4 sm:grid-cols-2">
+            {([
+              {
+                icon: HeartPulse,
+                section: "ED Notes" as const,
+              },
+              {
+                icon: Stethoscope,
+                section: "Physician Notes" as const,
+              },
+            ]).map(({ icon: SectionIcon, section }) => {
+              const sectionCount = categoryNotes.filter(
+                (note) => (note.medicalNoteSection ?? "ED Notes") === section,
+              ).length;
+              const selected = medicalNoteSection === section;
+              return (
+                <button
+                  aria-pressed={selected}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg border p-3 text-left transition",
+                    selected
+                      ? "border-primary bg-primary-soft shadow-sm ring-1 ring-primary/15"
+                      : "border-border bg-background hover:border-primary/40 hover:bg-surface-muted/40",
+                  )}
+                  key={section}
+                  onClick={() => setMedicalNoteSection(section)}
+                  type="button"
+                >
+                  <span
+                    className={cn(
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                      selected ? "bg-primary text-primary-foreground" : "bg-surface-muted text-muted-foreground",
+                    )}
+                  >
+                    <SectionIcon className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className={cn("block text-sm font-semibold", selected && "text-primary")}>{section}</span>
+                  </span>
+                  <Badge tone={selected ? "info" : "default"}>{sectionCount}</Badge>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
         <div className="flex items-center justify-between border-b border-border px-4 py-2">
-          <span className="text-xs font-semibold">{specialty === "All Specialties" ? `All ${category.shortLabel} specialties` : specialty}</span>
+          <span className="text-xs font-semibold">
+            {category.label === "Medical Notes"
+              ? medicalNoteSection
+              : specialty === "All Specialties"
+                ? `All ${category.shortLabel} specialties`
+                : specialty}
+          </span>
           <span className="text-xs text-muted-foreground">{visibleNotes.length} notes</span>
         </div>
         {visibleNotes.length ? (
@@ -1320,11 +1911,51 @@ function CategoryView({
         ) : (
           <div className="flex min-h-72 flex-col items-center justify-center px-4 text-center">
             <FilePenLine className="h-9 w-9 text-muted-foreground/45" />
-            <p className="mt-3 text-sm font-semibold">No notes in {specialty === "All Specialties" ? category.label : specialty}</p>
+            <p className="mt-3 text-sm font-semibold">No notes in {specialty === "All Specialties" ? getCategoryDisplayLabel(category.label) : specialty}</p>
             <p className="mt-1 text-xs text-muted-foreground">Create the first note for this specialty.</p>
           </div>
         )}
       </div>
+      {category.label === "Medical Notes" ? (
+        <CenterModal
+          className="w-[min(94vw,720px)]"
+          description="Choose where this medical note should be filed before opening the note form."
+          onOpenChange={setMedicalSectionChooserOpen}
+          open={medicalSectionChooserOpen}
+          title="Select Medical Note Type"
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            {([
+              {
+                icon: HeartPulse,
+                section: "ED Notes" as const,
+              },
+              {
+                icon: Stethoscope,
+                section: "Physician Notes" as const,
+              },
+            ]).map(({ icon: SectionIcon, section }) => (
+              <button
+                className="flex items-center gap-3 rounded-lg border border-border bg-background p-4 text-left transition hover:border-primary/50 hover:bg-primary-soft/40 focus:outline-none focus:ring-2 focus:ring-ring/20"
+                key={section}
+                onClick={() => {
+                  setMedicalNoteSection(section);
+                  setMedicalSectionChooserOpen(false);
+                  onNewNote("Medical Notes", section);
+                }}
+                type="button"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                  <SectionIcon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">{section}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </CenterModal>
+      ) : null}
     </Card>
   );
 }
@@ -1374,7 +2005,6 @@ function FilterView(props: {
   const [pageSize, setPageSize] = React.useState(10);
   const [page, setPage] = React.useState(1);
   const allSpecialties = Array.from(new Set(props.allNotes.map((note) => note.specialty)));
-  const allAuthors = Array.from(new Set(props.allNotes.map((note) => note.author)));
   const allSigners = Array.from(new Set(props.allNotes.map((note) => note.signedBy).filter((value): value is string => Boolean(value))));
   const allNoteTypes = Array.from(new Set(props.allNotes.map(getNoteType)));
   const sortedNotes = React.useMemo(
@@ -1382,7 +2012,6 @@ function FilterView(props: {
       [...props.notes].sort((left, right) => {
         if (sortOrder === "Oldest first") return compareNoteDates(left, right);
         if (sortOrder === "Priority") return priorityRank(left.priority) - priorityRank(right.priority);
-        if (sortOrder === "Author") return left.author.localeCompare(right.author);
         if (sortOrder === "Note title") return left.title.localeCompare(right.title);
         return compareNoteDates(right, left);
       }),
@@ -1429,7 +2058,6 @@ function FilterView(props: {
             <SlidersHorizontal className="h-4 w-4 shrink-0 text-primary" />
             <div>
               <h3 className="text-sm font-semibold">Filter Notes</h3>
-              <p className="mt-1 text-xs text-muted-foreground">{filtersExpanded ? "Hide filters" : "Click to show all filters"}</p>
             </div>
           </div>
           <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", filtersExpanded && "rotate-180")} />
@@ -1444,9 +2072,14 @@ function FilterView(props: {
           <div className="space-y-3 border-t border-border pt-4">
             <div className="text-[11px] font-semibold uppercase text-muted-foreground">Document</div>
             {props.lockedCategory ? (
-              <ReadOnlyFilterValue label="Category" value={props.lockedCategory} />
+              <ReadOnlyFilterValue label="Category" value={getCategoryDisplayLabel(props.lockedCategory)} />
             ) : (
-              <FilterSelect label="Category" value={props.category} options={["All Categories", ...categories.map((item) => item.label)]} onChange={props.onCategoryChange} />
+              <FilterSelect
+                label="Category"
+                value={getCategoryDisplayLabel(props.category)}
+                options={["All Categories", ...notesCategories.map((item) => getCategoryDisplayLabel(item.label))]}
+                onChange={(value) => props.onCategoryChange(value === "Surgical Notes" ? "Surgery Notes" : value)}
+              />
             )}
             <FilterSelect label="Note type" value={props.noteType} options={["All Note Types", ...allNoteTypes]} onChange={props.onNoteTypeChange} />
             <FilterSelect label="Specialty" value={props.specialty} options={["All Specialties", ...allSpecialties]} onChange={props.onSpecialtyChange} />
@@ -1464,9 +2097,8 @@ function FilterView(props: {
 
           <div className="space-y-3 border-t border-border pt-4">
             <div className="text-[11px] font-semibold uppercase text-muted-foreground">Workflow</div>
-            <FilterSelect label="Author" value={props.author} options={["All Authors", ...allAuthors]} onChange={props.onAuthorChange} />
             <FilterSelect label="Signed by" value={props.signer} options={["All Signers", ...allSigners]} onChange={props.onSignerChange} />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <FilterSelect label="Status" value={props.status} options={["All Status", "Signed", "Draft", "Pending Review"]} onChange={props.onStatusChange} />
               <FilterRadioGroup label="Priority" name="notes-filter-priority" value={props.priority} options={["All Priorities", "High", "Medium", "Low"]} onChange={props.onPriorityChange} />
               <FilterSelect label="Follow-up" value={props.followUpFilter} options={["All Follow-up", "Required", "Not Required", "Overdue"]} onChange={props.onFollowUpFilterChange} />
@@ -1477,7 +2109,7 @@ function FilterView(props: {
           <div className="space-y-3 border-t border-border pt-4">
             <div className="text-[11px] font-semibold uppercase text-muted-foreground">Date</div>
             <FilterSelect label="Date type" value={props.dateType} options={["Created Date", "Service Date"]} onChange={props.onDateTypeChange} />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <FormField label="From">
                 <Input onChange={(event) => props.onFromDateChange(event.target.value)} type="date" value={props.fromDate} />
               </FormField>
@@ -1505,7 +2137,7 @@ function FilterView(props: {
             <p className="text-xs text-muted-foreground">{props.notes.length} matching clinical notes</p>
           </div>
           <div className="grid w-full grid-cols-[minmax(150px,1fr)_92px] gap-3 lg:w-auto">
-            <FilterSelect className="min-w-0" label="Sort" value={sortOrder} options={["Newest first", "Oldest first", "Priority", "Author", "Note title"]} onChange={setSortOrder} />
+            <FilterSelect className="min-w-0" label="Sort" value={sortOrder} options={["Newest first", "Oldest first", "Priority", "Note title"]} onChange={setSortOrder} />
             <FilterSelect className="min-w-0" label="Per page" value={String(pageSize)} options={["10", "25", "50", "100"]} onChange={(value) => setPageSize(Number(value))} />
           </div>
         </div>
@@ -1540,12 +2172,14 @@ function FilterView(props: {
 function NewNoteModal({
   editingNote,
   initialCategory,
+  initialMedicalNoteSection,
   onOpenChange,
   onSave,
   open,
 }: {
   editingNote: Note | null;
   initialCategory: NoteCategory;
+  initialMedicalNoteSection: MedicalNoteSection;
   onOpenChange: (open: boolean) => void;
   onSave: (note: Omit<Note, "id" | "date">) => void;
   open: boolean;
@@ -1553,6 +2187,8 @@ function NewNoteModal({
   const [title, setTitle] = React.useState("");
   const [category, setCategory] = React.useState<NoteCategory>(initialCategory);
   const [specialty, setSpecialty] = React.useState(categories[0].specialties[0]);
+  const [customMedicalSpecialty, setCustomMedicalSpecialty] = React.useState("");
+  const [customSpecialtyPopupOpen, setCustomSpecialtyPopupOpen] = React.useState(false);
   const [author, setAuthor] = React.useState("Nurse Mary");
   const [priority, setPriority] = React.useState<Note["priority"]>("Medium");
   const [content, setContent] = React.useState("");
@@ -1568,15 +2204,28 @@ function NewNoteModal({
   const [bloodPressureDiastolic, setBloodPressureDiastolic] = React.useState("");
   const [pulse, setPulse] = React.useState("");
   const [painScore, setPainScore] = React.useState("");
+  const [painScale, setPainScale] = React.useState<PainScale>("NRS");
+  const [cpotAirwayStatus, setCpotAirwayStatus] = React.useState<CpotAirwayStatus>("INTUBATED");
+  const [painDomainScores, setPainDomainScores] = React.useState<PainAssessment["scores"]>({});
+  const [temperature, setTemperature] = React.useState("");
+  const [respiratoryRate, setRespiratoryRate] = React.useState("");
+  const [spo2, setSpo2] = React.useState("");
+  const [glucose, setGlucose] = React.useState("");
+  const [glucoseUnit, setGlucoseUnit] = React.useState<GlucoseUnit>("mg/dL");
+  const [consciousnessLevel, setConsciousnessLevel] = React.useState("");
+  const [patientPosition, setPatientPosition] = React.useState("");
   const [signedBy, setSignedBy] = React.useState("");
   const [signatureAttested, setSignatureAttested] = React.useState(false);
   const [medicalNoteType, setMedicalNoteType] = React.useState<MedicalNoteType>("Progress Note");
+  const [customMedicalNoteType, setCustomMedicalNoteType] = React.useState("");
+  const [customNoteTypePopupOpen, setCustomNoteTypePopupOpen] = React.useState(false);
+  const [transplantType, setTransplantType] = React.useState<TransplantType | "">("");
+  const [transplantPopupOpen, setTransplantPopupOpen] = React.useState(false);
+  const [medicalNoteSection, setMedicalNoteSection] = React.useState<MedicalNoteSection>(initialMedicalNoteSection);
   const [subjective, setSubjective] = React.useState("");
   const [objective, setObjective] = React.useState("");
   const [medicalAssessment, setMedicalAssessment] = React.useState("");
   const [plan, setPlan] = React.useState("");
-  const [primaryDiagnosis, setPrimaryDiagnosis] = React.useState("");
-  const [secondaryDiagnoses, setSecondaryDiagnoses] = React.useState("");
   const [practitionerId, setPractitionerId] = React.useState("");
   const [patientId, setPatientId] = React.useState("10000098");
   const [encounterId, setEncounterId] = React.useState("ENC123456789");
@@ -1586,31 +2235,69 @@ function NewNoteModal({
   const [pharmacy, setPharmacy] = React.useState<PharmacyDocumentation>(emptyPharmacyDocumentation);
   const [alliedHealth, setAlliedHealth] = React.useState<AlliedHealthDocumentation>(emptyAlliedHealthDocumentation);
   const [additionalProgress, setAdditionalProgress] = React.useState<AdditionalProgressDocumentation>(emptyAdditionalProgressDocumentation);
+  const [specialInstructionEnabled, setSpecialInstructionEnabled] = React.useState(false);
+  const [operative, setOperative] = React.useState<OperativeDocumentation>(emptyOperativeDocumentation);
   const selectedCategory = categories.find((item) => item.label === category) ?? categories[0];
   const isNurseNote = category === "Nurse Notes";
   const isMedicalNote = category === "Medical Notes";
+  const isSurgeryNote = category === "Surgery Notes";
+  const isOperativeNote = category === "Operative Notes";
   const isPharmacyNote = category === "Pharmacy Notes";
   const isAlliedHealthNote = category === "Allied Health Notes";
-  const isAdditionalProgressNote = category === "Additional Progress Notes";
-  const hasPatientVisitContext = isMedicalNote || isPharmacyNote || isAlliedHealthNote || isAdditionalProgressNote;
+  const isAdditionalProgressNote = category === "Special Instruction Notes";
+  const shouldSaveSpecialInstruction = isAdditionalProgressNote || specialInstructionEnabled;
+  const hasSharedClinicalNoteType = isMedicalNote || isSurgeryNote;
+  const hasSurgerySpecialty = isSurgeryNote || isOperativeNote;
+  const hasCustomSpecialty = isMedicalNote || hasSurgerySpecialty;
+  const specialtyError = `Please enter the ${hasSurgerySpecialty ? "surgery" : "medical"} specialty.`;
+  const noteTypeError = `Please enter the ${isSurgeryNote ? "surgery" : "medical"} note type.`;
+  const contentError = isNurseNote
+    ? "Nursing note is required."
+    : isPharmacyNote
+      ? "Pharmacy note is required."
+      : "Clinical note is required.";
+  const hasPatientVisitContext = isMedicalNote || isSurgeryNote || isOperativeNote || isPharmacyNote || isAlliedHealthNote || shouldSaveSpecialInstruction;
   const isAmendment = isMedicalNote && editingNote?.status === "Signed";
+  const observedPainTotal = painScale === "NRS" ? undefined : calculateObservedPainScore(painScale, painDomainScores);
+  const savedPainScore = painScale === "NRS" ? painScore : observedPainTotal?.toString() ?? "";
+  const painSeverity =
+    painScale === "NRS"
+      ? painScore !== "" && Number(painScore) >= 0 && Number(painScore) <= 10
+        ? getPainSeverity("NRS", Number(painScore))
+        : undefined
+      : observedPainTotal !== undefined
+        ? getPainSeverity(painScale, observedPainTotal)
+        : undefined;
 
   React.useEffect(() => {
     if (!open) return;
     const nextCategory = categories.find((item) => item.label === initialCategory) ?? categories[0];
     const defaultAuthor =
-      nextCategory.label === "Medical Notes"
+      nextCategory.label === "Medical Notes" || nextCategory.label === "Surgery Notes" || nextCategory.label === "Operative Notes"
         ? "Dr. Smith"
         : nextCategory.label === "Pharmacy Notes"
           ? "Pharmacist John"
           : nextCategory.label === "Allied Health Notes"
             ? "Allied Health Clinician"
-            : nextCategory.label === "Additional Progress Notes"
+            : nextCategory.label === "Special Instruction Notes"
               ? "Care Team Clinician"
               : "Nurse Mary";
     setTitle(editingNote?.title ?? "");
     setCategory(nextCategory.label);
-    setSpecialty(editingNote?.specialty ?? nextCategory.specialties[0]);
+    const savedSpecialty = editingNote?.specialty ?? nextCategory.specialties[0];
+    const isCustomMedicalSpecialty = nextCategory.label === "Medical Notes" && !medicalSpecialties.includes(savedSpecialty);
+    const isCustomSurgerySpecialty =
+      (nextCategory.label === "Surgery Notes" || nextCategory.label === "Operative Notes") &&
+      !surgerySpecialties.includes(savedSpecialty);
+    setSpecialty(
+      isCustomMedicalSpecialty
+        ? medicalOtherSpecialty
+        : isCustomSurgerySpecialty
+          ? surgeryOtherSpecialty
+          : savedSpecialty,
+    );
+    setCustomMedicalSpecialty(isCustomMedicalSpecialty || isCustomSurgerySpecialty ? savedSpecialty : "");
+    setCustomSpecialtyPopupOpen(false);
     setAuthor(editingNote?.author ?? defaultAuthor);
     setPriority(editingNote?.priority ?? "Medium");
     setContent(editingNote?.content ?? "");
@@ -1626,15 +2313,29 @@ function NewNoteModal({
     setBloodPressureDiastolic(editingNote?.bloodPressureDiastolic ?? "");
     setPulse(editingNote?.pulse ?? "");
     setPainScore(editingNote?.painScore ?? "");
+    setPainScale(editingNote?.painAssessment?.scale ?? "NRS");
+    setCpotAirwayStatus(editingNote?.painAssessment?.airwayStatus ?? "INTUBATED");
+    setPainDomainScores(editingNote?.painAssessment?.scores ?? {});
+    setTemperature(editingNote?.temperature ?? "");
+    setRespiratoryRate(editingNote?.respiratoryRate ?? "");
+    setSpo2(editingNote?.spo2 ?? "");
+    const savedGlucoseUnit = editingNote?.glucoseUnit ?? (editingNote?.glucoseMmolL && !editingNote?.glucose ? "mmol/L" : "mg/dL");
+    setGlucoseUnit(savedGlucoseUnit);
+    setGlucose(savedGlucoseUnit === "mmol/L" ? editingNote?.glucoseMmolL ?? "" : editingNote?.glucose ?? "");
+    setConsciousnessLevel(editingNote?.consciousnessLevel ?? "");
+    setPatientPosition(editingNote?.patientPosition ?? "");
     setSignedBy(editingNote?.signedBy ?? editingNote?.author ?? defaultAuthor);
     setSignatureAttested(false);
     setMedicalNoteType(editingNote?.medicalNoteType ?? inferMedicalNoteType(editingNote?.title));
+    setCustomMedicalNoteType(editingNote?.customMedicalNoteType ?? "");
+    setCustomNoteTypePopupOpen(false);
+    setTransplantType(editingNote?.transplantType ?? "");
+    setTransplantPopupOpen(false);
+    setMedicalNoteSection(editingNote?.medicalNoteSection ?? initialMedicalNoteSection);
     setSubjective(editingNote?.subjective ?? "");
     setObjective(editingNote?.objective ?? "");
     setMedicalAssessment(editingNote?.medicalAssessment ?? "");
     setPlan(editingNote?.plan ?? "");
-    setPrimaryDiagnosis(editingNote?.primaryDiagnosis ?? "");
-    setSecondaryDiagnoses(editingNote?.secondaryDiagnoses ?? "");
     setPractitionerId(editingNote?.practitionerId ?? "");
     setPatientId(editingNote?.patientId ?? "10000098");
     setEncounterId(editingNote?.encounterId ?? "ENC123456789");
@@ -1655,11 +2356,37 @@ function NewNoteModal({
       ...editingNote?.additionalProgress,
       amendmentReason: "",
     });
-  }, [editingNote, initialCategory, open]);
+    setSpecialInstructionEnabled(Boolean(editingNote?.additionalProgress) || nextCategory.label === "Special Instruction Notes");
+    setOperative({
+      ...emptyOperativeDocumentation,
+      operativeDate: editingNote?.operative?.operativeDate ?? toDateTimeLocalValue().slice(0, 10),
+      surgeonName: editingNote?.operative?.surgeonName ?? editingNote?.author ?? defaultAuthor,
+      ...editingNote?.operative,
+      duration:
+        editingNote?.operative?.duration ??
+        [
+          editingNote?.operative?.durationHours ? `${editingNote.operative.durationHours} hour(s)` : "",
+          editingNote?.operative?.durationMinutes ? `${editingNote.operative.durationMinutes} minute(s)` : "",
+        ].filter(Boolean).join(" "),
+    });
+  }, [editingNote, initialCategory, initialMedicalNoteSection, open]);
 
   function changeSpecialty(value: string) {
     setSpecialty(value);
-    if (category === "Additional Progress Notes") {
+    setCustomSpecialtyPopupOpen(value === "Others");
+    if (value === "Transplant Surgery") {
+      setTransplantPopupOpen(true);
+    } else {
+      setTransplantType("");
+      setTransplantPopupOpen(false);
+    }
+    if (
+      (category === "Medical Notes" && value !== medicalOtherSpecialty) ||
+      ((category === "Surgery Notes" || category === "Operative Notes") && value !== surgeryOtherSpecialty)
+    ) {
+      setCustomMedicalSpecialty("");
+    }
+    if (category === "Special Instruction Notes") {
       setAdditionalProgress((current) => ({ ...current, noteType: inferAdditionalNoteType(value) }));
     }
   }
@@ -1681,18 +2408,45 @@ function NewNoteModal({
         "Care Coordination Note": "Care Coordination",
         "Patient Education Note": "Patient Education",
         "Phone Call Note": "Phone Call Note",
-        "Family Communication Note": "Family Communication",
+        "Family Meeting Notes": "Family Meeting",
         "Handover Note": "Handover",
         "Case Management Note": "Case Management",
+        "Morning Round": "Morning Round",
+        "Evening Round": "Evening Round",
+        "Consultant Notes": "Consultant Notes",
       };
-      setSpecialty(specialtyByType[value as AdditionalNoteType]);
+      if (category === "Special Instruction Notes") setSpecialty(specialtyByType[value as AdditionalNoteType]);
     }
+  }
+
+  function updateOperative<K extends keyof OperativeDocumentation>(field: K, value: OperativeDocumentation[K]) {
+    setOperative((current) => ({ ...current, [field]: value }));
   }
 
   function submitNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!content.trim()) {
-      setFormError("Clinical note is required.");
+    if (hasCustomSpecialty && specialty === "Others" && !customMedicalSpecialty.trim()) {
+      setFormError(specialtyError);
+      return;
+    }
+    if (hasSharedClinicalNoteType && medicalNoteType === "Others" && !customMedicalNoteType.trim()) {
+      setFormError(noteTypeError);
+      return;
+    }
+    if (isSurgeryNote && specialty === "Transplant Surgery" && !transplantType) {
+      setFormError("Please select the transplant type.");
+      return;
+    }
+    if (isOperativeNote && !operative.surgeonName.trim()) {
+      setFormError("Surgeon name is required.");
+      return;
+    }
+    if (isOperativeNote && !operative.surgeryName.trim()) {
+      setFormError("Name of surgery is required.");
+      return;
+    }
+    if (!isOperativeNote && !content.trim()) {
+      setFormError(contentError);
       return;
     }
 
@@ -1701,52 +2455,82 @@ function NewNoteModal({
     if (isSigned && !signatureAttested) return;
 
     const nextStatus: NoteStatus = isSigned ? "Signed" : "Draft";
+    const savedSpecialty =
+      hasCustomSpecialty && specialty === "Others" ? customMedicalSpecialty.trim() : specialty;
+    const savedMedicalNoteType =
+      hasSharedClinicalNoteType && medicalNoteType === "Others"
+        ? customMedicalNoteType.trim()
+        : medicalNoteType;
     const generatedTitle = buildNoteTitle({
       additionalProgress,
       alliedHealth,
       category,
-      medicalNoteType,
+      medicalNoteType: savedMedicalNoteType,
       pharmacy,
-      specialty,
+      specialty: savedSpecialty,
     });
 
     onSave({
-      author: author.trim(),
+      author: isOperativeNote
+          ? operative.surgeonName.trim()
+          : author.trim(),
       assessment: isNurseNote ? assessment.trim() : undefined,
       bloodPressureDiastolic: isNurseNote ? bloodPressureDiastolic : undefined,
       bloodPressureSystolic: isNurseNote ? bloodPressureSystolic : undefined,
       category,
-      content: content.trim(),
+      content: isOperativeNote ? undefined : content.trim(),
       communication: isNurseNote ? communication.trim() : undefined,
       followUpPlan: isNurseNote ? followUpPlan.trim() : undefined,
       intervention: isNurseNote ? intervention.trim() : undefined,
-      painScore: isNurseNote ? painScore : undefined,
+      painScore: isNurseNote ? savedPainScore : undefined,
+      painAssessment: isNurseNote
+        ? {
+            scale: painScale,
+            airwayStatus: painScale === "CPOT" ? cpotAirwayStatus : undefined,
+            scores: painScale === "NRS" ? {} : painDomainScores,
+            total: savedPainScore === "" ? undefined : Number(savedPainScore),
+            severity: painSeverity,
+          }
+        : undefined,
+      temperature: isNurseNote ? temperature : undefined,
+      respiratoryRate: isNurseNote ? respiratoryRate : undefined,
+      spo2: isNurseNote ? spo2 : undefined,
+      glucose: isNurseNote && glucoseUnit === "mg/dL" ? glucose : undefined,
+      glucoseMmolL: isNurseNote && glucoseUnit === "mmol/L" ? glucose : undefined,
+      glucoseUnit: isNurseNote ? glucoseUnit : undefined,
+      consciousnessLevel: isNurseNote ? consciousnessLevel : undefined,
+      patientPosition: isNurseNote ? patientPosition.trim() : undefined,
       patientResponse: isNurseNote ? patientResponse.trim() : undefined,
       amendmentReason: isMedicalNote && isAmendment ? amendmentReason.trim() : undefined,
-      additionalProgress: isAdditionalProgressNote ? additionalProgress : undefined,
+      additionalProgress: shouldSaveSpecialInstruction ? additionalProgress : undefined,
       alliedHealth: isAlliedHealthNote ? { ...alliedHealth, sessionDateTime: serviceDateTime } : undefined,
+      operative: isOperativeNote ? operative : undefined,
       authenticatedSigner: hasPatientVisitContext ? authenticatedSigner.trim() : undefined,
       encounterId: hasPatientVisitContext ? encounterId.trim() : undefined,
       medicalAssessment: isMedicalNote ? medicalAssessment.trim() : undefined,
-      medicalNoteType: isMedicalNote ? medicalNoteType : undefined,
+      medicalNoteType: hasSharedClinicalNoteType ? medicalNoteType : undefined,
+      customMedicalNoteType:
+        hasSharedClinicalNoteType && medicalNoteType === "Others" ? customMedicalNoteType.trim() : undefined,
+      transplantType: isSurgeryNote && savedSpecialty === "Transplant Surgery" && transplantType ? transplantType : undefined,
+      medicalNoteSection: isMedicalNote ? medicalNoteSection : undefined,
       objective: isMedicalNote ? objective.trim() : undefined,
       patientId: hasPatientVisitContext ? patientId.trim() : undefined,
       plan: isMedicalNote ? plan.trim() : undefined,
-      practitionerId: hasPatientVisitContext ? practitionerId.trim() : undefined,
-      primaryDiagnosis: isMedicalNote ? primaryDiagnosis.trim() : undefined,
+      practitionerId: undefined,
       priority,
       pharmacy: isPharmacyNote ? pharmacy : undefined,
       pulse: isNurseNote ? pulse : undefined,
       safetyRisk: isNurseNote ? safetyRisk.trim() : undefined,
-      secondaryDiagnoses: isMedicalNote ? secondaryDiagnoses.trim() : undefined,
-      serviceDateTime: serviceDateTime || undefined,
+      serviceDateTime: isOperativeNote
+          ? operative.operativeDate || undefined
+          : serviceDateTime || undefined,
       signatureAttested: isSigned ? signatureAttested : false,
       signedAt: isSigned && signatureAttested ? new Date().toISOString() : undefined,
       signedBy: isSigned && signatureAttested ? (hasPatientVisitContext ? authenticatedSigner.trim() : signedBy.trim()) : undefined,
-      specialty,
+      specialty: savedSpecialty,
       status: nextStatus,
       subjective: isMedicalNote ? subjective.trim() : undefined,
-      title: title.trim() || generatedTitle,
+      title: title.trim() || (isOperativeNote ? `Operative Note - ${operative.surgeryName.trim()}` : generatedTitle),
     });
   }
 
@@ -1755,9 +2539,14 @@ function NewNoteModal({
       className="w-[min(94vw,860px)]"
       onOpenChange={onOpenChange}
       open={open}
-      title={`${editingNote ? "Edit" : "New"} ${category.replace(/ Notes$/, " Note")}`}
+      scrollToTopOnOpen
+      title={
+        isPharmacyNote
+          ? `${editingNote ? "Edit " : ""}Pharmacy Note`
+          : `${editingNote ? "Edit" : "New"} ${category.replace(/ Notes$/, " Note")}`
+      }
     >
-      <form className="space-y-3" noValidate onSubmit={submitNote}>
+      <form className="notes-select-safe min-w-0 space-y-3" noValidate onSubmit={submitNote}>
         {hasPatientVisitContext ? (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border bg-surface-muted/30 px-3 py-2">
             <div className="text-xs">
@@ -1769,160 +2558,392 @@ function NewNoteModal({
               <span className="text-muted-foreground">Visit</span>
               <span className="ml-2 font-semibold">{encounterId}</span>
             </div>
-            <label className="ml-auto flex items-center gap-2 text-xs font-semibold">
-              <span className="whitespace-nowrap">Clinician ID</span>
-              <Input className="h-8 w-40" onChange={(event) => setPractitionerId(event.target.value)} placeholder="Enter ID" value={practitionerId} />
-            </label>
           </div>
         ) : null}
 
-        <div className={cn("grid gap-3 sm:grid-cols-2", isAdditionalProgressNote ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
-          <FormField label="Author">
-            <Input onChange={(event) => setAuthor(event.target.value)} placeholder="Enter author name" value={author} />
-          </FormField>
-          <FormField label="Priority">
-            <select
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
-              onChange={(event) => setPriority(event.target.value as Note["priority"])}
-              value={priority}
-            >
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-            </select>
-          </FormField>
-          {!isAdditionalProgressNote ? (
-            <FormField label="Specialty">
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
-                onChange={(event) => changeSpecialty(event.target.value)}
-                value={specialty}
-              >
-                {selectedCategory.specialties.map((item) => <option key={item}>{item}</option>)}
-              </select>
+        <div className="grid items-start gap-3 sm:grid-cols-2">
+          {isMedicalNote && medicalNoteSection === "ED Notes" ? (
+            <FormField label="Name">
+              <Input onChange={(event) => setAuthor(event.target.value)} placeholder="Enter name" value={author} />
             </FormField>
           ) : null}
-          <FormField label="Service date and time">
-            <Input onChange={(event) => setServiceDateTime(event.target.value)} type="datetime-local" value={serviceDateTime} />
-          </FormField>
+          <PriorityRadioGroup onChange={setPriority} value={priority} />
+          {!isAdditionalProgressNote && !isPharmacyNote ? (
+            <FormField label="Specialty">
+              {isSurgeryNote ? (
+                <SurgerySpecialtyField
+                  customValue={customMedicalSpecialty}
+                  error={formError === "Please select the transplant type." || formError === specialtyError}
+                  open={transplantPopupOpen}
+                  otherOpen={customSpecialtyPopupOpen}
+                  onOpenChange={setTransplantPopupOpen}
+                  onOtherOpenChange={setCustomSpecialtyPopupOpen}
+                  onCustomValueChange={(value) => {
+                    setCustomMedicalSpecialty(value);
+                    if (formError === specialtyError) setFormError("");
+                  }}
+                  onSpecialtyChange={changeSpecialty}
+                  onTransplantChange={(value) => {
+                    setTransplantType(value);
+                    setTransplantPopupOpen(false);
+                    if (formError === "Please select the transplant type.") setFormError("");
+                  }}
+                  specialty={specialty}
+                  transplantType={transplantType}
+                />
+              ) : (
+                <SelectWithOtherPopup
+                  error={formError === specialtyError}
+                  onChange={changeSpecialty}
+                  onCustomValueChange={(value) => {
+                    setCustomMedicalSpecialty(value);
+                    if (formError === specialtyError) setFormError("");
+                  }}
+                  onOpenChange={setCustomSpecialtyPopupOpen}
+                  open={customSpecialtyPopupOpen}
+                  options={selectedCategory.specialties}
+                  placeholder={`Enter ${hasSurgerySpecialty ? "surgery" : "medical"} specialty`}
+                  value={specialty}
+                  customValue={customMedicalSpecialty}
+                />
+              )}
+              {formError === "Please select the transplant type." || formError === specialtyError ? (
+                <span className="mt-1.5 block text-xs font-medium text-destructive">{formError}</span>
+              ) : null}
+            </FormField>
+          ) : null}
+          {!isOperativeNote ? (
+            <div className={cn((isAdditionalProgressNote || isPharmacyNote) && "sm:col-span-2")}>
+              <FormField label="Date and time">
+                <Input onChange={(event) => setServiceDateTime(event.target.value)} type="datetime-local" value={serviceDateTime} />
+              </FormField>
+            </div>
+          ) : null}
         </div>
 
+        {isOperativeNote ? (
+          <>
+            <FormSection description="Record the operative team, procedure and duration." title="Operation Details">
+              <div className="grid items-start gap-3 sm:grid-cols-2">
+                <FormField label="Surgeon Name">
+                  <Input
+                    onChange={(event) => {
+                      updateOperative("surgeonName", event.target.value);
+                      if (formError === "Surgeon name is required.") setFormError("");
+                    }}
+                    placeholder="Enter surgeon name"
+                    value={operative.surgeonName}
+                  />
+                  {formError === "Surgeon name is required." ? (
+                    <span className="mt-1.5 block text-xs font-medium text-destructive">{formError}</span>
+                  ) : null}
+                </FormField>
+                <FormField label="Assistant Name">
+                  <Input onChange={(event) => updateOperative("assistantName", event.target.value)} placeholder="Enter assistant name" value={operative.assistantName} />
+                </FormField>
+                <FormField label="OT Nurse Name">
+                  <Input onChange={(event) => updateOperative("otNurseName", event.target.value)} placeholder="Enter OT nurse name" value={operative.otNurseName} />
+                </FormField>
+                <FormField label="Name of Surgery">
+                  <Input
+                    onChange={(event) => {
+                      updateOperative("surgeryName", event.target.value);
+                      if (formError === "Name of surgery is required.") setFormError("");
+                    }}
+                    placeholder="Enter procedure or surgery name"
+                    value={operative.surgeryName}
+                  />
+                  {formError === "Name of surgery is required." ? (
+                    <span className="mt-1.5 block text-xs font-medium text-destructive">{formError}</span>
+                  ) : null}
+                </FormField>
+                <FormField label="Duration (Hours / Minutes)">
+                  <Input onChange={(event) => updateOperative("duration", event.target.value)} placeholder="e.g. 2 hours 30 minutes" value={operative.duration} />
+                </FormField>
+                <FormField label="Date">
+                  <Input onChange={(event) => updateOperative("operativeDate", event.target.value)} type="date" value={operative.operativeDate} />
+                </FormField>
+              </div>
+            </FormSection>
+            <section className="rounded-lg border border-border bg-surface-muted/25 p-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <ClinicalTextArea label="Operative Findings" onChange={(value) => updateOperative("operativeFindings", value)} placeholder="Enter operative findings..." value={operative.operativeFindings} />
+                <ClinicalTextArea label="Plan" onChange={(value) => updateOperative("plan", value)} placeholder="Enter post-operative plan..." value={operative.plan} />
+              </div>
+            </section>
+          </>
+        ) : null}
+
         {isNurseNote ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
+              <FormField label="Temperature">
+                <Input min="25" max="50" step="0.1" onChange={(event) => setTemperature(event.target.value)} placeholder="36.8 °C" type="number" value={temperature} />
+              </FormField>
+              <FormField label="Respiratory Rate">
+                <Input min="1" max="100" onChange={(event) => setRespiratoryRate(event.target.value)} placeholder="16 breaths/min" type="number" value={respiratoryRate} />
+              </FormField>
+              <FormField label="SpO₂">
+                <Input min="0" max="100" onChange={(event) => setSpo2(event.target.value)} placeholder="98%" type="number" value={spo2} />
+              </FormField>
+              <FormField label="Glucose">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] overflow-hidden rounded-md border border-input bg-background shadow-sm focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
+                  <Input
+                    className="min-w-0 rounded-none border-0 shadow-none focus:border-0 focus:ring-0"
+                    min="0"
+                    step={glucoseUnit === "mmol/L" ? "0.1" : "1"}
+                    onChange={(event) => setGlucose(event.target.value)}
+                    placeholder={glucoseUnit === "mmol/L" ? "e.g. 6.0" : "e.g. 108"}
+                    type="number"
+                    value={glucose}
+                  />
+                  <div className="flex h-9 items-stretch border-l border-input" role="radiogroup" aria-label="Glucose unit">
+                    {(["mg/dL", "mmol/L"] as GlucoseUnit[]).map((unit) => (
+                      <label
+                        className={cn(
+                          "flex cursor-pointer items-center justify-center px-2.5 text-xs font-semibold transition",
+                          unit !== "mg/dL" && "border-l border-input",
+                          glucoseUnit === unit
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-background text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                        )}
+                        key={unit}
+                      >
+                        <input
+                          checked={glucoseUnit === unit}
+                          className="sr-only"
+                          name="glucoseUnit"
+                          onChange={() => {
+                            setGlucoseUnit(unit);
+                            setGlucose("");
+                          }}
+                          type="radio"
+                          value={unit}
+                        />
+                        {unit}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </FormField>
+              <FormField label="Consciousness Level">
+                <SearchableSelect
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  onChange={(event) => setConsciousnessLevel(event.target.value)}
+                  value={consciousnessLevel}
+                >
+                  <option value="">Select level</option>
+                  <option>Alert</option>
+                  <option>Responds to Voice</option>
+                  <option>Responds to Pain</option>
+                  <option>Unresponsive</option>
+                </SearchableSelect>
+              </FormField>
+              <FormField label="Patient Position">
+                <Input onChange={(event) => setPatientPosition(event.target.value)} placeholder="e.g. Supine, sitting, lateral" value={patientPosition} />
+              </FormField>
+              <FormField label="Pulse">
+                <Input min="20" max="250" onChange={(event) => setPulse(event.target.value)} placeholder="72" type="number" value={pulse} />
+              </FormField>
               <FormField label="BP systolic">
                 <Input min="40" max="300" onChange={(event) => setBloodPressureSystolic(event.target.value)} placeholder="120" type="number" value={bloodPressureSystolic} />
               </FormField>
               <FormField label="BP diastolic">
                 <Input min="20" max="200" onChange={(event) => setBloodPressureDiastolic(event.target.value)} placeholder="80" type="number" value={bloodPressureDiastolic} />
               </FormField>
-              <FormField label="Pulse">
-                <Input min="20" max="250" onChange={(event) => setPulse(event.target.value)} placeholder="72" type="number" value={pulse} />
-              </FormField>
-              <FormField label="Pain score">
-                <Input min="0" max="10" onChange={(event) => setPainScore(event.target.value)} placeholder="0" type="number" value={painScore} />
-              </FormField>
+              <div className="sm:col-span-2">
+                <PainAssessmentFields
+                  airwayStatus={cpotAirwayStatus}
+                  domainScores={painDomainScores}
+                  nrsScore={painScore}
+                  onAirwayStatusChange={(value) => {
+                    setCpotAirwayStatus(value);
+                    setPainDomainScores((current) => ({ ...current, cpotDomain4: undefined }));
+                  }}
+                  onDomainScoreChange={(key, value) => setPainDomainScores((current) => ({ ...current, [key]: value }))}
+                  onNrsScoreChange={setPainScore}
+                  onScaleChange={(value) => {
+                    setPainScale(value);
+                    setPainScore("");
+                    setPainDomainScores({});
+                  }}
+                  scale={painScale}
+                  severity={painSeverity}
+                  total={painScale === "NRS" ? (painScore === "" ? undefined : Number(painScore)) : observedPainTotal}
+                />
+              </div>
             </div>
         ) : null}
 
-        {isMedicalNote ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <FormField label="Note type">
-                <select
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
-                  onChange={(event) => setMedicalNoteType(event.target.value as MedicalNoteType)}
-                  value={medicalNoteType}
-                >
-                  {medicalNoteTypes.map((item) => <option key={item}>{item}</option>)}
-                </select>
-              </FormField>
-              <FormField label="Primary diagnosis">
-                <Input onChange={(event) => setPrimaryDiagnosis(event.target.value)} placeholder="e.g. Essential hypertension" value={primaryDiagnosis} />
-              </FormField>
-              <FormField label="Secondary diagnoses">
-                <Input onChange={(event) => setSecondaryDiagnoses(event.target.value)} placeholder="Additional diagnoses" value={secondaryDiagnoses} />
-              </FormField>
+        {hasSharedClinicalNoteType ? (
+            <div className="grid items-start gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <FormField label="Note type">
+                  <SelectWithOtherPopup
+                    customValue={customMedicalNoteType}
+                    error={formError === noteTypeError}
+                    onChange={(value) => {
+                      const nextType = value as MedicalNoteType;
+                      setMedicalNoteType(nextType);
+                      setCustomNoteTypePopupOpen(nextType === "Others");
+                      if (nextType !== "Others") setCustomMedicalNoteType("");
+                      if (formError === noteTypeError) setFormError("");
+                    }}
+                    onCustomValueChange={(value) => {
+                      setCustomMedicalNoteType(value);
+                      if (formError === noteTypeError) setFormError("");
+                    }}
+                    onOpenChange={setCustomNoteTypePopupOpen}
+                    open={customNoteTypePopupOpen}
+                    options={isSurgeryNote ? surgeryNoteTypes : medicalNoteTypes}
+                    placeholder={`Enter ${isSurgeryNote ? "surgery" : "medical"} note type`}
+                    value={medicalNoteType}
+                  />
+                </FormField>
+              </div>
             </div>
         ) : null}
 
         {isPharmacyNote ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <FormField label="Medication">
-                <Input onChange={(event) => updatePharmacy("medicationName", event.target.value)} placeholder="Medication name" value={pharmacy.medicationName} />
-              </FormField>
-              <FormField label="Note type">
-                <select
+            <div className="grid items-start gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <FormField label="Note type">
+                <SearchableSelect
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                   onChange={(event) => updatePharmacy("noteType", event.target.value as PharmacyNoteType)}
                   value={pharmacy.noteType}
                 >
                   {pharmacyNoteTypes.map((item) => <option key={item}>{item}</option>)}
-                </select>
-              </FormField>
+                </SearchableSelect>
+                </FormField>
+              </div>
+              <ClinicalTextArea
+                label="Past Medicine"
+                onChange={(value) => updatePharmacy("medicationPreviousToAdmission", value)}
+                placeholder="Medicines the patient was taking previously..."
+                value={pharmacy.medicationPreviousToAdmission}
+              />
+              <ClinicalTextArea
+                label="Medication Currently"
+                onChange={(value) => updatePharmacy("medicationCurrently", value)}
+                placeholder="Medicines currently being administered..."
+                value={pharmacy.medicationCurrently}
+              />
+              <div className="sm:col-span-2">
+                <ClinicalTextArea
+                  label="Medication at Discharge"
+                  onChange={(value) => updatePharmacy("medicationAtDischarge", value)}
+                  placeholder="Medicines planned or prescribed at discharge..."
+                  value={pharmacy.medicationAtDischarge}
+                />
+              </div>
             </div>
         ) : null}
 
         {isAlliedHealthNote ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
               <FormField label="Note type">
-                <select
+                <SearchableSelect
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                   onChange={(event) => updateAlliedHealth("noteType", event.target.value as AlliedNoteType)}
                   value={alliedHealth.noteType}
                 >
                   {alliedNoteTypes.map((item) => <option key={item}>{item}</option>)}
-                </select>
+                </SearchableSelect>
               </FormField>
-              <FormField label="Duration (minutes)">
-                <Input min="1" onChange={(event) => updateAlliedHealth("sessionDuration", event.target.value)} type="number" value={alliedHealth.sessionDuration} />
+              <FormField label="Duration (Hours / Minutes)">
+                <Input
+                  onChange={(event) => updateAlliedHealth("sessionDuration", event.target.value)}
+                  placeholder="e.g. 1 hour 30 minutes"
+                  type="text"
+                  value={alliedHealth.sessionDuration}
+                />
               </FormField>
+              <div className="sm:col-span-2">
+                <ClinicalTextArea
+                  label="Plan"
+                  onChange={(value) => updateAlliedHealth("followUpPlan", value)}
+                  placeholder="Enter assessment plan, actions and follow-up..."
+                  value={alliedHealth.followUpPlan}
+                />
+              </div>
             </div>
         ) : null}
 
-        {isAdditionalProgressNote ? (
-            <div className={cn("grid gap-3 sm:grid-cols-2", additionalProgress.followUpRequired === "Yes" && "lg:grid-cols-3")}>
-              <FormField label="Note type">
-                <select
+        {!isAdditionalProgressNote ? (
+          <label className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary/40 hover:bg-primary/5">
+            <input
+              checked={specialInstructionEnabled}
+              className="h-4 w-4 rounded border-input"
+              onChange={(event) => setSpecialInstructionEnabled(event.target.checked)}
+              type="checkbox"
+            />
+            <span>Special Instruction Note</span>
+          </label>
+        ) : null}
+
+        {shouldSaveSpecialInstruction ? (
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+            <div className="mb-3 text-sm font-semibold text-foreground">Special Instruction Note</div>
+            <div className="grid items-start gap-3 sm:grid-cols-2">
+              <FormField label="Special instruction type">
+                <SearchableSelect
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                   onChange={(event) => updateAdditionalProgress("noteType", event.target.value as AdditionalNoteType)}
                   value={additionalProgress.noteType}
                 >
                   {additionalNoteTypes.map((item) => <option key={item}>{item}</option>)}
-                </select>
+                </SearchableSelect>
               </FormField>
               <FormField label="Follow-up">
-                <select
+                <SearchableSelect
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                   onChange={(event) => updateAdditionalProgress("followUpRequired", event.target.value)}
                   value={additionalProgress.followUpRequired}
                 >
                   <option>No</option>
                   <option>Yes</option>
-                </select>
+                </SearchableSelect>
               </FormField>
               {additionalProgress.followUpRequired === "Yes" ? (
-                <FormField label="Follow-up date">
-                  <Input onChange={(event) => updateAdditionalProgress("followUpDate", event.target.value)} type="date" value={additionalProgress.followUpDate} />
-                </FormField>
+                <div className="sm:col-span-2">
+                  <FormField label="Follow-up date">
+                    <Input onChange={(event) => updateAdditionalProgress("followUpDate", event.target.value)} type="date" value={additionalProgress.followUpDate} />
+                  </FormField>
+                </div>
               ) : null}
+            </div>
             </div>
         ) : null}
 
-        <FormField label="Clinical note">
+        {!isOperativeNote ? (
+        <FormField label={isNurseNote ? "Nursing note" : isPharmacyNote ? "Pharmacy note" : "Clinical note"}>
           <textarea
             autoFocus
             className={cn(
               "min-h-28 w-full resize-y rounded-md border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:ring-2 focus:ring-ring/20",
-              formError ? "border-destructive focus:border-destructive" : "border-input focus:border-ring",
+              formError === contentError ? "border-destructive focus:border-destructive" : "border-input focus:border-ring",
             )}
             onChange={(event) => {
               setContent(event.target.value);
-              if (formError) setFormError("");
+              if (formError === contentError) setFormError("");
             }}
             placeholder="Assessment, action taken, patient response and next plan..."
             value={content}
           />
-          {formError ? <span className="mt-1.5 block text-xs font-medium text-destructive">{formError}</span> : null}
+          {formError === contentError ? <span className="mt-1.5 block text-xs font-medium text-destructive">{formError}</span> : null}
         </FormField>
+        ) : null}
+
+        {isMedicalNote ? (
+          <FormField label="Treatment Plan">
+            <textarea
+              className="min-h-24 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
+              onChange={(event) => setPlan(event.target.value)}
+              placeholder="Enter treatment plan, medicines, investigations and follow-up..."
+              value={plan}
+            />
+          </FormField>
+        ) : null}
 
         {showSigning ? (
           <div className="grid gap-3 rounded-md border border-warning/35 bg-warning/5 p-3 sm:grid-cols-2">
@@ -1961,8 +2982,28 @@ function NewNoteModal({
           ) : (
             <Button
               onClick={() => {
-                if (!content.trim()) {
-                  setFormError("Clinical note is required.");
+                if (hasCustomSpecialty && specialty === "Others" && !customMedicalSpecialty.trim()) {
+                  setFormError(specialtyError);
+                  return;
+                }
+                if (hasSharedClinicalNoteType && medicalNoteType === "Others" && !customMedicalNoteType.trim()) {
+                  setFormError(noteTypeError);
+                  return;
+                }
+                if (isSurgeryNote && specialty === "Transplant Surgery" && !transplantType) {
+                  setFormError("Please select the transplant type.");
+                  return;
+                }
+                if (isOperativeNote && !operative.surgeonName.trim()) {
+                  setFormError("Surgeon name is required.");
+                  return;
+                }
+                if (isOperativeNote && !operative.surgeryName.trim()) {
+                  setFormError("Name of surgery is required.");
+                  return;
+                }
+                if (!isOperativeNote && !content.trim()) {
+                  setFormError(contentError);
                   return;
                 }
                 setShowSigning(true);
@@ -1979,12 +3020,983 @@ function NewNoteModal({
   );
 }
 
+function PainAssessmentFields({
+  airwayStatus,
+  domainScores,
+  nrsScore,
+  onAirwayStatusChange,
+  onDomainScoreChange,
+  onNrsScoreChange,
+  onScaleChange,
+  scale,
+  severity,
+  total,
+}: {
+  airwayStatus: CpotAirwayStatus;
+  domainScores: PainAssessment["scores"];
+  nrsScore: string;
+  onAirwayStatusChange: (value: CpotAirwayStatus) => void;
+  onDomainScoreChange: (key: PainDomainKey, value: number | undefined) => void;
+  onNrsScoreChange: (value: string) => void;
+  onScaleChange: (value: PainScale) => void;
+  scale: PainScale;
+  severity?: string;
+  total?: number;
+}) {
+  const maxScore = scale === "CPOT" ? 8 : 10;
+  const domain4Options = airwayStatus === "INTUBATED" ? cpotVentilatorOptions : cpotVocalizationOptions;
+  const selectedNrsTotal = nrsScore === "" ? undefined : Number(nrsScore);
+  const selectedNrsSeverity =
+    selectedNrsTotal !== undefined && Number.isFinite(selectedNrsTotal)
+      ? getPainSeverity("NRS", selectedNrsTotal)
+      : undefined;
+
+  return (
+    <div className="rounded-lg border border-border bg-surface-muted/40 p-3 sm:p-4">
+      <div className="mb-3">
+        <div className="text-sm font-semibold">Pain Assessment</div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {([
+          ["NRS", "NRS", "Conscious / verbal patient"],
+          ["CPOT", "CPOT", "Non-verbal / ventilated adult"],
+          ["FLACC", "FLACC", "Infant, child or non-verbal patient"],
+        ] as Array<[PainScale, string, string]>).map(([value, label, help]) => (
+          <label
+            className={cn(
+              "flex cursor-pointer items-start gap-2 rounded-md border bg-background p-3 transition",
+              scale === value ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-primary/50",
+            )}
+            key={value}
+          >
+            <input
+              checked={scale === value}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+              name="pain-scale"
+              onChange={() => onScaleChange(value)}
+              type="radio"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">{label}</span>
+              <span className="block text-xs leading-4 text-muted-foreground">{help}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {scale === "NRS" ? (
+        <div className="mt-4 rounded-lg border border-border bg-background p-4">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm font-semibold">Pain Score (0-10)</div>
+            <div className="text-xs font-semibold text-muted-foreground">
+              {selectedNrsTotal !== undefined && Number.isFinite(selectedNrsTotal) ? `Selected score: ${selectedNrsTotal}/10` : "Select a score"}
+            </div>
+          </div>
+          <div className="grid grid-cols-11 gap-1">
+            {nrsScalePoints.map((point) => (
+              <button
+                aria-label={`${point.score} ${point.label}`}
+                className="flex min-w-0 flex-col items-center gap-1 rounded-md px-1 py-1.5 outline-none transition hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring/25"
+                key={point.score}
+                onClick={() => onNrsScoreChange(String(point.score))}
+                title={point.label}
+                type="button"
+              >
+                <span
+                  className={cn(
+                    "relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-900/25 shadow-sm",
+                    point.tone,
+                    selectedNrsTotal === point.score && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                  )}
+                >
+                  <NrsFace expression={point.expression} />
+                </span>
+                <span className="text-xs font-semibold text-foreground">{point.score}</span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 max-w-[220px]">
+            <div className="rounded-md border border-border bg-surface-muted px-3 py-2">
+              <div className="text-xs font-semibold uppercase text-muted-foreground">Severity</div>
+              <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <span
+                  className={cn(
+                    "h-2.5 w-2.5 rounded-full",
+                    selectedNrsSeverity === "No pain" && "bg-success",
+                    selectedNrsSeverity === "Mild pain" && "bg-emerald-400",
+                    selectedNrsSeverity === "Moderate pain" && "bg-warning",
+                    selectedNrsSeverity === "Severe pain" && "bg-danger",
+                    !selectedNrsSeverity && "bg-muted-foreground/40",
+                  )}
+                />
+                {selectedNrsSeverity ?? "Not selected"}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {scale === "CPOT" ? (
+        <div className="mt-4 space-y-4">
+          <div className="text-sm font-semibold">CPOT Assessment</div>
+          <FormField label="Airway status">
+            <SearchableSelect
+              className="h-9 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+              onChange={(event) => onAirwayStatusChange(event.target.value as CpotAirwayStatus)}
+              value={airwayStatus}
+            >
+              <option value="INTUBATED">Intubated</option>
+              <option value="NOT_INTUBATED">Extubated / non-ventilated</option>
+            </SearchableSelect>
+          </FormField>
+          <CpotAssessmentTable
+            airwayStatus={airwayStatus}
+            domain4Options={domain4Options}
+            domainScores={domainScores}
+            onDomainScoreChange={onDomainScoreChange}
+            severity={severity}
+            total={total}
+          />
+        </div>
+      ) : null}
+
+      {scale === "FLACC" ? (
+        <div className="mt-4 space-y-4">
+          <FlaccAssessmentTable domainScores={domainScores} onDomainScoreChange={onDomainScoreChange} severity={severity} total={total} />
+        </div>
+      ) : null}
+
+      {scale !== "CPOT" ? (
+        <div className="mt-4 flex flex-col gap-2 rounded-md border border-primary/20 bg-primary-soft px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-xs font-semibold text-muted-foreground">Total Score</span>
+          <span className="text-sm font-semibold text-primary">
+            {total !== undefined && Number.isFinite(total)
+              ? `${total}/${maxScore}${severity ? ` - ${severity}` : ""}`
+              : scale === "NRS"
+                ? "Enter a score"
+                : "Complete all domains"}
+          </span>
+        </div>
+      ) : null}
+      {scale === "FLACC" ? null : null}
+
+    </div>
+  );
+}
+
+function NrsFace({ expression }: { expression: (typeof nrsScalePoints)[number]["expression"] }) {
+  const mouthClass =
+    expression === "smile"
+      ? "h-3 w-5 rounded-b-full border-b-2 border-slate-800"
+      : expression === "slight-smile"
+        ? "h-2 w-5 rounded-b-full border-b-2 border-slate-800"
+        : expression === "neutral"
+          ? "h-0 w-5 border-b-2 border-slate-800"
+          : expression === "concerned"
+            ? "h-2 w-5 rounded-t-full border-t-2 border-slate-800"
+            : "h-3 w-5 rounded-t-full border-t-2 border-slate-800";
+
+  return (
+    <span aria-hidden="true" className="absolute inset-0">
+      <span className="absolute left-[9px] top-[10px] h-1.5 w-1.5 rounded-full bg-slate-800" />
+      <span className="absolute right-[9px] top-[10px] h-1.5 w-1.5 rounded-full bg-slate-800" />
+      {expression === "cry" ? (
+        <>
+          <span className="absolute left-[8px] top-[16px] h-2 w-1 rounded-full bg-sky-300" />
+          <span className="absolute right-[8px] top-[16px] h-2 w-1 rounded-full bg-sky-300" />
+        </>
+      ) : null}
+      <span className={cn("absolute left-1/2 top-[21px] -translate-x-1/2", mouthClass)} />
+    </span>
+  );
+}
+
+function CpotAssessmentTable({
+  airwayStatus,
+  domain4Options,
+  domainScores,
+  onDomainScoreChange,
+  severity,
+  total,
+}: {
+  airwayStatus: CpotAirwayStatus;
+  domain4Options: PainScoreOption[];
+  domainScores: PainAssessment["scores"];
+  onDomainScoreChange: (key: PainDomainKey, value: number | undefined) => void;
+  severity?: string;
+  total?: number;
+}) {
+  const rows = [
+    ...cpotDomains,
+    {
+      key: "cpotDomain4" as PainDomainKey,
+      label: airwayStatus === "INTUBATED" ? "Ventilator Compliance" : "Vocalization",
+      options: domain4Options,
+    },
+  ];
+  const significantPain = total !== undefined && total >= 3;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+      <div className="grid gap-3 border-b border-border bg-primary-soft/45 px-4 py-3 text-xs font-bold uppercase text-muted-foreground md:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_260px]">
+        <div>CPOT Components</div>
+        <div>Observation</div>
+        <div>Score</div>
+      </div>
+      <div className="divide-y divide-border">
+        {rows.map((row) => {
+          const selectedScore = domainScores[row.key];
+          const meta = cpotComponentMeta(row.key, row.label);
+          return (
+            <div className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_260px] md:items-center" key={row.key}>
+              <div className="flex items-center gap-3">
+                <PainComponentIcon name={meta.icon} />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-foreground">{row.label}</div>
+                  <div className="text-xs text-muted-foreground">{meta.description}</div>
+                </div>
+              </div>
+              <SearchableSelect
+                className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                onChange={(event) => onDomainScoreChange(row.key, event.target.value === "" ? undefined : Number(event.target.value))}
+                value={selectedScore ?? ""}
+              >
+                <option value="">Select observation</option>
+                {row.options.map((option) => (
+                  <option key={`${row.key}-${option.score}`} value={option.score}>
+                    {option.label}
+                  </option>
+                ))}
+              </SearchableSelect>
+              <div className="grid grid-cols-3 gap-2">
+                {[0, 1, 2].map((score) => (
+                  <button
+                    className={cn(
+                      "h-9 rounded-md border text-sm font-bold transition hover:border-primary hover:bg-primary-soft",
+                      selectedScore === score ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background text-muted-foreground",
+                    )}
+                    key={`${row.key}-${score}`}
+                    onClick={() => onDomainScoreChange(row.key, score)}
+                    type="button"
+                  >
+                    {score}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="grid gap-3 border-t border-border bg-surface-muted/35 p-4 md:grid-cols-[minmax(220px,1fr)_minmax(0,1.4fr)]">
+        <div className="rounded-lg border border-primary/20 bg-background p-4">
+          <div className="text-xs font-bold uppercase text-muted-foreground">Total Score</div>
+          <div className="mt-2 text-center text-3xl font-black text-primary">{total ?? 0} / 8</div>
+        </div>
+        <div className="rounded-lg border border-primary/20 bg-background p-4">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,1fr)] md:items-center">
+            <div>
+              <div className="text-xs font-bold uppercase text-muted-foreground">Severity</div>
+              <div className="mt-2 flex items-center gap-2 text-sm font-bold text-foreground">
+                <span className={cn("h-2.5 w-2.5 rounded-full", significantPain ? "bg-danger" : "bg-success")} />
+                {total !== undefined ? severity : "Complete all domains"}
+              </div>
+            </div>
+            <div className="space-y-2 border-border text-xs font-semibold text-foreground md:border-l md:pl-4">
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-success" />0-2 Acceptable / Minimal Pain</div>
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-danger" />3-8 Significant Pain Present</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function cpotComponentMeta(key: PainDomainKey, label: string) {
+  if (key === "cpotFacial") return { icon: "face", description: "Facial movements" };
+  if (key === "cpotBody") return { icon: "walk", description: "Upper limb movements" };
+  if (key === "cpotMuscle") return { icon: "muscle", description: "Muscle tension" };
+  if (label === "Vocalization") return { icon: "voice", description: "Extubated / non-ventilated patient" };
+  return { icon: "lungs", description: "Tolerance of ventilator" };
+}
+
+function FlaccAssessmentTable({
+  domainScores,
+  onDomainScoreChange,
+  severity,
+  total,
+}: {
+  domainScores: PainAssessment["scores"];
+  onDomainScoreChange: (key: PainDomainKey, value: number | undefined) => void;
+  severity?: string;
+  total?: number;
+}) {
+  const severePain = total !== undefined && total >= 7;
+  const moderatePain = total !== undefined && total >= 4 && total <= 6;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+      <div className="grid gap-3 border-b border-border bg-primary-soft/45 px-4 py-3 text-xs font-bold uppercase text-muted-foreground md:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_260px]">
+        <div>FLACC Components</div>
+        <div>Observation</div>
+        <div>Score</div>
+      </div>
+      <div className="divide-y divide-border">
+        {flaccDomains.map((row) => {
+          const selectedScore = domainScores[row.key];
+          const meta = flaccComponentMeta(row.key);
+          return (
+            <div className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_260px] md:items-center" key={row.key}>
+              <div className="flex items-center gap-3">
+                <PainComponentIcon name={meta.icon} />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-foreground">{row.label}</div>
+                  <div className="text-xs text-muted-foreground">{meta.description}</div>
+                </div>
+              </div>
+              <SearchableSelect
+                className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                onChange={(event) => onDomainScoreChange(row.key, event.target.value === "" ? undefined : Number(event.target.value))}
+                value={selectedScore ?? ""}
+              >
+                <option value="">Select observation</option>
+                {row.options.map((option) => (
+                  <option key={`${row.key}-${option.score}`} value={option.score}>
+                    {option.label}
+                  </option>
+                ))}
+              </SearchableSelect>
+              <div className="grid grid-cols-3 gap-2">
+                {[0, 1, 2].map((score) => (
+                  <button
+                    className={cn(
+                      "h-9 rounded-md border text-sm font-bold transition hover:border-primary hover:bg-primary-soft",
+                      selectedScore === score ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background text-muted-foreground",
+                    )}
+                    key={`${row.key}-${score}`}
+                    onClick={() => onDomainScoreChange(row.key, score)}
+                    type="button"
+                  >
+                    {score}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="grid gap-3 border-t border-border bg-surface-muted/35 p-4 md:grid-cols-[minmax(220px,1fr)_minmax(0,1.4fr)]">
+        <div className="rounded-lg border border-primary/20 bg-background p-4">
+          <div className="text-xs font-bold uppercase text-muted-foreground">Total Score</div>
+          <div className="mt-2 text-center text-3xl font-black text-primary">{total ?? 0} / 10</div>
+        </div>
+        <div className="rounded-lg border border-primary/20 bg-background p-4">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,1fr)] md:items-center">
+            <div>
+              <div className="text-xs font-bold uppercase text-muted-foreground">Severity</div>
+              <div className="mt-2 flex items-center gap-2 text-sm font-bold text-foreground">
+                <span className={cn("h-2.5 w-2.5 rounded-full", severePain ? "bg-danger" : moderatePain ? "bg-warning" : "bg-success")} />
+                {total !== undefined ? severity : "Complete all domains"}
+              </div>
+            </div>
+            <div className="space-y-2 border-border text-xs font-semibold text-foreground md:border-l md:pl-4">
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-success" />0 Relaxed and comfortable</div>
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-success" />1-3 Mild discomfort</div>
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-warning" />4-6 Moderate pain</div>
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-danger" />7-10 Severe discomfort / pain</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function flaccComponentMeta(key: PainDomainKey) {
+  if (key === "flaccFace") return { icon: "face", description: "Facial expression" };
+  if (key === "flaccLegs") return { icon: "legs", description: "Position of legs" };
+  if (key === "flaccActivity") return { icon: "activity", description: "Movement of body" };
+  if (key === "flaccCry") return { icon: "cry", description: "Vocalization" };
+  return { icon: "comfort", description: "Ease of comforting" };
+}
+
+function PainComponentIcon({ name }: { name: string }) {
+  return (
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+      {name === "face" ? <FaceMiniIcon /> : null}
+      {name === "walk" ? <BodyMovementIcon /> : null}
+      {name === "muscle" ? <MuscleMiniIcon /> : null}
+      {name === "lungs" ? <LungsMiniIcon /> : null}
+      {name === "voice" ? <VoiceMiniIcon /> : null}
+      {name === "legs" ? <LegsMiniIcon /> : null}
+      {name === "activity" ? <ActivityMiniIcon /> : null}
+      {name === "cry" ? <CryMiniIcon /> : null}
+      {name === "comfort" ? <ComfortMiniIcon /> : null}
+    </div>
+  );
+}
+
+function FaceMiniIcon() {
+  return (
+    <span className="relative h-5 w-5 rounded-full border-2 border-current">
+      <span className="absolute left-[4px] top-[5px] h-1 w-1 rounded-full bg-current" />
+      <span className="absolute right-[4px] top-[5px] h-1 w-1 rounded-full bg-current" />
+      <span className="absolute left-1/2 top-[12px] h-1.5 w-2.5 -translate-x-1/2 rounded-b-full border-b-2 border-current" />
+    </span>
+  );
+}
+
+function BodyMovementIcon() {
+  return (
+    <span className="relative h-6 w-5">
+      <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-current" />
+      <span className="absolute left-[8px] top-[7px] h-8 w-1 origin-top rotate-[18deg] rounded-full bg-current" />
+      <span className="absolute left-[4px] top-[10px] h-1 w-4 -rotate-[28deg] rounded-full bg-current" />
+      <span className="absolute left-[7px] top-[15px] h-1 w-4 rotate-[36deg] rounded-full bg-current" />
+    </span>
+  );
+}
+
+function MuscleMiniIcon() {
+  return (
+    <span className="relative h-6 w-6">
+      <span className="absolute bottom-1 left-1 h-3 w-4 rounded-full border-2 border-current" />
+      <span className="absolute bottom-2 right-0 h-2 w-3 rounded-full bg-current" />
+      <span className="absolute left-2 top-1 h-4 w-1 rotate-[-25deg] rounded-full bg-current" />
+    </span>
+  );
+}
+
+function LungsMiniIcon() {
+  return (
+    <span className="relative h-6 w-6">
+      <span className="absolute left-[11px] top-1 h-5 w-1 rounded-full bg-current" />
+      <span className="absolute left-1 top-2 h-4 w-2.5 rounded-full border-2 border-current" />
+      <span className="absolute right-1 top-2 h-4 w-2.5 rounded-full border-2 border-current" />
+    </span>
+  );
+}
+
+function VoiceMiniIcon() {
+  return (
+    <span className="relative h-6 w-6">
+      <span className="absolute left-1 top-2 h-3 w-2 rounded-sm bg-current" />
+      <span className="absolute left-3 top-[7px] h-4 w-4 rounded-full border-2 border-current border-l-0" />
+      <span className="absolute left-[15px] top-[3px] h-5 w-5 rounded-full border-2 border-current border-l-0 opacity-50" />
+    </span>
+  );
+}
+
+function LegsMiniIcon() {
+  return (
+    <span className="relative h-6 w-6">
+      <span className="absolute left-2 top-1 h-5 w-1.5 rounded-full bg-current" />
+      <span className="absolute right-2 top-1 h-5 w-1.5 rounded-full bg-current" />
+    </span>
+  );
+}
+
+function ActivityMiniIcon() {
+  return (
+    <span className="relative h-6 w-6">
+      <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-current" />
+      <span className="absolute left-[11px] top-[7px] h-4 w-1 rounded-full bg-current" />
+      <span className="absolute left-[4px] top-[10px] h-1 w-5 rounded-full bg-current" />
+      <span className="absolute left-[6px] top-[18px] h-1 w-4 rounded-full bg-current" />
+    </span>
+  );
+}
+
+function CryMiniIcon() {
+  return (
+    <span className="relative h-5 w-5 rounded-full border-2 border-current">
+      <span className="absolute left-[4px] top-[5px] h-1 w-1 rounded-full bg-current" />
+      <span className="absolute right-[4px] top-[5px] h-1 w-1 rounded-full bg-current" />
+      <span className="absolute left-[4px] top-[9px] h-2 w-1 rounded-full bg-sky-300" />
+      <span className="absolute right-[4px] top-[9px] h-2 w-1 rounded-full bg-sky-300" />
+      <span className="absolute left-1/2 top-[13px] h-1.5 w-2.5 -translate-x-1/2 rounded-t-full border-t-2 border-current" />
+    </span>
+  );
+}
+
+function ComfortMiniIcon() {
+  return (
+    <span className="relative h-6 w-6">
+      <span className="absolute left-1/2 top-1 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-current" />
+      <span className="absolute bottom-1 left-1/2 h-3 w-5 -translate-x-1/2 rounded-t-full bg-current" />
+      <span className="absolute bottom-0 left-1/2 h-1 w-6 -translate-x-1/2 rounded-full bg-current opacity-50" />
+    </span>
+  );
+}
+
+function PainDomainSelect({
+  domainKey,
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  domainKey: PainDomainKey;
+  label: string;
+  onChange: (key: PainDomainKey, value: number | undefined) => void;
+  options: PainScoreOption[];
+  value?: number;
+}) {
+  const selectedOption = options.find((option) => option.score === value);
+
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)_96px] md:items-center">
+        <div className="text-sm font-semibold text-foreground">{label}</div>
+        <SearchableSelect
+          className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+          onChange={(event) => onChange(domainKey, event.target.value === "" ? undefined : Number(event.target.value))}
+          value={value ?? ""}
+        >
+          <option value="">Select observation</option>
+          {options.map((option) => (
+            <option key={`${domainKey}-${option.score}`} value={option.score}>
+              {option.label}
+            </option>
+          ))}
+        </SearchableSelect>
+        <div className="rounded-md bg-primary-soft px-3 py-2 text-sm font-semibold text-primary">
+          Score = {value ?? "-"}
+        </div>
+      </div>
+      {selectedOption?.guidance ? <span className="mt-2 block text-xs leading-4 text-muted-foreground">{selectedOption.guidance}</span> : null}
+    </div>
+  );
+}
+
+function NrsPainScaleModal({
+  currentScore,
+  onApply,
+  onOpenChange,
+  open,
+}: {
+  currentScore?: number;
+  onApply: (score: number) => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}) {
+  const initialRange = nrsPainRanges.find((range) => scoreInNrsRange(currentScore, range)) ?? nrsPainRanges[1];
+  const [selectedRangeId, setSelectedRangeId] = React.useState<NrsPainRange["id"]>(initialRange.id);
+  const [selectedScore, setSelectedScore] = React.useState(currentScore ?? initialRange.score);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const nextRange = nrsPainRanges.find((range) => scoreInNrsRange(currentScore, range)) ?? nrsPainRanges[1];
+    setSelectedRangeId(nextRange.id);
+    setSelectedScore(currentScore ?? nextRange.score);
+  }, [currentScore, open]);
+
+  const selectedRange = nrsPainRanges.find((range) => range.id === selectedRangeId) ?? nrsPainRanges[1];
+  const selectedPoint = nrsScalePoints.find((point) => point.score === selectedScore);
+
+  function selectRange(range: NrsPainRange) {
+    setSelectedRangeId(range.id);
+    setSelectedScore(range.score);
+  }
+
+  function selectScore(score: number) {
+    const nextRange = nrsPainRanges.find((range) => scoreInNrsRange(score, range));
+    setSelectedScore(score);
+    if (nextRange) setSelectedRangeId(nextRange.id);
+  }
+
+  return (
+    <CenterModal
+      className="w-[min(94vw,900px)]"
+      description="Select patient condition, pain range, and severity to calculate the NRS pain score."
+      onOpenChange={onOpenChange}
+      open={open}
+      title="NRS Pain Scale"
+    >
+      <div className="space-y-5">
+        <div className="grid gap-3 md:grid-cols-4">
+          {nrsPainRanges.map((range) => (
+            <button
+              className={cn(
+                "rounded-lg border bg-background p-3 text-left transition hover:border-primary/70",
+                selectedRangeId === range.id ? "border-primary ring-2 ring-primary/15" : "border-border",
+              )}
+              key={range.id}
+              onClick={() => selectRange(range)}
+              type="button"
+            >
+              <div className="text-sm font-semibold text-foreground">{range.label}</div>
+              <div className="mt-1 text-xs font-semibold text-primary">Range {range.range}</div>
+              <div className="mt-2 text-xs leading-5 text-muted-foreground">{range.condition}</div>
+            </button>
+          ))}
+        </div>
+
+        <div className="rounded-lg border border-border bg-surface-muted/40 p-4">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-sm font-semibold">Scaling</div>
+              <div className="text-xs text-muted-foreground">Choose an exact score from 0 to 10.</div>
+            </div>
+            <div className="rounded-md bg-primary-soft px-3 py-1.5 text-sm font-semibold text-primary">
+              Calculated score: {selectedScore}/10
+            </div>
+          </div>
+          <div className="grid grid-cols-11 gap-1">
+            {nrsScalePoints.map((point) => (
+              <button
+                aria-label={`${point.score} ${point.label}`}
+                className={cn(
+                  "flex h-10 items-center justify-center rounded-md border text-sm font-bold transition hover:border-primary hover:bg-primary-soft",
+                  selectedScore === point.score ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground",
+                )}
+                key={point.score}
+                onClick={() => selectScore(point.score)}
+                title={point.label}
+                type="button"
+              >
+                {point.score}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+            <div>0: No pain</div>
+            <div>1-3: Mild pain</div>
+            <div>4-6: Moderate pain</div>
+            <div className="sm:col-span-3">7-10: Severe pain</div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[1fr_220px]">
+          <div className="rounded-lg border border-border bg-background p-4">
+            <div className="text-sm font-semibold">Patient Condition</div>
+            <div className="mt-2 text-sm text-muted-foreground">{selectedRange.condition}</div>
+            <div className="mt-3 text-xs leading-5 text-muted-foreground">{selectedRange.description}</div>
+            {selectedPoint ? <div className="mt-3 text-xs font-semibold text-primary">Scale marker: {selectedPoint.label}</div> : null}
+          </div>
+          <div className="rounded-lg border border-primary/25 bg-primary-soft p-4">
+            <div className="text-xs font-semibold uppercase text-muted-foreground">Severity</div>
+            <div className="mt-1 text-xl font-bold text-primary">{getPainSeverity("NRS", selectedScore)}</div>
+            <div className="mt-2 text-xs text-muted-foreground">Range {selectedRange.range}</div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              onApply(selectedScore);
+              onOpenChange(false);
+            }}
+          >
+            Apply Score
+          </Button>
+        </div>
+      </div>
+    </CenterModal>
+  );
+}
+
+function scoreInNrsRange(score: number | undefined, range: NrsPainRange) {
+  if (score === undefined || !Number.isFinite(score)) return false;
+  if (range.id === "none") return score === 0;
+  if (range.id === "mild") return score >= 1 && score <= 3;
+  if (range.id === "moderate") return score >= 4 && score <= 6;
+  return score >= 7 && score <= 10;
+}
+
 function FormField({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-1.5 block text-xs font-semibold text-foreground">{label}</span>
       {children}
     </label>
+  );
+}
+
+function PriorityRadioGroup({
+  onChange,
+  value,
+}: {
+  onChange: (priority: Note["priority"]) => void;
+  value: Note["priority"];
+}) {
+  return (
+    <fieldset className="min-w-0">
+      <legend className="mb-1.5 text-xs font-semibold text-foreground">Priority</legend>
+      <div className="grid h-9 grid-cols-3 overflow-hidden rounded-md border border-input bg-background shadow-sm">
+        {(["Low", "Medium", "High"] as Note["priority"][]).map((item) => (
+          <label
+            className={cn(
+              "flex min-w-0 cursor-pointer items-center justify-center gap-1.5 border-l border-input px-2 text-xs font-semibold transition first:border-l-0",
+              value === item
+                ? "bg-primary-soft text-primary"
+                : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+            )}
+            key={item}
+          >
+            <input
+              checked={value === item}
+              className="h-3.5 w-3.5 shrink-0 accent-[var(--primary)]"
+              name="priority"
+              onChange={() => onChange(item)}
+              type="radio"
+              value={item}
+            />
+            <span className="whitespace-nowrap">{item}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function SelectWithOtherPopup({
+  customValue,
+  error,
+  onChange,
+  onCustomValueChange,
+  onOpenChange,
+  open,
+  options,
+  placeholder,
+  value,
+}: {
+  customValue: string;
+  error: boolean;
+  onChange: (value: string) => void;
+  onCustomValueChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  options: readonly string[];
+  placeholder: string;
+  value: string;
+}) {
+  const anchorRef = React.useRef<HTMLDivElement>(null);
+  const [popupWidth, setPopupWidth] = React.useState(280);
+
+  React.useEffect(() => {
+    if (!open) return;
+
+    function updateWidth() {
+      const width = anchorRef.current?.getBoundingClientRect().width;
+      if (width) setPopupWidth(Math.min(width, window.innerWidth - 24));
+    }
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [open]);
+
+  return (
+    <Popover.Root onOpenChange={onOpenChange} open={open && value === "Others"}>
+      <Popover.Anchor asChild>
+        <div ref={anchorRef}>
+          <SearchableSelect
+            className={cn(
+              "h-9 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20",
+              error ? "border-destructive focus:border-destructive" : "border-input focus:border-ring",
+            )}
+            onChange={(event) => onChange(event.target.value)}
+            value={value}
+          >
+            <option value="">Select option</option>
+            {options.map((item) => <option key={item}>{item}</option>)}
+          </SearchableSelect>
+          {value === "Others" && customValue ? (
+            <button
+              className="mt-2 flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary-soft px-3 text-left text-sm font-semibold text-primary outline-none transition hover:border-primary focus-visible:ring-2 focus-visible:ring-ring/20"
+              onClick={() => onOpenChange(true)}
+              type="button"
+            >
+              <span className="min-w-0 truncate">{customValue}</span>
+              <FilePenLine className="h-4 w-4 shrink-0" />
+            </button>
+          ) : null}
+        </div>
+      </Popover.Anchor>
+      <Popover.Portal>
+        <Popover.Content
+          align="start"
+          avoidCollisions
+          collisionPadding={{ bottom: 12, left: 12, right: 12, top: 12 }}
+          className="z-[90] max-w-[calc(100vw-24px)] rounded-md border border-border bg-surface p-3 shadow-soft"
+          sideOffset={4}
+          sticky="always"
+          style={{ width: popupWidth }}
+        >
+          <CustomValuePopupContent
+            onChange={onCustomValueChange}
+            onDone={() => onOpenChange(false)}
+            placeholder={placeholder}
+            value={customValue}
+          />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function CustomValuePopupContent({
+  onChange,
+  onDone,
+  placeholder,
+  value,
+}: {
+  onChange: (value: string) => void;
+  onDone: () => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="text-xs font-semibold text-muted-foreground">Enter custom value</div>
+      <Input
+        autoFocus
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            if (value.trim()) onDone();
+          }
+        }}
+        placeholder={placeholder}
+        value={value}
+      />
+      <div className="flex justify-end">
+        <Button disabled={!value.trim()} onClick={onDone} size="sm" type="button">Done</Button>
+      </div>
+    </div>
+  );
+}
+
+function SurgerySpecialtyField({
+  customValue,
+  error,
+  open,
+  otherOpen,
+  onCustomValueChange,
+  onOpenChange,
+  onOtherOpenChange,
+  onSpecialtyChange,
+  onTransplantChange,
+  specialty,
+  transplantType,
+}: {
+  customValue: string;
+  error: boolean;
+  open: boolean;
+  otherOpen: boolean;
+  onCustomValueChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onOtherOpenChange: (open: boolean) => void;
+  onSpecialtyChange: (specialty: string) => void;
+  onTransplantChange: (transplantType: TransplantType) => void;
+  specialty: string;
+  transplantType: TransplantType | "";
+}) {
+  const anchorRef = React.useRef<HTMLDivElement>(null);
+  const [popupWidth, setPopupWidth] = React.useState(280);
+  const popupOpen = specialty === "Transplant Surgery" ? open : specialty === "Others" ? otherOpen : false;
+
+  React.useEffect(() => {
+    if (!popupOpen) return;
+
+    function updateWidth() {
+      const width = anchorRef.current?.getBoundingClientRect().width;
+      if (width) setPopupWidth(Math.min(width, window.innerWidth - 24));
+    }
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [popupOpen]);
+
+  return (
+    <Popover.Root
+      onOpenChange={(nextOpen) => {
+        if (specialty === "Transplant Surgery") onOpenChange(nextOpen);
+        if (specialty === "Others") onOtherOpenChange(nextOpen);
+      }}
+      open={popupOpen}
+    >
+      <Popover.Anchor asChild>
+        <div ref={anchorRef}>
+          <SearchableSelect
+            className={cn(
+              "h-9 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20",
+              error ? "border-destructive focus:border-destructive" : "border-input focus:border-ring",
+            )}
+            onChange={(event) => onSpecialtyChange(event.target.value)}
+            value={specialty}
+          >
+            {surgerySpecialties.map((item) => <option key={item}>{item}</option>)}
+          </SearchableSelect>
+          {specialty === "Transplant Surgery" && transplantType ? (
+            <button
+              className="mt-2 flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary-soft px-3 text-left text-sm font-semibold text-primary outline-none transition hover:border-primary focus-visible:ring-2 focus-visible:ring-ring/20"
+              onClick={() => onOpenChange(true)}
+              type="button"
+            >
+              <span className="min-w-0 truncate">{transplantType}</span>
+              <ChevronDown className="h-4 w-4 shrink-0" />
+            </button>
+          ) : null}
+          {specialty === "Others" && customValue ? (
+            <button
+              className="mt-2 flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-primary/40 bg-primary-soft px-3 text-left text-sm font-semibold text-primary outline-none transition hover:border-primary focus-visible:ring-2 focus-visible:ring-ring/20"
+              onClick={() => onOtherOpenChange(true)}
+              type="button"
+            >
+              <span className="min-w-0 truncate">{customValue}</span>
+              <FilePenLine className="h-4 w-4 shrink-0" />
+            </button>
+          ) : null}
+        </div>
+      </Popover.Anchor>
+      <Popover.Portal>
+        <Popover.Content
+          align="start"
+          avoidCollisions
+          collisionPadding={{ bottom: 12, left: 12, right: 12, top: 12 }}
+          className="z-[90] max-h-[min(360px,var(--radix-popover-content-available-height))] max-w-[calc(100vw-24px)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-md border border-border bg-surface p-1 shadow-soft"
+          sideOffset={4}
+          sticky="always"
+          style={{ width: popupWidth }}
+        >
+          {specialty === "Transplant Surgery" ? (
+            <>
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Select transplant type</div>
+              {transplantTypes.map((type) => (
+                <button
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded px-3 py-2.5 text-left text-sm outline-none hover:bg-surface-muted focus-visible:bg-surface-muted",
+                    transplantType === type && "bg-primary-soft font-semibold text-primary",
+                  )}
+                  key={type}
+                  onClick={() => onTransplantChange(type)}
+                  type="button"
+                >
+                  <span className="min-w-0 flex-1 break-words whitespace-normal">{type}</span>
+                  {transplantType === type ? <Check className="h-4 w-4 shrink-0" /> : null}
+                </button>
+              ))}
+            </>
+          ) : (
+            <CustomValuePopupContent
+              onChange={onCustomValueChange}
+              onDone={() => onOtherOpenChange(false)}
+              placeholder="Enter surgery specialty"
+              value={customValue}
+            />
+          )}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 
@@ -2105,7 +4117,7 @@ function AlliedSpecialtyFields({
     );
   }
 
-  if (specialty === "Social Work") {
+  if (specialty === "Social Worker") {
     return (
       <FormSection description="Record psychosocial needs, discharge barriers, consent and community support." title="Social work assessment">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -2213,14 +4225,14 @@ function AdditionalProgressFields({
             <ClinicalTextArea label="Current assessment" onChange={(value) => onChange("currentAssessment", value)} placeholder="Assessment based on this follow-up..." required value={data.currentAssessment} />
             <ClinicalTextArea label="Next action" onChange={(value) => onChange("nextAction", value)} placeholder="Treatment, monitoring or appointment plan..." required value={data.nextAction} />
             <FormField label="Escalation required">
-              <select
+              <SearchableSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                 onChange={(event) => onChange("escalationRequired", event.target.value)}
                 value={data.escalationRequired}
               >
                 <option>No</option>
                 <option>Yes</option>
-              </select>
+              </SearchableSelect>
             </FormField>
           </div>
         </FormSection>
@@ -2245,7 +4257,7 @@ function AdditionalProgressFields({
             <ClinicalTextArea label="Referral / service required" onChange={(value) => onChange("referralRequired", value)} placeholder="Referral, equipment or external service needed..." value={data.referralRequired} />
             <ClinicalTextArea label="Discharge barriers" onChange={(value) => onChange("dischargeBarriers", value)} placeholder="Barriers affecting safe discharge..." value={data.dischargeBarriers} />
             <FormField label="Follow-up status">
-              <select
+              <SearchableSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                 onChange={(event) => onChange("followUpStatus", event.target.value)}
                 value={data.followUpStatus}
@@ -2254,7 +4266,7 @@ function AdditionalProgressFields({
                 <option>In progress</option>
                 <option>Completed</option>
                 <option>Blocked</option>
-              </select>
+              </SearchableSelect>
             </FormField>
           </div>
         </FormSection>
@@ -2270,7 +4282,7 @@ function AdditionalProgressFields({
               <Input onChange={(event) => onChange("educationProvidedTo", event.target.value)} placeholder="Patient, caregiver or family member" required value={data.educationProvidedTo} />
             </FormField>
             <FormField label="Teaching method">
-              <select
+              <SearchableSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                 onChange={(event) => onChange("teachingMethod", event.target.value)}
                 value={data.teachingMethod}
@@ -2281,7 +4293,7 @@ function AdditionalProgressFields({
                 <option>Video</option>
                 <option>Interpreter-assisted</option>
                 <option>Teach-back</option>
-              </select>
+              </SearchableSelect>
             </FormField>
             <FormField label="Material / language used">
               <Input onChange={(event) => onChange("materialLanguage", event.target.value)} placeholder="Material and preferred language" value={data.materialLanguage} />
@@ -2291,14 +4303,14 @@ function AdditionalProgressFields({
             <ClinicalTextArea label="Teach-back result" onChange={(value) => onChange("teachBackResult", value)} placeholder="What the patient repeated or demonstrated..." required value={data.teachBackResult} />
             <ClinicalTextArea label="Barriers to learning" onChange={(value) => onChange("learningBarriers", value)} placeholder="Language, hearing, cognition, distress..." value={data.learningBarriers} />
             <FormField label="Interpreter required">
-              <select
+              <SearchableSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                 onChange={(event) => onChange("interpreterRequired", event.target.value)}
                 value={data.interpreterRequired}
               >
                 <option>No</option>
                 <option>Yes</option>
-              </select>
+              </SearchableSelect>
             </FormField>
             <ClinicalTextArea label="Questions raised" onChange={(value) => onChange("questionsRaised", value)} placeholder="Patient or caregiver questions..." value={data.questionsRaised} />
             <ClinicalTextArea label="Additional education required" onChange={(value) => onChange("additionalEducation", value)} placeholder="Further teaching or reinforcement required..." value={data.additionalEducation} />
@@ -2310,13 +4322,13 @@ function AdditionalProgressFields({
         <CommunicationFields data={data} onChange={onChange} />
       ) : null}
 
-      {data.noteType === "Family Communication Note" ? (
+      {data.noteType === "Family Meeting Notes" ? (
         <>
           <CommunicationFields data={data} onChange={onChange} />
-          <FormSection description="Confirm consent and record the information shared with the family member." title="Family communication">
+          <FormSection description="Confirm consent and record the discussion and decisions made with the family." title="Family meeting">
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField label="Patient consent to share information">
-                <select
+                <SearchableSelect
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                   onChange={(event) => onChange("patientConsent", event.target.value)}
                   value={data.patientConsent}
@@ -2325,7 +4337,7 @@ function AdditionalProgressFields({
                   <option>Confirmed</option>
                   <option>Not required</option>
                   <option>Declined</option>
-                </select>
+                </SearchableSelect>
               </FormField>
               <ClinicalTextArea label="Information shared" onChange={(value) => onChange("informationShared", value)} placeholder="Clinical or care information shared..." required value={data.informationShared} />
               <ClinicalTextArea label="Family questions / concerns" onChange={(value) => onChange("familyConcerns", value)} placeholder="Questions, concerns and decisions..." required value={data.familyConcerns} />
@@ -2347,14 +4359,14 @@ function AdditionalProgressFields({
               <Input onChange={(event) => onChange("handoverDateTime", event.target.value)} required type="datetime-local" value={data.handoverDateTime} />
             </FormField>
             <FormField label="Acknowledgement received">
-              <select
+              <SearchableSelect
                 className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                 onChange={(event) => onChange("acknowledgementReceived", event.target.value)}
                 value={data.acknowledgementReceived}
               >
                 <option>No</option>
                 <option>Yes</option>
-              </select>
+              </SearchableSelect>
             </FormField>
             <ClinicalTextArea label="Situation" onChange={(value) => onChange("situation", value)} placeholder="Immediate issue and current situation..." required value={data.situation} />
             <ClinicalTextArea label="Background" onChange={(value) => onChange("background", value)} placeholder="Relevant history and treatment..." required value={data.background} />
@@ -2399,14 +4411,14 @@ function CommunicationFields({
     <FormSection description="Record who was contacted, identity checks, advice given and the outcome." title="Telephone communication">
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label="Call direction">
-          <select
+          <SearchableSelect
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
             onChange={(event) => onChange("callDirection", event.target.value)}
             value={data.callDirection}
           >
             <option>Incoming</option>
             <option>Outgoing</option>
-          </select>
+          </SearchableSelect>
         </FormField>
         <FormField label="Call date and time">
           <Input onChange={(event) => onChange("callDateTime", event.target.value)} required type="datetime-local" value={data.callDateTime} />
@@ -2421,21 +4433,21 @@ function CommunicationFields({
           <Input onChange={(event) => onChange("contactNumber", event.target.value)} placeholder="Prefer masked number" value={data.contactNumber} />
         </FormField>
         <FormField label="Identity verified">
-          <select
+          <SearchableSelect
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
             onChange={(event) => onChange("identityVerified", event.target.value)}
             value={data.identityVerified}
           >
             <option>No</option>
             <option>Yes</option>
-          </select>
+          </SearchableSelect>
         </FormField>
         <ClinicalTextArea label="Reason for call" onChange={(value) => onChange("callReason", value)} placeholder="Reason for the communication..." required value={data.callReason} />
         <ClinicalTextArea label="Discussion summary" onChange={(value) => onChange("discussionSummary", value)} placeholder="Important details discussed..." required value={data.discussionSummary} />
         <ClinicalTextArea label="Clinical advice provided" onChange={(value) => onChange("clinicalAdvice", value)} placeholder="Advice, warning signs and instructions..." required value={data.clinicalAdvice} />
         <ClinicalTextArea label="Action agreed" onChange={(value) => onChange("actionAgreed", value)} placeholder="Agreed action and responsibility..." required value={data.actionAgreed} />
         <FormField label="Urgency">
-          <select
+          <SearchableSelect
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
             onChange={(event) => onChange("urgency", event.target.value)}
             value={data.urgency}
@@ -2443,10 +4455,10 @@ function CommunicationFields({
             <option>Routine</option>
             <option>Urgent</option>
             <option>Immediate</option>
-          </select>
+          </SearchableSelect>
         </FormField>
         <FormField label="Call outcome">
-          <select
+          <SearchableSelect
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
             onChange={(event) => onChange("callOutcome", event.target.value)}
             value={data.callOutcome}
@@ -2457,17 +4469,17 @@ function CommunicationFields({
             <option>Call disconnected</option>
             <option>Follow-up required</option>
             <option>Escalated</option>
-          </select>
+          </SearchableSelect>
         </FormField>
         <FormField label="Escalation required">
-          <select
+          <SearchableSelect
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
             onChange={(event) => onChange("escalationRequired", event.target.value)}
             value={data.escalationRequired}
           >
             <option>No</option>
             <option>Yes</option>
-          </select>
+          </SearchableSelect>
         </FormField>
       </div>
     </FormSection>
@@ -2488,7 +4500,7 @@ function NoteDetailsModal({
   return (
     <CenterModal
       className="w-[min(94vw,880px)]"
-      description={note ? `${note.category} / ${note.specialty}` : undefined}
+      description={note ? `${getCategoryDisplayLabel(note.category)} / ${note.specialty}` : undefined}
       onOpenChange={onOpenChange}
       open={Boolean(note)}
       title={note?.title ?? "Note Details"}
@@ -2496,7 +4508,9 @@ function NoteDetailsModal({
       {note ? (
         <div className="space-y-4">
           <div className="grid gap-3 rounded-md border border-border bg-surface-muted/45 p-3 sm:grid-cols-2 lg:grid-cols-4">
-            <DetailField label="Author" value={note.author} />
+            {note.category === "Medical Notes" && (note.medicalNoteSection ?? "ED Notes") === "ED Notes" ? (
+              <DetailField label="Name" value={note.author} />
+            ) : null}
             <DetailField label="Date & Time" value={note.date} />
             <div>
               <div className="text-[11px] font-semibold text-muted-foreground">Status</div>
@@ -2512,21 +4526,13 @@ function NoteDetailsModal({
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground">Medical Document Context</h4>
                 <div className="mt-2 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <DetailField label="Medical Note Type" value={note.medicalNoteType ?? inferMedicalNoteType(note.title)} />
-                  <DetailField label="Service Date & Time" value={formatServiceDateTime(note.serviceDateTime)} />
+                  <DetailField label="Medical Note Type" value={getNoteType(note)} />
+                  <DetailField label="Medical Notes Tab" value={note.medicalNoteSection ?? "ED Notes"} />
+                  <DetailField label="Date & Time" value={formatServiceDateTime(note.serviceDateTime)} />
                   <DetailField label="Patient ID" value={note.patientId || "Not linked"} />
                   <DetailField label="Encounter ID" value={note.encounterId || "Not linked"} />
-                  <DetailField label="Practitioner ID" value={note.practitionerId || "Not linked"} />
                   <DetailField label="Authenticated Signer" value={note.authenticatedSigner || note.signedBy || "Not authenticated"} />
                   <DetailField label="FHIR Document Target" value="DocumentReference" />
-                  <DetailField label="Diagnosis Target" value="Condition" />
-                </div>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-muted-foreground">Diagnoses</h4>
-                <div className="mt-2 grid gap-3 sm:grid-cols-2">
-                  <NarrativeField label="Primary Diagnosis" value={note.primaryDiagnosis} />
-                  <NarrativeField label="Secondary Diagnoses" value={note.secondaryDiagnoses} />
                 </div>
               </div>
               {hasStructuredMedicalNote(note) ? (
@@ -2536,7 +4542,7 @@ function NoteDetailsModal({
                     <NarrativeField label="Subjective" value={note.subjective} />
                     <NarrativeField label="Objective" value={note.objective} />
                     <NarrativeField label="Assessment" value={note.medicalAssessment} />
-                    <NarrativeField label="Plan" value={note.plan} />
+                    <NarrativeField label="Treatment Plan" value={note.plan} />
                   </div>
                 </div>
               ) : null}
@@ -2548,18 +4554,53 @@ function NoteDetailsModal({
               ) : null}
             </>
           ) : null}
+          {note.category === "Surgery Notes" ? (
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground">Surgery Document Context</h4>
+              <div className="mt-2 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
+                <DetailField label="Surgery Note Type" value={getNoteType(note)} />
+                <DetailField label="Specialty" value={note.specialty} />
+                {note.specialty === "Transplant Surgery" ? (
+                  <DetailField label="Transplant Type" value={note.transplantType || "Not recorded"} />
+                ) : null}
+                <DetailField label="Date & Time" value={formatServiceDateTime(note.serviceDateTime)} />
+                <DetailField label="Authenticated Signer" value={note.authenticatedSigner || note.signedBy || "Not authenticated"} />
+              </div>
+            </div>
+          ) : null}
+          {note.category === "Operative Notes" && note.operative ? <OperativeNoteDetails note={note} /> : null}
           {note.category === "Pharmacy Notes" && note.pharmacy ? <PharmacyNoteDetails note={note} /> : null}
           {note.category === "Allied Health Notes" && note.alliedHealth ? <AlliedHealthNoteDetails note={note} /> : null}
-          {note.category === "Additional Progress Notes" && note.additionalProgress ? <AdditionalProgressNoteDetails note={note} /> : null}
+          {note.additionalProgress ? <AdditionalProgressNoteDetails note={note} /> : null}
           {hasStructuredObservations(note) ? (
             <div>
               <h4 className="text-xs font-semibold text-muted-foreground">Structured Observations</h4>
               <div className="mt-2 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
-                <DetailField label="Blood Pressure" value={formatBloodPressure(note)} />
                 <DetailField label="Pulse" value={note.pulse ? `${note.pulse} beats/min` : "Not recorded"} />
-                <DetailField label="Pain Score" value={note.painScore ? `${note.painScore}/10` : "Not recorded"} />
+                <DetailField label="Blood Pressure" value={formatBloodPressure(note)} />
+                <DetailField label="Pain Score" value={formatPainAssessment(note)} />
+                <DetailField label="Temperature" value={note.temperature ? `${note.temperature} °C` : "Not recorded"} />
+                <DetailField label="Respiratory Rate" value={note.respiratoryRate ? `${note.respiratoryRate} breaths/min` : "Not recorded"} />
+                <DetailField label="SpO₂" value={note.spo2 ? `${note.spo2}%` : "Not recorded"} />
+                <DetailField
+                  label="Glucose"
+                  value={
+                    note.glucoseUnit === "mmol/L"
+                      ? note.glucoseMmolL
+                        ? `${note.glucoseMmolL} mmol/L`
+                        : "Not recorded"
+                      : note.glucose
+                        ? `${note.glucose} mg/dL`
+                        : note.glucoseMmolL
+                          ? `${note.glucoseMmolL} mmol/L`
+                          : "Not recorded"
+                  }
+                />
+                <DetailField label="Consciousness Level" value={note.consciousnessLevel || "Not recorded"} />
+                <DetailField label="Patient Position" value={note.patientPosition || "Not recorded"} />
                 <DetailField label="FHIR target" value="Observation" />
               </div>
+              {note.painAssessment && note.painAssessment.scale !== "NRS" ? <PainAssessmentDetails assessment={note.painAssessment} /> : null}
             </div>
           ) : null}
           {hasStructuredNursingNote(note) ? (
@@ -2575,10 +4616,14 @@ function NoteDetailsModal({
               </div>
             </div>
           ) : null}
-          {note.content || (!hasStructuredNursingNote(note) && !hasStructuredObservations(note) && !hasStructuredMedicalNote(note) && !note.pharmacy && !note.alliedHealth && !note.additionalProgress) ? (
+          {note.content || (!hasStructuredNursingNote(note) && !hasStructuredObservations(note) && !hasStructuredMedicalNote(note) && !note.pharmacy && !note.alliedHealth && !note.additionalProgress && !note.operative) ? (
             <div>
               <h4 className="text-xs font-semibold text-muted-foreground">
-                {hasStructuredNursingNote(note) || hasStructuredMedicalNote(note) || note.pharmacy || note.alliedHealth || note.additionalProgress ? "Additional Narrative" : "Clinical Note"}
+                {hasStructuredNursingNote(note) || hasStructuredMedicalNote(note) || note.pharmacy || note.alliedHealth || note.additionalProgress || note.operative
+                  ? "Additional Narrative"
+                  : note.category === "Nurse Notes"
+                    ? "Nursing Note"
+                    : "Clinical Note"}
               </h4>
               <div className="mt-2 min-h-28 whitespace-pre-wrap rounded-md border border-border bg-background p-4 text-sm leading-6">
                 {note.content || "No clinical narrative was added to this demo note."}
@@ -2618,6 +4663,46 @@ function NarrativeField({ label, value }: { label: string; value?: string }) {
   );
 }
 
+function PainAssessmentDetails({ assessment }: { assessment: PainAssessment }) {
+  const domains =
+    assessment.scale === "CPOT"
+      ? [
+          ...cpotDomains,
+          {
+            key: "cpotDomain4" as PainDomainKey,
+            label: assessment.airwayStatus === "INTUBATED" ? "Ventilator compliance" : "Vocalization",
+            options: assessment.airwayStatus === "INTUBATED" ? cpotVentilatorOptions : cpotVocalizationOptions,
+          },
+        ]
+      : flaccDomains;
+
+  return (
+    <div className="mt-3 rounded-md border border-border bg-background p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h5 className="text-xs font-semibold">{assessment.scale} observations</h5>
+        <span className="text-xs font-semibold text-primary">
+          {assessment.total !== undefined ? `${assessment.total}/${assessment.scale === "CPOT" ? 8 : 10}` : "Incomplete"}
+          {assessment.severity ? ` - ${assessment.severity}` : ""}
+        </span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {domains.map((domain) => {
+          const score = assessment.scores[domain.key];
+          const option = domain.options.find((item) => item.score === score);
+          return (
+            <div className="rounded border border-border bg-surface-muted/40 p-2.5" key={domain.key}>
+              <div className="text-[11px] font-semibold text-muted-foreground">{domain.label}</div>
+              <div className="mt-1 text-xs font-medium">
+                {option ? `${option.score} - ${option.label}` : "Not recorded"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function PatientVisitDetails({ note }: { note: Note }) {
   return (
     <div>
@@ -2625,10 +4710,46 @@ function PatientVisitDetails({ note }: { note: Note }) {
       <div className="mt-2 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
         <DetailField label="Patient ID" value={note.patientId || "Not linked"} />
         <DetailField label="Visit ID" value={note.encounterId || "Not linked"} />
-        <DetailField label="Clinician ID" value={note.practitionerId || "Not linked"} />
         <DetailField label="Signing Clinician" value={note.authenticatedSigner || note.signedBy || "Not authenticated"} />
       </div>
     </div>
+  );
+}
+
+function OperativeNoteDetails({ note }: { note: Note }) {
+  const operative = note.operative;
+  if (!operative) return null;
+
+  const duration =
+    operative.duration ||
+    [
+      operative.durationHours ? `${operative.durationHours} hour(s)` : "",
+      operative.durationMinutes ? `${operative.durationMinutes} minute(s)` : "",
+    ].filter(Boolean).join(" ") ||
+    "Not recorded";
+
+  return (
+    <>
+      <div>
+        <h4 className="text-xs font-semibold text-muted-foreground">Operation Details</h4>
+        <div className="mt-2 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
+          <DetailField label="Specialty" value={note.specialty} />
+          <DetailField label="Surgeon Name" value={operative.surgeonName || "Not recorded"} />
+          <DetailField label="Assistant Name" value={operative.assistantName || "Not recorded"} />
+          <DetailField label="OT Nurse Name" value={operative.otNurseName || "Not recorded"} />
+          <DetailField label="Name of Surgery" value={operative.surgeryName || "Not recorded"} />
+          <DetailField label="Duration" value={duration} />
+          <DetailField label="Date" value={formatServiceDateTime(operative.operativeDate)} />
+          <DetailField label="Authenticated Signer" value={note.authenticatedSigner || note.signedBy || "Not authenticated"} />
+        </div>
+      </div>
+      <div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <NarrativeField label="Operative Findings" value={operative.operativeFindings} />
+          <NarrativeField label="Plan" value={operative.plan} />
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -2639,8 +4760,13 @@ function PharmacyNoteDetails({ note }: { note: Note }) {
     <>
       <PatientVisitDetails note={note} />
       <div>
-        <h4 className="text-xs font-semibold text-muted-foreground">Medication Details</h4>
-        <div className="mt-2 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
+        <h4 className="text-xs font-semibold text-muted-foreground">Medication Reconciliation</h4>
+        <div className="mt-2 grid gap-3 sm:grid-cols-3">
+          <NarrativeField label="Past Medicine" value={pharmacy.medicationPreviousToAdmission} />
+          <NarrativeField label="Medication Currently" value={pharmacy.medicationCurrently} />
+          <NarrativeField label="Medication at Discharge" value={pharmacy.medicationAtDischarge} />
+        </div>
+        <div className="mt-3 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
           <DetailField label="Note Type" value={pharmacy.noteType} />
           <DetailField label="Medication" value={pharmacy.medicationName || "Not recorded"} />
           <DetailField label="Medication Code" value={pharmacy.medicationCode || "Not recorded"} />
@@ -2682,8 +4808,8 @@ function AlliedHealthNoteDetails({ note }: { note: Note }) {
         <div className="mt-2 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
           <DetailField label="Note Type" value={allied.noteType} />
           <DetailField label="Specialty" value={note.specialty} />
-          <DetailField label="Session Date & Time" value={formatServiceDateTime(allied.sessionDateTime)} />
-          <DetailField label="Duration" value={allied.sessionDuration ? `${allied.sessionDuration} minutes` : "Not recorded"} />
+          <DetailField label="Date & Time" value={formatServiceDateTime(allied.sessionDateTime)} />
+          <DetailField label="Duration" value={allied.sessionDuration || "Not recorded"} />
         </div>
       </div>
       <div>
@@ -2698,7 +4824,7 @@ function AlliedHealthNoteDetails({ note }: { note: Note }) {
           <NarrativeField label="Goals" value={allied.goals} />
           <NarrativeField label="Progress Toward Goals" value={allied.goalProgress} />
           <NarrativeField label="Education Provided" value={allied.educationProvided} />
-          <NarrativeField label="Follow-up Plan" value={allied.followUpPlan} />
+          <NarrativeField label="Plan" value={allied.followUpPlan} />
         </div>
       </div>
       <div>
@@ -2719,10 +4845,10 @@ function AdditionalProgressNoteDetails({ note }: { note: Note }) {
     <>
       <PatientVisitDetails note={note} />
       <div>
-        <h4 className="text-xs font-semibold text-muted-foreground">Progress Note Details</h4>
+        <h4 className="text-xs font-semibold text-muted-foreground">Special Instruction Details</h4>
         <div className="mt-2 grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4">
           <DetailField label="Note Type" value={data.noteType} />
-          <DetailField label="Service Date & Time" value={formatServiceDateTime(note.serviceDateTime)} />
+          <DetailField label="Date & Time" value={formatServiceDateTime(note.serviceDateTime)} />
           <DetailField label="Follow-up Required" value={data.followUpRequired} />
           <DetailField label="Follow-up Date" value={data.followUpDate || "Not scheduled"} />
         </div>
@@ -2802,7 +4928,7 @@ function getAdditionalProgressDetails(data: AdditionalProgressDocumentation) {
       { label: "Additional Education Required", value: data.additionalEducation },
     ];
   }
-  if (data.noteType === "Phone Call Note" || data.noteType === "Family Communication Note") {
+  if (data.noteType === "Phone Call Note" || data.noteType === "Family Meeting Notes") {
     const communicationDetails = [
       { label: "Call Direction", value: data.callDirection },
       { label: "Call Date & Time", value: formatServiceDateTime(data.callDateTime) },
@@ -2818,7 +4944,7 @@ function getAdditionalProgressDetails(data: AdditionalProgressDocumentation) {
       { label: "Call Outcome", value: data.callOutcome },
       { label: "Escalation Required", value: data.escalationRequired },
     ];
-    if (data.noteType === "Family Communication Note") {
+    if (data.noteType === "Family Meeting Notes") {
       communicationDetails.push(
         { label: "Patient Consent", value: data.patientConsent },
         { label: "Information Shared", value: data.informationShared },
@@ -2869,7 +4995,7 @@ function getAlliedSpecialtyDetails(specialty: string, data: AlliedHealthDocument
       { label: "Next-session Plan", value: data.nextSessionPlan },
     ];
   }
-  if (specialty === "Nutrition") {
+  if (specialty === "Dietitian") {
     return [
       { label: "Current Weight", value: data.currentWeight ? `${data.currentWeight} kg` : "" },
       { label: "Height", value: data.height ? `${data.height} cm` : "" },
@@ -2886,7 +5012,7 @@ function getAlliedSpecialtyDetails(specialty: string, data: AlliedHealthDocument
       { label: "Monitoring Plan", value: data.monitoringPlan },
     ];
   }
-  if (specialty === "Social Work") {
+  if (specialty === "Social Worker") {
     return [
       { label: "Family / Support System", value: data.supportSystem },
       { label: "Living Arrangement", value: data.livingArrangement },
@@ -2957,12 +5083,33 @@ function hasStructuredMedicalNote(note: Note) {
 }
 
 function hasStructuredObservations(note: Note) {
-  return Boolean(note.bloodPressureSystolic || note.bloodPressureDiastolic || note.pulse || note.painScore);
+  return Boolean(
+    note.bloodPressureSystolic ||
+      note.bloodPressureDiastolic ||
+      note.pulse ||
+      note.painScore ||
+      note.painAssessment ||
+      note.temperature ||
+      note.respiratoryRate ||
+      note.spo2 ||
+      note.glucose ||
+      note.glucoseMmolL ||
+      note.consciousnessLevel ||
+      note.patientPosition,
+  );
 }
 
 function formatBloodPressure(note: Note) {
   if (!note.bloodPressureSystolic && !note.bloodPressureDiastolic) return "Not recorded";
   return `${note.bloodPressureSystolic || "--"}/${note.bloodPressureDiastolic || "--"} mmHg`;
+}
+
+function formatPainAssessment(note: Note) {
+  if (!note.painScore) return "Not recorded";
+  const scale = note.painAssessment?.scale ?? "NRS";
+  const maxScore = scale === "CPOT" ? 8 : 10;
+  const severity = note.painAssessment?.severity ?? getPainSeverity(scale, Number(note.painScore));
+  return `${scale} ${note.painScore}/${maxScore}${severity ? ` - ${severity}` : ""}`;
 }
 
 function formatServiceDateTime(value?: string) {
@@ -2977,7 +5124,7 @@ function NotesTable({ actions, notes: rows, compact = false }: { actions: NoteTa
       <table className="w-full min-w-[780px] border-collapse text-xs">
         <thead className="bg-surface-muted/70 text-muted-foreground">
           <tr>
-            {["Note Title", "Category", "Specialty", "Author", "Date & Time", "Status", "Priority", "Actions"].map((heading) => (
+            {["Note Title", "Category", "Specialty", "Date & Time", "Status", "Priority", "Actions"].map((heading) => (
               <th className="border-b border-border px-3 py-2 text-left text-[11px] font-semibold" key={heading}>{heading}</th>
             ))}
           </tr>
@@ -2986,9 +5133,8 @@ function NotesTable({ actions, notes: rows, compact = false }: { actions: NoteTa
           {rows.map((note) => (
             <tr className="transition hover:bg-surface-muted/50" key={note.id}>
               <td className="border-b border-border px-3 py-2.5 font-medium">{note.title}</td>
-              <td className="border-b border-border px-3 py-2.5 text-muted-foreground">{note.category}</td>
+              <td className="border-b border-border px-3 py-2.5 text-muted-foreground">{getCategoryDisplayLabel(note.category)}</td>
               <td className="border-b border-border px-3 py-2.5">{note.specialty}</td>
-              <td className="border-b border-border px-3 py-2.5">{note.author}</td>
               <td className="whitespace-nowrap border-b border-border px-3 py-2.5 text-muted-foreground">{note.date}</td>
               <td className="border-b border-border px-3 py-2.5"><StatusLabel status={note.status} /></td>
               <td className="border-b border-border px-3 py-2.5"><PriorityLabel priority={note.priority} /></td>
@@ -3033,7 +5179,8 @@ function NoteActionsMenu({ actions, note }: { actions: NoteTableActions; note: N
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="end"
-          className="z-[80] min-w-44 rounded-md border border-border bg-surface p-1 text-xs shadow-soft"
+          collisionPadding={12}
+          className="z-[80] max-w-[calc(100vw-24px)] min-w-44 rounded-md border border-border bg-surface p-1 text-xs shadow-soft"
           sideOffset={4}
         >
           <ActionMenuItem icon={Eye} label="View details" onSelect={() => actions.onView(note)} />
@@ -3077,10 +5224,169 @@ function ActionMenuItem({
 
 function PatientFact({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="min-w-44 px-4 py-2">
-      <div className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</div>
-      <div className={cn("mt-0.5 truncate text-xs font-semibold", tone)}>{value}</div>
+    <div className="min-w-0 px-2 py-2 sm:px-4">
+      <div className="text-[9px] font-semibold uppercase text-muted-foreground sm:text-[10px]">{label}</div>
+      <div className={cn("mt-0.5 truncate text-[11px] font-semibold sm:text-xs", tone)}>{value}</div>
     </div>
+  );
+}
+
+
+type SearchableSelectOption = {
+  disabled: boolean;
+  label: string;
+  value: string;
+};
+
+function getSearchableSelectOptions(children: React.ReactNode): SearchableSelectOption[] {
+  const options: SearchableSelectOption[] = [];
+
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement<{ children?: React.ReactNode; disabled?: boolean; value?: string | number }>(child)) return;
+    if (child.type === React.Fragment) {
+      options.push(...getSearchableSelectOptions(child.props.children));
+      return;
+    }
+    if (child.type !== "option") return;
+
+    const label = React.Children.toArray(child.props.children).join("");
+    options.push({
+      disabled: Boolean(child.props.disabled),
+      label,
+      value: String(child.props.value ?? label),
+    });
+  });
+
+  return options;
+}
+
+function SearchableCombobox({
+  className,
+  disabled,
+  onValueChange,
+  options,
+  placeholder,
+  value,
+}: {
+  className?: string;
+  disabled?: boolean;
+  onValueChange: (value: string) => void;
+  options: SearchableSelectOption[];
+  placeholder?: string;
+  value: string;
+}) {
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? value;
+  const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState(selectedLabel);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filterQuery = normalizedQuery === selectedLabel.trim().toLowerCase() ? "" : normalizedQuery;
+  const filteredOptions = options.filter(
+    (option) => !option.disabled && (!filterQuery || option.label.toLowerCase().includes(filterQuery)),
+  );
+
+  React.useEffect(() => {
+    if (!open) setQuery(selectedLabel);
+  }, [open, selectedLabel]);
+
+  function choose(option: SearchableSelectOption) {
+    setQuery(option.label);
+    onValueChange(option.value);
+    setOpen(false);
+  }
+
+  return (
+    <Popover.Root
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) setQuery(selectedLabel);
+      }}
+      open={open}
+    >
+      <Popover.Anchor asChild>
+        <div className="relative min-w-0">
+          <input
+            className={cn(className, "pr-9")}
+            disabled={disabled}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setOpen(true);
+            }}
+            onClick={() => setOpen(true)}
+            onFocus={(event) => {
+              event.currentTarget.select();
+              setOpen(true);
+            }}
+            placeholder={placeholder}
+            value={query}
+          />
+          <button
+            aria-label="Open options"
+            className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground"
+            disabled={disabled}
+            onClick={() => setOpen((current) => !current)}
+            tabIndex={-1}
+            type="button"
+          >
+            <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+          </button>
+        </div>
+      </Popover.Anchor>
+      <Popover.Portal>
+        <Popover.Content
+          align="start"
+          className="z-[9999] max-h-64 min-w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-lg border-2 border-primary/25 bg-white p-1.5 text-foreground shadow-[0_16px_40px_rgba(15,23,42,0.24)] ring-1 ring-black/5 dark:bg-slate-950"
+          collisionPadding={12}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          sideOffset={4}
+        >
+          {filteredOptions.length ? (
+            filteredOptions.map((option) => (
+              <button
+                className={cn(
+                  "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm text-foreground outline-none transition hover:bg-primary-soft hover:text-primary focus:bg-primary-soft focus:text-primary",
+                  option.value === value && "bg-primary-soft font-semibold text-primary",
+                )}
+                key={option.value}
+                onClick={() => choose(option)}
+                type="button"
+              >
+                <span>{option.label}</span>
+                {option.value === value ? <Check className="h-4 w-4" /> : null}
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-2 text-sm text-muted-foreground">No matching option</div>
+          )}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function SearchableSelect({
+  children,
+  className,
+  disabled,
+  onChange,
+  value,
+}: Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "onChange"> & {
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
+}) {
+  const options = getSearchableSelectOptions(children);
+
+  return (
+    <SearchableCombobox
+      className={className}
+      disabled={disabled}
+      onValueChange={(nextValue) =>
+        onChange?.({
+          currentTarget: { value: nextValue },
+          target: { value: nextValue },
+        } as React.ChangeEvent<HTMLSelectElement>)
+      }
+      options={options}
+      value={String(value ?? "")}
+    />
   );
 }
 
@@ -3098,15 +5404,15 @@ function FilterSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className={cn("block", className)}>
+    <label className={cn("block min-w-0 max-w-full", className)}>
       <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">{label}</span>
-      <select
-        className="h-9 w-full min-w-0 rounded-md border border-input bg-background pl-2 pr-7 text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
-        onChange={(event) => onChange(event.target.value)}
+      <SearchableCombobox
+        className="h-9 w-full min-w-0 max-w-full truncate rounded-md border border-input bg-background px-2 text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+        onValueChange={onChange}
+        options={options.map((option) => ({ disabled: false, label: option, value: option }))}
+        placeholder={`Type or select ${label.toLowerCase()}`}
         value={value}
-      >
-        {options.map((option) => <option key={option}>{option}</option>)}
-      </select>
+      />
     </label>
   );
 }

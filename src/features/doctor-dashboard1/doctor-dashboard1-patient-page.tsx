@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   ChartNoAxesCombined,
   ClipboardCheck,
+  FilePenLine,
   FlaskConical,
   HeartPulse,
   LayoutDashboard,
@@ -34,10 +35,11 @@ import { ClinicalExaminationPage } from "@/features/clinical-examination/clinica
 import { AssessmentPage } from "@/features/assessment/assessment-page";
 import { ViewPoctResultPage } from "@/features/poct/poct-pages";
 import { IntakeOutputPage } from "@/features/intake-output/intake-output-page";
+import { NotesPage } from "@/features/notes/notes-page";
 import { ProgressNotesPanel } from "@/features/doctor-dashboard1/progress-notes";
 import { cn } from "@/lib/utils";
 
-type PatientTabValue = "overview" | "live-monitoring" | "clinical-examination" | "results" | "vitals" | "assessment" | "shift-summary" | "orders" | "Intake Output";
+type PatientTabValue = "overview" | "live-monitoring" | "clinical-examination" | "results" | "vitals" | "assessment" | "add-progress" | "shift-summary" | "orders" | "Intake Output";
 type DashboardPoctMode = "add" | "results";
 type ResultsAutoView = "laboratory-all";
 type RequestedOrderTab = "blood" | "drugs" | "pathology" | "lab" | "radiology" | "poct" | "procedures" | "referral" | "ordersets" | "ldt";
@@ -50,6 +52,7 @@ function getRequestedPatientTab(tab: string | null): PatientTabValue | null {
     case "results":
     case "vitals":
     case "assessment":
+    case "add-progress":
     case "shift-summary":
     case "orders":
     case "Intake Output":
@@ -184,7 +187,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
             tone={tone}
           />
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-white/95 p-1 shadow-sm">
+          <div className="horizontal-scrollbar max-w-full overflow-x-auto rounded-xl border border-border bg-white/95 p-1 pb-2 shadow-sm">
             <TabsList className="inline-flex h-auto w-max min-w-max rounded-lg bg-surface-muted/70 p-1">
               <PatientTab icon={LayoutDashboard} label="Overview" value="overview" />
               <PatientTab icon={Radio} label="Live Monitoring" value="live-monitoring" />
@@ -192,6 +195,7 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
               <PatientTab icon={FlaskConical} label="Results" value="results" />
               <PatientTab icon={HeartPulse} label="Vitals" value="vitals" />
               <PatientTab icon={ClipboardCheck} label="Assessment" value="assessment" />
+              <PatientTab icon={FilePenLine} label="Add Progress" value="add-progress" />
               <PatientTab icon={ClipboardCheck} label="Progress Note" value="shift-summary" />
               <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
               <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
@@ -251,6 +255,11 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
               }}
             /> */}
             <h1>under development</h1>
+          </TabsContent>
+          <TabsContent className="mt-0" value="add-progress">
+            <React.Suspense fallback={<div className="rounded-md border border-border bg-white p-4 text-sm font-semibold text-muted-foreground">Loading notes...</div>}>
+              <NotesPage />
+            </React.Suspense>
           </TabsContent>
           <TabsContent className="mt-0" value="shift-summary">
             <NurseShiftSummaryTimeline patient={patient} rapidReviewPatient={rapidReviewPatient} />

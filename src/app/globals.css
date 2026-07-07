@@ -138,6 +138,30 @@ body {
   height: 0;
 }
 
+.horizontal-scrollbar {
+  overscroll-behavior-x: contain;
+  scrollbar-color: hsl(var(--primary) / 0.55) hsl(var(--muted));
+  scrollbar-width: thin;
+}
+
+.horizontal-scrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.horizontal-scrollbar::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: hsl(var(--muted));
+}
+
+.horizontal-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: hsl(var(--primary) / 0.55);
+}
+
+.horizontal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.75);
+}
+
 .tabs-scroll-list::-webkit-scrollbar-track {
   border-radius: 999px;
   background: hsl(var(--muted));

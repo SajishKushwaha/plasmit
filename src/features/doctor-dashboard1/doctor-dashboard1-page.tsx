@@ -22,7 +22,9 @@ import { CenterModal } from "@/components/ui/center-modal";
 import { SearchInput } from "@/components/ui/search-input";
 import { ProgressNotesPanel } from "@/features/doctor-dashboard1/progress-notes";
 import { DoctorOrdersPage } from "@/features/doctor-orders/doctor-orders";
+import { LiveMonitoringPage } from "@/features/live-monitoring/live-monitoring-page";
 import { rapidReviewPatients } from "@/features/rapid-review/rapid-review-data";
+import { PatientVitalsAllGraphOnly } from "@/features/rapid-review/rapid-review-graph";
 import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
 import { cn } from "@/lib/utils";
 
@@ -179,6 +181,7 @@ export function DoctorDashboard1Page() {
   const [labResultsPatient, setLabResultsPatient] = React.useState<Dashboard1Patient | null>(null);
   const [medicationPatient, setMedicationPatient] = React.useState<Dashboard1Patient | null>(null);
   const [radiologyPatient, setRadiologyPatient] = React.useState<Dashboard1Patient | null>(null);
+  const [vitalsPatient, setVitalsPatient] = React.useState<Dashboard1Patient | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredPatients = orderedPatients.filter((patient) =>
     `${patient.name} ${patient.bed} ${patient.diagnosis}`.toLowerCase().includes(normalizedSearch),
@@ -251,6 +254,7 @@ export function DoctorDashboard1Page() {
                 onOpenMedication={() => setMedicationPatient(patient)}
                 onOpenProgressNote={() => setShiftSummaryPatient(patient)}
                 onOpenRadiology={() => setRadiologyPatient(patient)}
+                onOpenVitals={() => setVitalsPatient(patient)}
               />
             ))}
             {!visiblePatients.length ? (
@@ -309,11 +313,11 @@ export function DoctorDashboard1Page() {
                           {patient.diagnosis}
                         </Link>
                       </td>
-                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.hr} href="" /></td>
-                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.spo2} href="" /></td>
-                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abps} href="" /></td>
-                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} href="" /></td>
-                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} href="" /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.hr} onClick={() => setVitalsPatient(patient)} /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.spo2} onClick={() => setVitalsPatient(patient)} /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abps} onClick={() => setVitalsPatient(patient)} /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} onClick={() => setVitalsPatient(patient)} /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} onClick={() => setVitalsPatient(patient)} /></td>
                       <td className="h-[74px] px-3 py-2 text-center">
                         <RoundActionButton
                           icon={FlaskConical}
@@ -345,7 +349,7 @@ export function DoctorDashboard1Page() {
                         <RoundActionButton dataTestId={`dashboard1-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={() => setEventPatient(patient)} />
                       </td>
                       <td className="h-[74px] px-3 py-2 text-center">
-                        <RoundActionButton disabled icon={PhoneCall} tone="dark" label={`Collaborate unavailable for ${patient.name}`} />
+                        <RoundActionButton icon={PhoneCall} tone="blue" label={`Open collaborate for ${patient.name}`} onClick={() => setCollaboratePatient(patient)} />
                       </td>
                     </tr>
                   );
@@ -385,11 +389,23 @@ export function DoctorDashboard1Page() {
         </div>
       </div>
       <CenterModal
-        className="w-[min(96vw,1180px)]"
+        bodyClassName="overflow-hidden p-0"
+        className="h-[min(92dvh,860px)] w-[min(96vw,1180px)]"
+        description={vitalsPatient ? `${vitalsPatient.name} | ${vitalsPatient.bed} | ${vitalsPatient.diagnosis}` : undefined}
+        onOpenChange={(open) => !open && setVitalsPatient(null)}
+        open={Boolean(vitalsPatient)}
+        title="Patient Vitals"
+      >
+        {vitalsPatient ? <DashboardVitalsPopup patient={vitalsPatient} /> : null}
+      </CenterModal>
+
+      <CenterModal
+        bodyClassName="overflow-hidden p-0"
+        className="h-[min(92dvh,760px)] w-[min(96vw,1180px)]"
         description={labResultsPatient ? `${labResultsPatient.name} | ${labResultsPatient.bed} | ${labResultsPatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setLabResultsPatient(null)}
         open={Boolean(labResultsPatient)}
-        title="Laboratory Results"
+        title="Diagnosis Result"
       >
         {labResultsPatient ? <DashboardLabResultsPopup patient={labResultsPatient} /> : null}
       </CenterModal>
@@ -464,6 +480,7 @@ function DashboardMobilePatientCard({
   onOpenMedication,
   onOpenProgressNote,
   onOpenRadiology,
+  onOpenVitals,
 }: {
   patient: Dashboard1Patient;
   onOpenCollaborate: () => void;
@@ -472,6 +489,7 @@ function DashboardMobilePatientCard({
   onOpenMedication: () => void;
   onOpenProgressNote: () => void;
   onOpenRadiology: () => void;
+  onOpenVitals: () => void;
 }) {
   const tone = patientTone(patient);
   const vitalItems = [
@@ -506,7 +524,7 @@ function DashboardMobilePatientCard({
       <div className="border-t border-[#e5e7eb] px-3 py-3">
         <div className="grid grid-cols-5 gap-2">
           {vitalItems.map((item) => (
-            <MobileVitalBadge key={item.label} {...item} />
+            <MobileVitalBadge key={item.label} {...item} onClick={onOpenVitals} />
           ))}
         </div>
       </div>
@@ -545,20 +563,19 @@ function DashboardMobilePatientCard({
           tone="red"
         />
         <MobileDashboardAction
-          disabled
           icon={PhoneCall}
-          label={`Collaborate unavailable for ${patient.name}`}
+          label={`Open collaborate for ${patient.name}`}
           onClick={onOpenCollaborate}
-          tone="disabled"
+          tone="blue"
         />
       </div>
     </article>
   );
 }
 
-function MobileVitalBadge({ label, value, tone }: { label: string; value: string | number; tone: VitalTone }) {
+function MobileVitalBadge({ label, onClick, value, tone }: { label: string; onClick: () => void; value: string | number; tone: VitalTone }) {
   return (
-    <div className="flex min-w-0 flex-col items-center gap-1.5">
+    <button className="flex min-w-0 flex-col items-center gap-1.5 rounded-md outline-none transition active:scale-95 focus-visible:ring-2 focus-visible:ring-blue-300" onClick={onClick} type="button">
       <span className="truncate text-[10px] font-bold text-[#64748b]">{label}</span>
       <span
         className={cn(
@@ -570,7 +587,7 @@ function MobileVitalBadge({ label, value, tone }: { label: string; value: string
       >
         {value}
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -587,7 +604,7 @@ function MobileDashboardAction({
   icon: React.ElementType;
   label: string;
   onClick: () => void;
-  tone: "dark" | "red" | "disabled";
+  tone: "dark" | "red" | "disabled" | "blue";
 }) {
   return (
     <button
@@ -607,11 +624,12 @@ function MobileDashboardAction({
   );
 }
 
-function mobileDashboardActionClassName(tone: "dark" | "red" | "disabled") {
+function mobileDashboardActionClassName(tone: "dark" | "red" | "disabled" | "blue") {
   return cn(
     "relative mx-auto inline-flex h-9 w-9 min-w-0 items-center justify-center rounded-full text-white shadow-[0_4px_9px_rgba(15,23,42,0.20)] transition active:scale-95",
     tone === "dark" && "bg-[#4a4a4a]",
     tone === "red" && "bg-[#ff443e]",
+    tone === "blue" && "bg-[#2563eb]",
     tone === "disabled" && "cursor-not-allowed bg-[#c9c9c9] opacity-100",
   );
 }
@@ -644,10 +662,11 @@ function mobilePatientBed(patient: Dashboard1Patient) {
   return patient.bed;
 }
 
-function VitalPill({ value, tone, href }: { value: string | number; tone: VitalTone; href: string }) {
+function VitalPill({ value, tone, onClick }: { value: string | number; tone: VitalTone; onClick: () => void }) {
   return (
-    <Link
-      href={href}
+    <button
+      onClick={onClick}
+      type="button"
       className={cn(
         "inline-flex h-8 min-w-12 items-center justify-center rounded-full px-3 text-sm font-bold text-white shadow-[0_4px_9px_rgba(15,23,42,0.22)] transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40",
         tone === "green" && "bg-[#008d0c]",
@@ -656,7 +675,7 @@ function VitalPill({ value, tone, href }: { value: string | number; tone: VitalT
       )}
     >
       {value}
-    </Link>
+    </button>
   );
 }
 
@@ -668,7 +687,7 @@ function RoundAction({
   download,
 }: {
   icon: React.ElementType;
-  tone: "dark" | "red";
+  tone: "dark" | "red" | "blue";
   href: string;
   label: string;
   download?: string;
@@ -680,6 +699,7 @@ function RoundAction({
         "inline-flex h-8 w-8 items-center justify-center rounded-full text-white shadow-[0_4px_9px_rgba(15,23,42,0.20)] transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40",
         tone === "dark" && "bg-[#4a4a4a]",
         tone === "red" && "bg-[#ff443e]",
+        tone === "blue" && "bg-[#2563eb]",
       )}
       download={download}
       href={href}
@@ -699,7 +719,7 @@ function RoundActionButton({
   disabled = false,
 }: {
   icon: React.ElementType;
-  tone: "dark" | "red";
+  tone: "dark" | "red" | "blue";
   label: string;
   onClick?: () => void;
   href?: string;
@@ -711,6 +731,7 @@ function RoundActionButton({
     disabled ? "cursor-not-allowed opacity-35 grayscale" : "cursor-pointer hover:scale-105 active:scale-95",
     tone === "dark" && "bg-[#4a4a4a]",
     tone === "red" && "bg-[#ff443e]",
+    tone === "blue" && "bg-[#2563eb]",
   );
 
   if (href && !disabled) {
@@ -737,6 +758,108 @@ function RoundActionButton({
       <Icon className="h-4 w-4" />
     </button>
   );
+}
+
+function DashboardVitalsPopup({ patient }: { patient: Dashboard1Patient }) {
+  const [tab, setTab] = React.useState<"overview" | "live">("overview");
+  const vitals = dashboardVitalsForPatient(patient);
+  const rapidReviewPatient = rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f8fafc]">
+      <div className="shrink-0 border-b border-slate-200 bg-white p-3">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+          <div className="grid min-w-[360px] grid-cols-2 gap-1 rounded-lg bg-slate-100/80 p-1 text-sm font-bold sm:max-w-[420px]">
+            <button
+              className={cn("rounded-lg px-3 py-2 transition", tab === "overview" ? "bg-white text-[#7367f0] shadow-sm" : "text-slate-600 hover:bg-white/70")}
+              onClick={() => setTab("overview")}
+              type="button"
+            >
+              Overview
+            </button>
+            <button
+              className={cn("rounded-lg px-3 py-2 transition", tab === "live" ? "bg-white text-[#7367f0] shadow-sm" : "text-slate-600 hover:bg-white/70")}
+              onClick={() => setTab("live")}
+              type="button"
+            >
+              Live Monitoring
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+        <div className="space-y-4">
+          {tab === "overview" ? (
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                {vitals.map((vital) => (
+                  <DashboardSinglePatientMetric key={vital.label} {...vital} />
+                ))}
+              </div>
+              {rapidReviewPatient ? (
+                <PatientVitalsAllGraphOnly patient={rapidReviewPatient} />
+              ) : (
+                <DashboardVitalsUnavailable />
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <LiveMonitoringPage />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardSinglePatientMetric({ label, value, tone, unit }: { label: string; value: string | number; tone: VitalTone; unit: string }) {
+  const status = tone === "red" ? "Critical" : tone === "orange" ? "Watch" : "Normal";
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-xl border bg-white p-3 shadow-sm",
+        tone === "green" && "border-emerald-200/80",
+        tone === "orange" && "border-orange-200/80",
+        tone === "red" && "border-red-200/80",
+      )}
+    >
+      <div className={cn("absolute inset-y-0 left-0 w-1", tone === "green" && "bg-emerald-500", tone === "orange" && "bg-orange-500", tone === "red" && "bg-red-500")} />
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+        <span className={cn("text-[10px] font-semibold", tone === "green" && "text-emerald-700", tone === "orange" && "text-orange-600", tone === "red" && "text-red-600")}>{status}</span>
+      </div>
+      <div
+        className={cn(
+          "mt-2 text-xl font-bold tracking-tight",
+          tone === "green" && "text-emerald-700",
+          tone === "orange" && "text-orange-600",
+          tone === "red" && "text-red-600",
+        )}
+      >
+        {value} {unit}
+      </div>
+    </div>
+  );
+}
+
+function DashboardVitalsUnavailable() {
+  return (
+    <div className="rounded-xl border border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">
+      Vitals graph data is not available for this patient.
+    </div>
+  );
+}
+
+function dashboardVitalsForPatient(patient: Dashboard1Patient) {
+  return [
+    { label: "HR", value: patient.hr.value, tone: patient.hr.tone, unit: "bpm" },
+    { label: "SpO2", value: patient.spo2.value, tone: patient.spo2.tone, unit: "%" },
+    { label: "ABPS", value: patient.abps.value, tone: patient.abps.tone, unit: "mmHg" },
+    { label: "ABPD", value: patient.abpd.value, tone: patient.abpd.tone, unit: "mmHg" },
+    { label: "Temperature", value: patient.temperature.value, tone: patient.temperature.tone, unit: "°C" },
+  ];
 }
 
 function DashboardShiftSummaryTimeline({ patient }: { patient: Dashboard1Patient }) {
@@ -1045,26 +1168,28 @@ function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
   const rapidReviewPatient = rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId);
 
   return (
-    <ResultsCenterView
-      autoOpenAllDepartment="laboratory"
-      autoOpenLatestDateOnly
-      defaultDepartment="laboratory"
-      patientContext={{
-        ageSex: rapidReviewPatient?.ageGender,
-        allergy: "Meropenem",
-        bed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
-        bloodGroup: "AB +ve",
-        consultantDoctor: rapidReviewPatient?.consultant,
-        dob: "30-12-1995",
-        mrn: getDashboardResultPatientMrn(patient.id),
-        name: patient.name,
-        patientId: String(patient.id),
-        uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
-        wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
-      }}
-      viewDescription="Laboratory reports for the selected dashboard patient."
-      viewTitle="Laboratory Results"
-    />
+    <div className="h-full min-h-0 overflow-y-auto p-3 sm:p-5">
+      <ResultsCenterView
+        defaultDepartment="laboratory"
+        defaultLatestDateOnly
+        showPoctTab={false}
+        patientContext={{
+          ageSex: rapidReviewPatient?.ageGender,
+          allergy: "Meropenem",
+          bed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+          bloodGroup: "AB +ve",
+          consultantDoctor: rapidReviewPatient?.consultant,
+          dob: "30-12-1995",
+          mrn: getDashboardResultPatientMrn(patient.id),
+          name: patient.name,
+          patientId: String(patient.id),
+          uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
+          wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+        }}
+        viewDescription="Laboratory reports for the selected dashboard patient."
+        viewTitle="Diagnosis Result"
+      />
+    </div>
   );
 }
 

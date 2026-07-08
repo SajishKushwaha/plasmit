@@ -51,6 +51,15 @@ import type { NavigationItem, Role } from "@/types";
 
 const wardNurseDefaultRoute = "/icu-command-center/clinical-workspace/patient-overview";
 
+export const icuCommandSwitcherRoles: Role[] = [
+  "Hospital Admin",
+  "ICU",
+  "Nurse ICU 2",
+  "Unit Nurse",
+  "Head Nurse",
+  "Ward Nurse",
+];
+
 export const navigationItems: NavigationItem[] = [
   // =====================================================
   // NON-DOCTOR ROLES: Main Dashboard
@@ -121,7 +130,6 @@ export const navigationItems: NavigationItem[] = [
     status: "ready",
     children: getNursingRoleNavigation("Ward Nurse"),
   },
-
   // =====================================================
   // DOCTOR: CLINICAL
   // =====================================================

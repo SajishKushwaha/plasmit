@@ -2,52 +2,25 @@
 
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { useRole } from "@/components/providers/role-provider";
+import { icuCommandSwitcherRoles } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 
-const wardNurseRoute = "/icu-command-center/clinical-workspace/patient-overview";
-const headNurseRoute = "/icu-command-center/nursing/station";
-
 export function RoleSwitcher({ className, portal = true }: { className?: string; portal?: boolean }) {
+  const pathname = usePathname();
   const { role, setRole, roles } = useRole();
-  const router = useRouter();
+  const selectableRoles = pathname.startsWith("/icu-command-center") ? icuCommandSwitcherRoles : roles;
 
-  if (roles.length <= 1) {
+  if (selectableRoles.length <= 1) {
     return null;
   }
-
-  const handleRoleChange = (value: string) => {
-    const nextRole = value as typeof role;
-    setRole(nextRole);
-
-    if (nextRole === "Doctor" || nextRole === "Doctor OPD") {
-      router.push("/doctor-dashboard");
-    } else if (nextRole === "Doctor IPD") {
-      router.push("/doctor-dashboard1");
-    } else if (nextRole === "Nurse") {
-      router.push("/icu-nursing");
-    } else if (nextRole === "Unit Nurse") {
-      router.push("/unit-nurse");
-    } else if (nextRole === "Head Nurse") {
-      router.push(headNurseRoute);
-    } else if (nextRole === "Ward Nurse") {
-      router.push(wardNurseRoute);
-    } else if (nextRole === "Nurse ICU") {
-      router.push("/nursing-icu");
-    } else if (nextRole === "ICU" || nextRole === "Nurse ICU 2") {
-      router.push("/icu-command-center");
-    } else {
-      // Navigate to main dashboard for other roles
-      router.push("/dashboard");
-    }
-  };
 
   const content = (
     <Select.Content className="z-[120] max-h-[min(20rem,60dvh)] overflow-hidden rounded-md border border-border bg-surface shadow-soft">
       <Select.Viewport className="max-h-[min(20rem,60dvh)] touch-pan-y overflow-y-auto p-1 [-webkit-overflow-scrolling:touch]">
-        {roles.map((item) => (
+        {selectableRoles.map((item) => (
           <Select.Item
             className="cursor-pointer rounded px-2 py-2 text-sm text-foreground outline-none hover:bg-surface-muted focus:bg-surface-muted data-[state=checked]:bg-primary/10"
             key={item}
@@ -61,7 +34,7 @@ export function RoleSwitcher({ className, portal = true }: { className?: string;
   );
 
   return (
-    <Select.Root value={role} onValueChange={handleRoleChange}>
+    <Select.Root value={role} onValueChange={(value) => setRole(value as typeof role)}>
       <Select.Trigger
         className={cn(
           "flex h-9 w-36 min-w-0 items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none hover:bg-surface-muted focus:ring-2 focus:ring-ring md:w-44",

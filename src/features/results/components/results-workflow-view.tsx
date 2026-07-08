@@ -698,12 +698,20 @@ export function ResultsWorkflowView({
 
   const records = useMemo(() => scopedPatientRecords(patientContext), [patientContext]);
   const availableDates = useMemo(() => {
-    const dateKeys = Array.from(new Set(records.filter((result) => !criticalOnly || result.status === "Critical").map((result) => getDateKey(result.orderedAt)))).sort((first, second) => second.localeCompare(first));
+    const dateKeys = Array.from(new Set(records
+      .filter((result) => {
+        const matchesDepartment = activeDepartment === "all"
+          ? showPoctTab || result.department !== "poct"
+          : result.department === activeDepartment;
+        const matchesCritical = !criticalOnly || result.status === "Critical";
+        return matchesDepartment && matchesCritical;
+      })
+      .map((result) => getDateKey(result.orderedAt)))).sort((first, second) => second.localeCompare(first));
     return dateKeys.map((dateKey) => ({
       dateKey,
       label: dateFormatter.format(new Date(`${dateKey}T00:00:00`)),
     }));
-  }, [criticalOnly, records]);
+  }, [activeDepartment, criticalOnly, records, showPoctTab]);
   const filteredRecords = useMemo(() => {
     return records.filter((result) => {
       const matchesDepartment = activeDepartment === "all" || result.department === activeDepartment;
@@ -744,6 +752,13 @@ export function ResultsWorkflowView({
     document.addEventListener("mousedown", closeDateMenu);
     return () => document.removeEventListener("mousedown", closeDateMenu);
   }, [dateMenuOpen]);
+
+  useEffect(() => {
+    if (selectedDate === "all" || selectedDate === "custom") return;
+    if (availableDates.some((date) => date.dateKey === selectedDate)) return;
+
+    setSelectedDate("all");
+  }, [availableDates, selectedDate]);
 
   useEffect(() => {
     if (!printPayload) return;
@@ -948,6 +963,8 @@ export function ResultsWorkflowView({
                   <div className="space-y-4 p-4 transition-all duration-200">
                     {(activeDepartment === "all" ? departmentCards : departmentCards.filter((card) => card.id === activeDepartment)).map((card) => {
                       const reports = group.records.filter((result) => result.department === card.id);
+                      if (reports.length === 0) return null;
+
                       return (
                         <ResultCategorySection
                           allReports={reports}
@@ -1006,6 +1023,8 @@ function ResultCategorySection({
   reports: ResultRecord[];
   title: string;
 }) {
+  if (reports.length === 0) return null;
+
   const department = allReports[0]?.department ?? reports[0]?.department;
   const allViewButton = (
     <Button disabled={!department || allReports.length === 0} size="sm" variant="outline" onClick={() => department && onAllView(department, allReports)}>
@@ -1017,17 +1036,7 @@ function ResultCategorySection({
   return (
     <Card className="overflow-hidden rounded-lg border-border shadow-none">
       <CardContent className="p-0">
-        {reports.length === 0 ? (
-          <div>
-            <div className="flex items-center justify-end gap-2 border-b border-border bg-surface-muted px-4 py-3">
-              {allViewButton}
-              <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Actions</span>
-            </div>
-            <div className="px-4 py-5 text-sm text-muted-foreground">No reports in this section.</div>
-          </div>
-        ) : (
-          <ResultTable allViewAction={allViewButton} reports={reports} onPrint={onPrint} onView={onView} />
-        )}
+        <ResultTable allViewAction={allViewButton} reports={reports} onPrint={onPrint} onView={onView} />
       </CardContent>
     </Card>
   );

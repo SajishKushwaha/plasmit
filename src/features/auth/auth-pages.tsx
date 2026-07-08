@@ -322,21 +322,24 @@ export function LoginPage() {
 
 type NurseLoginRole = "Unit Nurse" | "Head Nurse" | "Ward Nurse";
 
-const nurseLoginConfigs: Record<NurseLoginRole, { route: string; scope: string; title: string }> = {
+const nurseLoginConfigs: Record<NurseLoginRole, { route: string; scope: string; title: string; description: string }> = {
   "Unit Nurse": {
     route: "/unit-nurse",
     scope: "unit-nurse",
     title: "Unit Nurse Login",
+    description: "Login to open the unit coordination workspace.",
   },
   "Head Nurse": {
     route: "/head-nurse",
     scope: "head-nurse",
     title: "Head Nurse Login",
+    description: "Login to open the head nurse command workspace.",
   },
   "Ward Nurse": {
     route: wardNurseRoute,
     scope: "ward-nurse",
     title: "Ward Nurse Login",
+    description: "Login to open the ward nurse patient overview.",
   },
 };
 
@@ -353,7 +356,10 @@ export function NurseRoleLoginPage({ role }: { role: NurseLoginRole }) {
   React.useEffect(() => {
     if (window.localStorage.getItem(authStorageKey) === "true") {
       const savedRole = window.localStorage.getItem("plasmit-role") as Role | null;
-      router.replace(savedRole === role ? config.route : getRoleRoute(savedRole && roles.includes(savedRole) ? savedRole : role));
+      const savedScope = window.localStorage.getItem(accessScopeKey);
+      if (savedRole === role || savedScope === config.scope) {
+        router.replace(config.route);
+      }
     }
   }, [config.route, role, router]);
 
@@ -369,15 +375,24 @@ export function NurseRoleLoginPage({ role }: { role: NurseLoginRole }) {
 
     setLoading(true);
     window.setTimeout(() => {
+      const credential = loginCredentials.find(
+        (item) => item.role === role && item.email === username.trim().toLowerCase() && item.password === password,
+      );
+      if (!credential) {
+        setLoading(false);
+        setError(`Invalid ${role.toLowerCase()} username or password`);
+        return;
+      }
+
       window.localStorage.setItem(authStorageKey, "true");
-      window.localStorage.setItem(accessScopeKey, config.scope);
+      window.localStorage.setItem(accessScopeKey, credential.scope);
       window.localStorage.setItem("plasmit-role", role);
       window.localStorage.setItem("hk-general-remember", "true");
       window.dispatchEvent(new Event(roleChangeEvent));
       setTransitioning(true);
       toast.success(`${role} access granted`);
       window.setTimeout(() => {
-        router.replace(config.route);
+        router.replace(credential.route);
       }, 320);
     }, 500);
   }
@@ -402,7 +417,7 @@ export function NurseRoleLoginPage({ role }: { role: NurseLoginRole }) {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-2xl font-black tracking-tight text-slate-950">{config.title}</h2>
-                  <p className="mt-1 text-sm font-medium text-slate-500">Login to open your blank nurse workspace.</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">{config.description}</p>
                 </div>
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
                   <LockKeyhole className="h-5 w-5" />
@@ -425,7 +440,7 @@ export function NurseRoleLoginPage({ role }: { role: NurseLoginRole }) {
                   <Input
                     name="username"
                     autoComplete="username"
-                    placeholder={`${role.toLowerCase().replaceAll(" ", "")}@hospital.com`}
+                    placeholder={loginCredentials.find((item) => item.role === role)?.email ?? `${role.toLowerCase().replaceAll(" ", "")}@hospital.com`}
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
                     className="h-11 rounded-lg border-slate-200 bg-slate-50 pl-11 font-medium text-slate-900 transition hover:border-slate-300 hover:bg-white focus-visible:border-[#2563eb] focus-visible:ring-[#2563eb]/20"

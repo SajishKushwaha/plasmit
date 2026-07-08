@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -92,8 +93,15 @@ function buildRadiologySnapshotBlocks(testIds: string[], groupIds: string[]) {
   return blocks.length ? blocks : radiologyResultBlocks;
 }
 
-export function RadiologyTab() {
-  const [activeTab, setActiveTab] = React.useState<MainTab>("test-order");
+type RadiologyTabProps = {
+  defaultTab?: MainTab;
+};
+
+export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
+  const searchParams = useSearchParams();
+  const requestedRadiologyTab = toRadiologyTab(searchParams.get("radiologyTab"));
+  const initialTab = defaultTab ?? requestedRadiologyTab ?? "test-order";
+  const [activeTab, setActiveTab] = React.useState<MainTab>(initialTab);
   const [search, setSearch] = React.useState("");
   const [selectedTestIds, setSelectedTestIds] = React.useState<string[]>(selectedByDefault);
   const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(selectedGroupDefault);
@@ -103,6 +111,16 @@ export function RadiologyTab() {
   const [savedResultList, setSavedResultList] = React.useState<RadiologyResultBlock[]>(() => buildRadiologySnapshotBlocks(selectedByDefault, selectedGroupDefault));
   const [summarySort, setSummarySort] = React.useState<{ key: SummarySortKey; direction: "asc" | "desc" }>({ key: "selectedTests", direction: "asc" });
   const [billingNote, setBillingNote] = React.useState("Radiology order ready.");
+
+  React.useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+      return;
+    }
+    if (requestedRadiologyTab) {
+      setActiveTab(requestedRadiologyTab);
+    }
+  }, [defaultTab, requestedRadiologyTab]);
 
   const filteredTests = React.useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -235,4 +253,9 @@ export function RadiologyTab() {
       </Tabs>
     </div>
   );
+}
+
+function toRadiologyTab(value: string | null): MainTab | null {
+  if (value === "test-order" || value === "order-summary" || value === "result-review") return value;
+  return null;
 }

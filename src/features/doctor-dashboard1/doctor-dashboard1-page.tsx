@@ -43,8 +43,6 @@ type DashboardMedicationRow = {
   prescribedBy: string;
 };
 
-const RADIOLOGY_REPORT_URL = "/radiology-report.pdf";
-
 export type Dashboard1Patient = {
   id: number;
   name: string;
@@ -180,7 +178,7 @@ export function DoctorDashboard1Page() {
   const [eventPatient, setEventPatient] = React.useState<Dashboard1Patient | null>(null);
   const [labResultsPatient, setLabResultsPatient] = React.useState<Dashboard1Patient | null>(null);
   const [medicationPatient, setMedicationPatient] = React.useState<Dashboard1Patient | null>(null);
-  const [radiologyPatient, setRadiologyPatient] = React.useState<Dashboard1Patient | null>(null);
+  const [radiologyOrderPatient, setRadiologyOrderPatient] = React.useState<Dashboard1Patient | null>(null);
   const [vitalsPatient, setVitalsPatient] = React.useState<Dashboard1Patient | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredPatients = orderedPatients.filter((patient) =>
@@ -211,6 +209,10 @@ export function DoctorDashboard1Page() {
     link.download = "doctor-ipd-dashboard-patients.csv";
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  function openRadiologyResultReview(patient: Dashboard1Patient) {
+    setRadiologyOrderPatient(patient);
   }
 
   return (
@@ -253,7 +255,7 @@ export function DoctorDashboard1Page() {
                 onOpenLabResults={() => setLabResultsPatient(patient)}
                 onOpenMedication={() => setMedicationPatient(patient)}
                 onOpenProgressNote={() => setShiftSummaryPatient(patient)}
-                onOpenRadiology={() => setRadiologyPatient(patient)}
+                onOpenRadiology={() => openRadiologyResultReview(patient)}
                 onOpenVitals={() => setVitalsPatient(patient)}
               />
             ))}
@@ -342,7 +344,7 @@ export function DoctorDashboard1Page() {
                           icon={FileText}
                           tone="dark"
                           label={`Open radiology report for ${patient.name}`}
-                          onClick={() => setRadiologyPatient(patient)}
+                          onClick={() => openRadiologyResultReview(patient)}
                         />
                       </td>
                       <td className="h-[74px] px-3 py-2 text-center">
@@ -434,14 +436,28 @@ export function DoctorDashboard1Page() {
       </CenterModal>
 
       <CenterModal
-        bodyClassName="overflow-hidden p-0"
-        className="h-[min(92dvh,900px)] w-[min(96vw,1180px)]"
-        description={radiologyPatient ? `${radiologyPatient.name} | ${radiologyPatient.bed} | ${radiologyPatient.diagnosis}` : undefined}
-        onOpenChange={(open) => !open && setRadiologyPatient(null)}
-        open={Boolean(radiologyPatient)}
-        title="Radiology Report"
+        className="h-[min(88dvh,900px)] w-[min(96vw,1560px)]"
+        description={radiologyOrderPatient ? `${radiologyOrderPatient.name} | ${radiologyOrderPatient.bed} | ${radiologyOrderPatient.diagnosis}` : undefined}
+        onOpenChange={(open) => !open && setRadiologyOrderPatient(null)}
+        open={Boolean(radiologyOrderPatient)}
+        title="Radiology Result Review"
       >
-        {radiologyPatient ? <DashboardRadiologyReportPopup patient={radiologyPatient} /> : null}
+        {radiologyOrderPatient ? (
+          <DoctorOrdersPage
+            defaultTab="radiology"
+            onlyTab="radiology"
+            patientContext={{
+              ageSex: "45/M",
+              diagnosis: radiologyOrderPatient.diagnosis,
+              id: `doctor-ipd-${radiologyOrderPatient.id}`,
+              name: radiologyOrderPatient.name,
+              radiologyPatientId: `pat-${1000 + (((radiologyOrderPatient.id - 1) % 6) + 1)}`,
+              uhid: `DASH-${String(radiologyOrderPatient.id).padStart(4, "0")}`,
+              wardBed: radiologyOrderPatient.bed,
+            }}
+            radiologyDefaultTab="result-review"
+          />
+        ) : null}
       </CenterModal>
 
       <CenterModal
@@ -1190,61 +1206,6 @@ function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
         viewTitle="Diagnosis Result"
       />
     </div>
-  );
-}
-
-function DashboardRadiologyReportPopup({ patient }: { patient: Dashboard1Patient }) {
-  const [addRadiologyOpen, setAddRadiologyOpen] = React.useState(false);
-
-  return (
-    <>
-      <div className="flex h-full min-h-0 flex-1 flex-col">
-        <div className="relative min-h-0 flex-1 overflow-y-auto bg-slate-100 px-3 py-3 shadow-sm sm:px-5 sm:py-4">
-          <iframe
-            className="h-[calc(92dvh-88px)] min-h-[18000px] w-full rounded-md border border-slate-200 bg-white sm:min-h-[920px] md:h-full md:min-h-full"
-            src={`${RADIOLOGY_REPORT_URL}#toolbar=1&navpanes=0&zoom=page-width`}
-            title={`Radiology report for ${patient.name}`}
-          />
-          <div className="group sticky bottom-4 z-10 ml-auto mt-[-60px] flex h-11 w-11 justify-end">
-            <Button
-              aria-label="Add radiology order"
-              className="h-11 w-11 rounded-full p-0 shadow-lg"
-              onClick={() => setAddRadiologyOpen(true)}
-              title="Add Radiology Order"
-              type="button"
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
-            {!addRadiologyOpen ? (
-              <div className="pointer-events-none absolute bottom-1/2 right-14 z-[80] translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-3 py-1.5 text-xs font-bold text-white opacity-0 shadow-lg transition group-hover:opacity-100">
-                Add Radiology Order
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
-      <CenterModal
-        className="h-[min(88dvh,900px)] w-[min(96vw,1560px)]"
-        description={`${patient.name} | ${patient.bed} | ${patient.diagnosis}`}
-        onOpenChange={setAddRadiologyOpen}
-        open={addRadiologyOpen}
-        title="Add Radiology Order"
-      >
-        <DoctorOrdersPage
-          defaultTab="radiology"
-          onlyTab="radiology"
-          patientContext={{
-            ageSex: "45/M",
-            diagnosis: patient.diagnosis,
-            id: `doctor-ipd-${patient.id}`,
-            name: patient.name,
-            radiologyPatientId: `pat-${1000 + (((patient.id - 1) % 6) + 1)}`,
-            uhid: `DASH-${String(patient.id).padStart(4, "0")}`,
-            wardBed: patient.bed,
-          }}
-        />
-      </CenterModal>
-    </>
   );
 }
 

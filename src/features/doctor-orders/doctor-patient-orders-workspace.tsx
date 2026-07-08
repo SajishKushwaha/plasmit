@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown, Search, UserRound } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,17 +10,28 @@ import { orderedPatients, patientTone } from "@/features/doctor-dashboard1/docto
 import { rapidReviewPatients } from "@/features/rapid-review/rapid-review-data";
 
 export function DoctorPatientOrdersWorkspace() {
+  const searchParams = useSearchParams();
+  const requestedPatientId = searchParams.get("patientId") ?? "";
+  const initialPatientId = React.useMemo(() => normalizePatientId(requestedPatientId), [requestedPatientId]);
+  const initialOrderTab = searchParams.get("tab") ?? undefined;
+  const radiologyIntent = searchParams.get("radiologyTab") ?? "";
   // const [selectedPatientId, setSelectedPatientId] = React.useState(String(orderedPatients[0]?.id ?? ""));
   // const selectedPatient = orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? orderedPatients[0];
-  const [selectedPatientId, setSelectedPatientId] = React.useState("");
-const selectedPatient =
-  orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? undefined;
+  const [selectedPatientId, setSelectedPatientId] = React.useState(initialPatientId);
+  const selectedPatient =
+    orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? undefined;
   const rapidReviewPatient = selectedPatient ? rapidReviewPatients.find((item) => item.id === selectedPatient.rapidReviewPatientId) : undefined;
   const patientContext = selectedPatient ? toPatientContext(selectedPatient) : undefined;
   const [patientSearchOpen, setPatientSearchOpen] = React.useState(false);
   // const [patientQuery, setPatientQuery] = React.useState(selectedPatient ? patientOptionLabel(selectedPatient) : "");
   const [patientQuery, setPatientQuery] = React.useState("");
   const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
+
+  React.useEffect(() => {
+    if (initialPatientId) {
+      setSelectedPatientId(initialPatientId);
+    }
+  }, [initialPatientId]);
 
   React.useEffect(() => {
     if (selectedPatient && !patientSearchOpen) {
@@ -123,7 +135,11 @@ const selectedPatient =
       {selectedPatient && patientContext ? (
         <section className="min-w-0 space-y-3 rounded-md border border-slate-200 bg-white p-3 shadow-sm">
           <SelectedPatientHeader isCompact={isPatientHeaderCompact} patient={selectedPatient} rapidReviewPatient={rapidReviewPatient} />
-          <DoctorOrdersPage key={selectedPatient.id} patientContext={patientContext} />
+          <DoctorOrdersPage
+            defaultTab={initialOrderTab}
+            key={`${selectedPatient.id}-${initialOrderTab ?? ""}-${radiologyIntent}`}
+            patientContext={patientContext}
+          />
         </section>
       ) : (
         <Card>
@@ -135,6 +151,20 @@ const selectedPatient =
       )}
     </div>
   );
+}
+
+function normalizePatientId(value: string) {
+  if (!value) return "";
+
+  const directMatch = orderedPatients.find((patient) => String(patient.id) === value);
+  if (directMatch) return String(directMatch.id);
+
+  const doctorIpdMatch = value.match(/^doctor-ipd-(\d+)$/);
+  if (doctorIpdMatch?.[1] && orderedPatients.some((patient) => String(patient.id) === doctorIpdMatch[1])) {
+    return doctorIpdMatch[1];
+  }
+
+  return "";
 }
 
 function SelectedPatientHeader({

@@ -155,6 +155,7 @@ type DoctorOrdersPageProps = {
   drugsOnly?: boolean;
   onlyTab?: string;
   patientContext?: DoctorOrdersPatientContext;
+  radiologyDefaultTab?: "test-order" | "order-summary" | "result-review";
   showPatientBanner?: boolean;
   wardNurseMode?: boolean;
   patientId?: string;
@@ -169,6 +170,7 @@ export function DoctorOrdersPage({
   drugsOnly = false,
   onlyTab,
   patientContext,
+  radiologyDefaultTab,
   showPatientBanner = false,
   wardNurseMode = false,
   patientId,
@@ -220,7 +222,7 @@ export function DoctorOrdersPage({
           ) : null}
           {visibleTabs.map((tab) => (
             <TabsContent key={tab.id} value={tab.id} className="mt-2 sm:mt-3">
-              {tab.component}
+              {tab.id === "radiology" ? <RadiologyTab defaultTab={radiologyDefaultTab} /> : tab.component}
             </TabsContent>
           ))}
         </div>

@@ -303,7 +303,7 @@ function IntakeOutputWorkspaceInner({
 
   return (
     <div className="space-y-4">
-      {selectedPatient ? <IntakeOutputPatientStrip patient={selectedPatient} /> : null}
+      {/* {selectedPatient ? <IntakeOutputPatientStrip patient={selectedPatient} /> : null} */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <IoCollapsiblePanel

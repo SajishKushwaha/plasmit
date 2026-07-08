@@ -119,7 +119,7 @@ function useHeadNursePatientContext() {
   const selectedAdmission = admissions.find((admission) => normalizePatientId(admission.patientId) === normalizePatientId(selectedPatientId)) ?? initialAdmission;
   const selectedPatient = icuPatients.find((patient) => normalizePatientId(patient.id) === normalizePatientId(selectedAdmission?.patientId ?? selectedPatientId)) ?? null;
   const filteredPatients = icuPatients.filter((patient) => {
-    const text = `${patient.patientName} ${patient.mrn} ${patient.bedNo} ${patient.diagnosis} ${patient.assignedHeadNurse} ${patient.assignedHeadNurse}`.toLowerCase();
+    const text = `${patient.patientName} ${patient.mrn} ${patient.bedNo} ${patient.diagnosis} ${patient.assignedUnitNurse} ${patient.assignedWardNurse}`.toLowerCase();
     return text.includes(query.toLowerCase());
   });
 
@@ -187,7 +187,7 @@ function PatientSummaryCard({ admission, patient }: { admission: HeadNurseAdmiss
         <span>Bed: {admission.bed}</span>
         <span>Unit: {admission.icuUnit}</span>
         <span>Doctor: {patient.admittingDoctor}</span>
-        <span>Nurse: {patient.assignedHeadNurse}</span>
+        <span>Nurse: {patient.assignedWardNurse}</span>
       </div>
     </div>
   );
@@ -791,7 +791,6 @@ export function VerifyHandoverPage() {
     </React.Suspense>
   );
 }
-
 
 
 

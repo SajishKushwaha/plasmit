@@ -12,6 +12,7 @@ export const roleRoutes: Record<Role, string> = {
   "Super Admin": "/dashboard",
   "Hospital Admin": "/dashboard",
   Doctor: "/doctor-dashboard",
+  "Doctor ICU": "/icu-command-center",
   "Doctor OPD": "/doctor-dashboard",
   "Doctor IPD": "/doctor-dashboard1",
   Nurse: "/icu-nursing",
@@ -21,6 +22,12 @@ export const roleRoutes: Record<Role, string> = {
   ICU: "/icu-command-center",
   "Nurse ICU": "/nursing-icu",
   "Nurse ICU 2": "/icu-command-center",
+  "ICU Bed Coordinator": "/icu-command-center",
+  "Diagnostics Team": "/icu-command-center",
+  "Tele ICU Doctor": "/icu-command-center",
+  "Biomedical Engineer": "/icu-command-center",
+  "ICU Pharmacist": "/icu-command-center",
+  "Quality Audit": "/icu-command-center",
   "Blood Bank": "/blood-bank/blood-request",
   Receptionist: "/dashboard",
   "Lab Technician": "/dashboard",
@@ -192,6 +199,17 @@ export const roleModuleAccess: Record<Role, {
       "EMERGENCY_ALERTS",
     ],
   },
+  "Doctor ICU": {
+    allowed: ["/icu-command-center", "/nursing-icu", "/doctor-dashboard1", "/patients", "/results", "/radiology", "/laboratory"],
+    blocked: [...doctorBlockedModules],
+    features: [
+      "VIEW_DOCTOR_DASHBOARD",
+      "MANAGE_DOCTOR_ORDERS",
+      "CLINICAL_NOTES",
+      "EMERGENCY_ALERTS",
+      "ICU_COMMAND_CENTER",
+    ],
+  },
   "Doctor OPD": {
     allowed: doctorOpdAllowedModules,
     blocked: [...doctorBlockedModules],
@@ -287,6 +305,30 @@ export const roleModuleAccess: Record<Role, {
   },
   "Nurse ICU 2": {
     allowed: ["/icu-command-center", "/nursing-icu", "/worklist", "/nurse", "/radiology", "/results", "/surgery"],
+  },
+  "ICU Bed Coordinator": {
+    allowed: ["/icu-command-center", "/nursing-icu"],
+    features: ["ICU_COMMAND_CENTER"],
+  },
+  "Diagnostics Team": {
+    allowed: ["/icu-command-center", "/nursing-icu", "/results", "/laboratory", "/radiology"],
+    features: ["DIAGNOSTICS"],
+  },
+  "Tele ICU Doctor": {
+    allowed: ["/icu-command-center", "/nursing-icu", "/patients", "/results"],
+    features: ["TELE_ICU", "ICU_COMMAND_CENTER"],
+  },
+  "Biomedical Engineer": {
+    allowed: ["/icu-command-center", "/nursing-icu"],
+    features: ["DEVICE_OPERATIONS"],
+  },
+  "ICU Pharmacist": {
+    allowed: ["/icu-command-center", "/nursing-icu", "/pharmacy"],
+    features: ["PHARMACY"],
+  },
+  "Quality Audit": {
+    allowed: ["/icu-command-center", "/nursing-icu", "/reports"],
+    features: ["QUALITY_AUDIT"],
   },
   "Blood Bank": {
     allowed: ["/blood-bank"],

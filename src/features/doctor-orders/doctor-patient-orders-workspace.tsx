@@ -9,12 +9,16 @@ import { orderedPatients, patientTone } from "@/features/doctor-dashboard1/docto
 import { rapidReviewPatients } from "@/features/rapid-review/rapid-review-data";
 
 export function DoctorPatientOrdersWorkspace() {
-  const [selectedPatientId, setSelectedPatientId] = React.useState(String(orderedPatients[0]?.id ?? ""));
-  const selectedPatient = orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? orderedPatients[0];
+  // const [selectedPatientId, setSelectedPatientId] = React.useState(String(orderedPatients[0]?.id ?? ""));
+  // const selectedPatient = orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? orderedPatients[0];
+  const [selectedPatientId, setSelectedPatientId] = React.useState("");
+const selectedPatient =
+  orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? undefined;
   const rapidReviewPatient = selectedPatient ? rapidReviewPatients.find((item) => item.id === selectedPatient.rapidReviewPatientId) : undefined;
   const patientContext = selectedPatient ? toPatientContext(selectedPatient) : undefined;
   const [patientSearchOpen, setPatientSearchOpen] = React.useState(false);
-  const [patientQuery, setPatientQuery] = React.useState(selectedPatient ? patientOptionLabel(selectedPatient) : "");
+  // const [patientQuery, setPatientQuery] = React.useState(selectedPatient ? patientOptionLabel(selectedPatient) : "");
+  const [patientQuery, setPatientQuery] = React.useState("");
   const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
 
   React.useEffect(() => {

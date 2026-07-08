@@ -1,5 +1,5 @@
 import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
 
 export default function PendingMedicinesRoute() {
-  return <NursingIcuModulePage page="unit-pending-medicines" />;
+  return <NursingIcuModulePage page="notifications-tasks" />;
 }

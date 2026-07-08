@@ -1,5 +1,5 @@
 import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
 
 export default function UnitNurseWardAssignmentRoute() {
-  return <NursingIcuModulePage page="unit-bed-nurse-link" />;
+  return <NursingIcuModulePage page="smart-bed-view" />;
 }

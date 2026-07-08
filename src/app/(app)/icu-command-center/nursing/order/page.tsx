@@ -6,7 +6,7 @@ function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function IcuCommandCenterNursingOrderRoute({
+export default async function IcuCommandCenterRoute({
   searchParams,
 }: {
   searchParams?: SearchParams | Promise<SearchParams>;
@@ -18,14 +18,5 @@ export default async function IcuCommandCenterNursingOrderRoute({
   const orderId = firstParam(params.orderId);
   const department = firstParam(params.department);
 
-  return (
-    <DoctorOrdersPage
-      department={department}
-      locked={locked}
-      mode={mode}
-      orderId={orderId}
-      patientId={patientId}
-      wardNurseMode
-    />
-  );
+  return <DoctorOrdersPage patientId={patientId} locked={locked} mode={mode} orderId={orderId} department={department} />;
 }

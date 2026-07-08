@@ -1417,23 +1417,6 @@ export function NotesPage() {
 
   return (
     <div className="notes-select-safe min-w-0 space-y-4 py-4">
-      <section className="flex flex-col gap-3 border-b border-border pb-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary">JD</div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-lg font-semibold">John Doe</h1>
-              <Badge tone="info">Inpatient</Badge>
-            </div>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">MRN: 10000098 &nbsp; | &nbsp; Male &nbsp; | &nbsp; 65 Y &nbsp; | &nbsp; DOB: 12/05/1959</p>
-          </div>
-        </div>
-        <div className="grid min-w-0 grid-cols-3 divide-x rounded-md border border-border bg-surface">
-          <PatientFact label="Allergies" value="Penicillin, Peanuts" tone="text-danger" />
-          <PatientFact label="Location" value="ICU - 01, Bed 5" tone="text-blue-600" />
-          <PatientFact label="Encounter" value="ENC123456789" tone="text-emerald-600" />
-        </div>
-      </section>
 
       {notice ? (
         <div className="flex items-center justify-between rounded-md border border-success/25 bg-success/10 px-3 py-2 text-xs text-success">

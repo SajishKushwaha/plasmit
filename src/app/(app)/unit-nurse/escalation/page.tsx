@@ -1,5 +1,5 @@
 import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
 
 export default function UnitNurseEscalationRoute() {
-  return <NursingIcuModulePage page="unit-escalation-decision" />;
+  return <NursingIcuModulePage page="escalation-center" />;
 }

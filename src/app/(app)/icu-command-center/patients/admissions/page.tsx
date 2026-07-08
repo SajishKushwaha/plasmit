@@ -1,5 +1,5 @@
-import { HeadNurseAdmissionQueuePage } from "@/features/nursing-icu/components/head-nurse/head-nurse-workflow-pages";
+import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
 
 export default function IcuCommandCenterRoute() {
-  return <HeadNurseAdmissionQueuePage />;
+  return <NursingIcuModulePage page="arrival-bed-allocation" />;
 }

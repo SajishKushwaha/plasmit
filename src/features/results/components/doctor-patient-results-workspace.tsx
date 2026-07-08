@@ -9,11 +9,17 @@ import { rapidReviewPatients } from "@/features/rapid-review/rapid-review-data";
 import { ResultsCenterView } from "@/features/results/components/ResultsCenterView";
 
 export function DoctorPatientResultsWorkspace() {
-  const [selectedPatientId, setSelectedPatientId] = React.useState(String(orderedPatients[0]?.id ?? ""));
-  const selectedPatient = orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? orderedPatients[0];
+  // const [selectedPatientId, setSelectedPatientId] = React.useState(String(orderedPatients[0]?.id ?? ""));
+  const [selectedPatientId, setSelectedPatientId] = React.useState("");
+  // const selectedPatient = orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? orderedPatients[0];
+  const selectedPatient =
+  orderedPatients.find(
+    (patient) => String(patient.id) === selectedPatientId
+  ) ?? undefined;
   const rapidReviewPatient = selectedPatient ? rapidReviewPatients.find((item) => item.id === selectedPatient.rapidReviewPatientId) : undefined;
   const [patientSearchOpen, setPatientSearchOpen] = React.useState(false);
-  const [patientQuery, setPatientQuery] = React.useState(selectedPatient ? patientOptionLabel(selectedPatient) : "");
+  // const [patientQuery, setPatientQuery] = React.useState(selectedPatient ? patientOptionLabel(selectedPatient) : "");
+  const [patientQuery, setPatientQuery] = React.useState("");
   const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
 
   React.useEffect(() => {
@@ -115,7 +121,7 @@ export function DoctorPatientResultsWorkspace() {
         </CardContent>
       </Card>
 
-      {selectedPatient ? (
+      {/* {selectedPatient ? (
         <section className="space-y-4">
           <SelectedPatientHeader isCompact={isPatientHeaderCompact} patient={selectedPatient} rapidReviewPatient={rapidReviewPatient} />
           <ResultsCenterView
@@ -144,7 +150,41 @@ export function DoctorPatientResultsWorkspace() {
             No patient available for results.
           </CardContent>
         </Card>
-      )}
+      )} */}
+      {selectedPatient ? (
+    <section className="space-y-4">
+        <SelectedPatientHeader
+            isCompact={isPatientHeaderCompact}
+            patient={selectedPatient}
+            rapidReviewPatient={rapidReviewPatient}
+        />
+
+        <ResultsCenterView
+            key={selectedPatient.id}
+            defaultDepartment="all"
+            patientContext={{
+                ageSex: rapidReviewPatient?.ageGender,
+                allergy: "Meropenem",
+                bed: rapidReviewPatient
+                    ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}`
+                    : selectedPatient.bed,
+                bloodGroup: "AB +ve",
+                consultantDoctor: rapidReviewPatient?.consultant,
+                dob: "30-12-1995",
+                mrn: getResultPatientMrn(selectedPatient.id),
+                name: selectedPatient.name,
+                uhid:
+                    rapidReviewPatient?.uhid ??
+                    `DASH-${String(selectedPatient.id).padStart(4, "0")}`,
+                wardBed: rapidReviewPatient
+                    ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}`
+                    : selectedPatient.bed,
+            }}
+            viewTitle="Results Center"
+            viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
+        />
+    </section>
+) : null}
     </div>
   );
 }

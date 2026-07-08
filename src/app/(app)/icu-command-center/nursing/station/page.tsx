@@ -1,5 +1,5 @@
 import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
 
 export default function IcuCommandCenterRoute() {
-  return <NursingIcuModulePage page="unit-nurse-console" />;
+  return <NursingIcuModulePage page="head-nurse-console" />;
 }

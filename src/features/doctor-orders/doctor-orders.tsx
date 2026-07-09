@@ -179,16 +179,13 @@ export function DoctorOrdersPage({
   orderId,
   department,
 }: DoctorOrdersPageProps = {}) {
-  if (wardNurseMode) {
-    return <WardNurseDoctorOrdersPage department={department} locked={locked} mode={mode} orderId={orderId} patientId={patientId} />;
-  }
-
   const visibleTabs = drugsOnly
     ? tabs.filter((tab) => tab.id === "drugs")
     : onlyTab
       ? tabs.filter((tab) => tab.id === onlyTab)
       : tabs;
-  const defaultTab = defaultTabProp && visibleTabs.some((tab) => tab.id === defaultTabProp) ? defaultTabProp : visibleTabs[0]?.id ?? "drugs";
+  const preferredDefaultTab = defaultTabProp ?? department;
+  const defaultTab = preferredDefaultTab && visibleTabs.some((tab) => tab.id === preferredDefaultTab) ? preferredDefaultTab : visibleTabs[0]?.id ?? "drugs";
 
   return (
     <div className="space-y-4 px-2 py-2 sm:space-y-5 sm:px-0 sm:py-3">

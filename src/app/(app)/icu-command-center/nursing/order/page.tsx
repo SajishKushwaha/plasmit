@@ -9,10 +9,14 @@ function firstParam(value: string | string[] | undefined) {
 export default async function IcuCommandCenterRoute({
   searchParams,
 }: {
-  searchParams?: Promise<SearchParams>;
+  searchParams?: SearchParams | Promise<SearchParams>;
 }) {
   const params = searchParams ? await searchParams : {};
+  const patientId = firstParam(params.patientId);
+  const locked = firstParam(params.locked) === "1";
+  const mode = firstParam(params.mode) === "detail" ? "detail" : "list";
+  const orderId = firstParam(params.orderId);
   const department = firstParam(params.department);
 
-  return <DoctorOrdersPage department={department} />;
+  return <DoctorOrdersPage wardNurseMode patientId={patientId} locked={locked} mode={mode} orderId={orderId} department={department} />;
 }

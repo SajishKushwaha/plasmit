@@ -1,14 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { ClipboardCheck, Droplet, FileSearch, FlaskConical, Layers, Microscope, Pill, Stethoscope, UserPlus, X } from "lucide-react";
-import * as React from "react";
+import { ClipboardCheck, Droplet, FileSearch, FlaskConical, Layers, Microscope, Pill, Stethoscope, UserPlus } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientSummaryBanner } from "@/components/ui/patient-summary-banner";
-import { doctorInstructions, icuPatients, medicationRows, type IcuPatient } from "@/features/nursing-icu/nursing-icu-data";
 
 import { BloodRequestTab } from "./tabs/blood-request-tab";
 import { DrugsTab } from "./tabs/drugs-tab";
@@ -53,103 +49,6 @@ const tabs: OrderTab[] = [
   { id: "ldt", label: "LDT", description: "Line, drain, and tube order request workflow.", icon: ClipboardCheck, component: <LdtTab /> },
 ];
 
-type WardNurseOrder = {
-  id: string;
-  patientId: string;
-  order: string;
-  department: string;
-  departmentLabel: string;
-  orderedBy: string;
-  time: string;
-  status: string;
-  instruction: string;
-};
-
-const wardNurseName = "Ward Nurse Kavita";
-
-const departmentByInstruction = [
-  { match: "abg", tab: "lab", label: "Laboratory" },
-  { match: "electrolyte", tab: "lab", label: "Laboratory" },
-  { match: "sample", tab: "lab", label: "Laboratory" },
-  { match: "transfusion", tab: "blood", label: "Blood" },
-  { match: "radiology", tab: "radiology", label: "Radiology" },
-  { match: "x-ray", tab: "radiology", label: "Radiology" },
-  { match: "ct", tab: "radiology", label: "Radiology" },
-  { match: "transfer", tab: "procedures", label: "Procedure" },
-  { match: "discharge", tab: "procedures", label: "Procedure" },
-];
-
-function assignedWardPatients() {
-  return icuPatients.filter((patient) => patient.assignedWardNurse === wardNurseName);
-}
-
-function instructionDepartment(instruction: string) {
-  const normalized = instruction.toLowerCase();
-  return departmentByInstruction.find((item) => normalized.includes(item.match)) ?? { tab: "ordersets", label: "Nursing Care" };
-}
-
-function patientOrders(patient: IcuPatient): WardNurseOrder[] {
-  const medicationOrders = medicationRows
-    .filter((medication) => medication.patientId === patient.id)
-    .slice(0, 3)
-    .map((medication) => ({
-      id: `med-${medication.id}`,
-      patientId: patient.id,
-      order: `${medication.medication} ${medication.dose}`,
-      department: "drugs",
-      departmentLabel: "Drug",
-      orderedBy: patient.dutyDoctor,
-      time: medication.scheduledTime,
-      status: medication.status,
-      instruction: `${medication.route} | ${medication.frequency}`,
-    }));
-
-  const doctorOrders = doctorInstructions
-    .filter((instruction) => instruction.patientId === patient.id)
-    .map((instruction) => {
-      const department = instructionDepartment(`${instruction.instructionType} ${instruction.instruction}`);
-
-      return {
-        id: `doc-${instruction.id}`,
-        patientId: patient.id,
-        order: instruction.instruction,
-        department: department.tab,
-        departmentLabel: department.label,
-        orderedBy: instruction.doctor,
-        time: instruction.dueTime,
-        status: instruction.status,
-        instruction: instruction.remarks,
-      };
-    });
-
-  const fallbackOrders: WardNurseOrder[] = [
-    {
-      id: `lab-${patient.id}`,
-      patientId: patient.id,
-      order: patient.criticalityScore >= 7 ? "ABG, CBC, electrolytes" : "CBC and renal profile",
-      department: "lab",
-      departmentLabel: "Laboratory",
-      orderedBy: patient.dutyDoctor,
-      time: "Today",
-      status: patient.criticalityScore >= 7 ? "Pending" : "Ordered",
-      instruction: "Collect sample and track report.",
-    },
-    {
-      id: `rad-${patient.id}`,
-      patientId: patient.id,
-      order: patient.ventilatorStatus.includes("ventilation") ? "Portable chest X-ray" : "Radiology review if condition changes",
-      department: "radiology",
-      departmentLabel: "Radiology",
-      orderedBy: patient.admittingDoctor,
-      time: "Today",
-      status: "Ordered",
-      instruction: "Coordinate with radiology team.",
-    },
-  ];
-
-  return [...medicationOrders, ...doctorOrders, ...fallbackOrders].slice(0, 7);
-}
-
 type DoctorOrdersPageProps = {
   defaultTab?: string;
   drugsOnly?: boolean;
@@ -157,11 +56,6 @@ type DoctorOrdersPageProps = {
   patientContext?: DoctorOrdersPatientContext;
   radiologyDefaultTab?: "test-order" | "order-summary" | "result-review";
   showPatientBanner?: boolean;
-  wardNurseMode?: boolean;
-  patientId?: string;
-  locked?: boolean;
-  mode?: "list" | "detail";
-  orderId?: string;
   department?: string;
 };
 
@@ -172,11 +66,6 @@ export function DoctorOrdersPage({
   patientContext,
   radiologyDefaultTab,
   showPatientBanner = false,
-  wardNurseMode = false,
-  patientId,
-  locked = false,
-  mode = "list",
-  orderId,
   department,
 }: DoctorOrdersPageProps = {}) {
   const visibleTabs = drugsOnly
@@ -225,212 +114,5 @@ export function DoctorOrdersPage({
         </div>
       </Tabs>
     </div>
-  );
-}
-
-function WardNurseDoctorOrdersPage({
-  patientId,
-  locked: lockedFromRoute,
-  mode,
-  orderId,
-  department,
-}: Pick<DoctorOrdersPageProps, "patientId" | "locked" | "mode" | "orderId" | "department">) {
-  const assignedPatients = React.useMemo(() => assignedWardPatients(), []);
-  const locked = lockedFromRoute && Boolean(patientId);
-  const initialPatientId = patientId && assignedPatients.some((patient) => patient.id === patientId) ? patientId : "";
-  const [selectedPatientId, setSelectedPatientId] = React.useState(initialPatientId);
-  const [activeTab, setActiveTab] = React.useState("blood");
-  const [selectedOrderId, setSelectedOrderId] = React.useState<string | null>(orderId ?? null);
-  const [modalOpen, setModalOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    if (initialPatientId) {
-      setSelectedPatientId(initialPatientId);
-    }
-  }, [initialPatientId]);
-
-  React.useEffect(() => {
-    if (orderId) {
-      setSelectedOrderId(orderId);
-    }
-  }, [orderId]);
-
-  const selectedPatient = assignedPatients.find((patient) => patient.id === selectedPatientId) ?? null;
-  const orders = selectedPatient ? patientOrders(selectedPatient) : [];
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
-  const isDetailMode = mode === "detail" && Boolean(selectedPatient);
-
-  React.useEffect(() => {
-    if (department && tabs.some((tab) => tab.id === department)) {
-      setActiveTab(department);
-    } else if (selectedOrder) {
-      setActiveTab(selectedOrder.department);
-    }
-  }, [department, selectedOrder]);
-
-  function openOrder(order: WardNurseOrder) {
-    setSelectedOrderId(order.id);
-    setActiveTab(order.department);
-    setModalOpen(true);
-  }
-
-  return (
-    <div className="space-y-4 px-2 py-2 sm:space-y-5 sm:px-0 sm:py-3">
-      <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-border px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-base font-bold text-foreground">Doctor Orders</h2>
-            <p className="mt-1 text-xs font-medium text-muted-foreground">
-              {selectedPatient ? `${selectedPatient.patientName} | ${selectedPatient.bedNo} | ${selectedPatient.unit}` : "Select an assigned patient"}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <select
-              className="h-10 min-w-[260px] rounded-md border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={locked}
-              onChange={(event) => {
-                setSelectedPatientId(event.target.value);
-                setSelectedOrderId(null);
-              }}
-              value={selectedPatientId}
-            >
-              <option value="">Select patient</option>
-              {assignedPatients.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.patientName} - {patient.bedNo}
-                </option>
-              ))}
-            </select>
-            {locked ? <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">Locked</span> : null}
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] border-collapse text-sm">
-            <thead className="border-b border-border bg-surface-muted text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Order</th>
-                <th className="px-4 py-3">Department</th>
-                <th className="px-4 py-3">Ordered By</th>
-                <th className="px-4 py-3">Time</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/55" key={order.id}>
-                  <td className="px-4 py-3">
-                    <div className="font-bold text-foreground">{order.order}</div>
-                    <div className="mt-1 text-xs font-medium text-muted-foreground">{order.instruction}</div>
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-foreground">{order.departmentLabel}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{order.orderedBy}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{order.time}</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-foreground">{order.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button size="sm" type="button" variant="outline" onClick={() => openOrder(order)}>
-                      Open
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {!selectedPatient || orders.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-8 text-center text-sm font-semibold text-muted-foreground" colSpan={6}>
-                    {selectedPatient ? "No open orders for this patient." : "Select patient to view orders."}
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {isDetailMode ? (
-        <>
-          <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-foreground">{selectedOrder?.departmentLabel ?? "Order"} workspace</h3>
-                <p className="mt-1 text-xs font-medium text-muted-foreground">
-                  {selectedOrder ? `${selectedOrder.order} | ${selectedOrder.orderedBy} | ${selectedOrder.time}` : "Open an order from the patient order list."}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  if (!selectedPatient) return;
-                  const params = new URLSearchParams({ patientId: selectedPatient.id, locked: locked ? "1" : "0" });
-                  window.location.href = `/icu-command-center/nursing/order?${params.toString()}`;
-                }}
-              >
-                Back to orders
-              </Button>
-            </div>
-          </section>
-
-          <OrderWorkspaceTabs activeTab={activeTab} onActiveTabChange={setActiveTab} />
-        </>
-      ) : null}
-
-      <Dialog.Root open={modalOpen && Boolean(selectedOrder)} onOpenChange={setModalOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(92dvh,860px)] w-[min(96vw,1180px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
-            <div className="flex flex-col gap-3 border-b border-border bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <Dialog.Title className="truncate text-base font-bold text-foreground">
-                  {selectedOrder?.departmentLabel ?? "Order"} order
-                </Dialog.Title>
-                <Dialog.Description className="mt-1 truncate text-xs font-medium text-muted-foreground">
-                  {selectedPatient ? `${selectedPatient.patientName} | ${selectedPatient.bedNo} | ${selectedPatient.unit}` : "Selected patient"}
-                  {selectedOrder ? ` | ${selectedOrder.order}` : ""}
-                </Dialog.Description>
-              </div>
-              <Dialog.Close asChild>
-                <Button aria-label="Close order popup" className="h-9 w-9 shrink-0 p-0" type="button" variant="outline">
-                  <X className="h-4 w-4" />
-                </Button>
-              </Dialog.Close>
-            </div>
-            <div className="min-h-0 flex-1 overflow-auto p-4">
-              <OrderWorkspaceTabs activeTab={activeTab} onActiveTabChange={setActiveTab} />
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
-    </div>
-  );
-}
-
-function OrderWorkspaceTabs({
-  activeTab,
-  onActiveTabChange,
-}: {
-  activeTab: string;
-  onActiveTabChange: (tab: string) => void;
-}) {
-  return (
-    <Tabs value={activeTab} onValueChange={onActiveTabChange} className="w-full">
-      <div className="space-y-3 sm:space-y-4">
-        <TabsList className="w-full gap-1.5 overflow-x-auto px-1 py-1 sm:gap-2 sm:px-0">
-          {tabs.map((tab) => (
-            <TabsTrigger key={tab.id} value={tab.id} className="flex h-8 min-w-[110px] flex-row items-center justify-center gap-1.5 border border-transparent px-2.5 text-xs sm:h-10 sm:min-w-[132px] sm:gap-2 sm:px-3 sm:text-sm data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-              <span className="min-w-0 truncate leading-none">{tab.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {tabs.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-2 sm:mt-3">
-            {tab.component}
-          </TabsContent>
-        ))}
-      </div>
-    </Tabs>
   );
 }

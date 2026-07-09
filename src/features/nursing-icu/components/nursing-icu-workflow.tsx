@@ -2120,6 +2120,7 @@ export function ShiftHandoverWorkspace() {
   const searchParams = useSearchParams();
   const queryPatientId = searchParams.get("patientId") ?? "";
   const focusedPatient = getWardNursePatient(queryPatientId);
+  const isLockedPatientFlow = searchParams.get("locked") === "1" && Boolean(focusedPatient);
   const nurseOptions = React.useMemo(
     () => Array.from(new Set([
       "Ward Nurse Kavita",
@@ -2216,7 +2217,7 @@ export function ShiftHandoverWorkspace() {
       {selectedPatient ? <WardNursePatientStrip patient={selectedPatient} /> : null}
       <Card className="overflow-hidden">
         <CardContent className="grid gap-3 p-3 lg:grid-cols-[minmax(260px,1fr)_minmax(220px,0.85fr)_160px] lg:items-end">
-          <WardNursePatientSelect disabled={Boolean(focusedPatient)} label="Patient / bed" value={draft.patientId} onChange={updatePatient} />
+          {isLockedPatientFlow ? null : <WardNursePatientSelect disabled={Boolean(focusedPatient)} label="Patient / bed" value={draft.patientId} onChange={updatePatient} />}
           <SelectField label="Shift" value={draft.shift} onChange={updateShift} options={clinicalHandoffShiftOptions} />
           <label className="space-y-1 text-sm">
             <span className="font-medium text-foreground">Date</span>
@@ -2545,6 +2546,7 @@ export function ShiftPendingSummaryWorkspace() {
   const searchParams = useSearchParams();
   const queryPatientId = searchParams.get("patientId") ?? "";
   const focusedPatient = getWardNursePatient(queryPatientId);
+  const isLockedPatientFlow = searchParams.get("locked") === "1" && Boolean(focusedPatient);
   const [patientId, setPatientId] = React.useState(focusedPatient?.id ?? "");
   const [shift, setShift] = React.useState("Current shift");
   const [nurse, setNurse] = React.useState(WARD_NURSE_WORKSPACE_NAME);
@@ -2569,7 +2571,7 @@ export function ShiftPendingSummaryWorkspace() {
 
       <Card className="overflow-hidden">
         <CardContent className="grid gap-3 p-3 md:grid-cols-3 md:items-end">
-          <WardNursePatientSelect disabled={Boolean(focusedPatient)} label="Patient / bed" value={patientId} onChange={setPatientId} />
+          {isLockedPatientFlow ? null : <WardNursePatientSelect disabled={Boolean(focusedPatient)} label="Patient / bed" value={patientId} onChange={setPatientId} />}
           <NativeSelect label="Ward nurse" value={nurse} onChange={setNurse} options={nurseOptions.length ? nurseOptions : [WARD_NURSE_WORKSPACE_NAME]} />
           <NativeSelect label="Shift" value={shift} onChange={setShift} options={["Current shift", "Morning shift", "Evening shift", "Night shift"]} />
         </CardContent>
@@ -2633,6 +2635,7 @@ export function RaiseIssueToUnitNurseWorkspace() {
   const searchParams = useSearchParams();
   const queryPatientId = searchParams.get("patientId") ?? "";
   const focusedPatient = getWardNursePatient(queryPatientId);
+  const isLockedPatientFlow = searchParams.get("locked") === "1" && Boolean(focusedPatient);
   const [patientId, setPatientId] = React.useState(focusedPatient?.id ?? "");
   const [summary, setSummary] = React.useState("");
   const [details, setDetails] = React.useState("");
@@ -2668,11 +2671,13 @@ export function RaiseIssueToUnitNurseWorkspace() {
     <div className="space-y-4">
       {selectedPatient ? <WardNursePatientStrip patient={selectedPatient} /> : null}
 
-      <Card className="overflow-hidden">
-        <CardContent className="grid gap-3 p-3 md:max-w-xl">
-          <WardNursePatientSelect disabled={Boolean(focusedPatient)} label="Patient / bed" value={patientId} onChange={setPatientId} />
-        </CardContent>
-      </Card>
+      {isLockedPatientFlow ? null : (
+        <Card className="overflow-hidden">
+          <CardContent className="grid gap-3 p-3 md:max-w-xl">
+            <WardNursePatientSelect disabled={Boolean(focusedPatient)} label="Patient / bed" value={patientId} onChange={setPatientId} />
+          </CardContent>
+        </Card>
+      )}
 
       {!selectedPatient ? (
         <EmptyPanel title="Select patient" detail="Choose an assigned patient before raising an issue." />
@@ -4390,6 +4395,7 @@ export function MedicationTimelineWorkspace() {
   const queryFocus = searchParams.get("focus")?.trim() ?? "";
   const requestedPatientId = searchParams.get("patientId") ?? "";
   const focusedPatient = getWardNursePatient(requestedPatientId);
+  const isLockedPatientFlow = searchParams.get("locked") === "1" && Boolean(focusedPatient);
   const [orders, setOrders] = React.useState<DoctorMedicationOrder[]>(seededDoctorMedicationOrders);
   const [doses, setDoses] = React.useState<MedicationDoseRow[]>(() => buildMedicationDoseRows(seededDoctorMedicationOrders));
   const [patientId, setPatientId] = React.useState(focusedPatient?.id ?? "");
@@ -4458,7 +4464,6 @@ export function MedicationTimelineWorkspace() {
   const hasBlockingDoctorScenario = doctorOrderScenarios.some((scenario) => scenario.blocking);
   const selectedFilterPatient = getWardNursePatient(patientId);
   const medicationFilterSummary = [
-    selectedFilterPatient ? `${selectedFilterPatient.bedNo} - ${selectedFilterPatient.patientName}` : "Select patient",
     medicationDate || "All dates",
     shift,
     unitFilter,
@@ -4756,21 +4761,23 @@ export function MedicationTimelineWorkspace() {
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
         </summary>
         <div className="grid gap-3 border-t border-border p-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_220px_180px_220px_auto] xl:items-end">
-          <label className="space-y-1 text-sm md:col-span-2 xl:col-span-1">
-            <span className="font-medium text-foreground">Patient</span>
-            <select
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-              value={focusedPatient?.id ?? patientId}
-              onChange={(event) => {
-                if (!focusedPatient) setPatientId(event.target.value);
-              }}
-            >
-              {focusedPatient ? null : <option value="">Select patient</option>}
-              {(focusedPatient ? [focusedPatient] : getWardNurseAssignedPatients()).map((patient) => (
-                <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
-              ))}
-            </select>
-          </label>
+          {isLockedPatientFlow ? null : (
+            <label className="space-y-1 text-sm md:col-span-2 xl:col-span-1">
+              <span className="font-medium text-foreground">Patient</span>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={focusedPatient?.id ?? patientId}
+                onChange={(event) => {
+                  if (!focusedPatient) setPatientId(event.target.value);
+                }}
+              >
+                {focusedPatient ? null : <option value="">Select patient</option>}
+                {(focusedPatient ? [focusedPatient] : getWardNurseAssignedPatients()).map((patient) => (
+                  <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="space-y-1 text-sm">
             <span className="font-medium text-foreground">Medication date</span>
             <Input type="date" value={medicationDate} onChange={(event) => setMedicationDate(event.target.value)} />
@@ -4912,6 +4919,7 @@ export function MedicineReceiveVerifyWorkspace() {
   const queryPatientId = searchParams.get("patientId") ?? "";
   const [doses, setDoses] = React.useState<MedicationDoseRow[]>(() => applyReadyMedicationState(buildMedicationDoseRows(seededDoctorMedicationOrders)));
   const focusedPatient = getWardNursePatient(queryPatientId);
+  const isLockedPatientFlow = searchParams.get("locked") === "1" && Boolean(focusedPatient);
   const [patientId, setPatientId] = React.useState(focusedPatient?.id ?? "");
   const [query, setQuery] = React.useState("");
   const [queue, setQueue] = React.useState<"Pending" | "Ready" | "All">("Pending");
@@ -4981,20 +4989,22 @@ export function MedicineReceiveVerifyWorkspace() {
                 <Input className="pl-9" placeholder="Patient, bed, medicine, doctor..." value={query} onChange={(event) => setQuery(event.target.value)} />
               </div>
             </label>
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Patient</span>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-                disabled={Boolean(focusedPatient)}
-                value={patientId}
-                onChange={(event) => setPatientId(event.target.value)}
-              >
-                <option value="">Select patient</option>
-                {(focusedPatient ? [focusedPatient] : getWardNurseAssignedPatients()).map((patient) => (
-                  <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
-                ))}
-              </select>
-            </label>
+            {isLockedPatientFlow ? null : (
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">Patient</span>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                  disabled={Boolean(focusedPatient)}
+                  value={patientId}
+                  onChange={(event) => setPatientId(event.target.value)}
+                >
+                  <option value="">Select patient</option>
+                  {(focusedPatient ? [focusedPatient] : getWardNurseAssignedPatients()).map((patient) => (
+                    <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <NativeSelect label="Queue" value={queue} onChange={(value) => setQueue(value as typeof queue)} options={["Pending", "Ready", "All"]} />
             <Button variant="outline" onClick={() => {
               setQuery("");
@@ -5015,7 +5025,7 @@ export function MedicineReceiveVerifyWorkspace() {
             <table className="min-w-[980px] w-full text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold">Patient / Bed</th>
+                  <th className="px-4 py-3 text-left font-semibold">Bed / Unit</th>
                   <th className="px-4 py-3 text-left font-semibold">Medicine</th>
                   <th className="px-4 py-3 text-left font-semibold">Dose / Route</th>
                   <th className="px-4 py-3 text-left font-semibold">Due Time</th>
@@ -5031,8 +5041,8 @@ export function MedicineReceiveVerifyWorkspace() {
                   return (
                     <tr className="hover:bg-slate-50/70" key={dose.id}>
                       <td className="px-4 py-4">
-                        <p className="font-semibold text-foreground">{patient?.patientName}</p>
-                        <p className="text-xs text-muted-foreground">{dose.bedNo} | {patient?.unit}</p>
+                        <p className="font-semibold text-foreground">{dose.bedNo}</p>
+                        <p className="text-xs text-muted-foreground">{patient?.unit}</p>
                       </td>
                       <td className="px-4 py-4">
                         <p className="font-semibold text-foreground">{dose.medication}</p>

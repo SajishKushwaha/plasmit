@@ -77,6 +77,7 @@ type IoDraft = {
 
 type IntakeOutputWorkspaceProps = {
   entryOnly?: boolean;
+  hidePatientStrip?: boolean;
   initialPatientId?: string;
   lockedPatientId?: string;
   initialView?: IoView;
@@ -166,6 +167,7 @@ export function IntakeOutputWorkspace(props: IntakeOutputWorkspaceProps = {}) {
 
 function IntakeOutputWorkspaceInner({
   entryOnly = false,
+  hidePatientStrip = false,
   initialPatientId,
   lockedPatientId,
   initialView = "Hourly",
@@ -303,39 +305,41 @@ function IntakeOutputWorkspaceInner({
 
   return (
     <div className="space-y-4">
-      {/* {selectedPatient ? <IntakeOutputPatientStrip patient={selectedPatient} /> : null} */}
+      {selectedPatient && !hidePatientStrip ? <IntakeOutputPatientStrip patient={selectedPatient} /> : null}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <IoCollapsiblePanel
             open={filtersOpen}
             onOpenChange={setFiltersOpen}
-            summary={selectedPatient ? `${selectedPatient.bedNo} - ${selectedPatient.patientName} | ${view} | ${timeWindow} | ${scopedRows.length} row(s)` : `No patient selected | ${view} | ${timeWindow}`}
+            summary={selectedPatient ? `${hidePatientStrip ? "" : `${selectedPatient.bedNo} - ${selectedPatient.patientName} | `}${view} | ${timeWindow} | ${scopedRows.length} row(s)` : `No patient selected | ${view} | ${timeWindow}`}
             title="Search & filters"
           >
             <div className="p-3">
               <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                <FieldBlock label="Patient / bed">
-                  {lockedPatientId && selectedPatient ? (
-                    <div className="flex h-10 items-center justify-between gap-2 rounded-md border border-slate-300 bg-slate-100 px-3 text-sm text-slate-950">
-                      <span className="truncate">{selectedPatient.bedNo} - {selectedPatient.patientName}</span>
-                      <Badge tone="info">Locked</Badge>
-                    </div>
-                  ) : (
-                    <select
-                      className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200"
-                      value={patientId}
-                      onChange={(event) => {
-                        setPatientId(event.target.value);
-                        setFiltersOpen(false);
-                      }}
-                    >
-                      <option value="">Select patient</option>
-                      {icuPatients.map((patient) => (
-                        <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
-                      ))}
-                    </select>
-                  )}
-                </FieldBlock>
+                {hidePatientStrip ? null : (
+                  <FieldBlock label="Patient / bed">
+                    {lockedPatientId && selectedPatient ? (
+                      <div className="flex h-10 items-center justify-between gap-2 rounded-md border border-slate-300 bg-slate-100 px-3 text-sm text-slate-950">
+                        <span className="truncate">{selectedPatient.bedNo} - {selectedPatient.patientName}</span>
+                        <Badge tone="info">Locked</Badge>
+                      </div>
+                    ) : (
+                      <select
+                        className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200"
+                        value={patientId}
+                        onChange={(event) => {
+                          setPatientId(event.target.value);
+                          setFiltersOpen(false);
+                        }}
+                      >
+                        <option value="">Select patient</option>
+                        {icuPatients.map((patient) => (
+                          <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+                        ))}
+                      </select>
+                    )}
+                  </FieldBlock>
+                )}
                 <FieldBlock label="View">
                   <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-sky-200" value={view} onChange={(event) => setView(event.target.value as IoView)}>
                     {(["Hourly", "12 Hours", "24 Hours", "Cumulative"] satisfies IoView[]).map((option) => <option key={option}>{option}</option>)}

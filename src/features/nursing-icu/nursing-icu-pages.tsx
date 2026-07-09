@@ -477,7 +477,6 @@ function NursingIcuModulePageInner({
         />
       ) : null}
 
-      {useNurseEntryReviewTabs ? <NurseEntryReviewTabs activePage={page} /> : null}
       {!hideModuleTabs ? <NursingIcuTabs activePage={page} /> : null}
 
       {!streamlinedPage ? (
@@ -16125,7 +16124,7 @@ function IcuPatientProfileVerificationPanel({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-black text-slate-950">Profile verification</p>
-          <p className="mt-0.5 text-xs font-semibold text-slate-500">{patient.patientName} | {patient.bedNo}</p>
+          <p className="mt-0.5 text-xs font-semibold text-slate-500">{patient.bedNo} | MR: {patient.mrn}</p>
         </div>
         <Button size="sm" asChild>
           <Link href={`/icu-command-center/nursing/nurse-entry?patientId=${patient.id}`}>Open assessment</Link>
@@ -16163,13 +16162,22 @@ function IcuPatientCommandProfile({
   initialShiftFocus: IcuShiftFocus;
 }) {
   const { role } = useRole();
+  const searchParams = useSearchParams();
   const [previewResultId, setPreviewResultId] = React.useState<string | null>(null);
   const [ordersSubTab, setOrdersSubTab] = React.useState<MedicationOrdersSubTab>(initialOrdersSubTab);
   const nursingPermission = getNursingRolePermission(role);
-  const visiblePatientTabs = nursingPermission
+  const permittedPatientTabs = nursingPermission
     ? icuPatientDetailTabs.filter((tab) => nursingPermission.patientTabs.includes(tab.id))
     : icuPatientDetailTabs;
-  const safeInitialTab = visiblePatientTabs.some((tab) => tab.id === initialTab) ? initialTab : visiblePatientTabs[0]?.id ?? "overview";
+  const isLockedPatientFlow = searchParams.get("locked") === "1";
+  const isLockedRaiseIssueFlow = initialTab === "collaborate" && searchParams.get("action") === "raise-unit-issue" && isLockedPatientFlow;
+  const lockedTabQuery = isLockedRaiseIssueFlow ? "action=raise-unit-issue&locked=1" : isLockedPatientFlow ? "locked=1" : "";
+  const visiblePatientTabs = isLockedRaiseIssueFlow
+    ? icuPatientDetailTabs.filter((tab) => tab.id === "collaborate")
+    : permittedPatientTabs;
+  const safeInitialTab = isLockedRaiseIssueFlow
+    ? "collaborate"
+    : visiblePatientTabs.some((tab) => tab.id === initialTab) ? initialTab : visiblePatientTabs[0]?.id ?? "overview";
 
   if (!patient) {
     return (
@@ -16228,7 +16236,11 @@ function IcuPatientCommandProfile({
       <Tabs className="p-0" value={safeInitialTab}>
         <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-none border-b border-slate-100 bg-slate-50 px-4 py-3">
           {visiblePatientTabs.map((tab) => (
-            <IcuPatientTabLink active={safeInitialTab === tab.id} href={icuPatientDetailHref(patient.id, tab.id)} key={tab.id}>
+            <IcuPatientTabLink
+              active={safeInitialTab === tab.id}
+              href={icuPatientDetailHref(patient.id, tab.id, undefined, lockedTabQuery)}
+              key={tab.id}
+            >
               {tab.label}
             </IcuPatientTabLink>
           ))}
@@ -16253,11 +16265,11 @@ function IcuPatientCommandProfile({
         <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="monitoring">
           <Tabs value={initialMonitoringTab}>
             <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1.5">
-              <IcuPatientTabLink active={initialMonitoringTab === "monitoring-overview"} href={icuPatientDetailHref(patient.id, "monitoring", "monitoring-overview")}>Monitoring Overview</IcuPatientTabLink>
-              <IcuPatientTabLink active={initialMonitoringTab === "24h-chart"} href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}>24h Chart</IcuPatientTabLink>
-              <IcuPatientTabLink active={initialMonitoringTab === "ventilation"} href={icuPatientDetailHref(patient.id, "monitoring", "ventilation")}>Ventilation</IcuPatientTabLink>
-              <IcuPatientTabLink active={initialMonitoringTab === "intake-output"} href={icuPatientDetailHref(patient.id, "monitoring", "intake-output")}>Intake Output</IcuPatientTabLink>
-              <IcuPatientTabLink active={initialMonitoringTab === "device-snapshot"} href={icuPatientDetailHref(patient.id, "monitoring", "device-snapshot")}>Device Snapshot</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "monitoring-overview"} href={icuPatientDetailHref(patient.id, "monitoring", "monitoring-overview", lockedTabQuery)}>Monitoring Overview</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "24h-chart"} href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart", lockedTabQuery)}>24h Chart</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "ventilation"} href={icuPatientDetailHref(patient.id, "monitoring", "ventilation", lockedTabQuery)}>Ventilation</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "intake-output"} href={icuPatientDetailHref(patient.id, "monitoring", "intake-output", lockedTabQuery)}>Intake Output</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "device-snapshot"} href={icuPatientDetailHref(patient.id, "monitoring", "device-snapshot", lockedTabQuery)}>Device Snapshot</IcuPatientTabLink>
             </TabsList>
 
             <TabsContent className="mt-4 space-y-4" value="monitoring-overview">
@@ -16392,7 +16404,7 @@ function IcuPatientPendingWorkTable({
         <div className="min-w-0">
           <p className="text-sm font-black text-slate-950">Pending tasks and orders</p>
           <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
-            {patient.bedNo} | {patient.patientName}
+            {patient.bedNo} | {patient.unit}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -16600,21 +16612,14 @@ function IcuPatientMonitoring24HourChart({ patient }: { patient: IcuPatient }) {
   return (
     <div className="space-y-4">
       <CollapsibleCommandPanel
-        summary={`${patient.bedNo} - ${patient.patientName} | ${dateTimeFilter.dateFilter} / ${dateTimeFilter.timeFilter} | ${filteredHourlyVitals.length} record(s)`}
+        summary={`${dateTimeFilter.dateFilter} / ${dateTimeFilter.timeFilter} | ${filteredHourlyVitals.length} record(s)`}
         title="Patient & observation filters"
       >
         <div className="space-y-4 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <StatusPill tone={criticalHours ? "danger" : "success"}>{criticalHours ? `${criticalHours} risk hours` : "Stable 24h"}</StatusPill>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_180px_auto] xl:items-end">
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Patient / bed</span>
-              <div className="flex h-10 items-center justify-between gap-2 rounded-md border border-input bg-surface-muted px-3 text-sm">
-                <span className="truncate font-semibold text-foreground">{patient.bedNo} - {patient.patientName}</span>
-                <Badge tone="info">Locked</Badge>
-              </div>
-            </label>
+          <div className="grid gap-3 md:grid-cols-[180px_auto] md:items-end">
             <label className="space-y-1 text-sm">
               <span className="font-medium text-foreground">Observation date</span>
               <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={observationDate} onChange={(event) => {
@@ -16637,7 +16642,7 @@ function IcuPatientMonitoring24HourChart({ patient }: { patient: IcuPatient }) {
 
 function IcuPatientMonitoringIntakeOutput({ patient }: { patient: IcuPatient }) {
   return (
-    <IntakeOutputWorkspace initialMode="Table" initialPatientId={patient.id} initialView="Hourly" lockedPatientId={patient.id} />
+    <IntakeOutputWorkspace hidePatientStrip initialMode="Table" initialPatientId={patient.id} initialView="Hourly" lockedPatientId={patient.id} />
   );
 }
 
@@ -17308,7 +17313,12 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
   const events = React.useMemo(() => buildIcuPatientEvents(activePatient, activeResults), [activePatient, activeResults]);
   const [typeFilter, setTypeFilter] = React.useState(() => initialFocus === "open-alerts" ? "Alert" : "All events");
   const typeOptions = ["All events", "Vitals", "I/O", "Result", "Medication", "Alert"];
-  const filteredEvents = events.filter((event) => typeFilter === "All events" || event.type === typeFilter);
+  const filteredEvents = React.useMemo(() => events.filter((event) => typeFilter === "All events" || event.type === typeFilter), [events, typeFilter]);
+  const pagination = useIcuCommandPagination(filteredEvents);
+
+  React.useEffect(() => {
+    pagination.setPage(1);
+  }, [activePatient.id, pagination.setPage, typeFilter]);
 
   return (
     <div className="space-y-4">
@@ -17344,7 +17354,7 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
               </tr>
             </thead>
             <tbody>
-              {filteredEvents.map((event) => (
+              {pagination.pageRows.map((event) => (
                 <tr className="align-top even:bg-slate-50/45 hover:bg-sky-50/70 [&:last-child>td]:border-0" key={event.id}>
                   <td className="whitespace-nowrap border-b border-slate-100 px-3 py-3 text-sm font-bold text-slate-800">{event.time}</td>
                   <td className="border-b border-slate-100 px-3 py-3">
@@ -17364,6 +17374,7 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
           </table>
         </div>
         {!filteredEvents.length ? <div className="p-6 text-center text-sm font-semibold text-slate-500">No patient event matched selected filters.</div> : null}
+        {filteredEvents.length > ICU_COMMAND_PAGE_SIZE ? <IcuCommandPaginationControls {...pagination} /> : null}
       </div>
     </div>
   );
@@ -17480,7 +17491,7 @@ function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFoc
         <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-black text-slate-950">Shift Pending Summary</p>
-            <p className="mt-0.5 text-xs font-semibold text-slate-500">{patient.bedNo} | {patient.patientName} | {activeShift?.time ?? shift}</p>
+            <p className="mt-0.5 text-xs font-semibold text-slate-500">{patient.bedNo} | {activeShift?.time ?? shift}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {(["all", "critical", "pending"] as IcuShiftFocus[]).map((option) => (
@@ -17932,7 +17943,7 @@ function IcuPatientCollaborateWorkspace({ patient }: { patient: IcuPatient }) {
               <p className="text-sm font-bold text-slate-950">Routing</p>
               <div className="mt-3 space-y-2">
                 <InfoLine label="Unit nurse" value={activePatient.assignedUnitNurse} />
-                <InfoLine label="Patient" value={`${activePatient.bedNo} - ${activePatient.patientName}`} />
+                <InfoLine label="Bed" value={activePatient.bedNo} />
                 <InfoLine label="Issue" value={currentIssue.reason} />
               </div>
             </div>
@@ -20639,6 +20650,7 @@ type IcuHourlyVital = {
   urineOutput: number;
   fluidIntake: number;
   painScore: number;
+  mewsScore: number;
   dominantRiskZone: string;
   responseLevel: string;
   reviewStatus: string;
@@ -20706,6 +20718,7 @@ const monitoringParameters: MonitoringParameter[] = [
   { section: "Vitals", key: "pulse", label: "Pulse", unit: "/min" },
   { section: "Vitals", key: "gcs", label: "GCS", unit: "score" },
   { section: "Vitals", key: "painScore", label: "Pain", unit: "/10" },
+  { section: "Vitals", key: "mewsScore", label: "MEWS/EWS", unit: "score" },
 
   { section: "Rapid review", key: "fio2", label: "FiO2", unit: "%" },
   { section: "Rapid review", key: "deliveryMethod", label: "Delivery method" },
@@ -21028,7 +21041,7 @@ function MonitoringChart() {
   return (
     <div className="space-y-4">
       <CollapsibleCommandPanel
-        summary={`${selectedPatient.bedNo} - ${selectedPatient.patientName} | ${dateTimeFilter.dateFilter} / ${dateTimeFilter.timeFilter} | ${filteredHourlyVitals.length} record(s)`}
+        summary={`${dateTimeFilter.dateFilter} / ${dateTimeFilter.timeFilter} | ${filteredHourlyVitals.length} record(s)`}
         title="Patient & observation filters"
       >
         <div className="space-y-4 p-3">
@@ -21141,6 +21154,8 @@ function NurseReview() {
 
   return (
     <div className="space-y-4">
+      <NurseEntryReviewTabs activePage="nurse-review" />
+
       <CollapsibleCommandPanel title="Nurse Review Worklist & Filters" summary={filterSummary}>
         <div className="space-y-3 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -21209,6 +21224,7 @@ function NurseVitalsEntryForm() {
   const [pulseQuality, setPulseQuality] = React.useState("");
   const [pulseAction, setPulseAction] = React.useState("");
   const selectedPatient = patientId ? icuPatients.find((patient) => patient.id === patientId) : undefined;
+  const isLockedPatientFlow = searchParams.get("locked") === "1" && Boolean(selectedPatient);
   const pulseDeficit = Math.max(0, Number(monitorHeartRate || 0) - Number(pulseRate || 0));
   const hasObservationInput = [respiratoryRate, o2Saturation, pulseRate, temperature, urineOutput, painScore, gcsScore].some((value) => value.trim().length > 0);
   const riskLevel = hasObservationInput
@@ -21258,17 +21274,21 @@ function NurseVitalsEntryForm() {
         </div>
       ) : null}
 
+      <NurseEntryReviewTabs activePage="vitals" />
+
       <Card className="min-w-0 max-w-full overflow-hidden">
         <CardContent className="min-w-0 space-y-4 p-4">
           <div className="grid min-w-0 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             <NurseEntrySectionTitle>Patient and shift details</NurseEntrySectionTitle>
-            <label className="min-h-[66px] space-y-1 text-sm">
-              <span className="font-medium text-foreground">Patient</span>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={patientId} onChange={(event) => setPatientId(event.target.value)}>
-                <option value="">Select patient</option>
-                {icuPatients.map((patient) => <option key={patient.id} value={patient.id}>{patient.patientName} - {patient.bedNo}</option>)}
-              </select>
-            </label>
+            {isLockedPatientFlow ? null : (
+              <label className="min-h-[66px] space-y-1 text-sm">
+                <span className="font-medium text-foreground">Patient</span>
+                <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={patientId} onChange={(event) => setPatientId(event.target.value)}>
+                  <option value="">Select patient</option>
+                  {icuPatients.map((patient) => <option key={patient.id} value={patient.id}>{patient.patientName} - {patient.bedNo}</option>)}
+                </select>
+              </label>
+            )}
             <label className="min-h-[66px] space-y-1 text-sm">
               <span className="font-medium text-foreground">Date</span>
               <Input value={entryDate} onChange={(event) => setEntryDate(event.target.value)} type="date" />
@@ -21852,8 +21872,8 @@ function IcuVitals24HourTable({ data }: { data: IcuHourlyVital[] }) {
                       {data.map((entry) => {
                         const value = String(entry[parameter.key] ?? "-");
                         return (
-                          <td className={`border-r border-border px-2 py-2 text-center ${icuVitalCellClass(parameter.key, entry)}`} key={`${parameter.key}-${entry.hour}`}>
-                            <button className="min-h-8 w-full rounded px-1 outline-none hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-ring" onClick={() => toast.info(`${parameter.label} ${entry.hour}: ${value}`)}>
+                          <td className="border-r border-border px-2 py-2 text-center" key={`${parameter.key}-${entry.hour}`}>
+                            <button className={cn("min-h-8 w-full rounded px-1 outline-none hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-ring", icuVitalValueClass(parameter.key, entry))} onClick={() => toast.info(`${parameter.label} ${entry.hour}: ${value}`)}>
                               {value}
                             </button>
                           </td>
@@ -21893,17 +21913,19 @@ function buildIcuHourlyVitals(patient?: IcuPatient, observationDate = TODAY_DATE
     const respiratoryRate = earlyRisk ? 30 - (index % 2) : improving ? 22 : 24 + (index % 3);
     const gcs = earlyRisk ? 11 + (index % 2) : improving ? 14 : 13;
     const urineOutput = earlyRisk ? 22 + index : improving ? 45 + (index % 6) : 32 + (index % 5);
+    const temperature = Number((earlyRisk ? 38.4 - index * 0.03 : improving ? 37.2 : 37.6).toFixed(1));
+    const mewsScore = calculateMewsEwsScore({ respiratoryRate, spo2, pulse, temperature, gcs, urineOutput });
     const fio2 = earlyRisk ? 60 - Math.min(index, 4) * 2 : improving ? 35 : 28;
     const deliveryMethod = earlyRisk
       ? patient?.ventilatorStatus === "Invasive ventilation" || patient?.currentStatus === "Ventilated" ? "Ventilator" : "NIV support"
       : improving
         ? "Simple mask"
         : "Nasal cannula";
-    const risk = spo2 < 92 || pulse > 120 || respiratoryRate > 28 || gcs < 12 || urineOutput < 30
+    const risk = mewsScore >= 7 || spo2 < 92 || pulse > 120 || respiratoryRate > 28 || gcs < 12 || urineOutput < 30
       ? "Critical"
-      : spo2 < 95 || pulse > 110 || respiratoryRate > 24 || urineOutput < 35
+      : mewsScore >= 5 || spo2 < 95 || pulse > 110 || respiratoryRate > 24 || urineOutput < 35
         ? "High"
-        : spo2 < 97 || pulse > 100
+        : mewsScore >= 3 || spo2 < 97 || pulse > 100
           ? "Watch"
           : "Stable";
     const dominantRiskZone = spo2 < 90 || pulse > 130 || respiratoryRate >= 34 || gcs <= 8
@@ -21939,7 +21961,7 @@ function buildIcuHourlyVitals(patient?: IcuPatient, observationDate = TODAY_DATE
     return {
       date: observationDate,
       hour,
-      temperature: Number((earlyRisk ? 38.4 - index * 0.03 : improving ? 37.2 : 37.6).toFixed(1)),
+      temperature,
       pulse,
       monitorHeartRate,
       pulseDeficit,
@@ -21956,6 +21978,7 @@ function buildIcuHourlyVitals(patient?: IcuPatient, observationDate = TODAY_DATE
       urineOutput,
       fluidIntake: earlyRisk ? 65 + (index % 4) * 10 : improving ? 90 + (index % 3) * 5 : 75 + (index % 4) * 5,
       painScore: earlyRisk ? 7 : improving ? 3 : 5,
+      mewsScore,
       dominantRiskZone,
       responseLevel,
       reviewStatus,
@@ -21992,10 +22015,20 @@ function riskToObservationRisk(risk: IcuHourlyVital["risk"]): ObservationRisk {
   return "Normal";
 }
 
-function icuVitalCellClass(key: keyof IcuHourlyVital, entry: IcuHourlyVital) {
-  const critical = "bg-purple-100 font-semibold text-purple-900";
-  const high = "bg-rose-100 font-semibold text-rose-900";
-  const warning = "bg-yellow-100 font-semibold text-yellow-900";
+function calculateMewsEwsScore(values: { respiratoryRate: number; spo2: number; pulse: number; temperature: number; gcs: number; urineOutput: number }) {
+  const respiratoryScore = values.respiratoryRate <= 8 ? 3 : values.respiratoryRate <= 11 ? 1 : values.respiratoryRate <= 20 ? 0 : values.respiratoryRate <= 24 ? 2 : 3;
+  const spo2Score = values.spo2 <= 91 ? 3 : values.spo2 <= 93 ? 2 : values.spo2 <= 95 ? 1 : 0;
+  const pulseScore = values.pulse <= 40 ? 3 : values.pulse <= 50 ? 1 : values.pulse <= 90 ? 0 : values.pulse <= 110 ? 1 : values.pulse <= 130 ? 2 : 3;
+  const temperatureScore = values.temperature <= 35 ? 3 : values.temperature < 36.1 ? 1 : values.temperature <= 38 ? 0 : values.temperature <= 39 ? 1 : 2;
+  const gcsScore = values.gcs <= 11 ? 3 : values.gcs <= 13 ? 2 : 0;
+  const urineScore = values.urineOutput < 20 ? 3 : values.urineOutput < 30 ? 2 : values.urineOutput < 40 ? 1 : 0;
+  return respiratoryScore + spo2Score + pulseScore + temperatureScore + gcsScore + urineScore;
+}
+
+function icuVitalValueClass(key: keyof IcuHourlyVital, entry: IcuHourlyVital) {
+  const critical = "font-semibold text-purple-900";
+  const high = "font-semibold text-rose-800";
+  const warning = "font-semibold text-yellow-800";
   if (key === "spo2") return entry.spo2 < 90 ? critical : entry.spo2 < 92 ? high : entry.spo2 < 95 ? warning : "";
   if (key === "pulse") return entry.pulse > 130 ? critical : entry.pulse > 120 ? high : entry.pulse > 110 ? warning : "";
   if (key === "monitorHeartRate") return entry.monitorHeartRate > 130 ? critical : entry.monitorHeartRate > 120 ? high : entry.monitorHeartRate > 110 ? warning : "";
@@ -22006,6 +22039,7 @@ function icuVitalCellClass(key: keyof IcuHourlyVital, entry: IcuHourlyVital) {
   if (key === "fio2") return entry.fio2 > 60 ? critical : entry.fio2 > 40 ? high : entry.fio2 > 28 ? warning : "";
   if (key === "gcs") return entry.gcs <= 8 ? critical : entry.gcs < 12 ? high : entry.gcs < 14 ? warning : "";
   if (key === "urineOutput") return entry.urineOutput < 20 ? critical : entry.urineOutput < 30 ? high : entry.urineOutput < 35 ? warning : "";
+  if (key === "mewsScore") return entry.mewsScore >= 7 ? critical : entry.mewsScore >= 5 ? high : entry.mewsScore >= 3 ? warning : "";
   if (key === "abgPh") return entry.abgPh < 7.2 || entry.abgPh > 7.55 ? critical : entry.abgPh < 7.35 || entry.abgPh > 7.45 ? warning : "";
   if (key === "abgPaO2") return entry.abgPaO2 < 60 ? critical : entry.abgPaO2 < 80 ? high : "";
   if (key === "abgPaCO2") return entry.abgPaCO2 > 55 ? critical : entry.abgPaCO2 > 45 ? warning : "";

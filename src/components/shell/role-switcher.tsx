@@ -2,16 +2,13 @@
 
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
-import { usePathname } from "next/navigation";
 
 import { useRole } from "@/components/providers/role-provider";
-import { icuCommandSwitcherRoles } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 
 export function RoleSwitcher({ className, portal = true }: { className?: string; portal?: boolean }) {
-  const pathname = usePathname();
   const { role, setRole, roles } = useRole();
-  const selectableRoles = pathname.startsWith("/icu-command-center") ? icuCommandSwitcherRoles : roles;
+  const selectableRoles = roles;
 
   if (selectableRoles.length <= 1) {
     return null;

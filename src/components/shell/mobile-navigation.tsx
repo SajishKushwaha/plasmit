@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/components/providers/role-provider";
 import { collectNavigationHrefs, normalizeNavigationHref } from "@/components/shell/navigation-prefetch";
+import { roleRoutes } from "@/config/roles";
 import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
@@ -42,10 +43,12 @@ export function MobileNavigation() {
   const [open, setOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+  const edgeSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { role, roles, setRole } = useRole();
+  const homeRoute = roleRoutes[role] ?? "/dashboard";
   const visibleItems = useMemo(() => getNavigationItemsForRole(role), [role]);
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
   const currentSearch = searchParams.toString() ? `?${searchParams.toString()}` : "";
@@ -67,6 +70,53 @@ export function MobileNavigation() {
 
     return () => window.clearTimeout(timeout);
   }, [prefetchRoutes, warmRoute]);
+
+  useEffect(() => {
+    const edgeWidth = 24;
+    const openDistance = 64;
+    const maxVerticalDrift = 48;
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (open || window.innerWidth >= 1024) return;
+      const touch = event.touches[0];
+      if (!touch || touch.clientX > edgeWidth) {
+        edgeSwipeStartRef.current = null;
+        return;
+      }
+      edgeSwipeStartRef.current = { x: touch.clientX, y: touch.clientY };
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const start = edgeSwipeStartRef.current;
+      const touch = event.touches[0];
+      if (!start || !touch) return;
+
+      const deltaX = touch.clientX - start.x;
+      const deltaY = Math.abs(touch.clientY - start.y);
+      if (deltaX > openDistance && deltaY < maxVerticalDrift) {
+        setOpen(true);
+        edgeSwipeStartRef.current = null;
+      } else if (deltaY > maxVerticalDrift) {
+        edgeSwipeStartRef.current = null;
+      }
+    };
+
+    const resetSwipe = () => {
+      edgeSwipeStartRef.current = null;
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", resetSwipe, { passive: true });
+    window.addEventListener("touchcancel", resetSwipe, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", resetSwipe);
+      window.removeEventListener("touchcancel", resetSwipe);
+    };
+  }, [open]);
 
   const renderChildItem = (child: NavigationChildItem, depth = 0) => {
     const hasNestedChildren = Boolean(child.children?.length);
@@ -131,19 +181,25 @@ export function MobileNavigation() {
         </Button>
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/35" />
-        <Dialog.Content className="fixed left-0 top-0 z-[90] flex h-[100dvh] max-h-[100dvh] w-[min(88vw,360px)] flex-col overflow-hidden overscroll-none border-r border-border bg-sidebar text-sidebar-foreground shadow-soft outline-none" onPointerDownOutside={() => setRoleOpen(false)}>
+        <Dialog.Overlay className="mobile-drawer-overlay fixed inset-0 z-[80] bg-black/35" />
+        <Dialog.Content className="mobile-drawer-content fixed left-0 top-0 z-[90] flex h-[100dvh] max-h-[100dvh] w-[min(88vw,360px)] flex-col overflow-hidden overscroll-none border-r border-border bg-sidebar text-sidebar-foreground shadow-soft outline-none" onPointerDownOutside={() => setRoleOpen(false)}>
           <div className="flex h-20 shrink-0 items-center justify-between border-b border-border px-3">
             <Dialog.Title className="sr-only">Plasmit Hospital navigation</Dialog.Title>
             <Dialog.Description className="sr-only">Mobile navigation</Dialog.Description>
-            <Image
-              src="/plasmit-sidebar-logo.webp"
-              alt="Plasmit Healthcare IT Vector"
-              width={210}
-              height={85}
-              priority
-              className="h-auto w-[190px] object-contain"
-            />
+            <Link
+              aria-label={`${role} home dashboard`}
+              href={homeRoute}
+              onClick={() => setOpen(false)}
+            >
+              <Image
+                src="/plasmit-sidebar-logo.webp"
+                alt="Plasmit Healthcare IT Vector"
+                width={210}
+                height={85}
+                priority
+                className="h-auto w-[190px] object-contain"
+              />
+            </Link>
             <Dialog.Close asChild>
               <Button size="icon" variant="ghost" aria-label="Close navigation">
                 <X className="h-4 w-4" />

@@ -234,6 +234,10 @@ export function DoctorDashboard1PatientPage({ patientId }: { patientId: string }
                   uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
                   wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
                 }}
+                onAddLaboratoryOrder={() => {
+                  setActiveTab("orders");
+                  setOrdersDefaultTab("lab");
+                }}
                 viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
                 viewTitle="Results Center"
               />
@@ -332,38 +336,40 @@ function PatientDetailTopStrip({
   return (
     <div
       className={cn(
-        "overflow-x-auto overflow-y-hidden rounded-xl border border-[#7367f0]/40 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)] transition-all duration-200",
+        "rounded-xl border border-[#7367f0]/40 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)] transition-all duration-200",
         isCompact && "rounded-lg shadow-[0_6px_16px_rgba(115,103,240,0.2)]"
       )}
       style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}
     >
-      <div className={cn("flex min-w-max items-center justify-between gap-8 px-3 transition-all duration-200", isCompact ? "min-h-9 py-1" : "min-h-11 py-2")}>
-        <div className={cn("flex min-w-max flex-1 items-center transition-all duration-200", isCompact ? "gap-4" : "gap-7")}>
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-sm font-bold">{patient.name}</span>
-            <Badge
-              className={cn(
-                "border-white/30 px-2.5 font-bold shadow-sm",
-                tone === "red" && "bg-red-500 text-white",
-                tone === "orange" && "bg-orange-400 text-white",
-                tone === "blue" && "bg-blue-500 text-white",
-              )}
-              tone={tone === "red" ? "critical" : tone === "orange" ? "warning" : "success"}
-            >
-              {tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Stable"}
-            </Badge>
-          </div>
-          {details.map((item) => (
-            <div className="whitespace-nowrap text-sm font-semibold" key={`${item.label}-${item.value}`}>
-              {item.label ? <span className={item.label === "Isolation Type" ? "font-extrabold text-red-300" : "text-white/80"}>{item.label}: </span> : null}
-              <span className={item.label === "Isolation Type" ? "font-extrabold text-red-300" : undefined}>{item.value}</span>
+      <div className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 transition-all duration-200 xl:px-4", isCompact ? "min-h-9 py-1" : "min-h-11 py-2")}>
+        <div className="horizontal-scrollbar min-w-0 overflow-x-auto overflow-y-hidden pb-1">
+          <div className={cn("flex min-w-full w-max flex-nowrap items-center justify-between transition-all duration-200", isCompact ? "gap-x-2 xl:gap-x-3" : "gap-x-3 xl:gap-x-4 2xl:gap-x-5")}>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="max-w-[130px] truncate text-sm font-bold xl:max-w-[160px]">{patient.name}</span>
+              <Badge
+                className={cn(
+                  "border-white/30 px-2.5 font-bold shadow-sm",
+                  tone === "red" && "bg-red-500 text-white",
+                  tone === "orange" && "bg-orange-400 text-white",
+                  tone === "blue" && "bg-blue-500 text-white",
+                )}
+                tone={tone === "red" ? "critical" : tone === "orange" ? "warning" : "success"}
+              >
+                {tone === "red" ? "Urgent" : tone === "orange" ? "Watch" : "Stable"}
+              </Badge>
             </div>
-          ))}
-          <div className={cn("whitespace-nowrap text-sm font-bold text-orange-300", !isCompact && "ml-0")}>Allergies: Meropenem</div>
+            {details.map((item) => (
+              <div className="shrink-0 whitespace-nowrap text-[13px] font-semibold leading-5 xl:text-sm" key={`${item.label}-${item.value}`}>
+                {item.label ? <span className={item.label === "Isolation Type" ? "font-extrabold text-red-300" : "text-white/80"}>{item.label}: </span> : null}
+                <span className={item.label === "Isolation Type" ? "font-extrabold text-red-300" : undefined}>{item.value}</span>
+              </div>
+            ))}
+            <div className={cn("shrink-0 whitespace-nowrap text-[13px] font-bold leading-5 text-orange-300 xl:text-sm", !isCompact && "ml-0")}>Allergies: Meropenem</div>
+          </div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button asChild className="h-8 border-white/25 bg-[#1d4ed8] px-3 text-xs font-bold text-white shadow-sm hover:bg-[#1e40af]" size="sm" variant="outline">
-            <Link href="/doctor-dashboard1"><ArrowLeft className="h-4 w-4" />Back to Dashboard</Link>
+        <div className="flex min-w-0 justify-end">
+          <Button asChild className="h-8 w-8 max-w-full shrink-0 border-white/25 bg-[#1d4ed8] px-0 text-xs font-bold text-white shadow-sm hover:bg-[#1e40af] sm:w-auto sm:px-3 xl:px-4" size="sm" variant="outline">
+            <Link aria-label="Back to Dashboard" className="min-w-0" href="/doctor-dashboard1"><ArrowLeft className="h-4 w-4 shrink-0" /><span className="hidden truncate sm:inline">Back to Dashboard</span></Link>
           </Button>
         </div>
       </div>
@@ -393,16 +399,25 @@ function getResultPatientMrn(patientId: number) {
   return resultMrns[(patientId - 1) % resultMrns.length];
 }
 
+function dashboardBpValue(patient: Dashboard1Patient) {
+  return `${patient.abps.value}/${patient.abpd.value}`;
+}
+
+function dashboardBpTone(patient: Dashboard1Patient): Dashboard1Patient["abps"]["tone"] {
+  if (patient.abps.tone === "red" || patient.abpd.tone === "red") return "red";
+  if (patient.abps.tone === "orange" || patient.abpd.tone === "orange") return "orange";
+  return "green";
+}
+
 function PatientOverview({ patient, rapidReviewPatient }: { patient: Dashboard1Patient; rapidReviewPatient?: RapidReviewPatient }) {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 xl:grid-cols-[minmax(1,1fr)_320px]">
         <Card className="overflow-hidden border-border/80">
-          <CardContent className="grid gap-3 p-1 sm:grid-cols-5 xl:grid-cols-5">
+          <CardContent className="grid grid-cols-2 gap-3 p-1 lg:grid-cols-4">
             <PatientMetric label="HR" value={`${patient.hr.value} bpm`} tone={patient.hr.tone} />
             <PatientMetric label="SpO2" value={`${patient.spo2.value}%`} tone={patient.spo2.tone} />
-            <PatientMetric label="ABPS" value={`${patient.abps.value} mmHg`} tone={patient.abps.tone} />
-            <PatientMetric label="ABPD" value={`${patient.abpd.value} mmHg`} tone={patient.abpd.tone} />
+            <PatientMetric label="BP" value={`${dashboardBpValue(patient)} mmHg`} tone={dashboardBpTone(patient)} />
             <PatientMetric label="Temperature" value={`${patient.temperature.value} °C`} tone={patient.temperature.tone} />
           </CardContent>
         </Card>
@@ -470,11 +485,10 @@ function PatientMonitoring({ patient, rapidReviewPatient }: { patient: Dashboard
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-gradient-to-br from-white to-surface-muted/70 p-4 shadow-sm">
         
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <PatientMetric label="HR" value={`${patient.hr.value} bpm`} tone={patient.hr.tone} />
           <PatientMetric label="SpO2" value={`${patient.spo2.value}%`} tone={patient.spo2.tone} />
-          <PatientMetric label="ABPS" value={`${patient.abps.value} mmHg`} tone={patient.abps.tone} />
-          <PatientMetric label="ABPD" value={`${patient.abpd.value} mmHg`} tone={patient.abpd.tone} />
+          <PatientMetric label="BP" value={`${dashboardBpValue(patient)} mmHg`} tone={dashboardBpTone(patient)} />
           <PatientMetric label="Temperature" value={`${patient.temperature.value} °C`} tone={patient.temperature.tone} />
         </div>
       </div>

@@ -667,6 +667,7 @@ export function ResultsWorkflowView({
   showPoctTab = true,
   viewTitle = "Results Center",
   viewDescription = "Laboratory, radiology, and POCT reports organized for IPD review.",
+  onAddLaboratoryOrder,
 }: {
   autoOpenAllDepartment?: ResultDepartment;
   autoOpenLatestDateOnly?: boolean;
@@ -678,6 +679,7 @@ export function ResultsWorkflowView({
   showPoctTab?: boolean;
   viewTitle?: string;
   viewDescription?: string;
+  onAddLaboratoryOrder?: (patientContext?: DoctorOrdersPatientContext) => void;
 }) {
   const [activeDepartment, setActiveDepartment] = useState<DepartmentFilter>(criticalOnly ? "all" : defaultDepartment);
   const [query, setQuery] = useState("");
@@ -970,6 +972,7 @@ export function ResultsWorkflowView({
                           allReports={reports}
                           icon={card.icon}
                           key={`${group.dateKey}-${card.id}`}
+                          onAddLaboratoryOrder={onAddLaboratoryOrder}
                           onAllView={(department, recordsToView) => {
                             const selectedReportNames = new Set(recordsToView.map((result) => result.testName));
                             const comparisonRecords = records.filter((result) => {
@@ -998,6 +1001,7 @@ export function ResultsWorkflowView({
       <ReportViewModal
         patientContext={patientContext}
         payload={reportModal}
+        onAddLaboratoryOrder={onAddLaboratoryOrder}
         onClose={() => setReportModal(null)}
         onPrint={(recordsToPrint, title) => printReports(recordsToPrint, title)}
       />
@@ -1009,6 +1013,7 @@ export function ResultsWorkflowView({
 function ResultCategorySection({
   allReports,
   icon: Icon,
+  onAddLaboratoryOrder,
   onAllView,
   onPrint,
   onView,
@@ -1017,6 +1022,7 @@ function ResultCategorySection({
 }: {
   allReports: ResultRecord[];
   icon: typeof FileText;
+  onAddLaboratoryOrder?: (patientContext?: DoctorOrdersPatientContext) => void;
   onAllView: (department: ResultDepartment, records: ResultRecord[]) => void;
   onPrint: (result: ResultRecord) => void;
   onView: (result: ResultRecord) => void;
@@ -1026,17 +1032,30 @@ function ResultCategorySection({
   if (reports.length === 0) return null;
 
   const department = allReports[0]?.department ?? reports[0]?.department;
-  const allViewButton = (
-    <Button disabled={!department || allReports.length === 0} size="sm" variant="outline" onClick={() => department && onAllView(department, allReports)}>
-      <Icon className="h-4 w-4" />
-      All View
-    </Button>
+  const headerActions = (
+    <>
+      {department === "laboratory" && onAddLaboratoryOrder ? (
+        <Button
+          aria-label="Add laboratory order"
+          className="h-9 w-9 rounded-full p-0"
+          onClick={() => onAddLaboratoryOrder(toOrderPatientContext(reports[0] ?? allReports[0]))}
+          title="Add Laboratory Order"
+          type="button"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      ) : null}
+      <Button disabled={!department || allReports.length === 0} size="sm" variant="outline" onClick={() => department && onAllView(department, allReports)}>
+        <Icon className="h-4 w-4" />
+        All View
+      </Button>
+    </>
   );
 
   return (
     <Card className="overflow-hidden rounded-lg border-border shadow-none">
       <CardContent className="p-0">
-        <ResultTable allViewAction={allViewButton} reports={reports} onPrint={onPrint} onView={onView} />
+        <ResultTable allViewAction={headerActions} reports={reports} onPrint={onPrint} onView={onView} />
       </CardContent>
     </Card>
   );
@@ -1098,11 +1117,13 @@ function ResultTable({
 }
 
 function ReportViewModal({
+  onAddLaboratoryOrder,
   onClose,
   onPrint,
   patientContext,
   payload,
 }: {
+  onAddLaboratoryOrder?: (patientContext?: DoctorOrdersPatientContext) => void;
   onClose: () => void;
   onPrint: (records: ResultRecord[], title: string) => void;
   patientContext?: ResultsPatientContext;
@@ -1144,7 +1165,14 @@ function ReportViewModal({
                       <Button
                         aria-label="Add laboratory order"
                         className="h-9 w-9 rounded-full p-0"
-                        onClick={() => setLaboratoryOrderOpen(true)}
+                        onClick={() => {
+                          if (onAddLaboratoryOrder) {
+                            onAddLaboratoryOrder(orderPatientContext);
+                            onClose();
+                            return;
+                          }
+                          setLaboratoryOrderOpen(true);
+                        }}
                         title="Add Laboratory Order"
                         type="button"
                       >

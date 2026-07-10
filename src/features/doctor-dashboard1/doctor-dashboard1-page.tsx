@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   ClipboardList,
@@ -144,6 +145,16 @@ export function patientTone(patient: Dashboard1Patient): PatientTone {
   return "blue";
 }
 
+function bpValue(patient: Dashboard1Patient) {
+  return `${patient.abps.value}/${patient.abpd.value}`;
+}
+
+function bpTone(patient: Dashboard1Patient): VitalTone {
+  if (patient.abps.tone === "red" || patient.abpd.tone === "red") return "red";
+  if (patient.abps.tone === "orange" || patient.abpd.tone === "orange") return "orange";
+  return "green";
+}
+
 export function patientToneClass(tone: PatientTone) {
   if (tone === "red") return "text-red-700";
   if (tone === "orange") return "text-orange-600";
@@ -171,6 +182,7 @@ function csvCell(value: string | number) {
 }
 
 export function DoctorDashboard1Page() {
+  const router = useRouter();
   const [search, setSearch] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [shiftSummaryPatient, setShiftSummaryPatient] = React.useState<Dashboard1Patient | null>(null);
@@ -190,7 +202,7 @@ export function DoctorDashboard1Page() {
   const lastVisiblePatient = Math.min(page * patientsPerPage, filteredPatients.length);
 
   function exportExcel() {
-    const headers = ["Patient", "Bed", "Diagnosis", "Priority", "HR (bpm)", "SpO2 (%)", "ABPS (mmHg)", "ABPD (mmHg)", "Temperature (C)"];
+    const headers = ["Patient", "Bed", "Diagnosis", "Priority", "HR (bpm)", "SpO2 (%)", "BP (mmHg)", "Temperature (C)"];
     const rows = filteredPatients.map((patient) => [
       patient.name,
       patient.bed,
@@ -198,8 +210,7 @@ export function DoctorDashboard1Page() {
       patientTone(patient),
       patient.hr.value,
       patient.spo2.value,
-      patient.abps.value,
-      patient.abpd.value,
+      bpValue(patient),
       patient.temperature.value,
     ]);
     const csv = [headers, ...rows].map((rowValues) => rowValues.map(csvCell).join(",")).join("\n");
@@ -213,6 +224,11 @@ export function DoctorDashboard1Page() {
 
   function openRadiologyResultReview(patient: Dashboard1Patient) {
     setRadiologyOrderPatient(patient);
+  }
+
+  function openPatientLaboratoryOrder(patient: Dashboard1Patient) {
+    setLabResultsPatient(null);
+    router.push(`/doctor-dashboard1/patients/${patient.id}?tab=orders&orderTab=lab`);
   }
 
   return (
@@ -266,7 +282,7 @@ export function DoctorDashboard1Page() {
             ) : null}
           </div>
           <div className="hidden max-w-full overflow-x-auto md:block">
-            <table className="w-full min-w-[1460px] border-collapse text-left text-xs">
+            <table className="w-full min-w-[1360px] border-collapse text-left text-xs">
               <thead>
                 <tr className="h-14 border-b border-slate-200 bg-white text-slate-700">
                   <HeaderCell className="sticky left-0 z-50 h-14 w-[190px] min-w-[190px] border-r border-slate-200 bg-white shadow-[8px_0_14px_rgba(15,23,42,0.04)]">
@@ -275,8 +291,7 @@ export function DoctorDashboard1Page() {
                   <HeaderCell className="h-14 w-[230px] min-w-[230px]">Diagnosis</HeaderCell>
                   <HeaderCell className="h-14">HR (bpm)</HeaderCell>
                   <HeaderCell className="h-14">SpO2 (%)</HeaderCell>
-                  <HeaderCell className="h-14">ABPS (mmHg)</HeaderCell>
-                  <HeaderCell className="h-14">ABPD (mmHg)</HeaderCell>
+                  <HeaderCell className="h-14">BP (mmHg)</HeaderCell>
                   <HeaderCell className="h-14">Temperature<br />(°C)</HeaderCell>
                   <HeaderCell className="h-14">Lab Results</HeaderCell>
                   <HeaderCell className="h-14">Medication &<br />Intervention</HeaderCell>
@@ -317,8 +332,7 @@ export function DoctorDashboard1Page() {
                       </td>
                       <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.hr} onClick={() => setVitalsPatient(patient)} /></td>
                       <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.spo2} onClick={() => setVitalsPatient(patient)} /></td>
-                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abps} onClick={() => setVitalsPatient(patient)} /></td>
-                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.abpd} onClick={() => setVitalsPatient(patient)} /></td>
+                      <td className="h-[74px] px-3 py-2 text-center"><VitalPill value={bpValue(patient)} tone={bpTone(patient)} onClick={() => setVitalsPatient(patient)} /></td>
                       <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} onClick={() => setVitalsPatient(patient)} /></td>
                       <td className="h-[74px] px-3 py-2 text-center">
                         <RoundActionButton
@@ -409,7 +423,7 @@ export function DoctorDashboard1Page() {
         open={Boolean(labResultsPatient)}
         title="Diagnosis Result"
       >
-        {labResultsPatient ? <DashboardLabResultsPopup patient={labResultsPatient} /> : null}
+        {labResultsPatient ? <DashboardLabResultsPopup onOpenLaboratoryOrder={() => openPatientLaboratoryOrder(labResultsPatient)} patient={labResultsPatient} /> : null}
       </CenterModal>
       <CenterModal
         className="w-[min(94vw,920px)]"
@@ -511,8 +525,7 @@ function DashboardMobilePatientCard({
   const vitalItems = [
     { label: "HR", value: patient.hr.value, tone: patient.hr.tone },
     { label: "SpO2", value: patient.spo2.value, tone: patient.spo2.tone },
-    { label: "ABPS", value: patient.abps.value, tone: patient.abps.tone },
-    { label: "ABPD", value: patient.abpd.value, tone: patient.abpd.tone },
+    { label: "BP", value: bpValue(patient), tone: bpTone(patient) },
     { label: "Temp", value: patient.temperature.value, tone: patient.temperature.tone },
   ];
   const labBadge = patient.hr.tone === "red" || patient.spo2.tone === "red" ? 2 : patient.hr.tone === "orange" ? 1 : undefined;
@@ -538,7 +551,7 @@ function DashboardMobilePatientCard({
       </div>
 
       <div className="border-t border-[#e5e7eb] px-3 py-3">
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {vitalItems.map((item) => (
             <MobileVitalBadge key={item.label} {...item} onClick={onOpenVitals} />
           ))}
@@ -595,7 +608,7 @@ function MobileVitalBadge({ label, onClick, value, tone }: { label: string; onCl
       <span className="truncate text-[10px] font-bold text-[#64748b]">{label}</span>
       <span
         className={cn(
-          "inline-flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-extrabold",
+          "inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-[10px] font-extrabold",
           tone === "green" && "bg-[#008d0c] text-white shadow-[0_4px_9px_rgba(15,23,42,0.22)]",
           tone === "orange" && "bg-[#ffa600] text-white shadow-[0_4px_9px_rgba(15,23,42,0.22)]",
           tone === "red" && "bg-[#ff0808] text-white shadow-[0_4px_9px_rgba(15,23,42,0.22)]",
@@ -872,8 +885,7 @@ function dashboardVitalsForPatient(patient: Dashboard1Patient) {
   return [
     { label: "HR", value: patient.hr.value, tone: patient.hr.tone, unit: "bpm" },
     { label: "SpO2", value: patient.spo2.value, tone: patient.spo2.tone, unit: "%" },
-    { label: "ABPS", value: patient.abps.value, tone: patient.abps.tone, unit: "mmHg" },
-    { label: "ABPD", value: patient.abpd.value, tone: patient.abpd.tone, unit: "mmHg" },
+    { label: "BP", value: bpValue(patient), tone: bpTone(patient), unit: "mmHg" },
     { label: "Temperature", value: patient.temperature.value, tone: patient.temperature.tone, unit: "°C" },
   ];
 }
@@ -1180,7 +1192,7 @@ function buildPatientEvents(patient: Dashboard1Patient) {
   ] satisfies Array<{ name: string; value: number; time: string; priority: "high" | "medium" | "low" }>;
 }
 
-function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
+function DashboardLabResultsPopup({ onOpenLaboratoryOrder, patient }: { onOpenLaboratoryOrder: () => void; patient: Dashboard1Patient }) {
   const rapidReviewPatient = rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId);
 
   return (
@@ -1202,6 +1214,7 @@ function DashboardLabResultsPopup({ patient }: { patient: Dashboard1Patient }) {
           uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
           wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
         }}
+        onAddLaboratoryOrder={onOpenLaboratoryOrder}
         viewDescription="Laboratory reports for the selected dashboard patient."
         viewTitle="Diagnosis Result"
       />

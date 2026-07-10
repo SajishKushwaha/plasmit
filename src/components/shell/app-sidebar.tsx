@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "@/components/providers/role-provider";
 import { collectNavigationHrefs, normalizeNavigationHref } from "@/components/shell/navigation-prefetch";
+import { roleRoutes } from "@/config/roles";
 import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
@@ -55,6 +56,7 @@ export function AppSidebar({
   const searchParams = useSearchParams();
   const router = useRouter();
   const { role } = useRole();
+  const homeRoute = roleRoutes[role] ?? "/dashboard";
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const [currentHash, setCurrentHash] = useState("");
   const currentSearch = searchParams.toString() ? `?${searchParams.toString()}` : "";
@@ -154,27 +156,35 @@ export function AppSidebar({
     >
       {/* Logo */}
       <div className={cn("flex h-20 items-center border-b border-border px-3", collapsed ? "justify-center" : "justify-start")}>
-        {collapsed ? (
-          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+        <Link
+          aria-label={`${role} home dashboard`}
+          className={cn("outline-none focus-visible:ring-2 focus-visible:ring-ring/25", collapsed && "rounded-xl")}
+          href={homeRoute}
+          onFocus={() => warmRoute(homeRoute)}
+          onMouseEnter={() => warmRoute(homeRoute)}
+        >
+          {collapsed ? (
+            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+              <Image
+                src="/plasmit-logo-mark.png"
+                alt="Plasmit Healthcare IT logo mark"
+                width={160}
+                height={320}
+                priority
+                className="h-10 w-10 object-contain"
+              />
+            </div>
+          ) : (
             <Image
-              src="/plasmit-logo-mark.png"
-              alt="Plasmit Healthcare IT logo mark"
-              width={160}
-              height={320}
+              src="/plasmit-sidebar-logo.webp"
+              alt="Plasmit Healthcare IT Vector"
+              width={220}
+              height={89}
               priority
-              className="h-10 w-10 object-contain"
+              className="h-auto w-[220px] object-contain"
             />
-          </div>
-        ) : (
-          <Image
-            src="/plasmit-sidebar-logo.webp"
-            alt="Plasmit Healthcare IT Vector"
-            width={220}
-            height={89}
-            priority
-            className="h-auto w-[220px] object-contain"
-          />
-        )}
+          )}
+        </Link>
       </div>
 
       {/* Nav */}

@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Edit3, Eye, MoreVertical, RefreshCw, Trash2, UsersRound } from "lucide-react";
 
+import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CenterModal } from "@/components/ui/center-modal";
@@ -91,6 +92,12 @@ export function PatientListPage() {
 
   return (
     <div className="space-y-5">
+      <PageHeader
+        eyebrow="Patient Management"
+        title="Patient Details List"
+        description="Review saved patient details and reopen records for editing."
+      />
+
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">

@@ -13,6 +13,7 @@ import { useRole } from "@/components/providers/role-provider";
 import { collectNavigationHrefs, normalizeNavigationHref } from "@/components/shell/navigation-prefetch";
 import { roleRoutes } from "@/config/roles";
 import { getNavigationItemsForRole } from "@/data/navigation";
+import { getRoleDisplayName } from "@/lib/role-display";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
 
@@ -48,6 +49,7 @@ export function MobileNavigation() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { role, roles, setRole } = useRole();
+  const roleDisplayName = getRoleDisplayName(role);
   const homeRoute = roleRoutes[role] ?? "/dashboard";
   const visibleItems = useMemo(() => getNavigationItemsForRole(role), [role]);
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
@@ -160,9 +162,9 @@ export function MobileNavigation() {
         onFocus={() => warmRoute(child.route)}
         onMouseEnter={() => warmRoute(child.route)}
         onClick={(event: MouseEvent<HTMLAnchorElement>) => {
-          if (poctMode && pathname.startsWith("/doctor-dashboard1/patients/")) {
+          if (poctMode && pathname.startsWith("/doctor-ipd/patients/")) {
             event.preventDefault();
-            window.dispatchEvent(new CustomEvent("plasmit-dashboard1-poct-mode", { detail: { mode: poctMode } }));
+            window.dispatchEvent(new CustomEvent("plasmit-doctor-ipd-poct-mode", { detail: { mode: poctMode } }));
           }
           setOpen(false);
         }}
@@ -187,7 +189,7 @@ export function MobileNavigation() {
             <Dialog.Title className="sr-only">Plasmit Hospital navigation</Dialog.Title>
             <Dialog.Description className="sr-only">Mobile navigation</Dialog.Description>
             <Link
-              aria-label={`${role} home dashboard`}
+              aria-label={`${roleDisplayName} home dashboard`}
               href={homeRoute}
               onClick={() => setOpen(false)}
             >
@@ -214,7 +216,7 @@ export function MobileNavigation() {
                 onClick={() => setRoleOpen((value) => !value)}
                 type="button"
               >
-                <span className="truncate">{role}</span>
+                <span className="truncate">{roleDisplayName}</span>
                 <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition", roleOpen && "rotate-180")} />
               </button>
               {roleOpen ? (
@@ -232,7 +234,7 @@ export function MobileNavigation() {
                       }}
                       type="button"
                     >
-                      <span className="truncate">{item}</span>
+                      <span className="truncate">{getRoleDisplayName(item)}</span>
                       {item === role ? <Check className="h-4 w-4 shrink-0" /> : null}
                     </button>
                   ))}

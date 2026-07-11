@@ -19,7 +19,7 @@ import {
   validateTaskForm,
 } from "@/components/worklist/worklist-utils";
 import { isLinkedCarePlanTask, readLinkedWorklistTasks, replaceLinkedWorklistTask, subscribeToLinkedWorklistTasks } from "@/components/worklist/worklist-storage";
-import { NursingPatientStrip, NursingShell } from "@/features/nursing/nursing-shared";
+import { NursingPatientStrip, NursingShell } from "@/features/care-team/nursing/nursing-shared";
 import type { TaskCategory, TaskFrequency, TaskPriority, WorklistTask, WorklistTaskForm, WorklistTaskFormErrors } from "@/types/worklist";
 
 function defaultTaskForm(now = new Date()): WorklistTaskForm {

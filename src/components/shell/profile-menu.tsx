@@ -7,9 +7,11 @@ import Link from "next/link";
 import { useRole } from "@/components/providers/role-provider";
 import { Button } from "@/components/ui/button";
 import { hospitalContext, users } from "@/data/mock";
+import { getRoleDisplayName } from "@/lib/role-display";
 
 export function ProfileMenu() {
   const { role } = useRole();
+  const roleDisplayName = getRoleDisplayName(role);
   const matchedUser = users.find((item) => item.role === role);
   const baseUser = matchedUser ?? {
     name: "Plasmit User",
@@ -27,10 +29,10 @@ export function ProfileMenu() {
     }
     : role === "ICU"
       ? {
-        name: "ICU Command Center",
+        name: "ICU Admin",
         department: "Critical Care Operations",
         status: "Active",
-        designation: "ICU Command Role",
+        designation: "ICU Admin Role",
         registration: hospitalContext.code,
         patientLoad: "6 ICU beds visible",
       }
@@ -70,7 +72,7 @@ export function ProfileMenu() {
                   <Stethoscope className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{user.designation}</span>
                 </div>
-                <div className="mt-1 text-[11px] font-semibold text-muted-foreground">{role} workspace</div>
+                <div className="mt-1 text-[11px] font-semibold text-muted-foreground">{roleDisplayName} workspace</div>
               </div>
             </div>
           </div>
@@ -128,7 +130,7 @@ export function ProfileMenu() {
           </DropdownMenu.Item>
           <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground">
             <ShieldCheck className="h-4 w-4" />
-            Protected {role} session
+            Protected {roleDisplayName} session
           </div>
           <DropdownMenu.Item
             className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-danger outline-none hover:bg-danger/10 focus:bg-danger/10"

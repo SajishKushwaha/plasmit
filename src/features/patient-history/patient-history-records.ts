@@ -98,7 +98,7 @@ export function upsertPatientHistoryRecordSection(recordId: string | null, secti
   return nextRecord;
 }
 
-export function collectPatientHistorySection(form: HTMLFormElement, tabId: string, tabLabel: string): PatientHistoryRecordSection {
+export function collectPatientHistorySection(form: HTMLElement, tabId: string, tabLabel: string): PatientHistoryRecordSection {
   const tabPanel = form.querySelector<HTMLElement>(`[data-history-tab="${tabId}"]`);
   if (!tabPanel) return { tabId, tabLabel, fields: [] };
 
@@ -135,7 +135,7 @@ export function collectPatientHistorySection(form: HTMLFormElement, tabId: strin
   return { tabId, tabLabel, fields: entries };
 }
 
-export function applyPatientHistorySection(form: HTMLFormElement, section: PatientHistoryRecordSection) {
+export function applyPatientHistorySection(form: HTMLElement, section: PatientHistoryRecordSection) {
   const tabPanel = form.querySelector<HTMLElement>(`[data-history-tab="${section.tabId}"]`);
   if (!tabPanel) return;
 

@@ -46,7 +46,7 @@ function PrescritionButton() {
 
 // 3. SHOW/HIDE BASED ON ROLE
 // ============================
-import { ShowForDoctor, HideFromDoctor } from "@/features/auth/doctor-context";
+import { ShowForDoctor, HideFromDoctor } from "@/features/platform/auth/doctor-context";
 
 function Dashboard() {
   return (
@@ -66,7 +66,7 @@ function Dashboard() {
 
 // 4. ADMIN-ONLY COMPONENT
 // =======================
-import { AdminOnly } from "@/features/auth/doctor-context";
+import { AdminOnly } from "@/features/platform/auth/doctor-context";
 
 function RevenueReport() {
   return (
@@ -78,7 +78,7 @@ function RevenueReport() {
 
 // 5. PROTECT ENTIRE PAGE
 // ======================
-import { RouteGuard } from "@/features/auth/route-guard";
+import { RouteGuard } from "@/features/platform/auth/route-guard";
 
 function AdminSettingsPage() {
   return (
@@ -116,7 +116,7 @@ function Navigation() {
 
 // 7. CHECK MODULE ACCESS FOR DOCTOR
 // ==================================
-import { useDoctorContext } from "@/features/auth/doctor-context";
+import { useDoctorContext } from "@/features/platform/auth/doctor-context";
 
 function AppointmentModule() {
   const { canAccessModule } = useDoctorContext();

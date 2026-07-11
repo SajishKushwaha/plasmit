@@ -21,8 +21,8 @@ import {
   DoctorOnly,
   ShowForDoctor,
   HideFromDoctor,
-} from "@/features/auth/doctor-context";
-import { RouteGuard } from "@/features/auth/route-guard";
+} from "@/features/platform/auth/doctor-context";
+import { RouteGuard } from "@/features/platform/auth/route-guard";
 
 /**
  * PATTERN 1: Conditional Button - Show Action Only for Doctors

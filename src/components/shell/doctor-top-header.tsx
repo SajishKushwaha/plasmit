@@ -8,7 +8,7 @@
 import { Bell, AlertCircle, Clock, Users, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RoleSwitcher } from "@/components/shell/role-switcher";
-import { useDoctorContext, type AvailStatus } from "@/features/auth/doctor-context";
+import { useDoctorContext, type AvailStatus } from "@/features/platform/auth/doctor-context";
 import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
 

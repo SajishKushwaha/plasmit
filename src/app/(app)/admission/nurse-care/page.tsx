@@ -1,5 +1,0 @@
-import { AdmissionNurseCarePage } from "@/features/admission/pages/admission-pages";
-
-export default function Page() {
-  return <AdmissionNurseCarePage />;
-}

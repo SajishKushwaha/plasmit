@@ -24,10 +24,10 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "sticky top-16 z-30 -mx-4 border-b px-4 py-5 backdrop-blur md:-mx-6 md:px-6",
+        "-mx-4 px-4 py-5 md:-mx-6 md:px-6",
         primary
           ? "border-[#7367f0]/40 bg-gradient-to-r from-[#7367f0] to-[#5b8def] text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)]"
-          : "border-border bg-[#f8f9fc]/92",
+          : "",
         className,
       )}
     >

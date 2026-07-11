@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CenterModal } from "@/components/ui/center-modal";
@@ -48,7 +49,7 @@ const tabs = [
   { id: "social", label: "5. Social History" },
 ] as const;
 
-type HistoryTab = (typeof tabs)[number]["id"];
+export type HistoryTab = (typeof tabs)[number]["id"];
 
 function getInitialEditingHistoryRecord() {
   if (typeof window === "undefined") return null;
@@ -525,9 +526,7 @@ function PatientHistoryPreview({
           <div className="border-b-2 border-black pb-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Plasmit Hospital HMS</div>
                 <h2 className="mt-1 text-2xl font-bold text-black">Patient History Preview</h2>
-                <p className="mt-1 text-sm text-neutral-600">Review and edit history before final submit.</p>
               </div>
               <div className="rounded border border-neutral-300 px-3 py-2 text-right text-xs text-neutral-600">
                 <div className="font-semibold text-black">Draft</div>
@@ -567,10 +566,6 @@ function PatientHistoryPreview({
             ))}
           </div>
 
-          <div className="mt-8 flex items-center justify-between border-t border-neutral-300 pt-4 text-xs text-neutral-500">
-            <span>Editable preview before final submit</span>
-            <span>Generated from Patient History draft</span>
-          </div>
         </div>
       </div>
 
@@ -590,14 +585,30 @@ function PatientHistoryPreview({
   );
 }
 
-export function PatientHistoryPage() {
-  const formRef = React.useRef<HTMLFormElement | null>(null);
+export function PatientHistoryPage({
+  embedded = false,
+  activeTab: controlledActiveTab,
+  onTabChange,
+}: {
+  embedded?: boolean;
+  activeTab?: HistoryTab;
+  onTabChange?: (tab: HistoryTab) => void;
+}) {
+  const formRef = React.useRef<HTMLDivElement | null>(null);
   const initialEditingRecord = React.useMemo(() => getInitialEditingHistoryRecord(), []);
-  const [activeTab, setActiveTab] = React.useState<HistoryTab>("medical");
+  const [internalActiveTab, setInternalActiveTab] = React.useState<HistoryTab>("medical");
+  const activeTab = controlledActiveTab ?? internalActiveTab;
+  function setActiveTab(tab: HistoryTab) {
+    setInternalActiveTab(tab);
+    onTabChange?.(tab);
+  }
   const [formKey, setFormKey] = React.useState(0);
   const [editingRecordId, setEditingRecordId] = React.useState<string | null>(initialEditingRecord?.id ?? null);
   const [editingRecord, setEditingRecord] = React.useState<PatientHistoryRecord | null>(initialEditingRecord);
   const [previewRecord, setPreviewRecord] = React.useState<PatientHistoryRecord | null>(null);
+  const [diagnosisRows, setDiagnosisRows] = React.useState<number[]>([]);
+  const [surgeryRows, setSurgeryRows] = React.useState<number[]>([1]);
+  const [medicationRows, setMedicationRows] = React.useState<number[]>([]);
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
   React.useEffect(() => {
@@ -619,7 +630,11 @@ export function PatientHistoryPage() {
   }
 
   function nextTab() {
-    if (!formRef.current?.reportValidity()) return;
+    const invalidField = formRef.current?.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(":invalid");
+    if (invalidField) {
+      invalidField.reportValidity();
+      return;
+    }
     saveCurrentHistorySection();
     const next = tabs[activeTabIndex + 1];
     if (next) {
@@ -645,6 +660,9 @@ export function PatientHistoryPage() {
     setEditingRecordId(null);
     setEditingRecord(null);
     setPreviewRecord(null);
+    setDiagnosisRows([]);
+    setSurgeryRows([1]);
+    setMedicationRows([]);
     setFormKey((key) => key + 1);
     toast.info("Patient history form cleared.");
   }
@@ -688,7 +706,7 @@ export function PatientHistoryPage() {
     });
   }
 
-  function handleFormKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
+  function handleFormKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
     if (event.key !== "Enter" || target.tagName === "BUTTON" || target.tagName === "TEXTAREA") return;
     event.preventDefault();
@@ -700,9 +718,10 @@ export function PatientHistoryPage() {
   }
 
   return (
-    <form className="space-y-5" key={formKey} onKeyDown={handleFormKeyDown} ref={formRef}>
+    <div className={embedded ? "space-y-2" : "space-y-5"} key={formKey} onKeyDown={handleFormKeyDown} ref={formRef}>
+      {!embedded ? <PageHeader title="Patient History" /> : null}
+
       <CenterModal
-        description={previewRecord?.id}
         onOpenChange={(open) => !open && setPreviewRecord(null)}
         open={Boolean(previewRecord)}
         title="Patient History Preview"
@@ -710,13 +729,15 @@ export function PatientHistoryPage() {
         {previewRecord ? <PatientHistoryPreview record={previewRecord} onFieldChange={handlePreviewFieldChange} /> : null}
       </CenterModal>
 
-      <div className="pt-4">
-        <div className="flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1" role="tablist" aria-label="Patient history sections">
+      <div className={embedded ? "pt-0" : "pt-4"}>
+        <div className={embedded ? "flex gap-1 overflow-x-auto border-b border-border px-1" : "flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1"} role="tablist" aria-label="Patient history sections">
           {tabs.map((tab) => (
             <button
               aria-selected={activeTab === tab.id}
-              className={`h-8 shrink-0 rounded px-3 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${
-                activeTab === tab.id ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              className={`${embedded ? "h-9 rounded-none border-b-2 px-3" : "h-8 rounded px-3"} shrink-0 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${
+                activeTab === tab.id
+                  ? embedded ? "border-primary bg-primary/5 font-semibold text-primary" : "bg-surface text-foreground shadow-sm"
+                  : embedded ? "border-transparent text-muted-foreground hover:border-border hover:text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -729,10 +750,10 @@ export function PatientHistoryPage() {
         </div>
 
         {activeTab === "medical" ? (
-          <div className="mt-4" data-history-tab="medical">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="medical">
             <Section
               action={
-                <Button size="sm" type="button" variant="outline">
+                <Button onClick={() => setDiagnosisRows((rows) => [...rows, Date.now()])} size="sm" type="button" variant="outline">
                   <Plus className="h-4 w-4" />
                   Add Diagnosis
                 </Button>
@@ -755,16 +776,37 @@ export function PatientHistoryPage() {
                 <Field label="Other Comorbidities">
                   <Input placeholder="Specify other comorbidities" />
                 </Field>
+                {diagnosisRows.map((row, index) => (
+                  <div className="space-y-4 rounded-lg border border-border bg-surface-muted/30 p-4" key={row}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold text-foreground">Additional Diagnosis {index + 1}</div>
+                      <Button aria-label={`Remove additional diagnosis ${index + 1}`} onClick={() => setDiagnosisRows((rows) => rows.filter((item) => item !== row))} size="icon" type="button" variant="ghost">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="space-y-2" data-history-field-group>
+                      <span className={labelClass} data-history-field-label>Known Comorbidities</span>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        {["Hypertension", "Diabetes Mellitus", "Ischemic Heart Disease", "COPD / Asthma", "CKD", "Hypothyroidism", "Malignancy", "Others"].map((item) => (
+                          <Checkbox key={item} label={item} />
+                        ))}
+                      </div>
+                    </div>
+                    <Field label="Other Comorbidities">
+                      <Input placeholder="Specify other comorbidities" />
+                    </Field>
+                  </div>
+                ))}
               </div>
             </Section>
           </div>
         ) : null}
 
         {activeTab === "surgical" ? (
-          <div className="mt-4" data-history-tab="surgical">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="surgical">
             <Section
               action={
-                <Button size="sm" type="button" variant="outline">
+                <Button onClick={() => setSurgeryRows((rows) => [...rows, Date.now()])} size="sm" type="button" variant="outline">
                   <Plus className="h-4 w-4" />
                   Add Surgery
                 </Button>
@@ -773,12 +815,17 @@ export function PatientHistoryPage() {
               title="2. Past Surgical History"
             >
               <div className="space-y-5">
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                {surgeryRows.map((row, index) => <div className="space-y-5 rounded-lg border border-border p-4" key={row}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-semibold text-foreground">Surgery {index + 1}</div>
+                    {index > 0 ? <Button aria-label={`Remove surgery ${index + 1}`} onClick={() => setSurgeryRows((rows) => rows.filter((item) => item !== row))} size="icon" type="button" variant="ghost"><X className="h-4 w-4" /></Button> : null}
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                   <Field label="Surgery / Procedure">
-                    <Input placeholder="Enter surgery / procedure" required />
+                    <Input placeholder="Enter surgery / procedure" required={index === 0} />
                   </Field>
                   <Field label="Year">
-                    <DateField required />
+                    <DateField required={index === 0} />
                   </Field>
                   <Field label="Hospital / Center">
                     <Input placeholder="Enter hospital / center" />
@@ -787,7 +834,7 @@ export function PatientHistoryPage() {
                     <Input placeholder="Enter surgeon" />
                   </Field>
                   <Field label="Type of Surgery">
-                    <select className={selectClass} required>
+                    <select className={selectClass} required={index === 0}>
                       <option value="">Select</option>
                       <option>Elective</option>
                       <option>Emergency</option>
@@ -797,21 +844,21 @@ export function PatientHistoryPage() {
                   <Field label="Notes">
                     <Input placeholder="Enter notes" />
                   </Field>
-                </div>
+                  </div>
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                   <div className="space-y-2">
                     <span className={labelClass}>Biopsy (If Any)</span>
                     <div className="flex flex-wrap gap-4 pt-2">
-                      <Radio label="No Biopsy" name="biopsy" />
-                      <Radio label="Biopsy Done" name="biopsy" />
+                      <Radio label="No Biopsy" name={`biopsy-${row}`} />
+                      <Radio label="Biopsy Done" name={`biopsy-${row}`} />
                     </div>
                   </div>
                   <Field label="Site / Organ">
                     <Input placeholder="Enter site / organ" />
                   </Field>
                   <Field label="Date">
-                    <DateField required />
+                    <DateField required={index === 0} />
                   </Field>
                   <Field label="Result / Findings">
                     <Input placeholder="Enter result / findings" />
@@ -819,8 +866,8 @@ export function PatientHistoryPage() {
                   <div className="space-y-2">
                     <span className={labelClass}>Biopsy Result</span>
                     <div className="grid gap-2 pt-1">
-                      <Radio label="Malignant" name="biopsyResult" />
-                      <Radio label="Non-Malignant" name="biopsyResult" />
+                      <Radio label="Malignant" name={`biopsyResult-${row}`} />
+                      <Radio label="Non-Malignant" name={`biopsyResult-${row}`} />
                     </div>
                   </div>
                   <Field label="Remarks">
@@ -832,8 +879,8 @@ export function PatientHistoryPage() {
                   <div className="space-y-2">
                     <span className={labelClass}>Implant Placed (If Any)</span>
                     <div className="flex flex-wrap gap-4 pt-2">
-                      <Radio label="No Implant" name="implantPlaced" />
-                      <Radio label="Implant Placed" name="implantPlaced" />
+                      <Radio label="No Implant" name={`implantPlaced-${row}`} />
+                      <Radio label="Implant Placed" name={`implantPlaced-${row}`} />
                     </div>
                   </div>
                   <Field label="Implant Name / Type">
@@ -866,8 +913,8 @@ export function PatientHistoryPage() {
                   <div className="space-y-2">
                     <span className={labelClass}>Past Surgical Complications</span>
                     <div className="grid gap-2 pt-1">
-                      <Radio label="No Complications" name="surgicalComplication" />
-                      <Radio label="Complications Present" name="surgicalComplication" />
+                      <Radio label="No Complications" name={`surgicalComplication-${row}`} />
+                      <Radio label="Complications Present" name={`surgicalComplication-${row}`} />
                     </div>
                   </div>
                   <Field label="Type of Complication">
@@ -897,16 +944,17 @@ export function PatientHistoryPage() {
                     <DateField />
                   </Field>
                 </div>
+                </div>)}
               </div>
             </Section>
           </div>
         ) : null}
 
         {activeTab === "medication" ? (
-          <div className="mt-4" data-history-tab="medication">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="medication">
             <Section
               action={
-                <Button size="sm" type="button" variant="outline">
+                <Button onClick={() => setMedicationRows((rows) => [...rows, Date.now()])} size="sm" type="button" variant="outline">
                   <Plus className="h-4 w-4" />
                   Add Medication
                 </Button>
@@ -928,14 +976,28 @@ export function PatientHistoryPage() {
                             {heading}
                           </th>
                         ))}
+                        <th aria-label="Actions" className="border-b border-border px-2 py-2" />
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td className="px-3 py-8 text-center text-xs text-muted-foreground" colSpan={9}>
+                    <tbody className="divide-y divide-border">
+                      {!medicationRows.length ? <tr>
+                        <td className="px-3 py-8 text-center text-xs text-muted-foreground" colSpan={10}>
                           No medication history added.
                         </td>
-                      </tr>
+                      </tr> : medicationRows.map((row, index) => (
+                        <tr key={row}>
+                          <td className="px-3 py-2 text-center text-xs text-muted-foreground">{index + 1}</td>
+                          {[
+                            ["Medication Name", "Enter medicine"], ["Dose", "Dose"], ["Frequency", "Frequency"], ["Route", "Route"],
+                            ["Duration", "Duration"], ["Indication", "Indication"], ["Stopped On", "Date"], ["Reason", "Reason"],
+                          ].map(([label, placeholder]) => <td className="px-2 py-2" key={label}><Input aria-label={`${label} ${index + 1}`} placeholder={placeholder} /></td>)}
+                          <td className="px-2 py-2 text-center">
+                            <Button aria-label={`Remove medication ${index + 1}`} onClick={() => setMedicationRows((rows) => rows.filter((item) => item !== row))} size="icon" type="button" variant="ghost">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -945,7 +1007,7 @@ export function PatientHistoryPage() {
         ) : null}
 
         {activeTab === "allergy" ? (
-          <div className="mt-4" data-history-tab="allergy">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="allergy">
             <Section icon={ShieldAlert} title="4. Allergy History">
               <div className="space-y-5">
                 <div className="flex flex-wrap gap-5">
@@ -1019,7 +1081,7 @@ export function PatientHistoryPage() {
         ) : null}
 
         {activeTab === "social" ? (
-          <div className="mt-4" data-history-tab="social">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="social">
             <Section icon={Users} title="5. Social History">
               <div className="space-y-5">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -1186,7 +1248,7 @@ export function PatientHistoryPage() {
         ) : null}
       </div>
 
-      <div className="sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+      {!embedded ? <div className="sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Button onClick={handleCancel} size="sm" type="button" variant="outline">
             <X className="h-4 w-4" />
@@ -1220,7 +1282,7 @@ export function PatientHistoryPage() {
             )}
           </div>
         </div>
-      </div>
-    </form>
+      </div> : null}
+    </div>
   );
 }

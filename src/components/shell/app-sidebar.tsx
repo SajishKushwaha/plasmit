@@ -16,6 +16,7 @@ import { useRole } from "@/components/providers/role-provider";
 import { collectNavigationHrefs, normalizeNavigationHref } from "@/components/shell/navigation-prefetch";
 import { roleRoutes } from "@/config/roles";
 import { getNavigationItemsForRole } from "@/data/navigation";
+import { getRoleDisplayName } from "@/lib/role-display";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
 
@@ -56,6 +57,7 @@ export function AppSidebar({
   const searchParams = useSearchParams();
   const router = useRouter();
   const { role } = useRole();
+  const roleDisplayName = getRoleDisplayName(role);
   const homeRoute = roleRoutes[role] ?? "/dashboard";
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const [currentHash, setCurrentHash] = useState("");
@@ -136,9 +138,9 @@ export function AppSidebar({
         onFocus={() => warmRoute(child.route)}
         onMouseEnter={() => warmRoute(child.route)}
         onClick={(event: MouseEvent<HTMLAnchorElement>) => {
-          if (!poctMode || !pathname.startsWith("/doctor-dashboard1/patients/")) return;
+          if (!poctMode || !pathname.startsWith("/doctor-ipd/patients/")) return;
           event.preventDefault();
-          window.dispatchEvent(new CustomEvent("plasmit-dashboard1-poct-mode", { detail: { mode: poctMode } }));
+          window.dispatchEvent(new CustomEvent("plasmit-doctor-ipd-poct-mode", { detail: { mode: poctMode } }));
         }}
       >
         <span className="min-w-0 flex-1 truncate">{child.label}</span>
@@ -157,7 +159,7 @@ export function AppSidebar({
       {/* Logo */}
       <div className={cn("flex h-20 items-center border-b border-border px-3", collapsed ? "justify-center" : "justify-start")}>
         <Link
-          aria-label={`${role} home dashboard`}
+          aria-label={`${roleDisplayName} home dashboard`}
           className={cn("outline-none focus-visible:ring-2 focus-visible:ring-ring/25", collapsed && "rounded-xl")}
           href={homeRoute}
           onFocus={() => warmRoute(homeRoute)}

@@ -70,7 +70,7 @@ export const navigationItems: NavigationItem[] = [
     icon: LayoutDashboard,
     route: "/dashboard",
     group: "Command",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Lab Technician", "Radiologist", "Pharmacist", "Billing Executive", "HR Manager", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Lab Technician", "Radiologist", "Pharmacist", "Billing Executive", "HR Manager", "Management"],
     status: "ready",
   },
 
@@ -78,7 +78,23 @@ export const navigationItems: NavigationItem[] = [
   // DOCTOR: MAIN
   // =====================================================
   { id: "doctor-dashboard",    label: "Dashboard",            icon: LayoutDashboard,   route: "/doctor-dashboard",     group: "Main",     allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
-  { id: "doctor-dashboard1",   label: "Dashboard",            icon: Activity,          route: "/doctor-dashboard1",    group: "Main",     allowedRoles: ["Doctor", "Doctor IPD"], status: "ready" },
+  { id: "doctor-ipd-dashboard", label: "Dashboard",            icon: Activity,          route: "/doctor-ipd",    group: "Main",     allowedRoles: ["Doctor", "Doctor IPD"], status: "ready" },
+  {
+    id: "receptionist-dashboard",
+    label: "Receptionist",
+    icon: IdCard,
+    route: "/receptionist",
+    group: "Main",
+    allowedRoles: ["Receptionist"],
+    status: "ready",
+    children: [
+      { id: "receptionist-home", label: "Dashboard", route: "/receptionist", status: "ready" },
+      { id: "receptionist-billing", label: "Billing Dashboard", route: "/receptionist/billing", status: "ready" },
+      { id: "receptionist-register", label: "Patient Registration", route: "/patients/register", status: "ready" },
+      { id: "receptionist-appointments", label: "Appointments", route: "/appointments", status: "ready" },
+      { id: "receptionist-admission", label: "Admission Reception", route: "/admission/reception", status: "ready" },
+    ],
+  },
   {
     id: "unit-nurse-dashboard",
     label: "Unit Nurse",
@@ -489,12 +505,12 @@ export const navigationItems: NavigationItem[] = [
     status: "ready",
   },
   {
-    id: "poct-add", label: "Add POCT", icon: FlaskConical, route: "/doctor-dashboard1/patients/1?tab=Poct&poct=add", group: "Clinical",
+    id: "poct-add", label: "Add POCT", icon: FlaskConical, route: "/doctor-ipd/patients/1?tab=Poct&poct=add", group: "Clinical",
     allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Nurse", "Lab Technician", "Management"],
     status: "ready",
   },
   {
-    id: "poct-results", label: "View POCT Result", icon: Microscope, route: "/doctor-dashboard1/patients/1?tab=Poct&poct=results", group: "Clinical",
+    id: "poct-results", label: "View POCT Result", icon: Microscope, route: "/doctor-ipd/patients/1?tab=Poct&poct=results", group: "Clinical",
     allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Nurse", "Lab Technician", "Management"],
     status: "ready",
   },
@@ -559,12 +575,36 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   }
 
   if (role === "ICU") {
-    return roleItems.filter((item) => item.id === "icu-command-center");
+    return [
+      {
+        id: "icu-admin-patient-details",
+        label: "Patient Details",
+        icon: Users,
+        route: "/patient-details",
+        group: "Patient Management",
+        allowedRoles: ["ICU"],
+        status: "ready",
+      },
+      {
+        id: "icu-admin-patients",
+        label: "Patients",
+        icon: UserRound,
+        route: "/icu-command-center/patients/search",
+        group: "Patient Management",
+        allowedRoles: ["ICU"],
+        status: "ready",
+        children: [
+          { id: "icu-admin-patient-search", label: "Patient Search", route: "/icu-command-center/patients/search", status: "ready" },
+          { id: "icu-admin-admissions", label: "Admissions", route: "/icu-command-center/patients/admissions", status: "ready" },
+          { id: "icu-admin-discharges", label: "Discharges", route: "/icu-command-center/patients/discharges", status: "ready" },
+        ],
+      },
+    ];
   }
 
   if (role === "Doctor IPD") {
     const visibleItemIds = new Set([
-      "doctor-dashboard1",
+      "doctor-ipd-dashboard",
       "doctor-orders",
       "results",
     ]);
@@ -574,7 +614,7 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
       ["Diagnostics", 2],
     ]);
     const itemOrder = new Map([
-      ["doctor-dashboard1", 0],
+      ["doctor-ipd-dashboard", 0],
       ["doctor-orders", 0],
       ["results", 0],
     ]);
@@ -582,6 +622,49 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
     return roleItems
       .filter((item) => visibleItemIds.has(item.id))
       .map((item) => item.id === "results" ? { ...item, children: undefined } : item)
+      .sort((a, b) => {
+        const groupDifference = (groupOrder.get(a.group) ?? 100) - (groupOrder.get(b.group) ?? 100);
+        if (groupDifference !== 0) return groupDifference;
+        return (itemOrder.get(a.id) ?? 100) - (itemOrder.get(b.id) ?? 100);
+      });
+  }
+
+  if (role === "Receptionist") {
+    const visibleItemIds = new Set([
+      "receptionist-dashboard",
+      "billing-desk",
+      "appointments",
+      "admission",
+      "opd",
+      "results",
+    ]);
+    const groupOrder = new Map([
+      ["Main", 0],
+      ["Clinical", 1],
+      ["Diagnostics", 2],
+    ]);
+    const itemOrder = new Map([
+      ["receptionist-dashboard", 0],
+      ["billing-desk", 0],
+      ["appointments", 1],
+      ["admission", 2],
+      ["opd", 3],
+      ["results", 0],
+    ]);
+
+    return roleItems
+      .filter((item) => visibleItemIds.has(item.id))
+      .map((item) => {
+        if (item.id !== "results") return item;
+        return {
+          ...item,
+          children: [
+            { id: "receptionist-results-center", label: "Results Center", route: "/results", status: "ready" as const },
+            { id: "receptionist-lab-results", label: "Laboratory Results", route: "/results/laboratory", status: "ready" as const },
+            { id: "receptionist-radiology-results", label: "Radiology Results", route: "/results/radiology", status: "ready" as const },
+          ],
+        };
+      })
       .sort((a, b) => {
         const groupDifference = (groupOrder.get(a.group) ?? 100) - (groupOrder.get(b.group) ?? 100);
         if (groupDifference !== 0) return groupDifference;

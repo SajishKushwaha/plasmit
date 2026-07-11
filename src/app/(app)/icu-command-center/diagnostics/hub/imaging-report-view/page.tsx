@@ -1,5 +1,0 @@
-import { DiagnosticImagingReportPage } from "@/features/diagnostic-hub/diagnostic-hub-page";
-
-export default function Page() {
-  return <DiagnosticImagingReportPage />;
-}

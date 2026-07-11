@@ -14,12 +14,12 @@ export const roleRoutes: Record<Role, string> = {
   Doctor: "/doctor-dashboard",
   "Doctor ICU": "/icu-command-center",
   "Doctor OPD": "/doctor-dashboard",
-  "Doctor IPD": "/doctor-dashboard1",
+  "Doctor IPD": "/doctor-ipd",
   Nurse: "/icu-nursing",
   "Unit Nurse": "/unit-nurse",
   "Head Nurse": "/head-nurse",
   "Ward Nurse": "/icu-command-center/clinical-workspace/patient-overview",
-  ICU: "/icu-command-center",
+  ICU: "/icu-command-center/patients/search",
   "Nurse ICU": "/nursing-icu",
   "Nurse ICU 2": "/icu-command-center",
   "ICU Bed Coordinator": "/icu-command-center",
@@ -29,7 +29,7 @@ export const roleRoutes: Record<Role, string> = {
   "ICU Pharmacist": "/icu-command-center",
   "Quality Audit": "/icu-command-center",
   "Blood Bank": "/blood-bank/blood-request",
-  Receptionist: "/dashboard",
+  Receptionist: "/receptionist",
   "Lab Technician": "/dashboard",
   Radiologist: "/dashboard",
   Pharmacist: "/dashboard",
@@ -103,7 +103,7 @@ export const adminPermissions = [
  */
 export const doctorAllowedModules = [
   "/doctor-dashboard",
-  "/doctor-dashboard1",
+  "/doctor-ipd",
   "/doctor",
   "/admission",
   "/appointments",
@@ -138,7 +138,7 @@ export const doctorOpdAllowedModules = [
 ];
 
 export const doctorIpdAllowedModules = [
-  "/doctor-dashboard1",
+  "/doctor-ipd",
   "/doctor/orders",
   "/doctor",
   "/admission",
@@ -200,7 +200,7 @@ export const roleModuleAccess: Record<Role, {
     ],
   },
   "Doctor ICU": {
-    allowed: ["/icu-command-center", "/nursing-icu", "/doctor-dashboard1", "/patients", "/results", "/radiology", "/laboratory"],
+    allowed: ["/icu-command-center", "/nursing-icu", "/doctor-ipd", "/patients", "/results", "/radiology", "/laboratory"],
     blocked: [...doctorBlockedModules],
     features: [
       "VIEW_DOCTOR_DASHBOARD",
@@ -298,7 +298,12 @@ export const roleModuleAccess: Record<Role, {
     ],
   },
   ICU: {
-    allowed: ["/icu-command-center"],
+    allowed: [
+      "/patient-details",
+      "/icu-command-center/patients/search",
+      "/icu-command-center/patients/admissions",
+      "/icu-command-center/patients/discharges",
+    ],
   },
   "Nurse ICU": {
     allowed: ["/nursing-icu"],
@@ -334,7 +339,7 @@ export const roleModuleAccess: Record<Role, {
     allowed: ["/blood-bank"],
   },
   Receptionist: {
-    allowed: ["/dashboard", "/appointments", "/front-office", "/billing-desk", "/radiology", "/results", "/surgery"],
+    allowed: ["/receptionist", "/appointments", "/front-office", "/billing-desk", "/radiology", "/results", "/surgery"],
   },
   "Lab Technician": {
     allowed: ["/dashboard", "/laboratory", "/poct", "/results"],

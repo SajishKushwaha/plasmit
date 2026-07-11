@@ -5378,7 +5378,7 @@ function buildIcuStaffCoverageRows(rows: IcuOperationRow[]) {
   });
 }
 
-function IcuOpsMatrixCell({
+export function IcuOpsMatrixCell({
   icon: Icon,
   title,
   detail,
@@ -6113,7 +6113,7 @@ function OperationalAnalyticsCommand() {
   );
 }
 
-type ClinicalAlertRow = {
+export type ClinicalAlertRow = {
   id: string;
   alert: typeof icuAlerts[number];
   patient?: IcuPatient;
@@ -6139,7 +6139,7 @@ type ClinicalAlertRow = {
 };
 
 type ClinicalAlertCellKind = "patient" | "trigger" | "severity" | "source" | "owner" | "sla" | "status" | "route" | "action";
-type ClinicalAlertCellAction = { row: ClinicalAlertRow; kind: ClinicalAlertCellKind };
+export type ClinicalAlertCellAction = { row: ClinicalAlertRow; kind: ClinicalAlertCellKind };
 
 function ClinicalAlertsCommand() {
   const { queryFocus, queryUnit } = useCommandRouteContext();
@@ -6288,11 +6288,11 @@ function ClinicalAlertsCommand() {
   );
 }
 
-function buildClinicalAlertRows(resolvedRows: Set<string>): ClinicalAlertRow[] {
+export function buildClinicalAlertRows(resolvedRows: Set<string>, acknowledgedRows: Set<string> = new Set()): ClinicalAlertRow[] {
   return icuAlerts.map((alert) => {
     const patient = icuPatients.find((row) => row.id === alert.patientId);
     const resolved = resolvedRows.has(alert.id);
-    const status = resolved ? "Resolved" : alert.status;
+    const status = resolved ? "Resolved" : acknowledgedRows.has(alert.id) ? "Acknowledged" : alert.status;
     const ageMinutes = clinicalAlertAgeMinutes(alert.createdAt);
     const severityTone = clinicalAlertSeverityTone(alert.severity);
     const slaTone = clinicalAlertSlaTone(alert.severity, status, ageMinutes);
@@ -6331,7 +6331,7 @@ function clinicalAlertFocusRank(row: ClinicalAlertRow, focus: string) {
   return severityRank + slaRank;
 }
 
-function ClinicalAlertActionDialog({ action, onOpenChange, onComplete }: { action: ClinicalAlertCellAction | null; onOpenChange: (open: boolean) => void; onComplete: (row: ClinicalAlertRow, action: string) => void }) {
+export function ClinicalAlertActionDialog({ action, onOpenChange, onComplete }: { action: ClinicalAlertCellAction | null; onOpenChange: (open: boolean) => void; onComplete: (row: ClinicalAlertRow, action: string) => void }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -15289,7 +15289,7 @@ function CommandSection({ title, description, children }: { title: string; descr
   );
 }
 
-function InfoLine({ label, value }: { label: string; value: React.ReactNode }) {
+export function InfoLine({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
       <span className="font-medium text-slate-500">{label}</span>
@@ -15442,7 +15442,7 @@ function patientName(patientId: string) {
   return patient ? `${patient.bedNo} - ${patient.patientName}` : patientId;
 }
 
-function icuPatientDetailHref(patientId: string, tab: IcuPatientDetailTab, subtab?: IcuMonitoringSubTab, extraQuery = "") {
+export function icuPatientDetailHref(patientId: string, tab: IcuPatientDetailTab, subtab?: IcuMonitoringSubTab, extraQuery = "") {
   const subtabQuery = tab === "monitoring" && subtab ? `&subtab=${subtab}` : "";
   const normalizedExtra = extraQuery ? `&${extraQuery.replace(/^\?/, "").replace(/^&/, "")}` : "";
   return `/icu-command-center/patients/${patientId}?tab=${tab}${subtabQuery}${normalizedExtra}`;
@@ -15462,7 +15462,7 @@ function normalizeIcuMonitoringSubTab(subtab?: string): IcuMonitoringSubTab {
   return "monitoring-overview";
 }
 
-type DashboardCellTone = "critical" | "danger" | "warning" | "success" | "info" | "purple" | "muted";
+export type DashboardCellTone = "critical" | "danger" | "warning" | "success" | "info" | "purple" | "muted";
 type MedicationOrdersSubTab = "pending-work" | "medicine-chart";
 type IcuEventFocus = "all" | "open-alerts" | "action-needed";
 type IcuShiftFocus = "all" | "pending" | "critical" | "completed";
@@ -15867,7 +15867,7 @@ function CollapsibleCommandPanel({
 
 const ICU_COMMAND_PAGE_SIZE = 10;
 
-function useIcuCommandPagination<T>(rows: T[], pageSize = ICU_COMMAND_PAGE_SIZE) {
+export function useIcuCommandPagination<T>(rows: T[], pageSize = ICU_COMMAND_PAGE_SIZE) {
   const [page, setPage] = React.useState(1);
   const totalRows = rows.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
@@ -15895,7 +15895,7 @@ function useIcuCommandPagination<T>(rows: T[], pageSize = ICU_COMMAND_PAGE_SIZE)
   };
 }
 
-function IcuCommandPaginationControls({
+export function IcuCommandPaginationControls({
   endIndex,
   page,
   setPage,
@@ -20600,7 +20600,7 @@ function dashboardTonePillClass(tone: DashboardCellTone) {
   return "border-sky-500 bg-sky-50 text-sky-700";
 }
 
-function dashboardToneSolidClass(tone: DashboardCellTone) {
+export function dashboardToneSolidClass(tone: DashboardCellTone) {
   if (tone === "critical") return "bg-red-600";
   if (tone === "danger") return "bg-red-600";
   if (tone === "warning") return "bg-orange-500";
@@ -20620,7 +20620,7 @@ function dashboardToneDotClass(tone: DashboardCellTone) {
   return "bg-sky-600";
 }
 
-function dashboardToneTextClass(tone: DashboardCellTone) {
+export function dashboardToneTextClass(tone: DashboardCellTone) {
   if (tone === "critical") return "text-red-700";
   if (tone === "danger") return "text-red-700";
   if (tone === "warning") return "text-orange-700";
@@ -24945,7 +24945,7 @@ type SupervisionRole = "Head Nurse" | "Unit Nurse" | "Ward Nurse" | "Duty Doctor
 type SupervisionPriority = IcuPriority | "Info";
 type SupervisionShift = "Current" | "Day" | "Night";
 
-type SupervisionItem = {
+export type SupervisionItem = {
   id: string;
   patientId: string;
   patientName: string;
@@ -26537,7 +26537,7 @@ function SupervisionNotePanel({
   );
 }
 
-function buildSupervisionItems(): SupervisionItem[] {
+export function buildSupervisionItems(): SupervisionItem[] {
   const taskItems: SupervisionItem[] = icuTasks.map((task) => {
     const patient = getPatientForSupervision(task.patientId, task.bedNo);
     return {
@@ -26803,9 +26803,131 @@ function buildNurseSummaries(items: SupervisionItem[]) {
   });
 }
 
-function isClosedSupervisionStatus(status: string) {
+export function isClosedSupervisionStatus(status: string) {
   const lower = status.toLowerCase();
   return lower.includes("completed") || lower.includes("administered") || lower.includes("resolved") || lower.includes("signed");
+}
+
+export function nursingStationTopAlert(alerts: ClinicalAlertRow[], patientId: string) {
+  return alerts
+    .filter((row) => row.alert.patientId === patientId && row.status !== "Resolved")
+    .sort((left, right) => clinicalAlertFocusRank(right, "alerts") - clinicalAlertFocusRank(left, "alerts"))[0];
+}
+
+export function nursingStationActionRowFromItem(item: SupervisionItem): ClinicalAlertRow {
+  const patient = getPatientForSupervision(item.patientId, item.bedNo);
+  const severity = supervisionPriorityToAlertSeverity(item.priority);
+  const alert: typeof icuAlerts[number] = {
+    id: `station-action-${item.id}`,
+    patientId: item.patientId,
+    bedNo: item.bedNo,
+    type: item.source,
+    severity,
+    message: `${item.title}: ${item.detail}`,
+    source: item.source,
+    status: "Open",
+    createdAt: item.due,
+    owner: item.nurse,
+  };
+  const ageMinutes = clinicalAlertAgeMinutes(alert.createdAt);
+  const tone = clinicalAlertSeverityTone(severity);
+
+  return {
+    id: alert.id,
+    alert,
+    patient,
+    patientName: item.patientName,
+    bedNo: item.bedNo,
+    unit: item.unit,
+    category: item.source,
+    trigger: alert.message,
+    severity,
+    source: item.source,
+    owner: item.nurse,
+    status: "Open",
+    createdAt: item.due,
+    ageMinutes,
+    sla: clinicalAlertSlaLabel(severity, "Open", ageMinutes),
+    action: severity === "Critical" ? "Escalate" : "Acknowledge",
+    tone,
+    slaTone: clinicalAlertSlaTone(severity, "Open", ageMinutes),
+    statusTone: tone,
+    patientTone: patientDashboardTone(patient),
+    routeTo: clinicalAlertRoute(alert),
+    scenario: clinicalAlertScenario(alert),
+  };
+}
+
+function supervisionPriorityToAlertSeverity(priority: SupervisionPriority): typeof icuAlerts[number]["severity"] {
+  if (priority === "Critical") return "Critical";
+  if (priority === "High") return "High";
+  if (priority === "Medium") return "Medium";
+  return "Info";
+}
+
+export function PendingUnitMonitoringQueueDialog({
+  onOpenChange,
+  patient,
+}: {
+  onOpenChange: (open: boolean) => void;
+  patient: IcuPatient | null;
+}) {
+  const items = React.useMemo(() => buildSupervisionItems().filter((item) => item.patientId === patient?.id), [patient?.id]);
+  const groupedItems = React.useMemo(() => ({
+    orders: items.filter((item) => item.source === "Doctor Instructions"),
+    vitals: items.filter((item) => item.source === "Vitals Chart"),
+    medicines: items.filter((item) => item.source === "Medication Administration"),
+    tasks: items.filter((item) => item.source === "Tasks"),
+  }), [items]);
+
+  return (
+    <Dialog.Root open={Boolean(patient)} onOpenChange={onOpenChange}>
+      {patient ? (
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(980px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
+            <DialogHeader title="Pending Task" description={`${patient.bedNo} - ${patient.patientName}`} />
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+              <Tabs defaultValue="orders" className="space-y-3">
+                <TabsList className="flex flex-wrap">
+                  <TabsTrigger value="orders">Pending Doctor Order</TabsTrigger>
+                  <TabsTrigger value="vitals">Pending Vitals</TabsTrigger>
+                  <TabsTrigger value="medicines">Pending Medicine</TabsTrigger>
+                  <TabsTrigger value="tasks">Pending Nurse Task</TabsTrigger>
+                </TabsList>
+                {Object.entries(groupedItems).map(([key, rows]) => (
+                  <TabsContent value={key} key={key}>
+                    <div className="space-y-2">
+                      {rows.map((item) => (
+                        <div className="rounded-md border border-slate-200 bg-white p-3 text-sm" key={item.id}>
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="font-bold text-slate-950">{item.title}</p>
+                              <p className="mt-1 text-xs text-slate-500">{item.detail}</p>
+                            </div>
+                            <StatusPill tone={toneForStatus(item.status)}>{item.status}</StatusPill>
+                          </div>
+                          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                            <InfoLine label="Responsible" value={item.nurse} />
+                            <InfoLine label="Due" value={item.due} />
+                            <InfoLine label="Priority" value={item.priority} />
+                          </div>
+                        </div>
+                      ))}
+                      {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">No pending item.</div> : null}
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </div>
+            <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-4 py-3">
+              <Dialog.Close asChild><Button>Done</Button></Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      ) : null}
+    </Dialog.Root>
+  );
 }
 
 function supervisionPriorityTone(priority: SupervisionPriority): StatusTone {
@@ -28844,7 +28966,7 @@ function TableActionDialog({
   );
 }
 
-function DialogHeader({ title, description }: { title: string; description: string }) {
+export function DialogHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="border-b border-border bg-surface-muted px-4 py-3">
       <Dialog.Title className="text-base font-semibold text-foreground">{title}</Dialog.Title>

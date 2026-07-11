@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
 import { useRole } from "@/components/providers/role-provider";
@@ -13,6 +12,7 @@ import {
 
 export function IcuNursingRouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { role } = useRole();
   const [tab, setTab] = React.useState<string | null>(null);
 
@@ -22,28 +22,17 @@ export function IcuNursingRouteGuard({ children }: { children: React.ReactNode }
 
   const allowed = canAccessNursingIcuRoute(role, pathname, tab);
   const permission = getNursingRolePermission(role);
+  const defaultRoute = getDefaultNursingIcuRoute(role);
+
+  React.useEffect(() => {
+    if (!allowed && permission && pathname !== defaultRoute) {
+      router.replace(defaultRoute);
+    }
+  }, [allowed, defaultRoute, pathname, permission, router]);
 
   if (allowed || !permission) {
     return <>{children}</>;
   }
 
-  const defaultRoute = getDefaultNursingIcuRoute(role);
-
-  return (
-    <section className="mx-auto flex min-h-[55vh] max-w-3xl items-center justify-center">
-      <div className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold text-slate-500">Role access</p>
-        <h1 className="mt-2 text-xl font-black text-slate-950">{permission.role} workspace only</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          This screen belongs to another nursing role. Open the assigned workspace for the active role.
-        </p>
-        <Link
-          href={defaultRoute}
-          className="mt-5 inline-flex h-10 items-center rounded-md bg-sky-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700"
-        >
-          Open {permission.role} workspace
-        </Link>
-      </div>
-    </section>
-  );
+  return null;
 }

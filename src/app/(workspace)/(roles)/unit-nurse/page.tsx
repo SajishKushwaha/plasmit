@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
+import { redirect } from "next/navigation";
 
 export default function UnitNurseRoute() {
-  return <NursingIcuModulePage page="head-nurse-console" />;
+  redirect("/icu-command-center/nursing/assigned-patients");
 }

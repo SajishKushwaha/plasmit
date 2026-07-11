@@ -52,34 +52,14 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
   },
   UNIT_NURSE: {
     role: "Unit Nurse",
-    defaultRoute: "/icu-command-center/nursing/station",
+    defaultRoute: "/icu-command-center/nursing/assigned-patients",
     routes: [
-      "/icu-command-center/nursing/station",
-      "/icu-command-center/patients/smart-bed-view",
-      "/icu-command-center/notifications-tasks",
-      "/icu-command-center/critical-care/clinical-alerts",
-      "/icu-command-center/critical-care/escalation-center",
+      "/icu-command-center/nursing/assigned-patients",
       "/icu-command-center/patients/*",
     ],
     patientTabs: ["overview", "monitoring", "results", "events", "shift-summary"],
     navigation: [
-      navChild("unit-nurse-unit", "Unit Coordination", "/icu-command-center/nursing/station", [
-        navChild("unit-nurse-dashboard", "Unit Nurse Dashboard", "/icu-command-center/nursing/station"),
-        navChild("unit-nurse-assigned", "Assigned Patients", "/icu-command-center/patients/smart-bed-view"),
-        navChild("unit-nurse-linking", "Bed & Ward Nurse Link", "/icu-command-center/patients/smart-bed-view"),
-      ]),
-      navChild("unit-nurse-monitoring", "Unit Monitoring", "/icu-command-center/notifications-tasks", [
-        navChild("unit-nurse-pending-vitals", "Pending Vitals", "/icu-command-center/notifications-tasks"),
-        navChild("unit-nurse-pending-medicine", "Pending Medicines", "/icu-command-center/notifications-tasks"),
-        navChild("unit-nurse-pending-orders", "Pending Doctor Orders", "/icu-command-center/notifications-tasks"),
-        navChild("unit-nurse-pending-tasks", "Pending Nursing Tasks", "/icu-command-center/notifications-tasks"),
-      ]),
-      navChild("unit-nurse-escalation", "Issue Review", "/icu-command-center/critical-care/clinical-alerts", [
-        navChild("unit-nurse-alerts", "First-Level Review", "/icu-command-center/critical-care/clinical-alerts"),
-        navChild("unit-nurse-decision", "Escalation Decision", "/icu-command-center/critical-care/escalation-center"),
-        navChild("unit-nurse-tracking", "Escalation Tracking", "/icu-command-center/critical-care/escalation-center"),
-        navChild("unit-nurse-handover-review", "Unit Handover Review", "/icu-command-center/patients/icu-001?tab=shift-summary"),
-      ]),
+      navChild("unit-nurse-assigned", "Assigned Patients", "/icu-command-center/nursing/assigned-patients"),
     ],
   },
   WARD_NURSE: {

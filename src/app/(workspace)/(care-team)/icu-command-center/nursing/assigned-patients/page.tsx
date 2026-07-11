@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
+import { UnitAssignedPatients } from "@/features/care-team/nursing-icu/components/unit-assigned-patients";
 
 export default function UnitAssignedPatientsRoute() {
-  return <NursingIcuModulePage page="smart-bed-view" />;
+  return <UnitAssignedPatients />;
 }

@@ -1,6 +1,6 @@
 # Plasmit Hospital HMS
 
-Enterprise-grade Hospital Management System frontend for a single-hospital, multi-department workflow. The project is currently UI/frontend only and uses realistic static mock data.
+Enterprise-grade Hospital Management System frontend for a single-hospital, multi-department workflow. The project is currently UI/frontend only and uses realistic static mock data
 
 ## Project Status
 

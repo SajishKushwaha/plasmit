@@ -1,5 +1,5 @@
-import { HeadNurseAdmissionQueuePage } from "@/features/care-team/nursing-icu/components/head-nurse/head-nurse-workflow-pages";
+import { HeadNurseModulePage } from "@/features/care-team/nursing-icu/head-nurse/head-nurse-module-page";
 
 export default function HeadNurseAdmissionQueueRoute() {
-  return <HeadNurseAdmissionQueuePage />;
+  return <HeadNurseModulePage moduleId="new-admissions" />;
 }

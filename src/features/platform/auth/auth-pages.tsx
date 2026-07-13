@@ -58,7 +58,7 @@ const loginCredentials = [
     password: "123456",
     role: "Head Nurse" as Role,
     scope: "head-nurse",
-    route: "/head-nurse",
+    route: "/nursing-icu/head-nurse?view=patients",
   },
   {
     email: "wardnurse@hospital.com",
@@ -178,7 +178,7 @@ export function LoginPage() {
         return;
       }
       if (savedScope === "head-nurse") {
-        router.replace("/head-nurse");
+        router.replace("/nursing-icu/head-nurse?view=patients");
         return;
       }
       if (savedScope === "ward-nurse") {
@@ -342,7 +342,7 @@ const nurseLoginConfigs: Record<NurseLoginRole, { route: string; scope: string; 
     description: "Login to open the unit coordination workspace.",
   },
   "Head Nurse": {
-    route: "/head-nurse",
+    route: "/nursing-icu/head-nurse?view=patients",
     scope: "head-nurse",
     title: "Head Nurse Login",
     description: "Login to open the head nurse command workspace.",

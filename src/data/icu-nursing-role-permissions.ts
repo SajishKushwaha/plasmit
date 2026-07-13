@@ -17,8 +17,24 @@ function navChild(id: string, label: string, route: string, children?: Navigatio
 export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermission> = {
   HEAD_NURSE: {
     role: "Head Nurse",
-    defaultRoute: "/icu-command-center/nursing/station",
+    defaultRoute: "/nursing-icu/head-nurse?view=patients",
     routes: [
+      "/head-nurse",
+      "/head-nurse/new-admissions",
+      "/head-nurse/unit-availability",
+      "/head-nurse/staff-availability",
+      "/head-nurse/patient-assignment",
+      "/head-nurse/alerts-delays",
+      "/head-nurse/escalations",
+      "/head-nurse/shift-handover",
+      "/head-nurse/admission-queue",
+      "/head-nurse/admission-review",
+      "/head-nurse/unit-assignment",
+      "/head-nurse/audit-control",
+      "/head-nurse/escalation",
+      "/head-nurse/handover-verification",
+      "/nursing-icu/head-nurse",
+      "/nursing-icu/head-nurse/*",
       "/icu-command-center/nursing/station",
       "/icu-command-center/patients/admissions",
       "/icu-command-center/patients/smart-bed-view",
@@ -32,22 +48,8 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
     ],
     patientTabs: ["overview", "results", "events", "shift-summary"],
     navigation: [
-      navChild("head-nurse-nursing", "Nursing Command", "/icu-command-center/nursing/station", [
-        navChild("head-nurse-overview", "Nursing Dashboard", "/icu-command-center/nursing/station"),
-        navChild("head-nurse-admissions", "New Admission Queue", "/icu-command-center/patients/admissions"),
-        navChild("head-nurse-units", "Unit & Staff Availability", "/icu-command-center/patients/smart-bed-view"),
-        navChild("head-nurse-handover-review", "Handover Verification", "/icu-command-center/patients/icu-001?tab=shift-summary"),
-      ]),
-      navChild("head-nurse-control", "Control & Audit", "/icu-command-center/notifications-tasks", [
-        navChild("head-nurse-pending", "Pending Critical Items", "/icu-command-center/notifications-tasks"),
-        navChild("head-nurse-escalation", "Escalation Oversight", "/icu-command-center/critical-care/escalation-center"),
-        navChild("head-nurse-discharges", "Final Review / Closure", "/icu-command-center/patients/discharges"),
-      ]),
-      navChild("head-nurse-reports", "Reports", "/icu-command-center/analytics/clinical", [
-        navChild("head-nurse-quality", "Quality Audit", "/icu-command-center/analytics/clinical"),
-        navChild("head-nurse-operations", "Nursing Reports", "/icu-command-center/analytics/operational"),
-        navChild("head-nurse-audit", "Audit Logs", "/icu-command-center/administration/audit-logs"),
-      ]),
+      navChild("head-nurse-patient-dashboard", "Patient Dashboard", "/nursing-icu/head-nurse?view=patients"),
+      navChild("head-nurse-icu-dashboard", "ICU Dashboard", "/nursing-icu/head-nurse?view=icu"),
     ],
   },
   UNIT_NURSE: {

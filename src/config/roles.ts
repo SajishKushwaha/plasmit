@@ -286,12 +286,17 @@ export const roleModuleAccess: Record<Role, {
       "/icu-command-center/nursing/nurse-entry",
       "/icu-command-center/nursing/intake-output",
       "/icu-command-center/nursing/medicine-receive-verify",
+      "/icu-command-center/nursing/order",
       "/icu-command-center/nursing/medication-administration",
       "/icu-command-center/nursing/early-warning-score",
+      "/icu-command-center/nursing/patient-event-update",
       "/icu-command-center/nursing/shift-handover",
+      "/icu-command-center/nursing/shift-pending-summary",
+      "/icu-command-center/nursing/raise-issue",
       "/icu-command-center/nursing/tasks-assessments",
       "/icu-command-center/nursing/nursing-notes",
       "/icu-command-center/patients",
+      "/ward-nurse",
     ],
   },
   ICU: {
@@ -336,7 +341,7 @@ export const roleModuleAccess: Record<Role, {
     allowed: ["/blood-bank"],
   },
   Receptionist: {
-    allowed: ["/receptionist", "/appointments", "/front-office", "/billing-desk", "/radiology", "/results", "/surgery"],
+    allowed: ["/receptionist", "/patients"],
   },
   "Lab Technician": {
     allowed: ["/dashboard", "/laboratory", "/poct", "/results"],

@@ -2,11 +2,7 @@ import {
   Activity,
   Ambulance,
   Archive,
-  Ban,
-  BarChart3,
   BedDouble,
-  Bell,
-  Bot,
   BriefcaseMedical,
   Building2,
   Calendar,
@@ -15,29 +11,23 @@ import {
   CalendarRange,
   CheckCircle2,
   ClipboardList,
-  Clock,
   CreditCard,
   DoorOpen,
   Droplets,
   FileText,
   FlaskConical,
   HeartPulse,
-  Home,
   IdCard,
-  Landmark,
   LayoutDashboard,
   ListPlus,
   LockKeyhole,
   MessageSquareText,
   Microscope,
   Pill,
-  RadioTower,
   ScanSearch,
   Settings,
   ShieldAlert,
-  ShieldCheck,
   Stethoscope,
-  Store,
   Syringe,
   UserCog,
   UserRound,
@@ -79,22 +69,6 @@ export const navigationItems: NavigationItem[] = [
   // =====================================================
   { id: "doctor-dashboard",    label: "Dashboard",            icon: LayoutDashboard,   route: "/doctor-dashboard",     group: "Main",     allowedRoles: ["Doctor", "Doctor OPD"], status: "ready" },
   { id: "doctor-ipd-dashboard", label: "Dashboard",            icon: Activity,          route: "/doctor-ipd",    group: "Main",     allowedRoles: ["Doctor", "Doctor IPD"], status: "ready" },
-  {
-    id: "receptionist-dashboard",
-    label: "Receptionist",
-    icon: IdCard,
-    route: "/receptionist",
-    group: "Main",
-    allowedRoles: ["Receptionist"],
-    status: "ready",
-    children: [
-      { id: "receptionist-home", label: "Dashboard", route: "/receptionist", status: "ready" },
-      { id: "receptionist-billing", label: "Billing Dashboard", route: "/receptionist/billing", status: "ready" },
-      { id: "receptionist-register", label: "Patient Registration", route: "/patients/register", status: "ready" },
-      { id: "receptionist-appointments", label: "Appointments", route: "/appointments", status: "ready" },
-      { id: "receptionist-admission", label: "Admission Reception", route: "/admission/reception", status: "ready" },
-    ],
-  },
   {
     id: "unit-nurse-dashboard",
     label: "Unit Nurse",
@@ -153,7 +127,7 @@ export const navigationItems: NavigationItem[] = [
     icon: CheckCircle2,
     route: "/results",
     group: "Diagnostics",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Nurse ICU 2", "Receptionist", "Lab Technician", "Radiologist", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Nurse ICU 2", "Lab Technician", "Radiologist", "Management"],
     status: "ready",
     children: [
       { id: "results-center", label: "Results Center", route: "/results", status: "ready" },
@@ -169,7 +143,7 @@ export const navigationItems: NavigationItem[] = [
     icon: ScanSearch,
     route: "/radiology/dashboard",
     group: "Radiology",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Nurse ICU 2", "Receptionist", "Radiologist", "Billing Executive", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Nurse ICU 2", "Radiologist", "Billing Executive", "Management"],
     status: "ready",
     children: [
       { id: "radiology-mnt-dashboard", label: "Dashboard", route: "/radiology/dashboard", status: "ready" },
@@ -198,14 +172,14 @@ export const navigationItems: NavigationItem[] = [
   // =====================================================
   // ADMIN / MANAGEMENT: Clinical Operations
   // =====================================================
-  { id: "billing-desk",        label: "Billing Desk",   icon: CreditCard,    route: "/billing-desk", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Receptionist", "Billing Executive", "Management"], status: "ready" },
-  { id: "appointments",        label: "Appointment",    icon: CalendarClock, route: "/appointments", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Receptionist", "Nurse", "Billing Executive", "Management"], status: "ready" },
+  { id: "billing-desk",        label: "Billing Desk",   icon: CreditCard,    route: "/billing-desk", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Billing Executive", "Management"], status: "ready" },
+  { id: "appointments",        label: "Appointment",    icon: CalendarClock, route: "/appointments", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Billing Executive", "Management"], status: "ready" },
   {
     id: "admission", label: "Admission", icon: DoorOpen, route: "/admission", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Billing Executive", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Billing Executive", "Management"],
     status: "ready",
   },
-  { id: "opd",                 label: "OPD",            icon: Stethoscope,   route: "/opd",          group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Pharmacist", "Lab Technician", "Management"], status: "ready" },
+  { id: "opd",                 label: "OPD",            icon: Stethoscope,   route: "/opd",          group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Pharmacist", "Lab Technician", "Management"], status: "ready" },
   {
     id: "clinical-examination",
     label: "Clinical Exam",
@@ -476,7 +450,7 @@ export const navigationItems: NavigationItem[] = [
     icon: BriefcaseMedical,
     route: "/surgery",
     group: "Clinical",
-    allowedRoles: ["Super Admin", "Nurse", "Nurse ICU 2", "Receptionist", "Management"],
+    allowedRoles: ["Super Admin", "Nurse", "Nurse ICU 2", "Management"],
     status: "ready",
   },
   {
@@ -501,15 +475,15 @@ export const navigationItems: NavigationItem[] = [
   },
   {
     id: "ipd", label: "Monitoring", icon: BedDouble, route: "/ipd", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Billing Executive", "Pharmacist", "Management"],
     status: "ready",
   },
   {
     id: "discharge", label: "Discharge", icon: FileText, route: "/discharge", group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"],
+    allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Billing Executive", "Pharmacist", "Management"],
     status: "ready",
   },
-  { id: "emergency",           label: "Emergency",      icon: Ambulance,     route: "/emergency",    group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Receptionist", "Billing Executive", "Management"], status: "ready" },
+  { id: "emergency",           label: "Emergency",      icon: Ambulance,     route: "/emergency",    group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Billing Executive", "Management"], status: "ready" },
   { id: "doctor-management",   label: "Doctor Management", icon: UserRound,  route: "/admin/doctors", group: "Clinical", allowedRoles: ["Super Admin", "Hospital Admin", "Management"], status: "ready" },
   { id: "department-management", label: "Department Management", icon: Building2, route: "/admin/departments", group: "Master Setup", allowedRoles: ["Super Admin", "Hospital Admin", "Management", "HR Manager"], status: "ready" },
 ];
@@ -615,46 +589,17 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   }
 
   if (role === "Receptionist") {
-    const visibleItemIds = new Set([
-      "receptionist-dashboard",
-      "billing-desk",
-      "appointments",
-      "admission",
-      "opd",
-      "results",
-    ]);
-    const groupOrder = new Map([
-      ["Main", 0],
-      ["Clinical", 1],
-      ["Diagnostics", 2],
-    ]);
-    const itemOrder = new Map([
-      ["receptionist-dashboard", 0],
-      ["billing-desk", 0],
-      ["appointments", 1],
-      ["admission", 2],
-      ["opd", 3],
-      ["results", 0],
-    ]);
-
-    return roleItems
-      .filter((item) => visibleItemIds.has(item.id))
-      .map((item) => {
-        if (item.id !== "results") return item;
-        return {
-          ...item,
-          children: [
-            { id: "receptionist-results-center", label: "Results Center", route: "/results", status: "ready" as const },
-            { id: "receptionist-lab-results", label: "Laboratory Results", route: "/results/laboratory", status: "ready" as const },
-            { id: "receptionist-radiology-results", label: "Radiology Results", route: "/results/radiology", status: "ready" as const },
-          ],
-        };
-      })
-      .sort((a, b) => {
-        const groupDifference = (groupOrder.get(a.group) ?? 100) - (groupOrder.get(b.group) ?? 100);
-        if (groupDifference !== 0) return groupDifference;
-        return (itemOrder.get(a.id) ?? 100) - (itemOrder.get(b.id) ?? 100);
-      });
+    return [
+      {
+        id: "receptionist-icu-desk",
+        label: "ICU Reception",
+        icon: LayoutDashboard,
+        route: "/receptionist",
+        group: "Main",
+        allowedRoles: ["Receptionist"],
+        status: "ready",
+      },
+    ];
   }
 
   return roleItems;

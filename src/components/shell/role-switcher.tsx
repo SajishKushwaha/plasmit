@@ -2,14 +2,24 @@
 
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { useRole } from "@/components/providers/role-provider";
+import { roleRoutes } from "@/config/roles";
 import { getRoleDisplayName } from "@/lib/role-display";
 import { cn } from "@/lib/utils";
+import type { Role } from "@/types";
 
 export function RoleSwitcher({ className, portal = true }: { className?: string; portal?: boolean }) {
+  const router = useRouter();
   const { role, setRole, roles } = useRole();
   const selectableRoles = roles;
+
+  function handleRoleChange(value: string) {
+    const nextRole = value as Role;
+    setRole(nextRole);
+    router.push(roleRoutes[nextRole] ?? "/dashboard");
+  }
 
   if (selectableRoles.length <= 1) {
     return null;
@@ -32,7 +42,7 @@ export function RoleSwitcher({ className, portal = true }: { className?: string;
   );
 
   return (
-    <Select.Root value={role} onValueChange={(value) => setRole(value as typeof role)}>
+    <Select.Root value={role} onValueChange={handleRoleChange}>
       <Select.Trigger
         className={cn(
           "flex h-9 w-36 min-w-0 items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none hover:bg-surface-muted focus:ring-2 focus:ring-ring md:w-44",

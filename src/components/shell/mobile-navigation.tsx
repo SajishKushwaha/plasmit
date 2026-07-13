@@ -230,7 +230,9 @@ export function MobileNavigation() {
                       key={item}
                       onClick={() => {
                         setRole(item);
+                        router.push(roleRoutes[item] ?? "/dashboard");
                         setRoleOpen(false);
+                        setOpen(false);
                       }}
                       type="button"
                     >

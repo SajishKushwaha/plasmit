@@ -89,11 +89,11 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
             ? UNIT_NURSE_ROLE
             : nextAccessScope === "head-nurse"
               ? HEAD_NURSE_ROLE
-            : nextAccessScope === "ward-nurse"
-              ? WARD_NURSE_ROLE
-              : nextAccessScope === "receptionist"
-                ? RECEPTIONIST_ROLE
-                : nextRole;
+              : nextAccessScope === "ward-nurse"
+                ? WARD_NURSE_ROLE
+                : nextAccessScope === "receptionist"
+                  ? RECEPTIONIST_ROLE
+                  : nextRole;
     window.localStorage.setItem("plasmit-role", lockedRole);
     window.dispatchEvent(new Event(roleChangeEvent));
   }, []);

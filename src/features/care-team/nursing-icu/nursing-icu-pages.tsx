@@ -7753,6 +7753,39 @@ function getActiveWardNurseUnit() {
   return "General ICU";
 }
 
+function WardNurseSelectedPatientHeader({ patient }: { patient: IcuPatient }) {
+  return (
+    <div
+      className="max-w-full overflow-x-auto rounded-xl border border-[#7367f0]/40 px-4 py-3 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)]"
+      style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}
+    >
+      <div className="flex min-w-max items-center gap-6 text-sm font-semibold text-white/90">
+        <span className="text-base font-bold text-white">{patient.patientName}</span>
+        <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-bold uppercase text-red-700">
+          {patient.criticalityScore >= 8 ? "Urgent" : patient.currentStatus}
+        </span>
+        <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">MR: {patient.mrn}</span>
+        <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Age/Sex: {patient.ageGender}</span>
+        <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Bed: {patient.bedNo}</span>
+        <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Unit: {patient.unit}</span>
+        <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Doctor: {patient.admittingDoctor}</span>
+        <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs text-white shadow-sm">Nurse: {patient.assignedWardNurse}</span>
+      </div>
+    </div>
+  );
+}
+
+function WardNurseNoPatientSelected({ description, title }: { description: string; title: string }) {
+  return (
+    <Card className="border-dashed">
+      <CardContent className="flex min-h-40 flex-col items-center justify-center text-center">
+        <p className="text-base font-bold text-slate-950">{title}</p>
+        <p className="mt-2 max-w-xl text-sm font-medium text-slate-500">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 function readWardNurseSessionVerifiedIds(storageKey: string) {
   if (typeof window === "undefined") return new Set<string>();
   try {
@@ -16337,7 +16370,7 @@ function IcuPatientCommandProfile({
         </TabsContent>
 
         <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="events">
-          <IcuPatientEventsWorkspace initialFocus={initialEventFocus} patient={patient} results={resultRows} />
+          <IcuPatientEventsWorkspace hidePatientSelector initialFocus={initialEventFocus} patient={patient} results={resultRows} />
         </TabsContent>
 
         <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="shift-summary">
@@ -17306,13 +17339,32 @@ type IcuPatientEventRow = {
   tone: DashboardCellTone;
 };
 
-function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initialFocus: IcuEventFocus; patient: IcuPatient; results: IcuPatientResultRow[] }) {
+const ICU_PATIENT_EVENT_TYPE_OPTIONS = ["All events", "Vitals", "I/O", "Result", "Medication", "Alert"];
+
+function IcuPatientEventsWorkspace({
+  eventTypeFilter,
+  hidePatientSelector = false,
+  hideEventFilterBar = false,
+  initialFocus,
+  onEventTypeFilterChange,
+  patient,
+  results,
+}: {
+  eventTypeFilter?: string;
+  hideEventFilterBar?: boolean;
+  hidePatientSelector?: boolean;
+  initialFocus: IcuEventFocus;
+  onEventTypeFilterChange?: (value: string) => void;
+  patient: IcuPatient;
+  results: IcuPatientResultRow[];
+}) {
   const patientSelection = useWardNursePatientContext(patient);
-  const activePatient = patientSelection.patient;
+  const activePatient = hidePatientSelector ? patient : patientSelection.patient;
   const activeResults = activePatient.id === patient.id ? results : buildIcuPatientResultRows(activePatient);
   const events = React.useMemo(() => buildIcuPatientEvents(activePatient, activeResults), [activePatient, activeResults]);
-  const [typeFilter, setTypeFilter] = React.useState(() => initialFocus === "open-alerts" ? "Alert" : "All events");
-  const typeOptions = ["All events", "Vitals", "I/O", "Result", "Medication", "Alert"];
+  const [internalTypeFilter, setInternalTypeFilter] = React.useState(() => initialFocus === "open-alerts" ? "Alert" : "All events");
+  const typeFilter = eventTypeFilter ?? internalTypeFilter;
+  const updateTypeFilter = onEventTypeFilterChange ?? setInternalTypeFilter;
   const filteredEvents = React.useMemo(() => events.filter((event) => typeFilter === "All events" || event.type === typeFilter), [events, typeFilter]);
   const pagination = useIcuCommandPagination(filteredEvents);
 
@@ -17322,7 +17374,7 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
 
   return (
     <div className="space-y-4">
-      {patientSelection.selectable ? (
+      {patientSelection.selectable && !hidePatientSelector ? (
         <WardNursePatientContextSelector
           label="Patient"
           onChange={patientSelection.setPatientId}
@@ -17332,12 +17384,16 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
       ) : null}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
-        <div className="grid gap-3 border-b border-slate-100 bg-white p-4 md:grid-cols-[minmax(220px,1fr)_auto] md:items-end">
-          <NativeSelect label="Event type" value={typeFilter} onChange={setTypeFilter} options={typeOptions} />
-          <Button variant="outline" onClick={() => {
-            setTypeFilter("All events");
-          }}>Reset</Button>
-        </div>
+        {!hideEventFilterBar ? (
+          <div className="flex flex-col gap-3 border-b border-slate-100 bg-white p-4 sm:flex-row sm:items-end">
+            <div className="w-full sm:w-56">
+              <NativeSelect label="Event type" value={typeFilter} onChange={updateTypeFilter} options={ICU_PATIENT_EVENT_TYPE_OPTIONS} />
+            </div>
+            <Button variant="outline" onClick={() => {
+              updateTypeFilter("All events");
+            }}>Reset</Button>
+          </div>
+        ) : null}
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1180px] border-separate border-spacing-0 text-left text-sm">
@@ -17376,6 +17432,73 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
         {!filteredEvents.length ? <div className="p-6 text-center text-sm font-semibold text-slate-500">No patient event matched selected filters.</div> : null}
         {filteredEvents.length > ICU_COMMAND_PAGE_SIZE ? <IcuCommandPaginationControls {...pagination} /> : null}
       </div>
+    </div>
+  );
+}
+
+export function WardNursePatientEventUpdatePage() {
+  const activeWardNurse = getActiveWardNurseName();
+  const assignedPatients = React.useMemo(
+    () => icuPatients.filter((patient) => patient.assignedWardNurse === activeWardNurse),
+    [activeWardNurse],
+  );
+  const [patientId, setPatientId] = React.useState("");
+  const [eventTypeFilter, setEventTypeFilter] = React.useState("All events");
+  const selectedPatient = assignedPatients.find((patient) => patient.id === patientId) ?? null;
+  const selectedResults = React.useMemo(
+    () => (selectedPatient ? buildIcuPatientResultRows(selectedPatient) : []),
+    [selectedPatient],
+  );
+
+  return (
+    <div className="min-w-0 max-w-full space-y-4 pb-8">
+      {selectedPatient ? <WardNurseSelectedPatientHeader patient={selectedPatient} /> : null}
+      <div className="w-full max-w-full rounded-md border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end">
+          <label className="block w-full space-y-1 text-sm md:w-[26rem]">
+            <span className="font-semibold text-slate-800">Patient</span>
+            <select
+              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-sky-200"
+              onChange={(event) => setPatientId(event.target.value)}
+              value={patientId}
+            >
+              <option value="">Select patient</option>
+              {assignedPatients.map((patient) => (
+                <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block w-full space-y-1 text-sm md:w-56">
+            <span className="font-semibold text-slate-800">Event</span>
+            <select
+              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-sky-200"
+              onChange={(event) => setEventTypeFilter(event.target.value)}
+              value={eventTypeFilter}
+            >
+              {ICU_PATIENT_EVENT_TYPE_OPTIONS.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+          <Button variant="outline" onClick={() => setEventTypeFilter("All events")}>Reset</Button>
+        </div>
+      </div>
+      {selectedPatient ? (
+        <IcuPatientEventsWorkspace
+          eventTypeFilter={eventTypeFilter}
+          hidePatientSelector
+          hideEventFilterBar
+          initialFocus="all"
+          onEventTypeFilterChange={setEventTypeFilter}
+          patient={selectedPatient}
+          results={selectedResults}
+        />
+      ) : (
+        <WardNurseNoPatientSelected
+          title="No patient selected"
+          description="Please select a patient first. Patient event data will appear only after a patient is selected."
+        />
+      )}
     </div>
   );
 }

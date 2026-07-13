@@ -74,7 +74,9 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
       "/icu-command-center/nursing/medicine-receive-verify",
       "/icu-command-center/nursing/order",
       "/icu-command-center/nursing/medication-administration",
+      "/icu-command-center/nursing/nursing-notes",
       "/icu-command-center/nursing/early-warning-score",
+      "/icu-command-center/nursing/patient-event-update",
       "/icu-command-center/nursing/shift-handover",
       "/icu-command-center/nursing/shift-pending-summary",
       "/icu-command-center/nursing/raise-issue",
@@ -83,12 +85,12 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
     ],
     patientTabs: ["overview", "monitoring", "orders", "events", "shift-summary", "collaborate"],
     navigation: [
-      navChild("ward-nurse-assigned", "My Assigned Patients", "/icu-command-center/clinical-workspace/patient-overview"),
+      navChild("ward-nurse-assigned", "Assigned Patient", "/icu-command-center/clinical-workspace/patient-overview"),
       navChild("ward-nurse-documentation", "Bedside Documentation", "/icu-command-center/nursing/nurse-entry", [
         navChild("ward-nurse-entry", "Nurse Entry", "/icu-command-center/nursing/nurse-entry"),
         navChild("ward-nurse-ews", "Early Warning Score", "/icu-command-center/nursing/early-warning-score"),
         navChild("ward-nurse-io", "Intake / Output Update", "/icu-command-center/nursing/intake-output"),
-        navChild("ward-nurse-events", "Patient Event Update", "/icu-command-center/patients/icu-001?tab=events"),
+        navChild("ward-nurse-events", "Patient Event Update", "/icu-command-center/nursing/patient-event-update"),
       ]),
       navChild("ward-nurse-work", "Nursing Work", "/icu-command-center/nursing/medication-administration", [
         navChild("ward-nurse-medication-receive", "Medicine Receive & Verify", "/icu-command-center/nursing/medicine-receive-verify"),

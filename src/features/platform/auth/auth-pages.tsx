@@ -373,7 +373,7 @@ export function NurseRoleLoginPage({ role }: { role: NurseLoginRole }) {
         router.replace(config.route);
       }
     }
-  }, [config.route, role, router]);
+  }, [config.route, config.scope, role, router]);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

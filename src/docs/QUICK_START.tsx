@@ -5,6 +5,8 @@
  * This guide shows the most common patterns to implement role-based access in your components.
  */
 
+import Link from "next/link";
+
 // Mock components to satisfy TypeScript compilation in documentation examples
 const DoctorView = () => null;
 const AdminView = () => null;
@@ -95,19 +97,19 @@ function Navigation() {
 
   return (
     <nav>
-      <a href="/dashboard">Dashboard</a>
+      <Link href="/dashboard">Dashboard</Link>
 
       {isDoctor && (
         <>
-          <a href="/appointments">Appointments</a>
-          <a href="/opd">OPD Queue</a>
+          <Link href="/appointments">Appointments</Link>
+          <Link href="/opd">OPD Queue</Link>
         </>
       )}
 
       {!isDoctor && (
         <>
-          <a href="/admin">Admin</a>
-          <a href="/billing">Billing</a>
+          <Link href="/admin">Admin</Link>
+          <Link href="/billing">Billing</Link>
         </>
       )}
     </nav>

@@ -232,7 +232,7 @@ export function ModuleGatedComponent({ moduleRoute }: { moduleRoute: string }) {
     return (
       <div className="rounded border-l-4 border-red-500 bg-red-50 p-4">
         <p className="font-medium text-red-900">Access Denied</p>
-        <p className="text-sm text-red-700">You don't have access to this module.</p>
+        <p className="text-sm text-red-700">{"You don't have access to this module."}</p>
       </div>
     );
   }

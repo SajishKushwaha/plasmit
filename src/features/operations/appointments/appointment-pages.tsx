@@ -299,7 +299,7 @@ export function AppointmentBookingPage() {
               {weeklySlots.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Dr. Ananya Rao's Configured Sessions (Dynamic)
+                    {"Dr. Ananya Rao's Configured Sessions (Dynamic)"}
                   </div>
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {weeklySlots.map((slot) => {

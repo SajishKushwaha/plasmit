@@ -361,7 +361,8 @@ export async function downloadLaboratoryPdf(
     const interpretation = block.interpretation?.trim();
     if (interpretation) {
       const pageHeight = doc.internal.pageSize.getHeight();
-      let y = Math.max(((doc as any).lastAutoTable?.finalY ?? 212) + 10, 212);
+      const docWithTable = doc as jsPDF & { lastAutoTable?: { finalY?: number } };
+      let y = Math.max((docWithTable.lastAutoTable?.finalY ?? 212) + 10, 212);
       if (y > pageHeight - 140) {
         doc.addPage();
         await addPageFrame(doc, patient, logoBase64, inferredTitle, headerBase64);

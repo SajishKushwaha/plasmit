@@ -625,9 +625,10 @@ export function BloodRequestTab() {
   const replacementDonors = Array.isArray(form.replacementDonors) ? form.replacementDonors : [];
   const hasReplacementDonors = replacementDonorCount > 0;
   const requiredDateTime = parseDateTime(form.requiredDate, form.startTime);
+  const [nowMs] = React.useState(() => Date.now());
   const isRoutineLeadTimeWarning =
     form.requestType === "Routine" && requiredDateTime
-      ? requiredDateTime.getTime() - Date.now() < 24 * 60 * 60 * 1000
+      ? requiredDateTime.getTime() - nowMs < 24 * 60 * 60 * 1000
       : false;
   const productsRef = React.useRef<HTMLDivElement | null>(null);
   const [productsOpen, setProductsOpen] = React.useState(false);

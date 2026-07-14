@@ -138,7 +138,9 @@ export function ProfileMenu() {
               </div>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border bg-white px-3 py-2">
-              <span className="font-semibold text-muted-foreground">Today's responsibility</span>
+              <span className="font-semibold text-muted-foreground">
+                {"Today's responsibility"}
+              </span>
               <span className="font-black text-foreground">{user.patientLoad}</span>
             </div>
           </div>

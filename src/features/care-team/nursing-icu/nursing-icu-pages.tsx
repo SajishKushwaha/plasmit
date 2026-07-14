@@ -3509,30 +3509,24 @@ function IcuDailyNursingRecordTable({
   instructions: typeof doctorInstructions;
 }) {
   const rows = [
-    ...vitals
-      .slice(-4)
-      .map((row) => ({
-        id: row.id,
-        dateTime: row.time,
-        observation: `Vitals: SpO2 ${row.spo2}%, BP ${row.bp}, GCS ${row.gcs}`,
-        implementation: row.note,
-      })),
-    ...tasks
-      .slice(0, 3)
-      .map((row) => ({
-        id: row.id,
-        dateTime: row.dueTime,
-        observation: row.title,
-        implementation: `${row.status} | ${row.assignedTo} | ${row.remarks}`,
-      })),
-    ...instructions
-      .slice(0, 3)
-      .map((row) => ({
-        id: row.id,
-        dateTime: row.dueTime,
-        observation: row.instructionType,
-        implementation: `${row.instruction} | ${row.assignedNurse}`,
-      })),
+    ...vitals.slice(-4).map((row) => ({
+      id: row.id,
+      dateTime: row.time,
+      observation: `Vitals: SpO2 ${row.spo2}%, BP ${row.bp}, GCS ${row.gcs}`,
+      implementation: row.note,
+    })),
+    ...tasks.slice(0, 3).map((row) => ({
+      id: row.id,
+      dateTime: row.dueTime,
+      observation: row.title,
+      implementation: `${row.status} | ${row.assignedTo} | ${row.remarks}`,
+    })),
+    ...instructions.slice(0, 3).map((row) => ({
+      id: row.id,
+      dateTime: row.dueTime,
+      observation: row.instructionType,
+      implementation: `${row.instruction} | ${row.assignedNurse}`,
+    })),
   ].slice(0, 8);
 
   return (
@@ -4952,7 +4946,10 @@ function ExecutiveDashboardScenarioCommand({
   const [documentationStatus, setDocumentationStatus] = React.useState("All status");
   const [documentationCategory, setDocumentationCategory] = React.useState("All charting");
   const selectedUnit = unitId ? allRows.find((row) => row.id === unitId) : undefined;
-  const rows = selectedUnit ? [selectedUnit] : allRows;
+  const rows = React.useMemo(
+    () => (selectedUnit ? [selectedUnit] : allRows),
+    [selectedUnit, allRows],
+  );
   const pagination = useIcuCommandPagination(rows);
   const documentationRows = React.useMemo(() => buildExecutiveDocumentationRows(rows), [rows]);
   const documentationCategories = React.useMemo(
@@ -12664,15 +12661,13 @@ function PatientOverviewDetailCommand({ patients }: { patients: IcuPatient[] }) 
     },
   ];
   const timeline = [
-    ...patientVitals
-      .slice(-3)
-      .map((row) => ({
-        id: `vital-${row.id}`,
-        type: "Vitals",
-        title: `${row.time} - SpO2 ${row.spo2}%, BP ${row.bp}`,
-        detail: row.note,
-        tone: row.abnormal ? ("danger" as StatusTone) : ("success" as StatusTone),
-      })),
+    ...patientVitals.slice(-3).map((row) => ({
+      id: `vital-${row.id}`,
+      type: "Vitals",
+      title: `${row.time} - SpO2 ${row.spo2}%, BP ${row.bp}`,
+      detail: row.note,
+      tone: row.abnormal ? ("danger" as StatusTone) : ("success" as StatusTone),
+    })),
     ...activeAlerts.map((row) => ({
       id: `alert-${row.id}`,
       type: "Alert",
@@ -12687,15 +12682,13 @@ function PatientOverviewDetailCommand({ patients }: { patients: IcuPatient[] }) 
       detail: `${row.status}: ${row.reason}`,
       tone: toneForStatus(row.status),
     })),
-    ...patientInstructions
-      .slice(0, 3)
-      .map((row) => ({
-        id: `order-${row.id}`,
-        type: "Order",
-        title: `${row.dueTime} - ${row.instructionType}`,
-        detail: row.instruction,
-        tone: toneForPriority(row.priority),
-      })),
+    ...patientInstructions.slice(0, 3).map((row) => ({
+      id: `order-${row.id}`,
+      type: "Order",
+      title: `${row.dueTime} - ${row.instructionType}`,
+      detail: row.instruction,
+      tone: toneForPriority(row.priority),
+    })),
   ].slice(0, 8);
   const statusTone: StatusTone =
     patient?.currentStatus === "Critical"

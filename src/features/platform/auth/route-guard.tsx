@@ -143,7 +143,7 @@ export function isDoctorBlockedRoute(pathname: string): boolean {
 export function AccessDenied({ route }: { route: string }) {
   const { role } = useRole();
   const router = useRouter();
-  const defaultRoute = getDefaultRouteForRole(role as any);
+  const defaultRoute = getDefaultRouteForRole(role);
   const roleDisplayName = getRoleDisplayName(role);
 
   return (
@@ -151,7 +151,7 @@ export function AccessDenied({ route }: { route: string }) {
       <div className="text-center">
         <h1 className="text-4xl font-bold text-foreground">Access Denied</h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          You don't have permission to access{" "}
+          {"You don't have permission to access"}{" "}
           <code className="rounded bg-muted px-2 py-1 text-sm">{route}</code>
         </p>
         <p className="mt-1 text-sm text-muted-foreground">

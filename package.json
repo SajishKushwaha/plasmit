@@ -16,7 +16,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": [
-      "eslint --max-warnings=0",
+      "eslint .",
       "prettier --write"
     ],
     "*.{json,md,css,yml,yaml}": [

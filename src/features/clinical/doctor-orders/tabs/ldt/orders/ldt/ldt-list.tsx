@@ -18,9 +18,45 @@ import { LdtSummaryCards } from "./ldt-summary-cards";
 import type { LdtOrder } from "./types";
 
 const initialOrders: LdtOrder[] = [
-  { id: "ldt-001", orderNo: "LDT-9001", orderType: "Insert", ldtName: "PICC line", priority: "Routine", orderDate: "2026-06-23 09:15", status: "Pending", patientName: "Meera Joshi", patientId: "UHID-45821", doctorName: "Dr. Kavita Rao", notes: "Maintain sterile dressing." },
-  { id: "ldt-002", orderNo: "LDT-9002", orderType: "Remove", ldtName: "Foley catheter", priority: "Urgent", orderDate: "2026-06-23 10:20", status: "Active", patientName: "Meera Joshi", patientId: "UHID-45821", doctorName: "Dr. Kavita Rao", notes: "Remove after output review." },
-  { id: "ldt-003", orderNo: "LDT-9003", orderType: "Replace", ldtName: "Peripheral IV cannula", priority: "STAT", orderDate: "2026-06-23 11:40", status: "Completed", patientName: "Meera Joshi", patientId: "UHID-45821", doctorName: "Dr. Kavita Rao", notes: "Replacement completed." },
+  {
+    id: "ldt-001",
+    orderNo: "LDT-9001",
+    orderType: "Insert",
+    ldtName: "PICC line",
+    priority: "Routine",
+    orderDate: "2026-06-23 09:15",
+    status: "Pending",
+    patientName: "Meera Joshi",
+    patientId: "UHID-45821",
+    doctorName: "Dr. Kavita Rao",
+    notes: "Maintain sterile dressing.",
+  },
+  {
+    id: "ldt-002",
+    orderNo: "LDT-9002",
+    orderType: "Remove",
+    ldtName: "Foley catheter",
+    priority: "Urgent",
+    orderDate: "2026-06-23 10:20",
+    status: "Active",
+    patientName: "Meera Joshi",
+    patientId: "UHID-45821",
+    doctorName: "Dr. Kavita Rao",
+    notes: "Remove after output review.",
+  },
+  {
+    id: "ldt-003",
+    orderNo: "LDT-9003",
+    orderType: "Replace",
+    ldtName: "Peripheral IV cannula",
+    priority: "STAT",
+    orderDate: "2026-06-23 11:40",
+    status: "Completed",
+    patientName: "Meera Joshi",
+    patientId: "UHID-45821",
+    doctorName: "Dr. Kavita Rao",
+    notes: "Replacement completed.",
+  },
 ];
 
 const orderTypeOptions = ["All Types", "Insert", "Remove", "Replace"] as const;
@@ -39,7 +75,10 @@ export function LdtListPage() {
     const query = search.trim().toLowerCase();
 
     return initialOrders.filter((order) => {
-      const matchesSearch = `${order.orderNo} ${order.orderType} ${order.ldtName} ${order.priority} ${order.orderDate} ${order.status}`.toLowerCase().includes(query);
+      const matchesSearch =
+        `${order.orderNo} ${order.orderType} ${order.ldtName} ${order.priority} ${order.orderDate} ${order.status}`
+          .toLowerCase()
+          .includes(query);
       const matchesType = orderType === "All Types" || order.orderType === orderType;
       const matchesPriority = priority === "All Priority" || order.priority === priority;
       const matchesStatus = status === "All Status" || order.status === status;
@@ -56,12 +95,38 @@ export function LdtListPage() {
       { header: "LDT Name", accessorKey: "ldtName" },
       {
         header: "Priority",
-        cell: ({ row }) => <Badge tone={row.original.priority === "STAT" ? "danger" : row.original.priority === "Urgent" ? "warning" : "success"}>{row.original.priority}</Badge>,
+        cell: ({ row }) => (
+          <Badge
+            tone={
+              row.original.priority === "STAT"
+                ? "danger"
+                : row.original.priority === "Urgent"
+                  ? "warning"
+                  : "success"
+            }
+          >
+            {row.original.priority}
+          </Badge>
+        ),
       },
       { header: "Order Date", accessorKey: "orderDate" },
       {
         header: "Status",
-        cell: ({ row }) => <Badge tone={row.original.status === "Completed" ? "success" : row.original.status === "Cancelled" ? "danger" : row.original.status === "Active" ? "info" : "warning"}>{row.original.status}</Badge>,
+        cell: ({ row }) => (
+          <Badge
+            tone={
+              row.original.status === "Completed"
+                ? "success"
+                : row.original.status === "Cancelled"
+                  ? "danger"
+                  : row.original.status === "Active"
+                    ? "info"
+                    : "warning"
+            }
+          >
+            {row.original.status}
+          </Badge>
+        ),
       },
       {
         header: "Actions",
@@ -103,13 +168,37 @@ export function LdtListPage() {
       <Card>
         <CardContent className="space-y-4 p-3 sm:p-4">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_repeat(4,minmax(160px,1fr))]">
-            <SearchInput value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search LDT orders..." aria-label="Search LDT orders" />
-            <SelectFilter label="Order Type" value={orderType} onChange={(value) => setOrderType(value as (typeof orderTypeOptions)[number])} options={orderTypeOptions} />
-            <SelectFilter label="Priority" value={priority} onChange={(value) => setPriority(value as (typeof priorityOptions)[number])} options={priorityOptions} />
-            <SelectFilter label="Status" value={status} onChange={(value) => setStatus(value as (typeof statusOptions)[number])} options={statusOptions} />
+            <SearchInput
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search LDT orders..."
+              aria-label="Search LDT orders"
+            />
+            <SelectFilter
+              label="Order Type"
+              value={orderType}
+              onChange={(value) => setOrderType(value as (typeof orderTypeOptions)[number])}
+              options={orderTypeOptions}
+            />
+            <SelectFilter
+              label="Priority"
+              value={priority}
+              onChange={(value) => setPriority(value as (typeof priorityOptions)[number])}
+              options={priorityOptions}
+            />
+            <SelectFilter
+              label="Status"
+              value={status}
+              onChange={(value) => setStatus(value as (typeof statusOptions)[number])}
+              options={statusOptions}
+            />
             <label className="space-y-1 text-xs font-medium text-muted-foreground">
               <span>Date Range</span>
-              <Input type="date" value={dateRange} onChange={(event) => setDateRange(event.target.value)} />
+              <Input
+                type="date"
+                value={dateRange}
+                onChange={(event) => setDateRange(event.target.value)}
+              />
             </label>
           </div>
 
@@ -159,7 +248,9 @@ export function LdtListPage() {
         }
       >
         <div className="space-y-4 text-sm text-muted-foreground">
-          <div className="rounded-lg border border-dashed border-border bg-surface-muted p-4">LDT order form fields will be added in the next task.</div>
+          <div className="rounded-lg border border-dashed border-border bg-surface-muted p-4">
+            LDT order form fields will be added in the next task.
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-1 text-xs font-medium text-muted-foreground">
               <span>Order Type</span>
@@ -184,11 +275,25 @@ export function LdtListPage() {
   );
 }
 
-function SelectFilter({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: readonly string[] }) {
+function SelectFilter({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly string[];
+}) {
   return (
     <label className="space-y-1 text-xs font-medium text-muted-foreground">
       <span>{label}</span>
-      <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
+      <select
+        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
         {options.map((option) => (
           <option key={option} value={option}>
             {option}

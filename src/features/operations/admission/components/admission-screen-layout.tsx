@@ -3,7 +3,11 @@ import type { ReactNode } from "react";
 import { ClipboardList } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { admissionScreenMap, admissionScreens, admissionWorkflowCards } from "@/features/operations/admission/data/admission-data";
+import {
+  admissionScreenMap,
+  admissionScreens,
+  admissionWorkflowCards,
+} from "@/features/operations/admission/data/admission-data";
 import type { AdmissionScreenId } from "@/features/operations/admission/types";
 import { cn } from "@/lib/utils";
 
@@ -60,14 +64,25 @@ export function AdmissionScreenLayout({
             const active = stepTitle(step) === activeStepTitle;
             const className = cn("min-h-8", active && "shadow-sm");
             return route ? (
-              <Button asChild key={step} size="sm" variant={active ? "default" : "outline"} className={className}>
+              <Button
+                asChild
+                key={step}
+                size="sm"
+                variant={active ? "default" : "outline"}
+                className={className}
+              >
                 <Link href={route}>
                   <ClipboardList className="h-4 w-4" />
                   {step}
                 </Link>
               </Button>
             ) : (
-              <Button key={step} size="sm" variant={active ? "default" : "outline"} className={className}>
+              <Button
+                key={step}
+                size="sm"
+                variant={active ? "default" : "outline"}
+                className={className}
+              >
                 <ClipboardList className="h-4 w-4" />
                 {step}
               </Button>

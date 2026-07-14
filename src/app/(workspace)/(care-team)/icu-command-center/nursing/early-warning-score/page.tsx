@@ -9,7 +9,7 @@ export default async function IcuCommandCenterNursingEarlyWarningScoreRoute({
 }) {
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const patientId = resolvedSearchParams.patientId;
-  const initialPatientId = Array.isArray(patientId) ? patientId[0] ?? "" : patientId ?? "";
+  const initialPatientId = Array.isArray(patientId) ? (patientId[0] ?? "") : (patientId ?? "");
 
   return <EarlyWarningScoreClient initialPatientId={initialPatientId} />;
 }

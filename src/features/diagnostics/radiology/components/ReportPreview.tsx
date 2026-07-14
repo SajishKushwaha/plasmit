@@ -1,4 +1,10 @@
-import type { Patient, Radiologist, RadiologyOrder, RadiologyReport, RadiologyTest } from "@/features/diagnostics/radiology/types";
+import type {
+  Patient,
+  Radiologist,
+  RadiologyOrder,
+  RadiologyReport,
+  RadiologyTest,
+} from "@/features/diagnostics/radiology/types";
 import { formatDateTime } from "@/features/diagnostics/radiology/utils/formatters";
 
 interface ReportPreviewProps {
@@ -15,7 +21,9 @@ export function ReportPreview({ report, order, patient, test, radiologist }: Rep
       <div className="border-b border-slate-200 pb-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">Plasmit Hospital Radiology</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
+              Plasmit Hospital Radiology
+            </p>
             <h2 className="mt-2 text-xl font-semibold text-slate-950">{test.name}</h2>
           </div>
           <div className="text-right text-sm text-slate-600">
@@ -45,16 +53,24 @@ export function ReportPreview({ report, order, patient, test, radiologist }: Rep
 
       <div className="mt-6 space-y-5 text-sm leading-6 text-slate-800">
         <section>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">Clinical Indication</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Clinical Indication
+          </h3>
           <p className="mt-2">{order.clinicalIndication}</p>
         </section>
         <section>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">Findings</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Findings
+          </h3>
           <p className="mt-2 whitespace-pre-line">{report.findings}</p>
         </section>
         <section>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">Impression</h3>
-          <p className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-4 font-medium text-slate-950">{report.impression}</p>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+            Impression
+          </h3>
+          <p className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-4 font-medium text-slate-950">
+            {report.impression}
+          </p>
         </section>
       </div>
     </article>

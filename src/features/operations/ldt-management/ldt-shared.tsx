@@ -121,10 +121,14 @@ export function DynamicLdtInput({
   const textValue = onChange ? (typeof value === "string" ? value : "") : undefined;
 
   if (field.type === "Date") {
-    return <Input type="date" value={textValue} onChange={(event) => onChange?.(event.target.value)} />;
+    return (
+      <Input type="date" value={textValue} onChange={(event) => onChange?.(event.target.value)} />
+    );
   }
   if (field.type === "Time") {
-    return <Input type="time" value={textValue} onChange={(event) => onChange?.(event.target.value)} />;
+    return (
+      <Input type="time" value={textValue} onChange={(event) => onChange?.(event.target.value)} />
+    );
   }
   if (field.type === "Number") {
     return (
@@ -177,7 +181,13 @@ export function DynamicLdtInput({
       </label>
     );
   }
-  return <Input placeholder={`Enter ${field.name.toLowerCase()}`} value={textValue} onChange={(event) => onChange?.(event.target.value)} />;
+  return (
+    <Input
+      placeholder={`Enter ${field.name.toLowerCase()}`}
+      value={textValue}
+      onChange={(event) => onChange?.(event.target.value)}
+    />
+  );
 }
 
 export function LdtFieldShell({
@@ -212,7 +222,12 @@ export function LdtPropertiesForm({
   return (
     <div className="grid gap-4">
       {fields.map((field) => (
-        <LdtFieldShell key={field.id} field={field} value={values[field.id]} onChange={(value) => onValueChange(field.id, value)} />
+        <LdtFieldShell
+          key={field.id}
+          field={field}
+          value={values[field.id]}
+          onChange={(value) => onValueChange(field.id, value)}
+        />
       ))}
     </div>
   );
@@ -234,7 +249,10 @@ export function LdtBarcodePropertiesEntry({
       <CardHeader>
         <div>
           <CardTitle>Properties Entry</CardTitle>
-          <CardDescription>Scan item barcode to auto-fill properties, or open Properties and enter details manually.</CardDescription>
+          <CardDescription>
+            Scan item barcode to auto-fill properties, or open Properties and enter details
+            manually.
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -261,7 +279,9 @@ export function LdtBarcodePropertiesEntry({
           </Button>
         </form>
         {exampleBarcodes?.length ? (
-          <div className="mt-2 text-xs text-muted-foreground">Demo barcodes: {exampleBarcodes.join(", ")}</div>
+          <div className="mt-2 text-xs text-muted-foreground">
+            Demo barcodes: {exampleBarcodes.join(", ")}
+          </div>
         ) : null}
       </CardContent>
     </Card>

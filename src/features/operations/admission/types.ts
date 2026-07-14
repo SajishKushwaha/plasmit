@@ -19,18 +19,13 @@ export type AdmissionRequestStatus =
   | "Received"
   | "Care Started";
 
-export type AdmissionScenario = "Old Patient / Re-admission" | "New Patient Admission" | "Emergency Unknown Patient";
+export type AdmissionScenario =
+  "Old Patient / Re-admission" | "New Patient Admission" | "Emergency Unknown Patient";
 
 export type BillingClearanceStatus = "Pending" | "Cleared" | "Hold";
 
 export type AdmissionBedStatus =
-  | "Available"
-  | "Occupied"
-  | "Reserved"
-  | "Cleaning"
-  | "Maintenance"
-  | "Isolation"
-  | "Blocked";
+  "Available" | "Occupied" | "Reserved" | "Cleaning" | "Maintenance" | "Isolation" | "Blocked";
 
 export type AdmissionPatient = {
   id: string;

@@ -15,7 +15,17 @@ export type PatientTabValue =
 
 export type DashboardPoctMode = "add" | "results";
 export type ResultsAutoView = "laboratory-all";
-export type RequestedOrderTab = "blood" | "drugs" | "pathology" | "lab" | "radiology" | "poct" | "procedures" | "referral" | "ordersets" | "ldt";
+export type RequestedOrderTab =
+  | "blood"
+  | "drugs"
+  | "pathology"
+  | "lab"
+  | "radiology"
+  | "poct"
+  | "procedures"
+  | "referral"
+  | "ordersets"
+  | "ldt";
 
 export type DoctorIpdPatientContext = {
   patient: DoctorIpdPatient;

@@ -5,7 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { ChevronDown, Search, UserRound } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { DoctorOrdersPage, type DoctorOrdersPatientContext } from "@/features/clinical/doctor-orders/doctor-orders";
+import {
+  DoctorOrdersPage,
+  type DoctorOrdersPatientContext,
+} from "@/features/clinical/doctor-orders/doctor-orders";
 import { orderedPatients } from "@/features/roles/doctor-ipd/dashboard/dashboard.data";
 import { patientTone } from "@/features/roles/doctor-ipd/dashboard/dashboard.utils";
 import { rapidReviewPatients } from "@/features/clinical/rapid-review/rapid-review-data";
@@ -13,7 +16,10 @@ import { rapidReviewPatients } from "@/features/clinical/rapid-review/rapid-revi
 export function DoctorPatientOrdersWorkspace() {
   const searchParams = useSearchParams();
   const requestedPatientId = searchParams.get("patientId") ?? "";
-  const initialPatientId = React.useMemo(() => normalizePatientId(requestedPatientId), [requestedPatientId]);
+  const initialPatientId = React.useMemo(
+    () => normalizePatientId(requestedPatientId),
+    [requestedPatientId],
+  );
   const initialOrderTab = searchParams.get("tab") ?? undefined;
   const radiologyIntent = searchParams.get("radiologyTab") ?? "";
   // const [selectedPatientId, setSelectedPatientId] = React.useState(String(orderedPatients[0]?.id ?? ""));
@@ -21,7 +27,9 @@ export function DoctorPatientOrdersWorkspace() {
   const [selectedPatientId, setSelectedPatientId] = React.useState(initialPatientId);
   const selectedPatient =
     orderedPatients.find((patient) => String(patient.id) === selectedPatientId) ?? undefined;
-  const rapidReviewPatient = selectedPatient ? rapidReviewPatients.find((item) => item.id === selectedPatient.rapidReviewPatientId) : undefined;
+  const rapidReviewPatient = selectedPatient
+    ? rapidReviewPatients.find((item) => item.id === selectedPatient.rapidReviewPatientId)
+    : undefined;
   const patientContext = selectedPatient ? toPatientContext(selectedPatient) : undefined;
   const [patientSearchOpen, setPatientSearchOpen] = React.useState(false);
   // const [patientQuery, setPatientQuery] = React.useState(selectedPatient ? patientOptionLabel(selectedPatient) : "");
@@ -74,7 +82,9 @@ export function DoctorPatientOrdersWorkspace() {
       <Card className="rounded-md border-slate-200 shadow-sm">
         <CardContent className="flex justify-end p-4">
           <div className="w-full max-w-xl">
-            <span className="mb-1.5 block text-xs font-extrabold uppercase tracking-wide text-slate-500">Select Patient</span>
+            <span className="mb-1.5 block text-xs font-extrabold uppercase tracking-wide text-slate-500">
+              Select Patient
+            </span>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -98,7 +108,9 @@ export function DoctorPatientOrdersWorkspace() {
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => setPatientSearchOpen((open) => !open)}
               >
-                <ChevronDown className={`h-4 w-4 transition-transform ${patientSearchOpen ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${patientSearchOpen ? "rotate-180" : ""}`}
+                />
               </button>
 
               {patientSearchOpen ? (
@@ -113,7 +125,9 @@ export function DoctorPatientOrdersWorkspace() {
                         onClick={() => handlePatientSelect(patient.id)}
                       >
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-bold text-slate-900">{patient.name}</span>
+                          <span className="block truncate text-sm font-bold text-slate-900">
+                            {patient.name}
+                          </span>
                           <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">
                             {patient.bed} | {patient.diagnosis}
                           </span>
@@ -124,7 +138,9 @@ export function DoctorPatientOrdersWorkspace() {
                       </button>
                     ))
                   ) : (
-                    <div className="px-3 py-2 text-sm font-semibold text-slate-500">No patient found</div>
+                    <div className="px-3 py-2 text-sm font-semibold text-slate-500">
+                      No patient found
+                    </div>
                   )}
                 </div>
               ) : null}
@@ -135,7 +151,11 @@ export function DoctorPatientOrdersWorkspace() {
 
       {selectedPatient && patientContext ? (
         <section className="min-w-0 space-y-3 rounded-md border border-slate-200 bg-white p-3 shadow-sm">
-          <SelectedPatientHeader isCompact={isPatientHeaderCompact} patient={selectedPatient} rapidReviewPatient={rapidReviewPatient} />
+          <SelectedPatientHeader
+            isCompact={isPatientHeaderCompact}
+            patient={selectedPatient}
+            rapidReviewPatient={rapidReviewPatient}
+          />
           <DoctorOrdersPage
             defaultTab={initialOrderTab}
             key={`${selectedPatient.id}-${initialOrderTab ?? ""}-${radiologyIntent}`}
@@ -161,7 +181,10 @@ function normalizePatientId(value: string) {
   if (directMatch) return String(directMatch.id);
 
   const doctorIpdMatch = value.match(/^doctor-ipd-(\d+)$/);
-  if (doctorIpdMatch?.[1] && orderedPatients.some((patient) => String(patient.id) === doctorIpdMatch[1])) {
+  if (
+    doctorIpdMatch?.[1] &&
+    orderedPatients.some((patient) => String(patient.id) === doctorIpdMatch[1])
+  ) {
     return doctorIpdMatch[1];
   }
 
@@ -179,14 +202,26 @@ function SelectedPatientHeader({
 }) {
   const tone = patientTone(patient);
   const statusLabel = tone === "red" ? "Urgent" : tone === "orange" ? "Warning" : "Stable";
-  const statusClass = tone === "red" ? "bg-red-500 text-white" : tone === "orange" ? "bg-amber-400 text-slate-950" : "bg-emerald-500 text-white";
-  const age = rapidReviewPatient?.ageGender?.split("/")[0]?.trim() ? `${rapidReviewPatient.ageGender.split("/")[0].trim()} year(s)` : "35 year(s)";
+  const statusClass =
+    tone === "red"
+      ? "bg-red-500 text-white"
+      : tone === "orange"
+        ? "bg-amber-400 text-slate-950"
+        : "bg-emerald-500 text-white";
+  const age = rapidReviewPatient?.ageGender?.split("/")[0]?.trim()
+    ? `${rapidReviewPatient.ageGender.split("/")[0].trim()} year(s)`
+    : "35 year(s)";
   const details = [
     { label: "MR", value: "94346597930" },
     { label: "DOB", value: "30-12-1995" },
     { label: "", value: age },
     { label: "", value: "75 kg" },
-    { label: "Bed", value: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed },
+    {
+      label: "Bed",
+      value: rapidReviewPatient
+        ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}`
+        : patient.bed,
+    },
     { label: "Blood Group", value: "AB" },
     { label: "Rh", value: "+ve" },
     { label: "Isolation Type", value: "Droplet", tone: "orange" },
@@ -207,7 +242,11 @@ function SelectedPatientHeader({
         <div className="flex min-w-max items-center gap-6">
           {details.map((detail, index) => (
             <span
-              className={detail.tone === "orange" ? "whitespace-nowrap text-orange-200" : "whitespace-nowrap text-white"}
+              className={
+                detail.tone === "orange"
+                  ? "whitespace-nowrap text-orange-200"
+                  : "whitespace-nowrap text-white"
+              }
               key={`${detail.label}-${detail.value}-${index}`}
             >
               {detail.label ? `${detail.label}: ` : ""}

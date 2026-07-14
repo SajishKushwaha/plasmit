@@ -56,13 +56,9 @@ const completedOrders: CompletedOrder[] = [
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-surface-muted p-3">
-      <div className="text-xs font-medium text-muted-foreground">
-        {label}:
-      </div>
+      <div className="text-xs font-medium text-muted-foreground">{label}:</div>
 
-      <div className="text-sm font-semibold text-foreground">
-        {value}
-      </div>
+      <div className="text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
 }
@@ -93,7 +89,10 @@ function CompletedOrderDrawer({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <DetailItem label="Blood Product" value={order.bloodProducts} />
-            <DetailItem label="Units Transfused" value={`${order.unitsTransfused} Unit${order.unitsTransfused > 1 ? "s" : ""}`} />
+            <DetailItem
+              label="Units Transfused"
+              value={`${order.unitsTransfused} Unit${order.unitsTransfused > 1 ? "s" : ""}`}
+            />
             <DetailItem label="Order Date" value={order.date} />
             <DetailItem label="Completed By" value={order.completedBy} />
           </div>
@@ -126,7 +125,8 @@ function CompletedOrdersTable({ searchQuery }: { searchQuery: string }) {
       },
       {
         header: "Units transfused",
-        cell: ({ row }) => `${row.original.unitsTransfused} Unit${row.original.unitsTransfused > 1 ? "s" : ""}`,
+        cell: ({ row }) =>
+          `${row.original.unitsTransfused} Unit${row.original.unitsTransfused > 1 ? "s" : ""}`,
       },
       { header: "Reason", accessorKey: "reason" },
       { header: "Instructions", accessorKey: "instructions" },
@@ -185,7 +185,10 @@ export function CompletedOrderPage() {
   const allowed = nurseRoles.includes(role);
   const [patientId, setPatientId] = React.useState(mockPatients[0]?.id ?? "");
   const patient = mockPatients.find((item) => item.id === patientId) ?? mockPatients[0];
-  const totalUnitsTransfused = completedOrders.reduce((total, order) => total + order.unitsTransfused, 0);
+  const totalUnitsTransfused = completedOrders.reduce(
+    (total, order) => total + order.unitsTransfused,
+    0,
+  );
 
   if (!allowed) {
     return (
@@ -254,7 +257,12 @@ export function CompletedOrderPage() {
             {/* <label className="text-xs font-medium text-muted-foreground" htmlFor="completed-order-search">
               Search completed orders
             </label> */}
-            <SearchInput id="completed-order-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search product, reason, date..." />
+            <SearchInput
+              id="completed-order-search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search product, reason, date..."
+            />
             {/* <CardDescription>Search filters the completed order list below.</CardDescription> */}
           </div>
           <Badge tone="success">Read only</Badge>

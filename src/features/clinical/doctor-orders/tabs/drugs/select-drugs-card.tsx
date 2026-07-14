@@ -146,7 +146,9 @@ export function SelectDrugsCard({
                         <div className="mt-1 text-xs text-muted-foreground">
                           {order.genericName} / {order.form}
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">Available: {order.availableQty}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Available: {order.availableQty}
+                        </div>
                       </div>
                     </label>
                   );

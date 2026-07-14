@@ -22,7 +22,8 @@ const WARD_NURSE_ROLE: Role = "Ward Nurse";
 const RECEPTIONIST_ROLE: Role = "Receptionist";
 const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
-type AccessScope = "doctor-ipd" | "icu" | "unit-nurse" | "head-nurse" | "ward-nurse" | "receptionist" | "admin";
+type AccessScope =
+  "doctor-ipd" | "icu" | "unit-nurse" | "head-nurse" | "ward-nurse" | "receptionist" | "admin";
 
 function readAccessScope(): AccessScope {
   if (typeof window === "undefined") return "admin";
@@ -34,7 +35,8 @@ function readAccessScope(): AccessScope {
     savedScope === "head-nurse" ||
     savedScope === "ward-nurse" ||
     savedScope === "receptionist"
-  ) return savedScope;
+  )
+    return savedScope;
   return "admin";
 }
 
@@ -75,7 +77,11 @@ function subscribeRole(callback: () => void) {
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const role = React.useSyncExternalStore(subscribeRole, readStoredRole, () => DEFAULT_ROLE);
-  const accessScope = React.useSyncExternalStore<AccessScope>(subscribeRole, readAccessScope, () => "admin");
+  const accessScope = React.useSyncExternalStore<AccessScope>(
+    subscribeRole,
+    readAccessScope,
+    () => "admin",
+  );
   const allowedRoles = React.useMemo(() => getAllowedRoles(accessScope), [accessScope]);
 
   const setRole = React.useCallback((nextRole: Role) => {
@@ -89,11 +95,11 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
             ? UNIT_NURSE_ROLE
             : nextAccessScope === "head-nurse"
               ? HEAD_NURSE_ROLE
-            : nextAccessScope === "ward-nurse"
-              ? WARD_NURSE_ROLE
-              : nextAccessScope === "receptionist"
-                ? RECEPTIONIST_ROLE
-                : nextRole;
+              : nextAccessScope === "ward-nurse"
+                ? WARD_NURSE_ROLE
+                : nextAccessScope === "receptionist"
+                  ? RECEPTIONIST_ROLE
+                  : nextRole;
     window.localStorage.setItem("plasmit-role", lockedRole);
     window.dispatchEvent(new Event(roleChangeEvent));
   }, []);

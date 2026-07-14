@@ -134,9 +134,7 @@ export function useBlockedRouteRedirect(): string | null {
  * Highlight blocked routes for doctors
  */
 export function isDoctorBlockedRoute(pathname: string): boolean {
-  return doctorBlockedModules.some((module) =>
-    pathname.startsWith(module as string),
-  );
+  return doctorBlockedModules.some((module) => pathname.startsWith(module as string));
 }
 
 /**

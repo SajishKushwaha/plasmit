@@ -32,8 +32,13 @@ export function DrawerBundle() {
 }`,
   renderPreview: ({ openDrawer }) => (
     <div className="flex flex-wrap items-center gap-3">
-      <Button onClick={openDrawer}><PanelRightOpen className="h-4 w-4" />Open drawer</Button>
-      <span className="text-sm text-muted-foreground">Controlled side panel with footer actions.</span>
+      <Button onClick={openDrawer}>
+        <PanelRightOpen className="h-4 w-4" />
+        Open drawer
+      </Button>
+      <span className="text-sm text-muted-foreground">
+        Controlled side panel with footer actions.
+      </span>
     </div>
   ),
 };

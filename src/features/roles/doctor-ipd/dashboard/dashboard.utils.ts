@@ -1,7 +1,13 @@
 import type { DoctorIpdPatient, PatientTone, VitalTone } from "./dashboard.types";
 
 export function patientTone(patient: DoctorIpdPatient): PatientTone {
-  const tones = [patient.hr.tone, patient.spo2.tone, patient.abps.tone, patient.abpd.tone, patient.temperature.tone];
+  const tones = [
+    patient.hr.tone,
+    patient.spo2.tone,
+    patient.abps.tone,
+    patient.abpd.tone,
+    patient.temperature.tone,
+  ];
   if (tones.includes("red")) return "red";
   if (tones.includes("orange")) return "orange";
   return "blue";

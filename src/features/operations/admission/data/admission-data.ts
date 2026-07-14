@@ -254,11 +254,41 @@ export const billingClearances: BillingClearance[] = [
 ];
 
 const wards = [
-  { key: "ICU", prefix: "ICU", floor: "1st Floor", roomType: "Critical Care Bed", station: "Station A" },
-  { key: "General Ward", prefix: "GW", floor: "2nd Floor", roomType: "General Bed", station: "Station B" },
-  { key: "Private Ward", prefix: "PW", floor: "3rd Floor", roomType: "Private Room", station: "Station C" },
-  { key: "Emergency", prefix: "ER", floor: "Ground Floor", roomType: "Emergency Bed", station: "ER Desk" },
-  { key: "Pediatric", prefix: "PED", floor: "2nd Floor", roomType: "Pediatric Bed", station: "Station P" },
+  {
+    key: "ICU",
+    prefix: "ICU",
+    floor: "1st Floor",
+    roomType: "Critical Care Bed",
+    station: "Station A",
+  },
+  {
+    key: "General Ward",
+    prefix: "GW",
+    floor: "2nd Floor",
+    roomType: "General Bed",
+    station: "Station B",
+  },
+  {
+    key: "Private Ward",
+    prefix: "PW",
+    floor: "3rd Floor",
+    roomType: "Private Room",
+    station: "Station C",
+  },
+  {
+    key: "Emergency",
+    prefix: "ER",
+    floor: "Ground Floor",
+    roomType: "Emergency Bed",
+    station: "ER Desk",
+  },
+  {
+    key: "Pediatric",
+    prefix: "PED",
+    floor: "2nd Floor",
+    roomType: "Pediatric Bed",
+    station: "Station P",
+  },
 ];
 
 const statusPattern: AdmissionBedStatus[] = [
@@ -305,12 +335,42 @@ export const nurseReceiveChecklist = [
 ];
 
 export const admissionWorkflowCards = [
-  { title: "Patient Lookup", owner: "Reception", route: "/admission/reception", status: "Start here" },
-  { title: "Admission Order", owner: "Doctor", route: "/admission/doctor", status: "Clinical input" },
-  { title: "Requests", owner: "Admission Desk", route: "/admission/admission-desk", status: "Verification" },
+  {
+    title: "Patient Lookup",
+    owner: "Reception",
+    route: "/admission/reception",
+    status: "Start here",
+  },
+  {
+    title: "Admission Order",
+    owner: "Doctor",
+    route: "/admission/doctor",
+    status: "Clinical input",
+  },
+  {
+    title: "Requests",
+    owner: "Admission Desk",
+    route: "/admission/admission-desk",
+    status: "Verification",
+  },
   { title: "Billing", owner: "Billing", route: "/admission/billing", status: "Clearance" },
-  { title: "Bed Manager", owner: "Bed Manager", route: "/admission/bed-manager", status: "Allotment" },
-  { title: "Receive Patient", owner: "Nurse", route: "/admission/nurse-receive", status: "Handover" },
+  {
+    title: "Bed Manager",
+    owner: "Bed Manager",
+    route: "/admission/bed-manager",
+    status: "Allotment",
+  },
+  {
+    title: "Receive Patient",
+    owner: "Nurse",
+    route: "/admission/nurse-receive",
+    status: "Handover",
+  },
   { title: "Patient Care", owner: "Nurse", route: "/admission/nurse-care", status: "Care start" },
-  { title: "Generate QR", owner: "Admission Desk", route: "/admission/generate-qr", status: "Printable QR" },
+  {
+    title: "Generate QR",
+    owner: "Admission Desk",
+    route: "/admission/generate-qr",
+    status: "Printable QR",
+  },
 ];

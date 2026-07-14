@@ -31,9 +31,33 @@ const statusOptions: LdtOrderStatus[] = ["Pending", "Active", "Completed", "Canc
 const today = new Date().toISOString().slice(0, 10);
 
 const initialOrders: LdtOrder[] = [
-  { id: "ldt-001", orderNo: "LDT-9001", orderType: "Insert", ldtName: "PICC line", priority: "Routine", orderDate: today, status: "Pending" },
-  { id: "ldt-002", orderNo: "LDT-9002", orderType: "Remove", ldtName: "Foley catheter", priority: "Urgent", orderDate: today, status: "Active" },
-  { id: "ldt-003", orderNo: "LDT-9003", orderType: "Replace", ldtName: "Peripheral IV cannula", priority: "STAT", orderDate: today, status: "Completed" },
+  {
+    id: "ldt-001",
+    orderNo: "LDT-9001",
+    orderType: "Insert",
+    ldtName: "PICC line",
+    priority: "Routine",
+    orderDate: today,
+    status: "Pending",
+  },
+  {
+    id: "ldt-002",
+    orderNo: "LDT-9002",
+    orderType: "Remove",
+    ldtName: "Foley catheter",
+    priority: "Urgent",
+    orderDate: today,
+    status: "Active",
+  },
+  {
+    id: "ldt-003",
+    orderNo: "LDT-9003",
+    orderType: "Replace",
+    ldtName: "Peripheral IV cannula",
+    priority: "STAT",
+    orderDate: today,
+    status: "Completed",
+  },
 ];
 
 type DrawerMode = "create" | "edit" | "view";
@@ -70,7 +94,10 @@ export function LdtListPage() {
   const filteredOrders = React.useMemo(() => {
     const query = search.trim().toLowerCase();
     return orders.filter((order) => {
-      const matchesSearch = `${order.orderNo} ${order.orderType} ${order.ldtName} ${order.priority} ${order.orderDate} ${order.status}`.toLowerCase().includes(query);
+      const matchesSearch =
+        `${order.orderNo} ${order.orderType} ${order.ldtName} ${order.priority} ${order.orderDate} ${order.status}`
+          .toLowerCase()
+          .includes(query);
       const matchesPriority = priority === "All Priority" || order.priority === priority;
       const matchesStatus = status === "All Status" || order.status === status;
       const matchesDate = !dateRange || order.orderDate >= dateRange;
@@ -168,24 +195,69 @@ export function LdtListPage() {
     () => [
       { header: "Order No", accessorKey: "orderNo" },
       { header: "LDT Name", accessorKey: "ldtName" },
-      { header: "Priority", cell: ({ row }) => <Badge tone={row.original.priority === "STAT" ? "danger" : row.original.priority === "Urgent" ? "warning" : "success"}>{row.original.priority}</Badge> },
+      {
+        header: "Priority",
+        cell: ({ row }) => (
+          <Badge
+            tone={
+              row.original.priority === "STAT"
+                ? "danger"
+                : row.original.priority === "Urgent"
+                  ? "warning"
+                  : "success"
+            }
+          >
+            {row.original.priority}
+          </Badge>
+        ),
+      },
       { header: "Order Date", accessorKey: "orderDate" },
-      { header: "Status", cell: ({ row }) => <Badge tone={row.original.status === "Completed" ? "success" : row.original.status === "Cancelled" ? "danger" : row.original.status === "Active" ? "info" : "warning"}>{row.original.status}</Badge> },
+      {
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge
+            tone={
+              row.original.status === "Completed"
+                ? "success"
+                : row.original.status === "Cancelled"
+                  ? "danger"
+                  : row.original.status === "Active"
+                    ? "info"
+                    : "warning"
+            }
+          >
+            {row.original.status}
+          </Badge>
+        ),
+      },
       {
         header: "Actions",
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" type="button" onClick={() => openViewDrawer(row.original)}>
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={() => openViewDrawer(row.original)}
+            >
               <Eye className="h-4 w-4" />
-              
             </Button>
-            <Button size="sm" variant="outline" type="button" onClick={() => openEditDrawer(row.original)}>
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={() => openEditDrawer(row.original)}
+            >
               <Pencil className="h-4 w-4" />
-              
             </Button>
-            <Button size="sm" variant="outline" type="button" className="text-danger" onClick={() => setDeleteTarget(row.original)}>
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              className="text-danger"
+              onClick={() => setDeleteTarget(row.original)}
+            >
               <Trash2 className="h-4 w-4" />
-            
             </Button>
           </div>
         ),
@@ -194,7 +266,12 @@ export function LdtListPage() {
     [],
   );
 
-  const drawerTitle = drawerMode === "create" ? "Create LDT Order" : drawerMode === "edit" ? "Edit LDT Order" : "View LDT Order";
+  const drawerTitle =
+    drawerMode === "create"
+      ? "Create LDT Order"
+      : drawerMode === "edit"
+        ? "Edit LDT Order"
+        : "View LDT Order";
   const isReadOnly = drawerMode === "view";
 
   return (
@@ -202,12 +279,31 @@ export function LdtListPage() {
       <div className="space-y-4 p-3 sm:p-4">
         <div className="grid gap-3 lg:grid-cols-5">
           <label className="space-y-1 mt-1 text-xs font-medium text-muted-foreground">
-            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search LDT orders..." aria-label="Search LDT orders" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search LDT orders..."
+              aria-label="Search LDT orders"
+            />
           </label>
-          <SelectFilter label="" value={priority} onChange={setPriority} options={["All Priority", ...priorityOptions]} />
-          <SelectFilter label="" value={status} onChange={setStatus} options={["All Status", ...statusOptions]} />
+          <SelectFilter
+            label=""
+            value={priority}
+            onChange={setPriority}
+            options={["All Priority", ...priorityOptions]}
+          />
+          <SelectFilter
+            label=""
+            value={status}
+            onChange={setStatus}
+            options={["All Status", ...statusOptions]}
+          />
           <label className="space-y-1 mt-1 text-xs font-medium text-muted-foreground">
-            <Input type="date" value={dateRange} onChange={(event) => setDateRange(event.target.value)} />
+            <Input
+              type="date"
+              value={dateRange}
+              onChange={(event) => setDateRange(event.target.value)}
+            />
           </label>
           <Button className="sm:ml-auto mt-1" onClick={openCreateDrawer}>
             <Plus className="h-4 w-4" />
@@ -215,8 +311,7 @@ export function LdtListPage() {
           </Button>
         </div>
 
-        <div className="flex justify-end">
-        </div>
+        <div className="flex justify-end"></div>
 
         {filteredOrders.length ? (
           <DataTable data={filteredOrders} columns={columns} />
@@ -224,7 +319,9 @@ export function LdtListPage() {
           <div className="flex min-h-52 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface-muted p-6 text-center">
             <SearchX className="mb-3 h-5 w-5 text-muted-foreground" />
             <h3 className="text-sm font-semibold text-foreground">No LDT Orders Found</h3>
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">Create your first LDT order.</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Create your first LDT order.
+            </p>
             <Button className="mt-4" variant="outline" size="sm" onClick={openCreateDrawer}>
               <Plus className="h-4 w-4" />
               Create LDT Order
@@ -261,7 +358,9 @@ export function LdtListPage() {
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={draft.ldtType}
                 disabled={isReadOnly}
-                onChange={(event) => setDraft((current) => ({ ...current, ldtType: event.target.value }))}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, ldtType: event.target.value }))
+                }
               >
                 {LDT_TYPE_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -276,7 +375,12 @@ export function LdtListPage() {
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={draft.priority}
                 disabled={isReadOnly}
-                onChange={(event) => setDraft((current) => ({ ...current, priority: event.target.value as LdtOrderPriority }))}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    priority: event.target.value as LdtOrderPriority,
+                  }))
+                }
               >
                 {priorityOptions.map((option) => (
                   <option key={option} value={option}>
@@ -290,7 +394,9 @@ export function LdtListPage() {
               <Input
                 value={draft.reason}
                 disabled={isReadOnly}
-                onChange={(event) => setDraft((current) => ({ ...current, reason: event.target.value }))}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, reason: event.target.value }))
+                }
                 placeholder="Enter reason or indication"
               />
             </label>
@@ -300,7 +406,9 @@ export function LdtListPage() {
                 className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 value={draft.clinicalNotes}
                 disabled={isReadOnly}
-                onChange={(event) => setDraft((current) => ({ ...current, clinicalNotes: event.target.value }))}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, clinicalNotes: event.target.value }))
+                }
                 placeholder="Add clinical notes"
               />
             </label>
@@ -309,13 +417,22 @@ export function LdtListPage() {
               <Input
                 value={draft.ldtName}
                 disabled={isReadOnly}
-                onChange={(event) => setDraft((current) => ({ ...current, ldtName: event.target.value }))}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, ldtName: event.target.value }))
+                }
                 placeholder="Enter LDT name"
               />
             </label>
             <label className="space-y-1 text-xs font-medium text-muted-foreground">
               <span>Order Date</span>
-              <Input type="date" value={draft.orderDate} disabled={isReadOnly} onChange={(event) => setDraft((current) => ({ ...current, orderDate: event.target.value }))} />
+              <Input
+                type="date"
+                value={draft.orderDate}
+                disabled={isReadOnly}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, orderDate: event.target.value }))
+                }
+              />
             </label>
           </div>
         </div>
@@ -340,11 +457,25 @@ export function LdtListPage() {
   );
 }
 
-function SelectFilter<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (value: T) => void; options: readonly T[] }) {
+function SelectFilter<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: T;
+  onChange: (value: T) => void;
+  options: readonly T[];
+}) {
   return (
     <label className="space-y-1 text-xs font-medium text-muted-foreground">
       <span>{label}</span>
-      <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value as T)}>
+      <select
+        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+        value={value}
+        onChange={(event) => onChange(event.target.value as T)}
+      >
         {options.map((option) => (
           <option key={option} value={option}>
             {option}

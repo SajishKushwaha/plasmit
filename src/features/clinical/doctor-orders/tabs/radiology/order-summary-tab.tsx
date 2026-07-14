@@ -10,7 +10,16 @@ import { DataTable } from "@/components/ui/data-table";
 
 import type { RadiologySummaryRow } from "./types";
 
-type SummarySortKey = keyof Pick<RadiologySummaryRow, "selectedTests" | "loincCode" | "category" | "specification" | "priority" | "status" | "orderDateTime">;
+type SummarySortKey = keyof Pick<
+  RadiologySummaryRow,
+  | "selectedTests"
+  | "loincCode"
+  | "category"
+  | "specification"
+  | "priority"
+  | "status"
+  | "orderDateTime"
+>;
 
 export function RadiologyOrderSummaryTab({
   rows,
@@ -47,7 +56,17 @@ export function RadiologyOrderSummaryTab({
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => <Badge tone={row.original.status === "Completed" || row.original.status === "Reviewed" ? "success" : "info"}>{row.original.status}</Badge>,
+        cell: ({ row }) => (
+          <Badge
+            tone={
+              row.original.status === "Completed" || row.original.status === "Reviewed"
+                ? "success"
+                : "info"
+            }
+          >
+            {row.original.status}
+          </Badge>
+        ),
       },
       { accessorKey: "orderDateTime", header: "Order Date Time" },
       {
@@ -58,7 +77,13 @@ export function RadiologyOrderSummaryTab({
             {/* <Button type="button" size="sm" variant="outline" onClick={() => onEdit(row.original.id)}>
               <Pencil className="h-4 w-4" />
             </Button> */}
-            <Button type="button" size="sm" variant="outline" className="text-danger" onClick={() => onDelete(row.original.id)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="text-danger"
+              onClick={() => onDelete(row.original.id)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>

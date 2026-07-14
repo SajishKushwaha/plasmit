@@ -7,11 +7,7 @@
 
 import * as React from "react";
 import { useRole } from "@/components/providers/role-provider";
-import {
-  doctorAllowedModules,
-  doctorBlockedModules,
-  doctorPermissions,
-} from "@/config/roles";
+import { doctorAllowedModules, doctorBlockedModules, doctorPermissions } from "@/config/roles";
 
 export type AvailStatus = "Available" | "Busy" | "On Break" | "Off Duty" | "Emergency Call";
 
@@ -75,12 +71,66 @@ export interface DoctorContextType {
 const DoctorContext = React.createContext<DoctorContextType | null>(null);
 
 const defaultWeeklySlots: WeeklySlot[] = [
-  { id: "slot-1", day: "Mon", time: "08:00", end: "10:30", mode: "OPD", branch: "Apollo OPD", capacity: 18, occupied: 15 },
-  { id: "slot-2", day: "Mon", time: "11:00", end: "13:00", mode: "Follow-up", branch: "Apollo OPD", capacity: 12, occupied: 10 },
-  { id: "slot-3", day: "Tue", time: "09:00", end: "11:30", mode: "Video", branch: "Digital Clinic", capacity: 10, occupied: 5 },
-  { id: "slot-4", day: "Wed", time: "08:30", end: "12:00", mode: "OPD", branch: "North Wing", capacity: 22, occupied: 18 },
-  { id: "slot-5", day: "Thu", time: "13:30", end: "15:30", mode: "Emergency", branch: "Apollo OPD", capacity: 8, occupied: 3 },
-  { id: "slot-6", day: "Fri", time: "10:00", end: "14:00", mode: "OPD", branch: "Apollo OPD", capacity: 20, occupied: 12 },
+  {
+    id: "slot-1",
+    day: "Mon",
+    time: "08:00",
+    end: "10:30",
+    mode: "OPD",
+    branch: "Apollo OPD",
+    capacity: 18,
+    occupied: 15,
+  },
+  {
+    id: "slot-2",
+    day: "Mon",
+    time: "11:00",
+    end: "13:00",
+    mode: "Follow-up",
+    branch: "Apollo OPD",
+    capacity: 12,
+    occupied: 10,
+  },
+  {
+    id: "slot-3",
+    day: "Tue",
+    time: "09:00",
+    end: "11:30",
+    mode: "Video",
+    branch: "Digital Clinic",
+    capacity: 10,
+    occupied: 5,
+  },
+  {
+    id: "slot-4",
+    day: "Wed",
+    time: "08:30",
+    end: "12:00",
+    mode: "OPD",
+    branch: "North Wing",
+    capacity: 22,
+    occupied: 18,
+  },
+  {
+    id: "slot-5",
+    day: "Thu",
+    time: "13:30",
+    end: "15:30",
+    mode: "Emergency",
+    branch: "Apollo OPD",
+    capacity: 8,
+    occupied: 3,
+  },
+  {
+    id: "slot-6",
+    day: "Fri",
+    time: "10:00",
+    end: "14:00",
+    mode: "OPD",
+    branch: "Apollo OPD",
+    capacity: 20,
+    occupied: 12,
+  },
 ];
 
 const defaultTemplates: PresetTemplate[] = [
@@ -89,9 +139,33 @@ const defaultTemplates: PresetTemplate[] = [
     name: "Standard Weekly OPD Layout",
     description: "Regular Monday-Friday morning and afternoon OPD & Video consult slots.",
     slots: [
-      { day: "Mon", time: "09:00", end: "13:00", mode: "OPD", branch: "Main Clinic", capacity: 20, occupied: 0 },
-      { day: "Wed", time: "09:00", end: "13:00", mode: "OPD", branch: "Main Clinic", capacity: 20, occupied: 0 },
-      { day: "Fri", time: "09:00", end: "13:00", mode: "OPD", branch: "Main Clinic", capacity: 20, occupied: 0 },
+      {
+        day: "Mon",
+        time: "09:00",
+        end: "13:00",
+        mode: "OPD",
+        branch: "Main Clinic",
+        capacity: 20,
+        occupied: 0,
+      },
+      {
+        day: "Wed",
+        time: "09:00",
+        end: "13:00",
+        mode: "OPD",
+        branch: "Main Clinic",
+        capacity: 20,
+        occupied: 0,
+      },
+      {
+        day: "Fri",
+        time: "09:00",
+        end: "13:00",
+        mode: "OPD",
+        branch: "Main Clinic",
+        capacity: 20,
+        occupied: 0,
+      },
     ],
   },
 ];
@@ -191,43 +265,49 @@ export function DoctorProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const saveTemplate = React.useCallback((name: string, description: string) => {
-    setTemplates((prev) => {
-      const newTemplate: PresetTemplate = {
-        id: `temp-${Date.now()}`,
-        name,
-        description,
-        slots: weeklySlots.map(({ day, time, end, mode, branch, capacity, occupied }) => ({
-          day,
-          time,
-          end,
-          mode,
-          branch,
-          capacity,
-          occupied,
-        })),
-      };
-      const updated = [...prev, newTemplate];
-      if (typeof window !== "undefined") {
-        localStorage.setItem("doctor-availability-templates", JSON.stringify(updated));
-      }
-      return updated;
-    });
-  }, [weeklySlots]);
+  const saveTemplate = React.useCallback(
+    (name: string, description: string) => {
+      setTemplates((prev) => {
+        const newTemplate: PresetTemplate = {
+          id: `temp-${Date.now()}`,
+          name,
+          description,
+          slots: weeklySlots.map(({ day, time, end, mode, branch, capacity, occupied }) => ({
+            day,
+            time,
+            end,
+            mode,
+            branch,
+            capacity,
+            occupied,
+          })),
+        };
+        const updated = [...prev, newTemplate];
+        if (typeof window !== "undefined") {
+          localStorage.setItem("doctor-availability-templates", JSON.stringify(updated));
+        }
+        return updated;
+      });
+    },
+    [weeklySlots],
+  );
 
-  const loadTemplate = React.useCallback((templateId: string) => {
-    const template = templates.find((t) => t.id === templateId);
-    if (template) {
-      const newSlots = template.slots.map((s, idx) => ({
-        ...s,
-        id: `slot-loaded-${Date.now()}-${idx}`,
-      }));
-      setWeeklySlots(newSlots);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("doctor-weekly-slots", JSON.stringify(newSlots));
+  const loadTemplate = React.useCallback(
+    (templateId: string) => {
+      const template = templates.find((t) => t.id === templateId);
+      if (template) {
+        const newSlots = template.slots.map((s, idx) => ({
+          ...s,
+          id: `slot-loaded-${Date.now()}-${idx}`,
+        }));
+        setWeeklySlots(newSlots);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("doctor-weekly-slots", JSON.stringify(newSlots));
+        }
       }
-    }
-  }, [templates]);
+    },
+    [templates],
+  );
 
   const deleteTemplate = React.useCallback((templateId: string) => {
     setTemplates((prev) => {
@@ -331,9 +411,7 @@ export function DoctorProvider({ children }: { children: React.ReactNode }) {
     ],
   );
 
-  return (
-    <DoctorContext.Provider value={value}>{children}</DoctorContext.Provider>
-  );
+  return <DoctorContext.Provider value={value}>{children}</DoctorContext.Provider>;
 }
 
 /**
@@ -415,10 +493,7 @@ export interface AdminOnlyProps {
 
 export function AdminOnly({ children, fallback }: AdminOnlyProps) {
   const { role } = useRole();
-  const isAdmin =
-    role === "Super Admin" ||
-    role === "Hospital Admin" ||
-    role === "Management";
+  const isAdmin = role === "Super Admin" || role === "Hospital Admin" || role === "Management";
   return isAdmin ? <>{children}</> : <>{fallback}</>;
 }
 

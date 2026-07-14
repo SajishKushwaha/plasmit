@@ -24,7 +24,15 @@ const columns: ColumnDef<Row>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <StatusPill tone={row.original.status === "Critical" ? "critical" : row.original.status === "Pending" ? "warning" : "success"}>
+      <StatusPill
+        tone={
+          row.original.status === "Critical"
+            ? "critical"
+            : row.original.status === "Pending"
+              ? "warning"
+              : "success"
+        }
+      >
         {row.original.status}
       </StatusPill>
     ),

@@ -1,7 +1,10 @@
 import { Phone, Stethoscope, UserRound } from "lucide-react";
 
 import type { Patient, RadiologyOrder } from "@/features/diagnostics/radiology/types";
-import { formatPatientAgeGender, getInitials } from "@/features/diagnostics/radiology/utils/formatters";
+import {
+  formatPatientAgeGender,
+  getInitials,
+} from "@/features/diagnostics/radiology/utils/formatters";
 
 interface PatientSummaryCardProps {
   patient: Patient;
@@ -18,9 +21,13 @@ export function PatientSummaryCard({ patient, order }: PatientSummaryCardProps) 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-semibold text-slate-950">{patient.name}</h3>
-            <span className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-600">{patient.mrn}</span>
+            <span className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-600">
+              {patient.mrn}
+            </span>
           </div>
-          <p className="mt-1 text-sm text-slate-500">{formatPatientAgeGender(patient.age, patient.gender)}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {formatPatientAgeGender(patient.age, patient.gender)}
+          </p>
         </div>
       </div>
 

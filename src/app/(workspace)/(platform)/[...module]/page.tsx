@@ -35,7 +35,8 @@ export default async function PlannedModulePage({ params }: PlannedModulePagePro
           </CardHeader>
           <CardContent className="space-y-3">
             <AlertBanner icon={FileText} title="Phase discipline" tone="info">
-              This app intentionally avoids building future business workflows before their phase documentation is active.
+              This app intentionally avoids building future business workflows before their phase
+              documentation is active.
             </AlertBanner>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>Shared app shell and role-aware navigation are active.</li>

@@ -75,13 +75,9 @@ const discontinuedOrders: DiscontinuedOrder[] = [
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-surface-muted p-3">
-      <div className="text-xs font-medium text-muted-foreground">
-        {label}:
-      </div>
+      <div className="text-xs font-medium text-muted-foreground">{label}:</div>
 
-      <div className="text-sm font-semibold text-foreground">
-        {value}
-      </div>
+      <div className="text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
 }
@@ -144,11 +140,7 @@ function DiscontinuedOrdersTable({ searchQuery }: { searchQuery: string }) {
       { header: "Units ordered", accessorKey: "unitsOrdered" },
       {
         header: "Units transfused",
-        cell: ({ row }) => (
-          <span className="font-medium">
-            {row.original.unitsTransfused}
-          </span>
-        ),
+        cell: ({ row }) => <span className="font-medium">{row.original.unitsTransfused}</span>,
       },
       { header: "Reason", accessorKey: "reason" },
       { header: "Instructions", accessorKey: "instructions" },
@@ -213,8 +205,14 @@ export function DiscontinuedOrderPage() {
   const allowed = nurseRoles.includes(role);
   const [patientId, setPatientId] = React.useState(mockPatients[0]?.id ?? "");
   const patient = mockPatients.find((item) => item.id === patientId) ?? mockPatients[0];
-  const totalUnitsOrdered = discontinuedOrders.reduce((total, order) => total + order.unitsOrdered, 0);
-  const totalUnitsTransfused = discontinuedOrders.reduce((total, order) => total + order.unitsTransfused, 0);
+  const totalUnitsOrdered = discontinuedOrders.reduce(
+    (total, order) => total + order.unitsOrdered,
+    0,
+  );
+  const totalUnitsTransfused = discontinuedOrders.reduce(
+    (total, order) => total + order.unitsTransfused,
+    0,
+  );
 
   if (!allowed) {
     return (
@@ -281,7 +279,12 @@ export function DiscontinuedOrderPage() {
             {/* <label className="text-xs font-medium text-muted-foreground" htmlFor="discontinued-order-search">
               Search discontinued orders
             </label> */}
-            <SearchInput id="discontinued-order-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search product, reason, nurse, date..." />
+            <SearchInput
+              id="discontinued-order-search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search product, reason, nurse, date..."
+            />
             {/* <CardDescription>Search filters the discontinued order list below.</CardDescription> */}
           </div>
           <Badge tone="danger">Stopped</Badge>

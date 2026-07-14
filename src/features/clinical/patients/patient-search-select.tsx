@@ -57,9 +57,7 @@ export function PatientSearchSelect({
       <div className="flex items-center gap-2 rounded-lg border bg-background px-3 py-2 shadow-sm">
         {/* <UserRound className="h-4 w-4 shrink-0 text-primary" /> */}
 
-        <span className="shrink-0 text-sm font-medium text-muted-foreground">
-          {label}
-        </span>
+        <span className="shrink-0 text-sm font-medium text-muted-foreground">{label}</span>
 
         <div className="h-5 w-px bg-border" />
 
@@ -102,9 +100,7 @@ export function PatientSearchSelect({
                 className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors hover:bg-accent"
               >
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">
-                    {patientName(patient)}
-                  </div>
+                  <div className="truncate text-sm font-medium">{patientName(patient)}</div>
 
                   <div className="truncate text-xs text-muted-foreground">
                     {patient.uhid} • {patient.mobile}
@@ -117,9 +113,7 @@ export function PatientSearchSelect({
               </button>
             ))
           ) : (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
-              No patient found
-            </div>
+            <div className="px-3 py-2 text-sm text-muted-foreground">No patient found</div>
           )}
         </div>
       )}

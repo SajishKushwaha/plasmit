@@ -1,7 +1,7 @@
 /**
  * QUICK START GUIDE - Role-Based Access Control
  * ===============================================
- * 
+ *
  * This guide shows the most common patterns to implement role-based access in your components.
  */
 
@@ -135,13 +135,9 @@ function PatientActions() {
 
   return (
     <div>
-      {canPerformAction("WRITE_PRESCRIPTION") && (
-        <button>Write Prescription</button>
-      )}
+      {canPerformAction("WRITE_PRESCRIPTION") && <button>Write Prescription</button>}
 
-      {canPerformAction("REQUEST_LAB_TEST") && (
-        <button>Request Lab</button>
-      )}
+      {canPerformAction("REQUEST_LAB_TEST") && <button>Request Lab</button>}
     </div>
   );
 }
@@ -151,11 +147,7 @@ function PatientActions() {
 function Card() {
   const isDoctor = useIsDoctor();
 
-  return (
-    <div className={isDoctor ? "bg-blue-50" : "bg-gray-50"}>
-      Content
-    </div>
-  );
+  return <div className={isDoctor ? "bg-blue-50" : "bg-gray-50"}>Content</div>;
 }
 
 // 10. MULTIPLE CONDITION CHECK
@@ -168,14 +160,10 @@ function PatientForm() {
   return (
     <form>
       {/* Show prescription field for doctors who can write */}
-      {isDoctor && canPrescribe && (
-        <textarea placeholder="Prescription" />
-      )}
+      {isDoctor && canPrescribe && <textarea placeholder="Prescription" />}
 
       {/* Show billing codes for admins who can bill */}
-      {!isDoctor && canBill && (
-        <input placeholder="Billing Code" />
-      )}
+      {!isDoctor && canBill && <input placeholder="Billing Code" />}
     </form>
   );
 }
@@ -192,19 +180,13 @@ export function AppSidebar() {
   const { role } = useRole();
 
   // Filter items based on role
-  const visibleItems = navigationItems.filter((item) =>
-    item.allowedRoles.includes(role)
-  );
+  const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
 
   return (
     <aside className="w-64 bg-gray-50 p-4">
       <nav className="space-y-2">
         {visibleItems.map((item) => (
-          <a
-            key={item.id}
-            href={item.route}
-            className="block px-4 py-2 hover:bg-gray-100"
-          >
+          <a key={item.id} href={item.route} className="block px-4 py-2 hover:bg-gray-100">
             {item.label}
           </a>
         ))}
@@ -230,20 +212,14 @@ export function DoctorToolbar() {
   return (
     <div className="flex gap-3 border-b p-4">
       {canConsult && (
-        <button className="rounded bg-green-500 px-4 py-2 text-white">
-          Start Consultation
-        </button>
+        <button className="rounded bg-green-500 px-4 py-2 text-white">Start Consultation</button>
       )}
 
       {canManageSlots && (
-        <button className="rounded bg-blue-500 px-4 py-2 text-white">
-          Manage Availability
-        </button>
+        <button className="rounded bg-blue-500 px-4 py-2 text-white">Manage Availability</button>
       )}
 
-      <button className="rounded border px-4 py-2">
-        View Messages
-      </button>
+      <button className="rounded border px-4 py-2">View Messages</button>
     </div>
   );
 }
@@ -261,16 +237,12 @@ export function DashboardActions() {
 
       {/* Admin-only */}
       <AdminOnly>
-        <button className="rounded bg-red-100 px-4 py-2">
-          System Settings
-        </button>
+        <button className="rounded bg-red-100 px-4 py-2">System Settings</button>
       </AdminOnly>
 
       {/* Doctor-only */}
       <ShowForDoctor>
-        <button className="rounded bg-blue-100 px-4 py-2">
-          Availability
-        </button>
+        <button className="rounded bg-blue-100 px-4 py-2">Availability</button>
       </ShowForDoctor>
     </div>
   );

@@ -13,7 +13,9 @@ const AppSidebar = dynamic(
   () => import("@/components/shell/app-sidebar").then((module) => module.AppSidebar),
   {
     ssr: false,
-    loading: () => <div className="hidden h-dvh w-[264px] shrink-0 border-r border-border bg-white lg:fixed lg:left-0 lg:top-0 lg:z-50 lg:block" />,
+    loading: () => (
+      <div className="hidden h-dvh w-[264px] shrink-0 border-r border-border bg-white lg:fixed lg:left-0 lg:top-0 lg:z-50 lg:block" />
+    ),
   },
 );
 
@@ -24,8 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = React.useState(false);
   const [checkingAuth, setCheckingAuth] = React.useState(true);
   const sidebarCollapsed =
-    preference.sidebar === "collapsed" ||
-    (preference.sidebar === "auto" && collapsed);
+    preference.sidebar === "collapsed" || (preference.sidebar === "auto" && collapsed);
 
   React.useEffect(() => {
     if (window.localStorage.getItem("hk-general-auth") === "true") {
@@ -63,14 +64,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh max-w-full overflow-x-hidden bg-[#f8f9fc] text-foreground">
       <div className="flex min-h-dvh min-w-0 max-w-full overflow-x-hidden">
-        <AppSidebar
-          collapsed={sidebarCollapsed}
-          onCollapsedChange={handleCollapsedChange}
-        />
+        <AppSidebar collapsed={sidebarCollapsed} onCollapsedChange={handleCollapsedChange} />
         <div
           className={cn(
             "flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden transition-[margin] duration-200 ease-out",
-            sidebarCollapsed ? "lg:ml-[72px] lg:[--app-sidebar-offset:72px]" : "lg:ml-[264px] lg:[--app-sidebar-offset:264px]",
+            sidebarCollapsed
+              ? "lg:ml-[72px] lg:[--app-sidebar-offset:72px]"
+              : "lg:ml-[264px] lg:[--app-sidebar-offset:264px]",
           )}
         >
           <TopHeader />

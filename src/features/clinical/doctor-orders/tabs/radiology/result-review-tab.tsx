@@ -32,7 +32,10 @@ export function RadiologyResultReviewTab({
     items.sort((left, right) => {
       const leftValue = String(left[sortKey]);
       const rightValue = String(right[sortKey]);
-      const comparison = leftValue.localeCompare(rightValue, undefined, { numeric: true, sensitivity: "base" });
+      const comparison = leftValue.localeCompare(rightValue, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
       return sortDirection === "asc" ? comparison : -comparison;
     });
     return items;
@@ -40,7 +43,10 @@ export function RadiologyResultReviewTab({
 
   const pageCount = Math.max(1, Math.ceil(sortedBlocks.length / pageSize));
   const currentPage = Math.min(pageIndex, pageCount - 1);
-  const paged = React.useMemo(() => sortedBlocks.slice(currentPage * pageSize, currentPage * pageSize + pageSize), [currentPage, pageSize, sortedBlocks]);
+  const paged = React.useMemo(
+    () => sortedBlocks.slice(currentPage * pageSize, currentPage * pageSize + pageSize),
+    [currentPage, pageSize, sortedBlocks],
+  );
 
   const requestSort = (nextKey: SortKey) => {
     setPageIndex(0);
@@ -77,17 +83,23 @@ export function RadiologyResultReviewTab({
                 ["priority", "Priority"],
               ].map(([key, label]) => (
                 <th key={key} className="px-3 py-3">
-                  <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort(key as SortKey)}>
+                  <button
+                    className="inline-flex items-center gap-1.5"
+                    type="button"
+                    onClick={() => requestSort(key as SortKey)}
+                  >
                     {label}
                     {sortKey === key ? <ArrowUpDown className="h-3.5 w-3.5" /> : null}
                   </button>
                 </th>
               ))}
               <th className="px-3 py-3">Action</th>
-              <th className="px-3 py-3"><Button size="sm" variant="outline" onClick={handleDownloadAll}>
-            <Download className="h-3.5 w-3.5" />
-            Download All Reports
-          </Button></th>
+              <th className="px-3 py-3">
+                <Button size="sm" variant="outline" onClick={handleDownloadAll}>
+                  <Download className="h-3.5 w-3.5" />
+                  Download All Reports
+                </Button>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -101,18 +113,32 @@ export function RadiologyResultReviewTab({
                   <td className="px-3 py-3 text-muted-foreground">{block.priority}</td>
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => onReorderResult(block.selectedTests)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onReorderResult(block.selectedTests)}
+                      >
                         <ArrowUpDown className="h-4 w-4" />
                       </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => openBlockView(block)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openBlockView(block)}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => handleDownload(block)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(block)}
+                      >
                         <Download className="h-4 w-4" />
                       </Button>
                     </div>
                   </td>
-                  
                 </tr>
               </React.Fragment>
             ))}
@@ -126,11 +152,14 @@ export function RadiologyResultReviewTab({
           if (!open) closeBlockView();
         }}
         title={selectedBlock?.selectedTests ?? "Result preview"}
-        description={selectedBlock ? `${selectedBlock.category} • ${selectedBlock.specification} ` : "Static result preview"}
+        description={
+          selectedBlock
+            ? `${selectedBlock.category} • ${selectedBlock.specification} `
+            : "Static result preview"
+        }
       >
         {selectedBlock ? (
           <div className="space-y-4">
-            
             <div className="overflow-hidden rounded-md border border-border">
               <table className="w-full border-collapse text-left text-sm">
                 <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -181,23 +210,42 @@ export function RadiologyResultReviewTab({
           </label>
         </div>
         <div className="flex gap-1">
-          <Button size="sm" variant="outline" onClick={() => setPageIndex(0)} disabled={currentPage === 0} aria-label="First page">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPageIndex(0)}
+            disabled={currentPage === 0}
+            aria-label="First page"
+          >
             <ChevronsLeft className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setPageIndex((current) => Math.max(0, current - 1))} disabled={currentPage === 0}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
+            disabled={currentPage === 0}
+          >
             Previous
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setPageIndex((current) => Math.min(pageCount - 1, current + 1))} disabled={currentPage >= pageCount - 1}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPageIndex((current) => Math.min(pageCount - 1, current + 1))}
+            disabled={currentPage >= pageCount - 1}
+          >
             Next
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setPageIndex(pageCount - 1)} disabled={currentPage >= pageCount - 1} aria-label="Last page">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPageIndex(pageCount - 1)}
+            disabled={currentPage >= pageCount - 1}
+            aria-label="Last page"
+          >
             <ChevronsRight className="h-3.5 w-3.5" />
           </Button>
-          
         </div>
       </div>
     </div>
   );
 }
-
-

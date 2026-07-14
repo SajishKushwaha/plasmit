@@ -192,9 +192,7 @@ export const resultRecords: ResultRecord[] = [
     resultSummary: "Random glucose 142 mg/dL.",
     location: "Nursing Station",
     specimen: "Capillary blood",
-    values: [
-      { name: "Glucose", value: "142", unit: "mg/dL", range: "70 - 180", flag: "Normal" },
-    ],
+    values: [{ name: "Glucose", value: "142", unit: "mg/dL", range: "70 - 180", flag: "Normal" }],
     timeline: [
       { label: "Order created", at: "11:05", by: "Nurse Desk" },
       { label: "Result entered", at: "11:09", by: "Nurse Priya" },
@@ -243,7 +241,8 @@ export const resultRecords: ResultRecord[] = [
     priority: "Emergency",
     reportAvailable: true,
     imageAvailable: false,
-    resultSummary: "Critical Troponin I value detected. Emergency physician acknowledgement required.",
+    resultSummary:
+      "Critical Troponin I value detected. Emergency physician acknowledgement required.",
     location: "Emergency Bay 3",
     specimen: "Whole blood",
     values: [
@@ -349,4 +348,11 @@ export const resultDepartments = [
   { id: "poct", label: "POCT" },
 ] as const;
 
-export const resultStatuses = ["all", "Sample Collected", "Processing", "Verification Pending", "Completed", "Critical"] as const;
+export const resultStatuses = [
+  "all",
+  "Sample Collected",
+  "Processing",
+  "Verification Pending",
+  "Completed",
+  "Critical",
+] as const;

@@ -27,8 +27,13 @@ export function ToastBundle() {
   renderPreview: ({ showToast }) => (
     <div className="flex flex-wrap gap-2">
       <Button onClick={showToast}>Success toast</Button>
-      <Button variant="outline" onClick={() => toast.info("Review pending")}><Bell className="h-4 w-4" />Info toast</Button>
-      <Button variant="danger" onClick={() => toast.error("Action blocked")}>Error toast</Button>
+      <Button variant="outline" onClick={() => toast.info("Review pending")}>
+        <Bell className="h-4 w-4" />
+        Info toast
+      </Button>
+      <Button variant="danger" onClick={() => toast.error("Action blocked")}>
+        Error toast
+      </Button>
     </div>
   ),
 };

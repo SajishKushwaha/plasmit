@@ -30,12 +30,23 @@ export function DashboardPagination({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-muted-foreground">
-          Showing {firstVisiblePatient}-{lastVisiblePatient} of {filteredCount} | Page {page} of {totalPages}
+          Showing {firstVisiblePatient}-{lastVisiblePatient} of {filteredCount} | Page {page} of{" "}
+          {totalPages}
         </span>
-        <Button disabled={page === 1} onClick={() => onPageChange(Math.max(1, page - 1))} size="sm" variant="outline">
+        <Button
+          disabled={page === 1}
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          size="sm"
+          variant="outline"
+        >
           Previous
         </Button>
-        <Button disabled={page === totalPages} onClick={() => onPageChange(Math.min(totalPages, page + 1))} size="sm" variant="outline">
+        <Button
+          disabled={page === totalPages}
+          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          size="sm"
+          variant="outline"
+        >
           Next
         </Button>
       </div>

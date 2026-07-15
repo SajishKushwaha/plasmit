@@ -1,7 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, CheckCircle2, FileText, Filter, PanelRightOpen, Save, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  Filter,
+  PanelRightOpen,
+  Save,
+  Search,
+} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { PageHeader } from "@/components/shell/page-header";
@@ -37,7 +45,15 @@ const columns: ColumnDef<PreviewRow>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <StatusPill tone={row.original.status === "Critical" ? "critical" : row.original.status === "Pending" ? "warning" : "success"}>
+      <StatusPill
+        tone={
+          row.original.status === "Critical"
+            ? "critical"
+            : row.original.status === "Pending"
+              ? "warning"
+              : "success"
+        }
+      >
         {row.original.status}
       </StatusPill>
     ),
@@ -68,11 +84,17 @@ export function ComponentsPreview() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Button><Save className="h-4 w-4" />Primary</Button>
+              <Button>
+                <Save className="h-4 w-4" />
+                Primary
+              </Button>
               <Button variant="secondary">Secondary</Button>
               <Button variant="outline">Outline</Button>
               <Button variant="ghost">Ghost</Button>
-              <Button variant="danger"><AlertTriangle className="h-4 w-4" />Danger</Button>
+              <Button variant="danger">
+                <AlertTriangle className="h-4 w-4" />
+                Danger
+              </Button>
               <Button disabled>Disabled</Button>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -123,13 +145,24 @@ export function ComponentsPreview() {
                 <DataTable columns={columns} data={previewRows} />
               </TabsContent>
               <TabsContent value="empty">
-                <EmptyState icon={FileText} title="No preview records" description="This compact empty state is designed for work surfaces, not marketing pages." action="Reset filters" />
+                <EmptyState
+                  icon={FileText}
+                  title="No preview records"
+                  description="This compact empty state is designed for work surfaces, not marketing pages."
+                  action="Reset filters"
+                />
               </TabsContent>
               <TabsContent value="filters">
                 <div className="grid gap-3 sm:grid-cols-[1fr_180px_140px]">
                   <Input placeholder="Search..." />
-                  <Button variant="outline"><Filter className="h-4 w-4" />Open filter drawer</Button>
-                  <Button><Search className="h-4 w-4" />Apply</Button>
+                  <Button variant="outline">
+                    <Filter className="h-4 w-4" />
+                    Open filter drawer
+                  </Button>
+                  <Button>
+                    <Search className="h-4 w-4" />
+                    Apply
+                  </Button>
                 </div>
               </TabsContent>
             </Tabs>
@@ -144,7 +177,9 @@ export function ComponentsPreview() {
         description="Desktop side drawer and mobile full-screen sheet pattern."
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDrawerOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDrawerOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={() => setDrawerOpen(false)}>Save</Button>
           </div>
         }
@@ -152,7 +187,8 @@ export function ComponentsPreview() {
         <div className="space-y-4">
           <Input placeholder="Drawer form field" />
           <AlertBanner icon={AlertTriangle} title="Reason-gated action" tone="warning">
-            Future phases use this pattern for approvals, overrides, returns, and critical workflow changes.
+            Future phases use this pattern for approvals, overrides, returns, and critical workflow
+            changes.
           </AlertBanner>
         </div>
       </Drawer>

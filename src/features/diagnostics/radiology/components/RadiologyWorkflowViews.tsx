@@ -51,7 +51,14 @@ import { reportTemplates } from "@/features/diagnostics/radiology/data/reports";
 import { radiologyTechnicians } from "@/features/diagnostics/radiology/data/technicians";
 import { radiologyTests } from "@/features/diagnostics/radiology/data/tests";
 import { useRadiologyWorkspace } from "@/features/diagnostics/radiology/hooks/useRadiologyWorkspace";
-import type { CriticalAlert, PACSStudy, RadiologyOrder, RadiologyReport, RadiologyStatus, Schedule } from "@/features/diagnostics/radiology/types";
+import type {
+  CriticalAlert,
+  PACSStudy,
+  RadiologyOrder,
+  RadiologyReport,
+  RadiologyStatus,
+  Schedule,
+} from "@/features/diagnostics/radiology/types";
 import { formatCurrency, formatDateTime } from "@/features/diagnostics/radiology/utils/formatters";
 
 type RadiologyFilterValues = {
@@ -73,7 +80,9 @@ function patientName(patientId: string) {
 }
 
 function orderTotal(order: RadiologyOrder) {
-  return radiologyTests.filter((test) => order.testIds.includes(test.id)).reduce((sum, test) => sum + test.price, 0);
+  return radiologyTests
+    .filter((test) => order.testIds.includes(test.id))
+    .reduce((sum, test) => sum + test.price, 0);
 }
 
 function minutesBetween(start: string | undefined, end: string | undefined) {
@@ -168,12 +177,17 @@ function filterOrders(orders: RadiologyOrder[], filters: RadiologyFilterValues) 
   });
 }
 
-function filterSchedules(schedules: Schedule[], orders: RadiologyOrder[], filters: RadiologyFilterValues) {
+function filterSchedules(
+  schedules: Schedule[],
+  orders: RadiologyOrder[],
+  filters: RadiologyFilterValues,
+) {
   const filteredOrderIds = new Set(filterOrders(orders, filters).map((order) => order.id));
 
   return schedules.filter((schedule) => {
     const matchesOrder = filteredOrderIds.has(schedule.orderId);
-    const matchesModality = filters.modalityId === "ALL" || schedule.modalityId === filters.modalityId;
+    const matchesModality =
+      filters.modalityId === "ALL" || schedule.modalityId === filters.modalityId;
     const matchesStatus = filters.status === "ALL" || schedule.status === filters.status;
     const matchesDate = matchesDateRange(schedule.date, filters.dateRange);
 
@@ -181,13 +195,26 @@ function filterSchedules(schedules: Schedule[], orders: RadiologyOrder[], filter
   });
 }
 
-function filterPacsStudies(studies: PACSStudy[], orders: RadiologyOrder[], filters: RadiologyFilterValues) {
+function filterPacsStudies(
+  studies: PACSStudy[],
+  orders: RadiologyOrder[],
+  filters: RadiologyFilterValues,
+) {
   const filteredOrderIds = new Set(filterOrders(orders, filters).map((order) => order.id));
   const search = filters.search.trim().toLowerCase();
 
   return studies.filter((study) => {
     const patient = radiologyPatients.find((item) => item.id === study.patientId);
-    const text = [study.accessionNo, study.studyDescription, study.pacsStatus, patient?.name, patient?.mrn].filter(Boolean).join(" ").toLowerCase();
+    const text = [
+      study.accessionNo,
+      study.studyDescription,
+      study.pacsStatus,
+      patient?.name,
+      patient?.mrn,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
     const matchesSearch = search.length === 0 || text.includes(search);
     const matchesOrder = filteredOrderIds.has(study.orderId);
     const matchesModality = filters.modalityId === "ALL" || study.modalityId === filters.modalityId;
@@ -197,30 +224,63 @@ function filterPacsStudies(studies: PACSStudy[], orders: RadiologyOrder[], filte
   });
 }
 
-function filterReports(reports: RadiologyReport[], orders: RadiologyOrder[], filters: RadiologyFilterValues) {
+function filterReports(
+  reports: RadiologyReport[],
+  orders: RadiologyOrder[],
+  filters: RadiologyFilterValues,
+) {
   const filteredOrderIds = new Set(filterOrders(orders, filters).map((order) => order.id));
   const search = filters.search.trim().toLowerCase();
 
   return reports.filter((report) => {
     const patient = radiologyPatients.find((item) => item.id === report.patientId);
     const order = orders.find((item) => item.id === report.orderId);
-    const text = [report.templateName, report.findings, report.impression, report.status, patient?.name, patient?.mrn, order?.orderNo].filter(Boolean).join(" ").toLowerCase();
+    const text = [
+      report.templateName,
+      report.findings,
+      report.impression,
+      report.status,
+      patient?.name,
+      patient?.mrn,
+      order?.orderNo,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
     const matchesSearch = search.length === 0 || text.includes(search);
     const matchesOrder = filteredOrderIds.has(report.orderId);
-    const matchesDate = matchesDateRange(report.releasedAt ?? report.verifiedAt ?? report.createdAt, filters.dateRange);
+    const matchesDate = matchesDateRange(
+      report.releasedAt ?? report.verifiedAt ?? report.createdAt,
+      filters.dateRange,
+    );
 
     return matchesSearch && matchesOrder && matchesDate;
   });
 }
 
-function filterAlerts(alerts: CriticalAlert[], orders: RadiologyOrder[], filters: RadiologyFilterValues) {
+function filterAlerts(
+  alerts: CriticalAlert[],
+  orders: RadiologyOrder[],
+  filters: RadiologyFilterValues,
+) {
   const filteredOrderIds = new Set(filterOrders(orders, filters).map((order) => order.id));
   const search = filters.search.trim().toLowerCase();
 
   return alerts.filter((alert) => {
     const patient = radiologyPatients.find((item) => item.id === alert.patientId);
     const order = orders.find((item) => item.id === alert.orderId);
-    const text = [alert.finding, alert.status, alert.severity, alert.notifiedTo, patient?.name, patient?.mrn, order?.orderNo].filter(Boolean).join(" ").toLowerCase();
+    const text = [
+      alert.finding,
+      alert.status,
+      alert.severity,
+      alert.notifiedTo,
+      patient?.name,
+      patient?.mrn,
+      order?.orderNo,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
     const matchesSearch = search.length === 0 || text.includes(search);
     const matchesOrder = filteredOrderIds.has(alert.orderId);
     const matchesDate = matchesDateRange(alert.notifiedAt, filters.dateRange);
@@ -260,7 +320,9 @@ function DashboardMetricLink({
     >
       <div className="flex items-start justify-between gap-3">
         <span className="text-sm font-semibold text-muted-foreground">{label}</span>
-        <span className="rounded-md border border-border bg-surface-muted p-2 text-primary">{icon}</span>
+        <span className="rounded-md border border-border bg-surface-muted p-2 text-primary">
+          {icon}
+        </span>
       </div>
       <div className="mt-2">
         <p className="text-3xl font-semibold text-foreground">{value}</p>
@@ -320,13 +382,15 @@ function WorkflowActionButtons({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {(order.billingStatus === "Pending" || order.status === "PAYMENT_PENDING") && order.status !== "CANCELLED" ? (
+      {(order.billingStatus === "Pending" || order.status === "PAYMENT_PENDING") &&
+      order.status !== "CANCELLED" ? (
         <Button onClick={() => actions.clearBilling(order.id)} size="sm">
           <CreditCard className="h-4 w-4" />
           Clear Bill
         </Button>
       ) : null}
-      {["ORDER_CREATED", "PAYMENT_DONE"].includes(order.status) && order.billingStatus !== "Pending" ? (
+      {["ORDER_CREATED", "PAYMENT_DONE"].includes(order.status) &&
+      order.billingStatus !== "Pending" ? (
         <Button onClick={() => actions.scheduleOrder(order.id)} size="sm">
           <Clock className="h-4 w-4" />
           Schedule
@@ -404,48 +468,71 @@ function WorkflowActionButtons({
 export function RadiologyDashboardView() {
   const workspace = useRadiologyWorkspace();
   const [filters, setFilters] = useState(defaultRadiologyFilters);
-  const dashboardSearchRecords: RadiologyDashboardSearchRecord[] = workspace.orders.flatMap((order) => {
-    const patient = radiologyPatients.find((item) => item.id === order.patientId);
-    const test = radiologyTests.find((item) => item.id === order.testIds[0]);
+  const dashboardSearchRecords: RadiologyDashboardSearchRecord[] = workspace.orders.flatMap(
+    (order) => {
+      const patient = radiologyPatients.find((item) => item.id === order.patientId);
+      const test = radiologyTests.find((item) => item.id === order.testIds[0]);
 
-    if (!patient) {
-      return [];
-    }
+      if (!patient) {
+        return [];
+      }
 
-    return [
-      {
-        age: patient.age,
-        consultant: patient.consultant,
-        department: patient.department,
-        gender: patient.gender,
-        id: order.id,
-        location: patient.location,
-        modalityId: order.modalityId,
-        mrn: patient.mrn,
-        orderNo: order.orderNo,
-        patientName: patient.name,
-        status: order.status,
-        testName: test?.name ?? order.testIds.join(", "),
-      },
-    ];
-  });
+      return [
+        {
+          age: patient.age,
+          consultant: patient.consultant,
+          department: patient.department,
+          gender: patient.gender,
+          id: order.id,
+          location: patient.location,
+          modalityId: order.modalityId,
+          mrn: patient.mrn,
+          orderNo: order.orderNo,
+          patientName: patient.name,
+          status: order.status,
+          testName: test?.name ?? order.testIds.join(", "),
+        },
+      ];
+    },
+  );
   const filteredOrders = filterOrders(workspace.orders, filters);
   const filteredAlerts = filterAlerts(workspace.criticalAlerts, workspace.orders, filters);
-  const openOrders = filteredOrders.filter((order) => !["REPORT_DELIVERED", "CANCELLED"].includes(order.status));
+  const openOrders = filteredOrders.filter(
+    (order) => !["REPORT_DELIVERED", "CANCELLED"].includes(order.status),
+  );
   const queueOrders = filteredOrders
-    .filter((order) => ["SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING", "READY_FOR_SCAN"].includes(order.status))
+    .filter((order) =>
+      ["SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING", "READY_FOR_SCAN"].includes(
+        order.status,
+      ),
+    )
     .slice(0, 6);
-  const pendingReports = filteredOrders.filter((order) => ["IMAGE_SENT_TO_PACS", "REPORT_PENDING", "REPORT_DRAFTED"].includes(order.status)).length;
-  const activeScans = filteredOrders.filter((order) => ["READY_FOR_SCAN", "SCAN_IN_PROGRESS"].includes(order.status)).length;
+  const pendingReports = filteredOrders.filter((order) =>
+    ["IMAGE_SENT_TO_PACS", "REPORT_PENDING", "REPORT_DRAFTED"].includes(order.status),
+  ).length;
+  const activeScans = filteredOrders.filter((order) =>
+    ["READY_FOR_SCAN", "SCAN_IN_PROGRESS"].includes(order.status),
+  ).length;
   const openAlerts = filteredAlerts.filter((alert) => alert.status === "Open").length;
   const frontOfficeCount = filteredOrders.filter((order) =>
-    ["ORDER_CREATED", "PAYMENT_PENDING", "PAYMENT_DONE", "SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING"].includes(order.status),
+    [
+      "ORDER_CREATED",
+      "PAYMENT_PENDING",
+      "PAYMENT_DONE",
+      "SCHEDULED",
+      "PATIENT_ARRIVED",
+      "PREPARATION_PENDING",
+    ].includes(order.status),
   ).length;
-  const scanRoomCount = filteredOrders.filter((order) => ["READY_FOR_SCAN", "SCAN_IN_PROGRESS", "SCAN_COMPLETED"].includes(order.status)).length;
+  const scanRoomCount = filteredOrders.filter((order) =>
+    ["READY_FOR_SCAN", "SCAN_IN_PROGRESS", "SCAN_COMPLETED"].includes(order.status),
+  ).length;
   const pacsReportingCount = filteredOrders.filter((order) =>
     ["IMAGE_SENT_TO_PACS", "REPORT_PENDING", "REPORT_DRAFTED"].includes(order.status),
   ).length;
-  const deliveryCount = filteredOrders.filter((order) => ["REPORT_VERIFIED", "REPORT_RELEASED"].includes(order.status)).length + openAlerts;
+  const deliveryCount =
+    filteredOrders.filter((order) => ["REPORT_VERIFIED", "REPORT_RELEASED"].includes(order.status))
+      .length + openAlerts;
   const dashboardAlerts = [...filteredAlerts]
     .sort((first, second) => Number(first.status !== "Open") - Number(second.status !== "Open"))
     .slice(0, 3);
@@ -497,7 +584,9 @@ export function RadiologyDashboardView() {
       <section>
         <div className="mb-3">
           <h2 className="text-base font-semibold text-foreground">Workflow Overview</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Open the workspace that needs attention without searching through menus.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Open the workspace that needs attention without searching through menus.
+          </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <DashboardWorkflowLink
@@ -536,7 +625,9 @@ export function RadiologyDashboardView() {
           <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-foreground">Patient Queue</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Patients scheduled, arrived, preparing, or ready for scan.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Patients scheduled, arrived, preparing, or ready for scan.
+              </p>
             </div>
             <Button asChild size="sm" variant="outline">
               <Link href="/radiology/front-office">
@@ -545,7 +636,11 @@ export function RadiologyDashboardView() {
               </Link>
             </Button>
           </div>
-          <PatientQueueTable orders={queueOrders} patients={radiologyPatients} tests={radiologyTests} />
+          <PatientQueueTable
+            orders={queueOrders}
+            patients={radiologyPatients}
+            tests={radiologyTests}
+          />
         </div>
 
         <div className="min-w-0">
@@ -554,10 +649,14 @@ export function RadiologyDashboardView() {
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-semibold text-foreground">Critical Alerts</h2>
                 {openAlerts > 0 ? (
-                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">{openAlerts} open</span>
+                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">
+                    {openAlerts} open
+                  </span>
                 ) : null}
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">Findings that need prompt acknowledgement.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Findings that need prompt acknowledgement.
+              </p>
             </div>
             <Button asChild size="sm" variant="outline">
               <Link href="/radiology/delivery-alerts">
@@ -568,12 +667,17 @@ export function RadiologyDashboardView() {
           </div>
           <div className="space-y-3">
             {dashboardAlerts.length === 0 ? (
-              <WorkflowEmptyState title="No critical alerts" description="Critical findings will appear here when they need attention." />
+              <WorkflowEmptyState
+                title="No critical alerts"
+                description="Critical findings will appear here when they need attention."
+              />
             ) : null}
             {dashboardAlerts.map((alert) => {
               const patient = radiologyPatients.find((item) => item.id === alert.patientId);
               const order = workspace.orders.find((item) => item.id === alert.orderId);
-              return patient && order ? <CriticalAlertCard alert={alert} key={alert.id} order={order} patient={patient} /> : null;
+              return patient && order ? (
+                <CriticalAlertCard alert={alert} key={alert.id} order={order} patient={patient} />
+              ) : null;
             })}
           </div>
         </div>
@@ -586,14 +690,29 @@ export function RadiologyBillingStatusView() {
   const workspace = useRadiologyWorkspace();
   const [filters, setFilters] = useState(defaultRadiologyFilters);
   const filteredOrders = filterOrders(workspace.orders, filters);
-  const pendingOrders = filteredOrders.filter((order) => order.billingStatus === "Pending" || order.status === "PAYMENT_PENDING");
+  const pendingOrders = filteredOrders.filter(
+    (order) => order.billingStatus === "Pending" || order.status === "PAYMENT_PENDING",
+  );
 
   return (
     <div className="space-y-5">
       <section className="grid gap-4 md:grid-cols-3">
-        <RadiologyStatsCard icon={<CreditCard className="h-5 w-5" />} subtext="Click clear bill to continue workflow" title="Pending Billing" value={pendingOrders.length} />
-        <RadiologyStatsCard subtext="Paid, package, or corporate approved" title="Cleared Orders" value={filteredOrders.length - pendingOrders.length} />
-        <RadiologyStatsCard subtext="This page now updates local workflow" title="Mode" value="Working" />
+        <RadiologyStatsCard
+          icon={<CreditCard className="h-5 w-5" />}
+          subtext="Click clear bill to continue workflow"
+          title="Pending Billing"
+          value={pendingOrders.length}
+        />
+        <RadiologyStatsCard
+          subtext="Paid, package, or corporate approved"
+          title="Cleared Orders"
+          value={filteredOrders.length - pendingOrders.length}
+        />
+        <RadiologyStatsCard
+          subtext="This page now updates local workflow"
+          title="Mode"
+          value="Working"
+        />
       </section>
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
       <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
@@ -612,7 +731,10 @@ export function RadiologyBillingStatusView() {
             {filteredOrders.length === 0 ? (
               <tr>
                 <td className="px-4 py-10" colSpan={6}>
-                  <WorkflowEmptyState title="No billing records" description="Change filters or create a new radiology order." />
+                  <WorkflowEmptyState
+                    title="No billing records"
+                    description="Change filters or create a new radiology order."
+                  />
                 </td>
               </tr>
             ) : (
@@ -627,7 +749,9 @@ export function RadiologyBillingStatusView() {
                     <ModalityBadge modalityId={order.modalityId} />
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">{order.billingStatus}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-foreground">{formatCurrency(orderTotal(order))}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-foreground">
+                    {formatCurrency(orderTotal(order))}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end">
                       <WorkflowActionButtons actions={workspace.actions} order={order} />
@@ -648,24 +772,43 @@ export function RadiologyPatientQueueView() {
   const [filters, setFilters] = useState(defaultRadiologyFilters);
   const filteredOrders = filterOrders(workspace.orders, filters);
   const queueActionOrders = filteredOrders.filter((order) =>
-    ["PAYMENT_PENDING", "PAYMENT_DONE", "ORDER_CREATED", "SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING"].includes(order.status),
+    [
+      "PAYMENT_PENDING",
+      "PAYMENT_DONE",
+      "ORDER_CREATED",
+      "SCHEDULED",
+      "PATIENT_ARRIVED",
+      "PREPARATION_PENDING",
+    ].includes(order.status),
   );
 
   return (
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
-      <PatientQueueTable orders={filteredOrders} patients={radiologyPatients} tests={radiologyTests} />
+      <PatientQueueTable
+        orders={filteredOrders}
+        patients={radiologyPatients}
+        tests={radiologyTests}
+      />
       <div className="grid gap-3 lg:grid-cols-2">
-        {queueActionOrders.length === 0 ? <WorkflowEmptyState title="No queue action" description="Patients needing reception action will appear here." /> : null}
+        {queueActionOrders.length === 0 ? (
+          <WorkflowEmptyState
+            title="No queue action"
+            description="Patients needing reception action will appear here."
+          />
+        ) : null}
         {queueActionOrders.map((order) => (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm" key={order.id}>
-              <div>
-                <p className="font-semibold text-foreground">{patientName(order.patientId)}</p>
-                <p className="text-sm text-muted-foreground">{order.orderNo}</p>
-              </div>
-              <WorkflowActionButtons actions={workspace.actions} order={order} />
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
+            key={order.id}
+          >
+            <div>
+              <p className="font-semibold text-foreground">{patientName(order.patientId)}</p>
+              <p className="text-sm text-muted-foreground">{order.orderNo}</p>
             </div>
-          ))}
+            <WorkflowActionButtons actions={workspace.actions} order={order} />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -680,7 +823,8 @@ export function RadiologySchedulingWorkflowView() {
   const filteredOrders = filterOrders(workspace.orders, filters);
   const filteredSchedules = filterSchedules(workspace.schedules, workspace.orders, filters);
   const unscheduledOrders = filteredOrders.filter(
-    (order) => ["ORDER_CREATED", "PAYMENT_DONE"].includes(order.status) && order.billingStatus !== "Pending",
+    (order) =>
+      ["ORDER_CREATED", "PAYMENT_DONE"].includes(order.status) && order.billingStatus !== "Pending",
   );
 
   return (
@@ -690,19 +834,35 @@ export function RadiologySchedulingWorkflowView() {
         <div className="grid gap-3 md:grid-cols-[1fr_160px_160px_220px] md:items-end">
           <div>
             <h2 className="text-base font-semibold text-foreground">Schedule Setup</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Select a date, time, and technician, then schedule ready orders.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Select a date, time, and technician, then schedule ready orders.
+            </p>
           </div>
           <label className="text-sm font-medium text-foreground">
             Date
-            <input className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setSlotDate(event.target.value)} type="date" value={slotDate} />
+            <input
+              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              onChange={(event) => setSlotDate(event.target.value)}
+              type="date"
+              value={slotDate}
+            />
           </label>
           <label className="text-sm font-medium text-foreground">
             Time
-            <input className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setSlotTime(event.target.value)} type="time" value={slotTime} />
+            <input
+              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              onChange={(event) => setSlotTime(event.target.value)}
+              type="time"
+              value={slotTime}
+            />
           </label>
           <label className="text-sm font-medium text-foreground">
             Technician
-            <select className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setTechnicianId(event.target.value)} value={technicianId}>
+            <select
+              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              onChange={(event) => setTechnicianId(event.target.value)}
+              value={technicianId}
+            >
               {radiologyTechnicians.map((technician) => (
                 <option key={technician.id} value={technician.id}>
                   {technician.name}
@@ -716,13 +876,21 @@ export function RadiologySchedulingWorkflowView() {
         <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
           <div className="mb-3">
             <h2 className="text-base font-semibold text-foreground">Ready to Schedule</h2>
-            <p className="text-sm text-muted-foreground">Click schedule to place the order in the calendar.</p>
+            <p className="text-sm text-muted-foreground">
+              Click schedule to place the order in the calendar.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {unscheduledOrders.map((order) => (
               <Button
                 key={order.id}
-                onClick={() => workspace.actions.scheduleOrder(order.id, { date: slotDate, startTime: slotTime, technicianId })}
+                onClick={() =>
+                  workspace.actions.scheduleOrder(order.id, {
+                    date: slotDate,
+                    startTime: slotTime,
+                    technicianId,
+                  })
+                }
                 size="sm"
                 variant="outline"
               >
@@ -732,9 +900,17 @@ export function RadiologySchedulingWorkflowView() {
           </div>
         </div>
       ) : (
-        <WorkflowEmptyState title="No order ready for scheduling" description="Billing-cleared orders will appear here." />
+        <WorkflowEmptyState
+          title="No order ready for scheduling"
+          description="Billing-cleared orders will appear here."
+        />
       )}
-      <SchedulingCalendar modalities={radiologyModalities} patients={radiologyPatients} schedules={filteredSchedules} tests={radiologyTests} />
+      <SchedulingCalendar
+        modalities={radiologyModalities}
+        patients={radiologyPatients}
+        schedules={filteredSchedules}
+        tests={radiologyTests}
+      />
     </div>
   );
 }
@@ -742,17 +918,29 @@ export function RadiologySchedulingWorkflowView() {
 export function RadiologyCheckInView() {
   const workspace = useRadiologyWorkspace();
   const [filters, setFilters] = useState(defaultRadiologyFilters);
-  const checkInOrders = filterOrders(workspace.orders, filters).filter((order) => ["SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING"].includes(order.status));
+  const checkInOrders = filterOrders(workspace.orders, filters).filter((order) =>
+    ["SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING"].includes(order.status),
+  );
 
   return (
     <div className="space-y-4">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
-      {checkInOrders.length === 0 ? <WorkflowEmptyState title="No scheduled patient waiting" description="Schedule an order first, then check-in will appear here." /> : null}
+      {checkInOrders.length === 0 ? (
+        <WorkflowEmptyState
+          title="No scheduled patient waiting"
+          description="Schedule an order first, then check-in will appear here."
+        />
+      ) : null}
       {checkInOrders.map((order) => (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm" key={order.id}>
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm"
+          key={order.id}
+        >
           <div>
             <p className="font-semibold text-foreground">{patientName(order.patientId)}</p>
-            <p className="text-sm text-muted-foreground">{order.orderNo} · {order.location}</p>
+            <p className="text-sm text-muted-foreground">
+              {order.orderNo} · {order.location}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <RadiologyStatusBadge status={order.status} />
@@ -774,7 +962,12 @@ export function RadiologyPreparationView() {
   return (
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
-      {filteredOrders.length === 0 ? <WorkflowEmptyState title="No preparation case" description="Checked-in patients will appear here for checklist completion." /> : null}
+      {filteredOrders.length === 0 ? (
+        <WorkflowEmptyState
+          title="No preparation case"
+          description="Checked-in patients will appear here for checklist completion."
+        />
+      ) : null}
       <div className="grid gap-4 xl:grid-cols-2">
         {filteredOrders.map((order) => {
           const patient = radiologyPatients.find((item) => item.id === order.patientId);
@@ -799,13 +992,20 @@ export function RadiologyScanWorkflowView() {
   const workspace = useRadiologyWorkspace();
   const [filters, setFilters] = useState(defaultRadiologyFilters);
   const filteredOrders = filterOrders(workspace.orders, filters).filter((order) =>
-    ["READY_FOR_SCAN", "SCAN_IN_PROGRESS", "SCAN_COMPLETED", "IMAGE_SENT_TO_PACS"].includes(order.status),
+    ["READY_FOR_SCAN", "SCAN_IN_PROGRESS", "SCAN_COMPLETED", "IMAGE_SENT_TO_PACS"].includes(
+      order.status,
+    ),
   );
 
   return (
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
-      {filteredOrders.length === 0 ? <WorkflowEmptyState title="No scan case" description="Prepared patients will appear here for scan management." /> : null}
+      {filteredOrders.length === 0 ? (
+        <WorkflowEmptyState
+          title="No scan case"
+          description="Prepared patients will appear here for scan management."
+        />
+      ) : null}
       <div className="grid gap-4 xl:grid-cols-2">
         {filteredOrders.map((order) => {
           const patient = radiologyPatients.find((item) => item.id === order.patientId);
@@ -833,7 +1033,14 @@ export function RadiologyTechnicianWorklistView() {
   const filteredSchedules = filterSchedules(workspace.schedules, workspace.orders, filters);
   const filteredOrders = filterOrders(workspace.orders, filters);
   const technicianOrders = filteredOrders.filter((order) =>
-    ["SCHEDULED", "PATIENT_ARRIVED", "PREPARATION_PENDING", "READY_FOR_SCAN", "SCAN_IN_PROGRESS", "SCAN_COMPLETED"].includes(order.status),
+    [
+      "SCHEDULED",
+      "PATIENT_ARRIVED",
+      "PREPARATION_PENDING",
+      "READY_FOR_SCAN",
+      "SCAN_IN_PROGRESS",
+      "SCAN_COMPLETED",
+    ].includes(order.status),
   );
 
   return (
@@ -847,7 +1054,12 @@ export function RadiologyTechnicianWorklistView() {
         tests={radiologyTests}
       />
       <section className="grid gap-4 xl:grid-cols-2">
-        {technicianOrders.length === 0 ? <WorkflowEmptyState title="No technician action" description="Scheduled and scan-room cases will appear here." /> : null}
+        {technicianOrders.length === 0 ? (
+          <WorkflowEmptyState
+            title="No technician action"
+            description="Scheduled and scan-room cases will appear here."
+          />
+        ) : null}
         {technicianOrders.map((order) => {
           const patient = radiologyPatients.find((item) => item.id === order.patientId);
           const test = radiologyTests.find((item) => item.id === order.testIds[0]);
@@ -876,24 +1088,43 @@ export function RadiologyPacsStudiesView() {
   return (
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
-      {filteredStudies.length === 0 ? <WorkflowEmptyState title="No PACS study" description="Complete a scan and send images to PACS first." /> : null}
-      <PACSStudyTable modalities={radiologyModalities} patients={radiologyPatients} studies={filteredStudies} />
+      {filteredStudies.length === 0 ? (
+        <WorkflowEmptyState
+          title="No PACS study"
+          description="Complete a scan and send images to PACS first."
+        />
+      ) : null}
+      <PACSStudyTable
+        modalities={radiologyModalities}
+        patients={radiologyPatients}
+        studies={filteredStudies}
+      />
       <section className="grid gap-3 lg:grid-cols-2">
         {filteredStudies.map((study) => {
           const order = workspace.orders.find((item) => item.id === study.orderId);
           return (
-            <article className="rounded-lg border border-border bg-surface p-4 shadow-sm" key={study.id}>
+            <article
+              className="rounded-lg border border-border bg-surface p-4 shadow-sm"
+              key={study.id}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-base font-semibold text-foreground">{study.accessionNo}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">{patientName(study.patientId)} - {study.studyDescription}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {patientName(study.patientId)} - {study.studyDescription}
+                  </p>
                 </div>
                 <ModalityBadge modalityId={study.modalityId} />
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <select
                   className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                  onChange={(event) => workspace.actions.updatePacsStatus(study.id, event.target.value as PACSStudy["pacsStatus"])}
+                  onChange={(event) =>
+                    workspace.actions.updatePacsStatus(
+                      study.id,
+                      event.target.value as PACSStudy["pacsStatus"],
+                    )
+                  }
                   value={study.pacsStatus}
                 >
                   <option value="Queued">Queued</option>
@@ -914,9 +1145,13 @@ export function RadiologyPacsStudiesView() {
 export function RadiologyReportingWorkflowView() {
   const workspace = useRadiologyWorkspace();
   const [filters, setFilters] = useState(defaultRadiologyFilters);
-  const reportingOrders = filterOrders(workspace.orders, filters).filter((order) => ["IMAGE_SENT_TO_PACS", "REPORT_PENDING", "REPORT_DRAFTED"].includes(order.status));
+  const reportingOrders = filterOrders(workspace.orders, filters).filter((order) =>
+    ["IMAGE_SENT_TO_PACS", "REPORT_PENDING", "REPORT_DRAFTED"].includes(order.status),
+  );
   const [orderId, setOrderId] = useState(reportingOrders[0]?.id ?? "");
-  const [templateName, setTemplateName] = useState(reportTemplates[0]?.name ?? "General Radiology Report");
+  const [templateName, setTemplateName] = useState(
+    reportTemplates[0]?.name ?? "General Radiology Report",
+  );
   const [findings, setFindings] = useState("Structured findings entered by radiologist.");
   const [impression, setImpression] = useState("No acute abnormality in demo report.");
   const [critical, setCritical] = useState(false);
@@ -927,9 +1162,18 @@ export function RadiologyReportingWorkflowView() {
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
       <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
-        {reportingOrders.length === 0 ? <WorkflowEmptyState title="No reporting case" description="Send completed images to PACS before drafting a report." /> : null}
+        {reportingOrders.length === 0 ? (
+          <WorkflowEmptyState
+            title="No reporting case"
+            description="Send completed images to PACS before drafting a report."
+          />
+        ) : null}
         <div className="grid gap-3 lg:grid-cols-[0.8fr_1.2fr]">
-          <select className="rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setOrderId(event.target.value)} value={selectedOrderId}>
+          <select
+            className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            onChange={(event) => setOrderId(event.target.value)}
+            value={selectedOrderId}
+          >
             {reportingOrders.map((order) => (
               <option key={order.id} value={order.id}>
                 {order.orderNo} · {patientName(order.patientId)}
@@ -942,26 +1186,55 @@ export function RadiologyReportingWorkflowView() {
           </div>
         </div>
         <div className="mt-3 grid gap-3 lg:grid-cols-[0.8fr_1.2fr]">
-          <select className="rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setTemplateName(event.target.value)} value={templateName}>
+          <select
+            className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            onChange={(event) => setTemplateName(event.target.value)}
+            value={templateName}
+          >
             {reportTemplates.map((template) => (
               <option key={template.id} value={template.name}>
                 {template.name}
               </option>
             ))}
           </select>
-          <div className="text-sm text-muted-foreground">Select a template, edit the findings and impression, then send the report for verification.</div>
+          <div className="text-sm text-muted-foreground">
+            Select a template, edit the findings and impression, then send the report for
+            verification.
+          </div>
         </div>
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <textarea className="min-h-64 rounded-lg border border-input bg-background p-3 text-sm" onChange={(event) => setFindings(event.target.value)} value={findings} />
+          <textarea
+            className="min-h-64 rounded-lg border border-input bg-background p-3 text-sm"
+            onChange={(event) => setFindings(event.target.value)}
+            value={findings}
+          />
           <div className="space-y-3">
-            <textarea className="min-h-36 w-full rounded-lg border border-input bg-background p-3 text-sm" onChange={(event) => setImpression(event.target.value)} value={impression} />
+            <textarea
+              className="min-h-36 w-full rounded-lg border border-input bg-background p-3 text-sm"
+              onChange={(event) => setImpression(event.target.value)}
+              value={impression}
+            />
             <label className="flex items-center gap-2 text-sm">
-              <input checked={critical} onChange={(event) => setCritical(event.target.checked)} type="checkbox" />
+              <input
+                checked={critical}
+                onChange={(event) => setCritical(event.target.checked)}
+                type="checkbox"
+              />
               Mark as critical finding
             </label>
             <Button
-              disabled={!selectedOrderId || findings.trim().length === 0 || impression.trim().length === 0}
-              onClick={() => workspace.actions.saveReportDraft(selectedOrderId, findings, impression, critical, templateName)}
+              disabled={
+                !selectedOrderId || findings.trim().length === 0 || impression.trim().length === 0
+              }
+              onClick={() =>
+                workspace.actions.saveReportDraft(
+                  selectedOrderId,
+                  findings,
+                  impression,
+                  critical,
+                  templateName,
+                )
+              }
             >
               <Send className="h-4 w-4" />
               Send for Verification
@@ -969,7 +1242,11 @@ export function RadiologyReportingWorkflowView() {
           </div>
         </div>
       </div>
-      <PatientQueueTable orders={reportingOrders} patients={radiologyPatients} tests={radiologyTests} />
+      <PatientQueueTable
+        orders={reportingOrders}
+        patients={radiologyPatients}
+        tests={radiologyTests}
+      />
     </div>
   );
 }
@@ -979,7 +1256,10 @@ export function RadiologyVerificationWorkflowView() {
   const [filters, setFilters] = useState(defaultRadiologyFilters);
   const filteredReports = filterReports(workspace.reports, workspace.orders, filters);
   const [reportId, setReportId] = useState("");
-  const report = filteredReports.find((item) => item.id === reportId) ?? filteredReports.find((item) => item.status === "Pending Verification") ?? filteredReports[0];
+  const report =
+    filteredReports.find((item) => item.id === reportId) ??
+    filteredReports.find((item) => item.status === "Pending Verification") ??
+    filteredReports[0];
   const order = workspace.orders.find((item) => item.id === report?.orderId);
   const patient = radiologyPatients.find((item) => item.id === report?.patientId);
   const test = radiologyTests.find((item) => item.id === report?.testId);
@@ -988,9 +1268,18 @@ export function RadiologyVerificationWorkflowView() {
   return (
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
-      <RadiologyStatsCard icon={<FileCheck2 className="h-5 w-5" />} subtext="Click verify, then release from preview or delivery" title="Pending Verification" value={filteredReports.filter((item) => item.status === "Pending Verification").length} />
+      <RadiologyStatsCard
+        icon={<FileCheck2 className="h-5 w-5" />}
+        subtext="Click verify, then release from preview or delivery"
+        title="Pending Verification"
+        value={filteredReports.filter((item) => item.status === "Pending Verification").length}
+      />
       {filteredReports.length > 0 ? (
-        <select className="rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setReportId(event.target.value)} value={report?.id ?? ""}>
+        <select
+          className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          onChange={(event) => setReportId(event.target.value)}
+          value={report?.id ?? ""}
+        >
           {filteredReports.map((item) => (
             <option key={item.id} value={item.id}>
               {item.templateName} - {patientName(item.patientId)} - {item.status}
@@ -1000,18 +1289,34 @@ export function RadiologyVerificationWorkflowView() {
       ) : null}
       {report && order && patient && test && radiologist ? (
         <>
-          <ReportPreview order={order} patient={patient} radiologist={radiologist} report={report} test={test} />
+          <ReportPreview
+            order={order}
+            patient={patient}
+            radiologist={radiologist}
+            report={report}
+            test={test}
+          />
           <div className="flex flex-wrap justify-end gap-2">
-            <Button disabled={report.status === "Verified" || report.status === "Released"} onClick={() => workspace.actions.verifyReport(report.id)}>
+            <Button
+              disabled={report.status === "Verified" || report.status === "Released"}
+              onClick={() => workspace.actions.verifyReport(report.id)}
+            >
               Verify Report
             </Button>
-            <Button disabled={report.status !== "Verified"} onClick={() => workspace.actions.releaseReport(report.id)} variant="outline">
+            <Button
+              disabled={report.status !== "Verified"}
+              onClick={() => workspace.actions.releaseReport(report.id)}
+              variant="outline"
+            >
               Release Report
             </Button>
           </div>
         </>
       ) : (
-        <WorkflowEmptyState title="No report available" description="Draft a report first from Reporting Workbench." />
+        <WorkflowEmptyState
+          title="No report available"
+          description="Draft a report first from Reporting Workbench."
+        />
       )}
     </div>
   );
@@ -1021,7 +1326,11 @@ export function RadiologyReportPreviewWorkflowView() {
   const workspace = useRadiologyWorkspace();
   const [filters, setFilters] = useState(defaultRadiologyFilters);
   const filteredReports = filterReports(workspace.reports, workspace.orders, filters);
-  const [reportId, setReportId] = useState(filteredReports.find((report) => report.status === "Released")?.id ?? filteredReports[0]?.id ?? "");
+  const [reportId, setReportId] = useState(
+    filteredReports.find((report) => report.status === "Released")?.id ??
+      filteredReports[0]?.id ??
+      "",
+  );
   const report = filteredReports.find((item) => item.id === reportId) ?? filteredReports[0];
   const order = workspace.orders.find((item) => item.id === report?.orderId);
   const patient = radiologyPatients.find((item) => item.id === report?.patientId);
@@ -1032,7 +1341,11 @@ export function RadiologyReportPreviewWorkflowView() {
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
       <section className="grid gap-4 md:grid-cols-[1fr_auto]">
-        <select className="rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setReportId(event.target.value)} value={report?.id ?? ""}>
+        <select
+          className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          onChange={(event) => setReportId(event.target.value)}
+          value={report?.id ?? ""}
+        >
           {filteredReports.map((item) => (
             <option key={item.id} value={item.id}>
               {item.templateName} · {patientName(item.patientId)} · {item.status}
@@ -1044,8 +1357,26 @@ export function RadiologyReportPreviewWorkflowView() {
           Print
         </Button>
       </section>
-      <RadiologyStatsCard icon={<Printer className="h-5 w-5" />} subtext="Preview reflects current workspace report state" title="Report Preview" value={report?.status ?? "No Report"} />
-      {report && order && patient && test && radiologist ? <ReportPreview order={order} patient={patient} radiologist={radiologist} report={report} test={test} /> : <WorkflowEmptyState title="No report available" description="Create a draft report first from Reporting Workbench." />}
+      <RadiologyStatsCard
+        icon={<Printer className="h-5 w-5" />}
+        subtext="Preview reflects current workspace report state"
+        title="Report Preview"
+        value={report?.status ?? "No Report"}
+      />
+      {report && order && patient && test && radiologist ? (
+        <ReportPreview
+          order={order}
+          patient={patient}
+          radiologist={radiologist}
+          report={report}
+          test={test}
+        />
+      ) : (
+        <WorkflowEmptyState
+          title="No report available"
+          description="Create a draft report first from Reporting Workbench."
+        />
+      )}
     </div>
   );
 }
@@ -1053,31 +1384,63 @@ export function RadiologyReportPreviewWorkflowView() {
 export function RadiologyDeliveryWorkflowView() {
   const workspace = useRadiologyWorkspace();
   const [filters, setFilters] = useState(defaultRadiologyFilters);
-  const reports = filterReports(workspace.reports, workspace.orders, filters).filter((report) => report.status === "Verified" || report.status === "Released");
+  const reports = filterReports(workspace.reports, workspace.orders, filters).filter(
+    (report) => report.status === "Verified" || report.status === "Released",
+  );
 
   return (
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
-      <RadiologyStatsCard icon={<Truck className="h-5 w-5" />} subtext="Portal, print counter, ward dispatch" title="Ready for Delivery" value={reports.length} />
-      {reports.length === 0 ? <WorkflowEmptyState title="No report ready for delivery" description="Verify and release a report first." /> : null}
+      <RadiologyStatsCard
+        icon={<Truck className="h-5 w-5" />}
+        subtext="Portal, print counter, ward dispatch"
+        title="Ready for Delivery"
+        value={reports.length}
+      />
+      {reports.length === 0 ? (
+        <WorkflowEmptyState
+          title="No report ready for delivery"
+          description="Verify and release a report first."
+        />
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-2">
         {reports.map((report) => {
           const order = workspace.orders.find((item) => item.id === report.orderId);
           return (
-            <article className="rounded-lg border border-border bg-surface p-4 shadow-sm" key={report.id}>
+            <article
+              className="rounded-lg border border-border bg-surface p-4 shadow-sm"
+              key={report.id}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-foreground">{patientName(report.patientId)}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">{order?.orderNo ?? report.orderId}</p>
+                  <h2 className="text-base font-semibold text-foreground">
+                    {patientName(report.patientId)}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {order?.orderNo ?? report.orderId}
+                  </p>
                 </div>
-                <span className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium">{report.status}</span>
+                <span className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium">
+                  {report.status}
+                </span>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {order ? <RadiologyStatusBadge status={order.status} /> : null}
-                <Button disabled={report.status !== "Verified"} onClick={() => workspace.actions.releaseReport(report.id)} size="sm" variant="outline">
+                <Button
+                  disabled={report.status !== "Verified"}
+                  onClick={() => workspace.actions.releaseReport(report.id)}
+                  size="sm"
+                  variant="outline"
+                >
                   Release
                 </Button>
-                <Button disabled={!order || report.status !== "Released" || order.status === "REPORT_DELIVERED"} onClick={() => order && workspace.actions.deliverReport(order.id)} size="sm">
+                <Button
+                  disabled={
+                    !order || report.status !== "Released" || order.status === "REPORT_DELIVERED"
+                  }
+                  onClick={() => order && workspace.actions.deliverReport(order.id)}
+                  size="sm"
+                >
                   <Truck className="h-4 w-4" />
                   Mark Delivered
                 </Button>
@@ -1101,27 +1464,58 @@ export function RadiologyAnalyticsWorkflowView() {
   const tatValues = filteredReports
     .map((report) => {
       const order = workspace.orders.find((item) => item.id === report.orderId);
-      return minutesBetween(order?.createdAt, report.releasedAt ?? report.verifiedAt ?? report.createdAt);
+      return minutesBetween(
+        order?.createdAt,
+        report.releasedAt ?? report.verifiedAt ?? report.createdAt,
+      );
     })
     .filter((value): value is number => value !== null);
-  const averageTat = tatValues.length === 0 ? 0 : Math.round(tatValues.reduce((sum, value) => sum + value, 0) / tatValues.length);
+  const averageTat =
+    tatValues.length === 0
+      ? 0
+      : Math.round(tatValues.reduce((sum, value) => sum + value, 0) / tatValues.length);
 
   return (
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <RadiologyStatsCard icon={<BarChart3 className="h-5 w-5" />} subtext="Filtered local workspace" title="Total Studies" value={filteredOrders.length} />
-        <RadiologyStatsCard icon={<CreditCard className="h-5 w-5" />} subtext="Based on selected studies" title="Revenue" value={formatCurrency(totalRevenue)} />
-        <RadiologyStatsCard icon={<FileCheck2 className="h-5 w-5" />} subtext={`${filteredStudies.length} PACS studies`} title="Reports" value={filteredReports.length} />
-        <RadiologyStatsCard icon={<Clock className="h-5 w-5" />} subtext="Order to latest report event" title="Avg TAT" value={averageTat ? `${averageTat} min` : "N/A"} />
+        <RadiologyStatsCard
+          icon={<BarChart3 className="h-5 w-5" />}
+          subtext="Filtered local workspace"
+          title="Total Studies"
+          value={filteredOrders.length}
+        />
+        <RadiologyStatsCard
+          icon={<CreditCard className="h-5 w-5" />}
+          subtext="Based on selected studies"
+          title="Revenue"
+          value={formatCurrency(totalRevenue)}
+        />
+        <RadiologyStatsCard
+          icon={<FileCheck2 className="h-5 w-5" />}
+          subtext={`${filteredStudies.length} PACS studies`}
+          title="Reports"
+          value={filteredReports.length}
+        />
+        <RadiologyStatsCard
+          icon={<Clock className="h-5 w-5" />}
+          subtext="Order to latest report event"
+          title="Avg TAT"
+          value={averageTat ? `${averageTat} min` : "N/A"}
+        />
       </section>
       <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
           <h2 className="text-base font-semibold text-foreground">Modality Utilization</h2>
           <div className="mt-4 space-y-4">
             {radiologyModalities.map((modality) => {
-              const count = filteredOrders.filter((order) => order.modalityId === modality.id).length;
-              const percentage = filteredOrders.length === 0 ? 0 : Math.max(8, Math.round((count / filteredOrders.length) * 100));
+              const count = filteredOrders.filter(
+                (order) => order.modalityId === modality.id,
+              ).length;
+              const percentage =
+                filteredOrders.length === 0
+                  ? 0
+                  : Math.max(8, Math.round((count / filteredOrders.length) * 100));
 
               return (
                 <div key={modality.id}>
@@ -1133,7 +1527,10 @@ export function RadiologyAnalyticsWorkflowView() {
                     <span className="text-muted-foreground">{count} studies</span>
                   </div>
                   <div className="mt-2 h-2 rounded-full bg-muted">
-                    <div className="h-2 rounded-full bg-primary" style={{ width: `${percentage}%` }} />
+                    <div
+                      className="h-2 rounded-full bg-primary"
+                      style={{ width: `${percentage}%` }}
+                    />
                   </div>
                 </div>
               );
@@ -1143,9 +1540,22 @@ export function RadiologyAnalyticsWorkflowView() {
         <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
           <h2 className="text-base font-semibold text-foreground">Operational Signals</h2>
           <div className="mt-4 space-y-3 text-sm">
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">{filteredReports.filter((report) => report.status === "Verified" || report.status === "Released").length} reports verified or released</div>
-            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sky-900">{filteredOrders.filter((order) => order.status === "SCAN_IN_PROGRESS").length} scans currently in progress</div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">{filteredAlerts.filter((alert) => alert.status === "Open").length} critical alerts open</div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">
+              {
+                filteredReports.filter(
+                  (report) => report.status === "Verified" || report.status === "Released",
+                ).length
+              }{" "}
+              reports verified or released
+            </div>
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sky-900">
+              {filteredOrders.filter((order) => order.status === "SCAN_IN_PROGRESS").length} scans
+              currently in progress
+            </div>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+              {filteredAlerts.filter((alert) => alert.status === "Open").length} critical alerts
+              open
+            </div>
           </div>
         </div>
       </section>
@@ -1162,12 +1572,30 @@ export function RadiologyCriticalAlertsView() {
     <div className="space-y-5">
       <RadiologyFilterBar modalities={radiologyModalities} onChange={setFilters} />
       <section className="grid gap-4 md:grid-cols-3">
-        <RadiologyStatsCard icon={<AlertTriangle className="h-5 w-5" />} subtext="Open critical communications" title="Open" value={filteredAlerts.filter((alert) => alert.status === "Open").length} />
-        <RadiologyStatsCard subtext="Clinician acknowledged" title="Acknowledged" value={filteredAlerts.filter((alert) => alert.status === "Acknowledged").length} />
-        <RadiologyStatsCard subtext="Generated from critical report drafts" title="Total" value={filteredAlerts.length} />
+        <RadiologyStatsCard
+          icon={<AlertTriangle className="h-5 w-5" />}
+          subtext="Open critical communications"
+          title="Open"
+          value={filteredAlerts.filter((alert) => alert.status === "Open").length}
+        />
+        <RadiologyStatsCard
+          subtext="Clinician acknowledged"
+          title="Acknowledged"
+          value={filteredAlerts.filter((alert) => alert.status === "Acknowledged").length}
+        />
+        <RadiologyStatsCard
+          subtext="Generated from critical report drafts"
+          title="Total"
+          value={filteredAlerts.length}
+        />
       </section>
       <section className="grid gap-4 xl:grid-cols-2">
-        {filteredAlerts.length === 0 ? <WorkflowEmptyState title="No critical alert" description="Critical findings marked in reporting will appear here." /> : null}
+        {filteredAlerts.length === 0 ? (
+          <WorkflowEmptyState
+            title="No critical alert"
+            description="Critical findings marked in reporting will appear here."
+          />
+        ) : null}
         {filteredAlerts.map((alert) => {
           const patient = radiologyPatients.find((item) => item.id === alert.patientId);
           const order = workspace.orders.find((item) => item.id === alert.orderId);
@@ -1175,10 +1603,19 @@ export function RadiologyCriticalAlertsView() {
             <div className="space-y-2" key={alert.id}>
               <CriticalAlertCard alert={alert} order={order} patient={patient} />
               <div className="flex flex-wrap gap-2">
-                <Button disabled={alert.status !== "Open"} onClick={() => workspace.actions.acknowledgeAlert(alert.id)} size="sm">
+                <Button
+                  disabled={alert.status !== "Open"}
+                  onClick={() => workspace.actions.acknowledgeAlert(alert.id)}
+                  size="sm"
+                >
                   Acknowledge
                 </Button>
-                <Button disabled={alert.status === "Closed"} onClick={() => workspace.actions.closeAlert(alert.id)} size="sm" variant="outline">
+                <Button
+                  disabled={alert.status === "Closed"}
+                  onClick={() => workspace.actions.closeAlert(alert.id)}
+                  size="sm"
+                  variant="outline"
+                >
                   Close
                 </Button>
               </div>
@@ -1204,7 +1641,9 @@ export function RadiologyOrderDetailActions({ orderId }: { orderId: string }) {
         <Link href="/radiology/order-list">Back to Orders</Link>
       </Button>
       <WorkflowActionButtons actions={workspace.actions} allowCancel order={order} />
-      <span className="ml-auto text-xs text-muted-foreground">Updated: {formatDateTime(order.timeline.at(-1)?.timestamp ?? order.createdAt)}</span>
+      <span className="ml-auto text-xs text-muted-foreground">
+        Updated: {formatDateTime(order.timeline.at(-1)?.timestamp ?? order.createdAt)}
+      </span>
     </div>
   );
 }
@@ -1227,7 +1666,12 @@ export function RadiologyOrderDetailView({ orderId }: { orderId: string }) {
   const tests = radiologyTests.filter((test) => order.testIds.includes(test.id));
 
   if (!patient) {
-    return <WorkflowEmptyState title="Patient not found" description="The selected order has no matching patient in demo data." />;
+    return (
+      <WorkflowEmptyState
+        title="Patient not found"
+        description="The selected order has no matching patient in demo data."
+      />
+    );
   }
 
   return (
@@ -1252,7 +1696,8 @@ export function RadiologyOrderDetailView({ orderId }: { orderId: string }) {
             <h2 className="text-base font-semibold text-foreground">Study Information</h2>
             <div className="mt-3 space-y-3 text-sm text-muted-foreground">
               <p>
-                <span className="font-medium text-foreground">Modality:</span> {modality?.name ?? order.modalityId}
+                <span className="font-medium text-foreground">Modality:</span>{" "}
+                {modality?.name ?? order.modalityId}
               </p>
               <p>
                 <span className="font-medium text-foreground">Location:</span> {order.location}
@@ -1261,12 +1706,16 @@ export function RadiologyOrderDetailView({ orderId }: { orderId: string }) {
                 <span className="font-medium text-foreground">Billing:</span> {order.billingStatus}
               </p>
               <p>
-                <span className="font-medium text-foreground">Diagnosis:</span> {order.provisionalDiagnosis}
+                <span className="font-medium text-foreground">Diagnosis:</span>{" "}
+                {order.provisionalDiagnosis}
               </p>
             </div>
             <div className="mt-4 space-y-2">
               {tests.map((test) => (
-                <div className="rounded-lg border border-border bg-surface-muted p-3 text-sm" key={test.id}>
+                <div
+                  className="rounded-lg border border-border bg-surface-muted p-3 text-sm"
+                  key={test.id}
+                >
                   <p className="font-medium text-foreground">{test.name}</p>
                   <p className="text-muted-foreground">{test.preparation}</p>
                 </div>

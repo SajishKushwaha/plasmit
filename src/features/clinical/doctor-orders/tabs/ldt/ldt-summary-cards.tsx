@@ -6,5 +6,4 @@ import { StatCard } from "@/components/ui/stat-card";
 
 // import type { LdtOrder } from "./types";
 
-export function LdtSummaryCards(){}
-
+export function LdtSummaryCards() {}

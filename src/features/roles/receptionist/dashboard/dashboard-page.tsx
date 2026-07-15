@@ -15,7 +15,8 @@ export function ReceptionistDashboardPage() {
           <Badge tone="info">Receptionist Role</Badge>
           <h1 className="mt-3 text-2xl font-semibold text-foreground">Front Office Dashboard</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Registration, appointments, OPD queue, admission reception, and billing collection in one role workspace.
+            Registration, appointments, OPD queue, admission reception, and billing collection in
+            one role workspace.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -39,7 +40,9 @@ export function ReceptionistDashboardPage() {
           <Card key={stat.label}>
             <CardContent className="space-y-2 p-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">{stat.label}</p>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  {stat.label}
+                </p>
                 <Badge tone={stat.tone}>{stat.meta}</Badge>
               </div>
               <p className="text-3xl font-semibold text-foreground">{stat.value}</p>
@@ -64,8 +67,13 @@ export function ReceptionistDashboardPage() {
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
             {billingSnapshot.map((item) => (
-              <div key={item.label} className="rounded-lg border border-border bg-surface-muted p-4">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">{item.label}</p>
+              <div
+                key={item.label}
+                className="rounded-lg border border-border bg-surface-muted p-4"
+              >
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  {item.label}
+                </p>
                 <div className="mt-3 flex items-end justify-between gap-3">
                   <p className="text-2xl font-semibold text-foreground">{item.value}</p>
                   <p className="text-sm font-semibold text-muted-foreground">{item.amount}</p>
@@ -95,7 +103,9 @@ export function ReceptionistDashboardPage() {
                     <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate">{item.label}</span>
                   </span>
-                  <span className="shrink-0 text-xs font-medium text-muted-foreground">{item.count}</span>
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                    {item.count}
+                  </span>
                 </Link>
               );
             })}
@@ -112,7 +122,10 @@ export function ReceptionistDashboardPage() {
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
           {handoverItems.map((item) => (
-            <div key={item} className="flex items-start gap-3 rounded-lg border border-border bg-surface-muted p-3 text-sm text-muted-foreground">
+            <div
+              key={item}
+              className="flex items-start gap-3 rounded-lg border border-border bg-surface-muted p-3 text-sm text-muted-foreground"
+            >
               <Users className="mt-0.5 h-4 w-4 shrink-0 text-info" />
               <span>{item}</span>
             </div>

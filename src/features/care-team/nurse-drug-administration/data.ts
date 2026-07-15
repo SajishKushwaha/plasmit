@@ -1,7 +1,17 @@
 import type { AdministrationDetail, FluidAdministrationDetail, NurseDrugOrder } from "./types";
 
-export const medicationTimeSlots = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`);
-export const nurseDrugCategories: NurseDrugOrder["category"][] = ["SOS", "STAT", "Bolus", "Diluent", "Intermittent", "Continuous"];
+export const medicationTimeSlots = Array.from(
+  { length: 24 },
+  (_, hour) => `${String(hour).padStart(2, "0")}:00`,
+);
+export const nurseDrugCategories: NurseDrugOrder["category"][] = [
+  "SOS",
+  "STAT",
+  "Bolus",
+  "Diluent",
+  "Intermittent",
+  "Continuous",
+];
 
 export const nurseDrugOrders: NurseDrugOrder[] = [
   {
@@ -206,9 +216,7 @@ export const nurseDrugOrders: NurseDrugOrder[] = [
     discontinuedReason: "Gastritis",
     lastAdministeredAt: "Yesterday 20:00",
     lastAdministeredBy: "Maya Iyer",
-    cells: [
-      { time: "08:00", label: "Stopped by doctor", status: "empty" },
-    ],
+    cells: [{ time: "08:00", label: "Stopped by doctor", status: "empty" }],
   },
   {
     id: "nd-007",
@@ -224,9 +232,7 @@ export const nurseDrugOrders: NurseDrugOrder[] = [
     dispensedQty: 0,
     receivedQty: 0,
     administeredQty: 0,
-    cells: [
-      { time: "11:00", label: "Thin layer", status: "due" },
-    ],
+    cells: [{ time: "11:00", label: "Thin layer", status: "due" }],
   },
 ];
 

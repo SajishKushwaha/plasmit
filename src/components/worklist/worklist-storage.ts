@@ -65,7 +65,11 @@ export function subscribeToLinkedWorklistTasks(callback: () => void) {
 
 export function replaceLinkedWorklistTask(task: WorklistTask) {
   const current = readLinkedWorklistTasks();
-  writeLinkedWorklistTasks(current.some((item) => item.id === task.id) ? current.map((item) => (item.id === task.id ? task : item)) : [...current, task]);
+  writeLinkedWorklistTasks(
+    current.some((item) => item.id === task.id)
+      ? current.map((item) => (item.id === task.id ? task : item))
+      : [...current, task],
+  );
 }
 
 export function upsertCarePlanWorklistTask({
@@ -99,11 +103,15 @@ export function upsertCarePlanWorklistTask({
     startTime: startTime || toTimeInputValue(now),
     endDate: endDate || "",
     frequency: normalizeFrequency(frequency),
-    comments: [comments, frequency ? `Care plan frequency: ${frequency}` : ""].filter(Boolean).join(" | "),
+    comments: [comments, frequency ? `Care plan frequency: ${frequency}` : ""]
+      .filter(Boolean)
+      .join(" | "),
     status: existing?.status ?? "Active",
     reason: existing?.reason ?? "",
     source: "Care Plans",
     discontinuedOn: existing?.discontinuedOn,
   };
-  writeLinkedWorklistTasks(existing ? current.map((task) => (task.id === id ? nextTask : task)) : [...current, nextTask]);
+  writeLinkedWorklistTasks(
+    existing ? current.map((task) => (task.id === id ? nextTask : task)) : [...current, nextTask],
+  );
 }

@@ -25,7 +25,8 @@ export function useRadiologyFilters(orders: RadiologyOrder[]) {
         normalizedSearch.length === 0 ||
         order.orderNo.toLowerCase().includes(normalizedSearch) ||
         order.clinicalIndication.toLowerCase().includes(normalizedSearch);
-      const matchesModality = filters.modalityId === "ALL" || order.modalityId === filters.modalityId;
+      const matchesModality =
+        filters.modalityId === "ALL" || order.modalityId === filters.modalityId;
       const matchesStatus = filters.status === "ALL" || order.status === filters.status;
 
       return matchesSearch && matchesModality && matchesStatus;

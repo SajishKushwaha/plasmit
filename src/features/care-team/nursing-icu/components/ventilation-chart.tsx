@@ -7,11 +7,7 @@ import { cn } from "@/lib/utils";
 import type { IcuPatient } from "../nursing-icu-data";
 
 type VentilationGroup =
-  | "Mode / device"
-  | "Oxygen / support"
-  | "Pressures"
-  | "Mechanics"
-  | "Monitoring / safety";
+  "Mode / device" | "Oxygen / support" | "Pressures" | "Mechanics" | "Monitoring / safety";
 
 type VentilationProfile = {
   support: "Invasive" | "NIV" | "Oxygen" | "Room air";
@@ -165,7 +161,11 @@ const rowDefinitions: VentilationRowDefinition[] = [
     parameter: "Sxxx Ventilation Mode",
     group: "Mode / device",
     unit: "None",
-    value: (profile, hour) => ifVentilator(profile, scheduledValue(hour, 4, profile.support === "Invasive" ? "SIMV" : "S/T")),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        scheduledValue(hour, 4, profile.support === "Invasive" ? "SIMV" : "S/T"),
+      ),
   },
   {
     parameter: "Ventilator Type",
@@ -177,13 +177,18 @@ const rowDefinitions: VentilationRowDefinition[] = [
     parameter: "Humidification",
     group: "Mode / device",
     unit: "mmHg",
-    value: (profile, hour) => ifVentilator(profile, scheduledValue(hour, 6, profile.support === "Invasive" ? "HME" : "Heated")),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        scheduledValue(hour, 6, profile.support === "Invasive" ? "HME" : "Heated"),
+      ),
   },
   {
     parameter: "Humidification temparature",
     group: "Mode / device",
     unit: "mmHg",
-    value: (profile, hour) => ifVentilator(profile, hour % 6 === 0 ? String(shiftValue(36, hour, 0.5, 1)) : "-"),
+    value: (profile, hour) =>
+      ifVentilator(profile, hour % 6 === 0 ? String(shiftValue(36, hour, 0.5, 1)) : "-"),
   },
   {
     parameter: "Humidified water check",
@@ -195,19 +200,28 @@ const rowDefinitions: VentilationRowDefinition[] = [
     parameter: "Mandatory breath type",
     group: "Mode / device",
     unit: "/min",
-    value: (profile, hour) => ifVentilator(profile, scheduledValue(hour, 4, profile.support === "Invasive" ? "Volume" : "Pressure")),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        scheduledValue(hour, 4, profile.support === "Invasive" ? "Volume" : "Pressure"),
+      ),
   },
   {
     parameter: "Apnea vantillatory",
     group: "Mode / device",
     unit: "cmH2O",
-    value: (profile, hour) => ifVentilator(profile, scheduledValue(hour, 6, profile.support === "Invasive" ? "On" : "Standby")),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        scheduledValue(hour, 6, profile.support === "Invasive" ? "On" : "Standby"),
+      ),
   },
   {
     parameter: "Spontaneous",
     group: "Oxygen / support",
     unit: "%",
-    value: (profile, hour) => ifSupported(profile, String(shiftValue(profile.support === "Invasive" ? 4 : 18, hour, 1, 3))),
+    value: (profile, hour) =>
+      ifSupported(profile, String(shiftValue(profile.support === "Invasive" ? 4 : 18, hour, 1, 3))),
   },
   {
     parameter: "FiO2",
@@ -219,73 +233,114 @@ const rowDefinitions: VentilationRowDefinition[] = [
     parameter: "Peep",
     group: "Oxygen / support",
     unit: "kPa",
-    value: (profile, hour) => numericOrDash(profile.peep ? shiftValue(profile.peep, hour, 1, 1) : 0, true),
+    value: (profile, hour) =>
+      numericOrDash(profile.peep ? shiftValue(profile.peep, hour, 1, 1) : 0, true),
   },
   {
     parameter: "Spontaneous breath",
     group: "Oxygen / support",
     unit: "kPa",
-    value: (profile, hour) => ifSupported(profile, String(shiftValue(profile.support === "Invasive" ? 4 : 18, hour, 1, 3))),
+    value: (profile, hour) =>
+      ifSupported(profile, String(shiftValue(profile.support === "Invasive" ? 4 : 18, hour, 1, 3))),
   },
   {
-    parameter: "IE(inspiratory \" Expiratory ratio)",
+    parameter: 'IE(inspiratory " Expiratory ratio)',
     group: "Oxygen / support",
     unit: "kPa",
-    value: (profile, hour) => ifVentilator(profile, scheduledValue(hour, 2, profile.support === "Invasive" ? "1:2" : "1:3")),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        scheduledValue(hour, 2, profile.support === "Invasive" ? "1:2" : "1:3"),
+      ),
   },
   {
     parameter: "T High",
     group: "Oxygen / support",
     unit: "/min",
-    value: (profile, hour) => ifVentilator(profile, profile.support === "Invasive" ? String(shiftValue(1, hour, 0.1, 1).toFixed(1)) : "-"),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        profile.support === "Invasive" ? String(shiftValue(1, hour, 0.1, 1).toFixed(1)) : "-",
+      ),
   },
   {
     parameter: "T low",
     group: "Oxygen / support",
     unit: "cmH2O",
-    value: (profile, hour) => ifVentilator(profile, profile.support === "Invasive" ? String(shiftValue(0.6, hour, 0.1, 2).toFixed(1)) : "-"),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        profile.support === "Invasive" ? String(shiftValue(0.6, hour, 0.1, 2).toFixed(1)) : "-",
+      ),
   },
   {
     parameter: "Ppeak Pressure",
     group: "Pressures",
     unit: "%",
-    value: (profile, hour) => numericOrDash(profile.peakPressure ? shiftValue(profile.peakPressure, hour, 1, 2) : 0, true),
+    value: (profile, hour) =>
+      numericOrDash(profile.peakPressure ? shiftValue(profile.peakPressure, hour, 1, 2) : 0, true),
   },
   {
     parameter: "Pplatou pressure",
     group: "Pressures",
     unit: "kPa",
-    value: (profile, hour) => numericOrDash(profile.plateauPressure ? shiftValue(profile.plateauPressure, hour, 1, 3) : 0, true),
+    value: (profile, hour) =>
+      numericOrDash(
+        profile.plateauPressure ? shiftValue(profile.plateauPressure, hour, 1, 3) : 0,
+        true,
+      ),
   },
   {
     parameter: "compliance static ( cstatic)",
     group: "Mechanics",
     unit: "kPa",
-    value: (profile, hour) => numericOrDash(profile.complianceStatic ? shiftValue(profile.complianceStatic, hour, 1, 1) : 0, true),
+    value: (profile, hour) =>
+      numericOrDash(
+        profile.complianceStatic ? shiftValue(profile.complianceStatic, hour, 1, 1) : 0,
+        true,
+      ),
   },
   {
     parameter: "compliance dynamics ( cdynamics)",
     group: "Mechanics",
     unit: "kPa",
-    value: (profile, hour) => numericOrDash(profile.complianceDynamic ? shiftValue(profile.complianceDynamic, hour, 1, 2) : 0, true),
+    value: (profile, hour) =>
+      numericOrDash(
+        profile.complianceDynamic ? shiftValue(profile.complianceDynamic, hour, 1, 2) : 0,
+        true,
+      ),
   },
   {
     parameter: "Pressure support ( Ps) - tidal volume",
     group: "Mechanics",
     unit: "kPa",
-    value: (profile, hour) => numericOrDash(profile.tidalVolume ? shiftValue(profile.tidalVolume, hour, 5, 2) : 0),
+    value: (profile, hour) =>
+      numericOrDash(profile.tidalVolume ? shiftValue(profile.tidalVolume, hour, 5, 2) : 0),
   },
   {
     parameter: "Pinspiratory",
     group: "Pressures",
     unit: "kPa",
-    value: (profile, hour) => ifVentilator(profile, profile.support === "NIV" ? String(shiftValue(16, hour, 1, 1)) : numericOrDash(profile.peakPressure ? shiftValue(profile.peakPressure - 6, hour, 1, 1) : 0, true)),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        profile.support === "NIV"
+          ? String(shiftValue(16, hour, 1, 1))
+          : numericOrDash(
+              profile.peakPressure ? shiftValue(profile.peakPressure - 6, hour, 1, 1) : 0,
+              true,
+            ),
+      ),
   },
   {
     parameter: "Pressure support ( Ps) - miute volume",
     group: "Mechanics",
     unit: "kPa",
-    value: (profile, hour) => ifVentilator(profile, String((shiftValue(profile.support === "Invasive" ? 7 : 9, hour, 0.4, 2)).toFixed(1))),
+    value: (profile, hour) =>
+      ifVentilator(
+        profile,
+        String(shiftValue(profile.support === "Invasive" ? 7 : 9, hour, 0.4, 2).toFixed(1)),
+      ),
   },
   {
     parameter: "respiratory rate",
@@ -333,7 +388,10 @@ export function VentilationChartWorkspace({ patient }: VentilationChartWorkspace
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <div>
             <h3 className="text-sm font-bold text-slate-950">Hourly ventilation parameters</h3>
-            <p className="mt-1 text-xs font-medium text-slate-600">{patient.bedNo} - {patient.patientName} | {latestMode} | FiO2 {latestFiO2}% | PEEP {latestPeep}</p>
+            <p className="mt-1 text-xs font-medium text-slate-600">
+              {patient.bedNo} - {patient.patientName} | {latestMode} | FiO2 {latestFiO2}% | PEEP{" "}
+              {latestPeep}
+            </p>
           </div>
           <span className="text-xs font-semibold text-slate-500">0000 - 2300</span>
         </div>
@@ -341,17 +399,28 @@ export function VentilationChartWorkspace({ patient }: VentilationChartWorkspace
           <table className="min-w-[2100px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-600">
-                <th className="sticky left-0 z-20 w-64 border-r border-slate-200 bg-white px-4 py-3 text-left font-bold">Property</th>
+                <th className="sticky left-0 z-20 w-64 border-r border-slate-200 bg-white px-4 py-3 text-left font-bold">
+                  Property
+                </th>
                 {hourColumns.map((hour) => (
-                  <th key={hour} className="w-20 border-r border-slate-200 px-3 py-3 text-center font-bold">{hour}</th>
+                  <th
+                    key={hour}
+                    className="w-20 border-r border-slate-200 px-3 py-3 text-center font-bold"
+                  >
+                    {hour}
+                  </th>
                 ))}
-                <th className="sticky right-0 z-20 w-28 border-l border-slate-200 bg-white px-3 py-3 text-left font-bold">Units</th>
+                <th className="sticky right-0 z-20 w-28 border-l border-slate-200 bg-white px-3 py-3 text-left font-bold">
+                  Units
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.parameter} className="border-b border-slate-100 hover:bg-sky-50/40">
-                  <th className="sticky left-0 z-10 border-r border-slate-200 bg-white px-4 py-3 text-left font-bold text-slate-900">{row.parameter}</th>
+                  <th className="sticky left-0 z-10 border-r border-slate-200 bg-white px-4 py-3 text-left font-bold text-slate-900">
+                    {row.parameter}
+                  </th>
                   {hourColumns.map((hour, hourIndex) => {
                     const value = row.values[hourIndex] ?? "-";
                     return (
@@ -366,7 +435,9 @@ export function VentilationChartWorkspace({ patient }: VentilationChartWorkspace
                       </td>
                     );
                   })}
-                  <td className="sticky right-0 z-10 border-l border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700">{row.unit}</td>
+                  <td className="sticky right-0 z-10 border-l border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700">
+                    {row.unit}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -382,29 +453,45 @@ export function VentilationChartWorkspace({ patient }: VentilationChartWorkspace
           <table className="min-w-[1120px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-600">
-                <th className="sticky left-0 z-20 w-72 border-r border-slate-200 bg-white px-4 py-3 text-left font-bold">Property</th>
+                <th className="sticky left-0 z-20 w-72 border-r border-slate-200 bg-white px-4 py-3 text-left font-bold">
+                  Property
+                </th>
                 {propertyColumns.map((column) => (
-                  <th key={`property-column-${column}`} className="w-20 border-r border-slate-200 px-3 py-3 text-center font-bold">{column}</th>
+                  <th
+                    key={`property-column-${column}`}
+                    className="w-20 border-r border-slate-200 px-3 py-3 text-center font-bold"
+                  >
+                    {column}
+                  </th>
                 ))}
-                <th className="sticky right-0 z-20 w-28 border-l border-slate-200 bg-white px-4 py-3 text-left font-bold">Units</th>
+                <th className="sticky right-0 z-20 w-28 border-l border-slate-200 bg-white px-4 py-3 text-left font-bold">
+                  Units
+                </th>
               </tr>
             </thead>
             <tbody>
               {rowDefinitions.map((row, rowIndex) => {
                 const propertyValues = propertyValuesForRow(rowIndex);
                 return (
-                <tr className="border-b border-slate-100 last:border-b-0" key={`property-${row.parameter}`}>
-                  <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-4 py-2.5 font-semibold text-slate-900">{row.parameter}</td>
-                  {propertyColumns.map((column, columnIndex) => (
-                    <td
-                      className="border-r border-slate-100 px-3 py-2.5 text-center font-medium text-slate-700"
-                      key={`property-${row.parameter}-${column}`}
-                    >
-                      {propertyValues[columnIndex]}
+                  <tr
+                    className="border-b border-slate-100 last:border-b-0"
+                    key={`property-${row.parameter}`}
+                  >
+                    <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-4 py-2.5 font-semibold text-slate-900">
+                      {row.parameter}
                     </td>
-                  ))}
-                  <td className="sticky right-0 z-10 border-l border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-600">{row.unit}</td>
-                </tr>
+                    {propertyColumns.map((column, columnIndex) => (
+                      <td
+                        className="border-r border-slate-100 px-3 py-2.5 text-center font-medium text-slate-700"
+                        key={`property-${row.parameter}-${column}`}
+                      >
+                        {propertyValues[columnIndex]}
+                      </td>
+                    ))}
+                    <td className="sticky right-0 z-10 border-l border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-600">
+                      {row.unit}
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>

@@ -20,14 +20,30 @@ export function PatientMetrics({ patient }: { patient: DoctorIpdPatient }) {
       <CardContent className="grid grid-cols-2 gap-3 p-1 lg:grid-cols-4">
         <PatientMetric label="HR" value={`${patient.hr.value} bpm`} tone={patient.hr.tone} />
         <PatientMetric label="SpO2" value={`${patient.spo2.value}%`} tone={patient.spo2.tone} />
-        <PatientMetric label="BP" value={`${dashboardBpValue(patient)} mmHg`} tone={dashboardBpTone(patient)} />
-        <PatientMetric label="Temperature" value={`${patient.temperature.value} °C`} tone={patient.temperature.tone} />
+        <PatientMetric
+          label="BP"
+          value={`${dashboardBpValue(patient)} mmHg`}
+          tone={dashboardBpTone(patient)}
+        />
+        <PatientMetric
+          label="Temperature"
+          value={`${patient.temperature.value} °C`}
+          tone={patient.temperature.tone}
+        />
       </CardContent>
     </Card>
   );
 }
 
-export function PatientMetric({ label, value, tone }: { label: string; value: string; tone: DoctorIpdPatient["hr"]["tone"] }) {
+export function PatientMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: DoctorIpdPatient["hr"]["tone"];
+}) {
   const status = tone === "red" ? "Critical" : tone === "orange" ? "Watch" : "Normal";
   return (
     <div
@@ -38,10 +54,28 @@ export function PatientMetric({ label, value, tone }: { label: string; value: st
         tone === "red" && "border-red-200/80",
       )}
     >
-      <div className={cn("absolute inset-y-0 left-0 w-1", tone === "green" && "bg-emerald-500", tone === "orange" && "bg-orange-500", tone === "red" && "bg-red-500")} />
+      <div
+        className={cn(
+          "absolute inset-y-0 left-0 w-1",
+          tone === "green" && "bg-emerald-500",
+          tone === "orange" && "bg-orange-500",
+          tone === "red" && "bg-red-500",
+        )}
+      />
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-        <span className={cn("text-[10px] font-semibold", tone === "green" && "text-emerald-700", tone === "orange" && "text-orange-600", tone === "red" && "text-red-600")}>{status}</span>
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </div>
+        <span
+          className={cn(
+            "text-[10px] font-semibold",
+            tone === "green" && "text-emerald-700",
+            tone === "orange" && "text-orange-600",
+            tone === "red" && "text-red-600",
+          )}
+        >
+          {status}
+        </span>
       </div>
       <div
         className={cn(

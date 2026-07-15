@@ -47,8 +47,16 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ResultDownloadDialog } from "@/features/diagnostics/results/components/ResultDownloadDialog";
 import { ResultsGroupDownloadDialog } from "@/features/diagnostics/results/components/ResultsGroupDownloadDialog";
-import { resultDepartments, resultRecords, resultStatuses } from "@/features/diagnostics/results/data/mockSidebarResults";
-import type { ResultDepartment, ResultRecord, ResultStatus } from "@/features/diagnostics/results/types";
+import {
+  resultDepartments,
+  resultRecords,
+  resultStatuses,
+} from "@/features/diagnostics/results/data/mockSidebarResults";
+import type {
+  ResultDepartment,
+  ResultRecord,
+  ResultStatus,
+} from "@/features/diagnostics/results/types";
 
 type DepartmentFilter = ResultDepartment | "all";
 type StatusFilter = ResultStatus | "all";
@@ -240,14 +248,23 @@ export function ResultsSidebarView({
   const [acknowledgedIds, setAcknowledgedIds] = useState<string[]>([]);
   const [ackNote, setAckNote] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
-  const [downloadGroup, setDownloadGroup] = useState<{ title: string; results: ResultRecord[] } | null>(null);
+  const [downloadGroup, setDownloadGroup] = useState<{
+    title: string;
+    results: ResultRecord[];
+  } | null>(null);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [historyQuickView, setHistoryQuickView] = useState<HistoryQuickView>(null);
   const [isCustomDateDialogOpen, setIsCustomDateDialogOpen] = useState(false);
   const [isDateWiseHistoryOpen, setIsDateWiseHistoryOpen] = useState(false);
   const [dateWiseHistoryDate, setDateWiseHistoryDate] = useState("");
-  const [historyPagination, setHistoryPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 4 });
-  const [dateWisePagination, setDateWisePagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 5 });
+  const [historyPagination, setHistoryPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 4,
+  });
+  const [dateWisePagination, setDateWisePagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 5,
+  });
 
   const isLaboratoryView = initialDepartment === "laboratory";
   const isUnifiedView = initialDepartment === "all" && !criticalOnly;
@@ -261,7 +278,9 @@ export function ResultsSidebarView({
     return resultRecords
       .filter((result) => {
         const matchesMrn = patientContext.mrn ? result.mrn === patientContext.mrn : false;
-        const matchesName = normalizedName ? result.patientName.toLowerCase() === normalizedName : false;
+        const matchesName = normalizedName
+          ? result.patientName.toLowerCase() === normalizedName
+          : false;
         return matchesMrn || matchesName;
       })
       .map((result) => ({
@@ -276,7 +295,10 @@ export function ResultsSidebarView({
     () =>
       patientScopedRecords.map((result) => {
         const statusValue = statusOverrides[result.id] ?? result.status;
-        const reportAvailable = result.reportAvailable || reportReadyIds.includes(result.id) || (result.department === "laboratory" && statusValue === "Completed");
+        const reportAvailable =
+          result.reportAvailable ||
+          reportReadyIds.includes(result.id) ||
+          (result.department === "laboratory" && statusValue === "Completed");
 
         return {
           ...result,
@@ -302,9 +324,11 @@ export function ResultsSidebarView({
   }, [criticalOnly, initialDepartment, recordsWithState]);
 
   const latestResultDateKey = useMemo(() => {
-    return scopedRecords
-      .map((result) => getDateKey(result.orderedAt))
-      .sort((first, second) => second.localeCompare(first))[0] ?? null;
+    return (
+      scopedRecords
+        .map((result) => getDateKey(result.orderedAt))
+        .sort((first, second) => second.localeCompare(first))[0] ?? null
+    );
   }, [scopedRecords]);
 
   const previousResultDateKey = latestResultDateKey ? shiftDateKey(latestResultDateKey, -1) : null;
@@ -319,23 +343,62 @@ export function ResultsSidebarView({
         dateFilter === "all" ||
         (dateFilter === "today" && getDateKey(result.orderedAt) === latestResultDateKey) ||
         (dateFilter === "yesterday" && getDateKey(result.orderedAt) === previousResultDateKey) ||
-        (dateFilter === "custom" && (!customResultDate || getDateKey(result.orderedAt) === customResultDate));
-      const matchesAvailability = availability === "all" || (availability === "reports" ? result.reportAvailable : result.imageAvailable);
+        (dateFilter === "custom" &&
+          (!customResultDate || getDateKey(result.orderedAt) === customResultDate));
+      const matchesAvailability =
+        availability === "all" ||
+        (availability === "reports" ? result.reportAvailable : result.imageAvailable);
       const matchesQuickQueue =
         quickQueue === null ||
-        (quickQueue === "pending" && (result.status === "Sample Collected" || result.status === "Processing" || result.status === "Verification Pending")) ||
-        (quickQueue === "emergency" && (result.priority === "Emergency" || result.status === "Critical"));
-      const matchesLockedDepartment = !isDepartmentLocked || result.department === initialDepartment;
+        (quickQueue === "pending" &&
+          (result.status === "Sample Collected" ||
+            result.status === "Processing" ||
+            result.status === "Verification Pending")) ||
+        (quickQueue === "emergency" &&
+          (result.priority === "Emergency" || result.status === "Critical"));
+      const matchesLockedDepartment =
+        !isDepartmentLocked || result.department === initialDepartment;
       const matchesCriticalMode = !criticalOnly || result.status === "Critical";
       const matchesSearch =
         !search ||
-        [result.patientName, result.mrn, result.id, result.testName, result.orderingDoctor, result.accessionNo, result.location]
+        [
+          result.patientName,
+          result.mrn,
+          result.id,
+          result.testName,
+          result.orderingDoctor,
+          result.accessionNo,
+          result.location,
+        ]
           .filter(Boolean)
           .some((value) => value?.toLowerCase().includes(search));
 
-      return matchesDepartment && matchesStatus && matchesDate && matchesAvailability && matchesQuickQueue && matchesLockedDepartment && matchesCriticalMode && matchesSearch;
+      return (
+        matchesDepartment &&
+        matchesStatus &&
+        matchesDate &&
+        matchesAvailability &&
+        matchesQuickQueue &&
+        matchesLockedDepartment &&
+        matchesCriticalMode &&
+        matchesSearch
+      );
     });
-  }, [availability, criticalOnly, customResultDate, dateFilter, department, initialDepartment, isDepartmentLocked, latestResultDateKey, previousResultDateKey, query, quickQueue, recordsWithState, status]);
+  }, [
+    availability,
+    criticalOnly,
+    customResultDate,
+    dateFilter,
+    department,
+    initialDepartment,
+    isDepartmentLocked,
+    latestResultDateKey,
+    previousResultDateKey,
+    query,
+    quickQueue,
+    recordsWithState,
+    status,
+  ]);
 
   const selectedResult = useMemo(() => {
     return filteredResults.find((result) => result.id === selectedId) ?? filteredResults[0] ?? null;
@@ -385,7 +448,9 @@ export function ResultsSidebarView({
       return [];
     }
 
-    return filteredResults.filter((result) => getDateKey(result.orderedAt) === previousQueueDateKey);
+    return filteredResults.filter(
+      (result) => getDateKey(result.orderedAt) === previousQueueDateKey,
+    );
   }, [filteredResults, previousQueueDateKey]);
 
   const historyPanelResults = useMemo(() => {
@@ -404,14 +469,18 @@ export function ResultsSidebarView({
     if (historyQuickView === "today") {
       return {
         title: "Today History",
-        description: activeQueueDateKey ? `Showing queue history for ${formatDateKeyLabel(activeQueueDateKey)}.` : "Showing the latest available result date.",
+        description: activeQueueDateKey
+          ? `Showing queue history for ${formatDateKeyLabel(activeQueueDateKey)}.`
+          : "Showing the latest available result date.",
       };
     }
 
     if (historyQuickView === "yesterday") {
       return {
         title: "Yesterday History",
-        description: previousQueueDateKey ? `Showing queue history for ${formatDateKeyLabel(previousQueueDateKey)}.` : "Showing the previous available result date.",
+        description: previousQueueDateKey
+          ? `Showing queue history for ${formatDateKeyLabel(previousQueueDateKey)}.`
+          : "Showing the previous available result date.",
       };
     }
 
@@ -469,7 +538,10 @@ export function ResultsSidebarView({
     }, {});
   }, [sameDateResults]);
 
-  const historyColumns = useMemo<ColumnDef<ResultRecord>[]>(() => [{ id: "history", accessorKey: "id" }], []);
+  const historyColumns = useMemo<ColumnDef<ResultRecord>[]>(
+    () => [{ id: "history", accessorKey: "id" }],
+    [],
+  );
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table is used here only for the separated test-history pagination state.
   const historyTable = useReactTable({
     data: historyPanelResults,
@@ -481,7 +553,10 @@ export function ResultsSidebarView({
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const dateWiseColumns = useMemo<ColumnDef<ResultRecord>[]>(() => [{ id: "date-wise-history", accessorKey: "id" }], []);
+  const dateWiseColumns = useMemo<ColumnDef<ResultRecord>[]>(
+    () => [{ id: "date-wise-history", accessorKey: "id" }],
+    [],
+  );
   const dateWiseHistoryTable = useReactTable({
     data: dateWiseHistoryResults,
     columns: dateWiseColumns,
@@ -494,12 +569,18 @@ export function ResultsSidebarView({
 
   const statusCounts = useMemo(() => {
     return resultStatuses.reduce<Record<string, number>>((counts, item) => {
-      counts[item] = item === "all" ? scopedRecords.length : scopedRecords.filter((result) => result.status === item).length;
+      counts[item] =
+        item === "all"
+          ? scopedRecords.length
+          : scopedRecords.filter((result) => result.status === item).length;
       return counts;
     }, {});
   }, [scopedRecords]);
 
-  const visibleStatusFilters = useMemo(() => resultStatuses.filter((item) => item !== "Critical"), []);
+  const visibleStatusFilters = useMemo(
+    () => resultStatuses.filter((item) => item !== "Critical"),
+    [],
+  );
 
   const unifiedCounts = useMemo(
     () => ({
@@ -510,16 +591,29 @@ export function ResultsSidebarView({
       critical: recordsWithState.filter((result) => result.status === "Critical").length,
       reports: recordsWithState.filter((result) => result.reportAvailable).length,
       images: recordsWithState.filter((result) => result.imageAvailable).length,
-      pending: recordsWithState.filter((result) => result.status === "Sample Collected" || result.status === "Processing" || result.status === "Verification Pending").length,
+      pending: recordsWithState.filter(
+        (result) =>
+          result.status === "Sample Collected" ||
+          result.status === "Processing" ||
+          result.status === "Verification Pending",
+      ).length,
       processing: recordsWithState.filter((result) => result.status === "Processing").length,
-      today: recordsWithState.filter((result) => getDateKey(result.orderedAt) === latestResultDateKey).length,
-      verification: recordsWithState.filter((result) => result.status === "Verification Pending").length,
-      emergency: recordsWithState.filter((result) => result.priority === "Emergency" || result.status === "Critical").length,
+      today: recordsWithState.filter(
+        (result) => getDateKey(result.orderedAt) === latestResultDateKey,
+      ).length,
+      verification: recordsWithState.filter((result) => result.status === "Verification Pending")
+        .length,
+      emergency: recordsWithState.filter(
+        (result) => result.priority === "Emergency" || result.status === "Critical",
+      ).length,
     }),
     [latestResultDateKey, recordsWithState],
   );
 
-  const generatedReportRecords = useMemo(() => scopedRecords.filter((result) => result.reportAvailable), [scopedRecords]);
+  const generatedReportRecords = useMemo(
+    () => scopedRecords.filter((result) => result.reportAvailable),
+    [scopedRecords],
+  );
 
   const commandSearchSuggestions = useMemo(() => {
     const search = query.trim().toLowerCase();
@@ -555,7 +649,8 @@ export function ResultsSidebarView({
       .slice(0, 6);
   }, [query, recordsWithState]);
 
-  const showCommandSearchSuggestions = isCommandSearchFocused && commandSearchSuggestions.length > 0;
+  const showCommandSearchSuggestions =
+    isCommandSearchFocused && commandSearchSuggestions.length > 0;
 
   function changeStatus(nextStatus: StatusFilter) {
     if (criticalOnly && nextStatus !== "Critical") {
@@ -620,7 +715,9 @@ export function ResultsSidebarView({
   }
 
   function openDateWiseHistory() {
-    changeDateWiseHistoryDate(dateWiseHistoryDate || activeQueueDateKey || availableHistoryDates[0]?.dateKey || "");
+    changeDateWiseHistoryDate(
+      dateWiseHistoryDate || activeQueueDateKey || availableHistoryDates[0]?.dateKey || "",
+    );
     setIsDateWiseHistoryOpen(true);
   }
 
@@ -636,7 +733,18 @@ export function ResultsSidebarView({
     setNotice("Filters reset.");
   }
 
-  function applyUnifiedPreset(preset: "all" | ResultDepartment | "critical" | "reports" | "images" | "today" | "pending" | "verification" | "emergency") {
+  function applyUnifiedPreset(
+    preset:
+      | "all"
+      | ResultDepartment
+      | "critical"
+      | "reports"
+      | "images"
+      | "today"
+      | "pending"
+      | "verification"
+      | "emergency",
+  ) {
     setNotice(null);
 
     if (preset === "critical") {
@@ -726,7 +834,9 @@ export function ResultsSidebarView({
       return;
     }
 
-    setAcknowledgedIds((current) => (current.includes(result.id) ? current : [...current, result.id]));
+    setAcknowledgedIds((current) =>
+      current.includes(result.id) ? current : [...current, result.id],
+    );
     setNotice(`Critical result ${result.id} acknowledged and added to audit trail.`);
     setAckNote("");
     setPreviewMode("audit");
@@ -742,7 +852,9 @@ export function ResultsSidebarView({
 
     setStatusOverrides((current) => ({ ...current, [result.id]: nextStatus }));
     if (nextStatus === "Completed") {
-      setReportReadyIds((current) => (current.includes(result.id) ? current : [...current, result.id]));
+      setReportReadyIds((current) =>
+        current.includes(result.id) ? current : [...current, result.id],
+      );
       setPreviewMode("report");
     } else {
       setPreviewMode("audit");
@@ -752,7 +864,9 @@ export function ResultsSidebarView({
 
   function releaseLaboratoryReport(result: ResultRecord) {
     setStatusOverrides((current) => ({ ...current, [result.id]: "Completed" }));
-    setReportReadyIds((current) => (current.includes(result.id) ? current : [...current, result.id]));
+    setReportReadyIds((current) =>
+      current.includes(result.id) ? current : [...current, result.id],
+    );
     setPreviewMode("report");
     setNotice(`${result.id} report marked ready for release.`);
   }
@@ -785,7 +899,9 @@ export function ResultsSidebarView({
 
       {showCommandSearchSuggestions ? (
         <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[70] overflow-hidden rounded-2xl border border-border/80 bg-background shadow-[0_18px_45px_rgba(79,70,229,0.16)]">
-          <div className="border-b border-border/70 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Patient suggestions</div>
+          <div className="border-b border-border/70 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            Patient suggestions
+          </div>
           <div className="max-h-72 overflow-y-auto p-1.5">
             {commandSearchSuggestions.map((result) => (
               <button
@@ -799,7 +915,9 @@ export function ResultsSidebarView({
                   {getPatientInitials(result.patientName)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-foreground">{result.patientName}</span>
+                  <span className="block truncate text-sm font-semibold text-foreground">
+                    {result.patientName}
+                  </span>
                   <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                     {result.mrn} | {result.testName}
                   </span>
@@ -826,7 +944,9 @@ export function ResultsSidebarView({
 
       {downloadGroup ? (
         <ResultsGroupDownloadDialog
-          onDownloaded={(format) => setNotice(`${downloadGroup.results.length} reports downloaded as ${format}.`)}
+          onDownloaded={(format) =>
+            setNotice(`${downloadGroup.results.length} reports downloaded as ${format}.`)
+          }
           onOpenChange={(open) => {
             if (!open) {
               setDownloadGroup(null);
@@ -886,21 +1006,32 @@ export function ResultsSidebarView({
 
       <Card className="overflow-visible rounded-2xl border-[#e6e8f7] bg-white shadow-[0_12px_30px_rgba(79,70,229,0.08)]">
         <CardContent className="space-y-2 p-2">
-          {!isUnifiedView ? <div className="flex flex-wrap items-center gap-3">{resultSearchControl}</div> : null}
+          {!isUnifiedView ? (
+            <div className="flex flex-wrap items-center gap-3">{resultSearchControl}</div>
+          ) : null}
 
           <div className="grid items-center gap-1.5 lg:grid-cols-[1.02fr_1.2fr_0.94fr_1.36fr_0.9fr_1.4fr]">
             {visibleStatusFilters.map((item) => (
-              <FilterChip active={status === item} disabled={criticalOnly} key={item} onClick={() => changeStatus(item)}>
+              <FilterChip
+                active={status === item}
+                disabled={criticalOnly}
+                key={item}
+                onClick={() => changeStatus(item)}
+              >
                 {getStatusIcon(item)}
                 <span className="min-w-0 truncate">{getStatusLabel(item)}</span>
-                <span className="ml-auto rounded-md bg-current/10 px-1.5 py-0.5 text-[11px] font-bold leading-none text-current">{statusCounts[item] ?? 0}</span>
+                <span className="ml-auto rounded-md bg-current/10 px-1.5 py-0.5 text-[11px] font-bold leading-none text-current">
+                  {statusCounts[item] ?? 0}
+                </span>
               </FilterChip>
             ))}
             <StatusActionChip
               active={availability === "reports"}
               count={generatedReportRecords.length}
               label="Generated Reports"
-              onDownload={() => openReportGroupDownload(generatedReportRecords, "Generated Reports")}
+              onDownload={() =>
+                openReportGroupDownload(generatedReportRecords, "Generated Reports")
+              }
               onView={viewGeneratedReports}
             />
           </div>
@@ -928,7 +1059,11 @@ export function ResultsSidebarView({
         <Card className="min-w-0">
           <CardHeader className="px-5 py-4">
             <div>
-              <CardTitle className="text-base">{isDepartmentLocked ? getDepartmentLabel(initialDepartment) : getDepartmentLabel(department)}</CardTitle>
+              <CardTitle className="text-base">
+                {isDepartmentLocked
+                  ? getDepartmentLabel(initialDepartment)
+                  : getDepartmentLabel(department)}
+              </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
                 {shouldSplitResultHistory
                   ? `${sameDateResults.length} same-date records shown. Use Test History for ${historyResults.length} older tests.`
@@ -946,14 +1081,19 @@ export function ResultsSidebarView({
                   yesterdayCount={yesterdayHistoryResults.length}
                 />
               ) : null}
-              <Badge tone={criticalOnly ? "critical" : "info"}>{criticalOnly ? "Critical only" : "Live results"}</Badge>
+              <Badge tone={criticalOnly ? "critical" : "info"}>
+                {criticalOnly ? "Critical only" : "Live results"}
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4 p-4 md:p-5">
             {filteredResults.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border bg-background px-4 py-10 text-center">
                 <div className="text-sm font-semibold text-foreground">No results found</div>
-                <p className="mt-1 text-xs text-muted-foreground">Change filters or search with a different patient, MRN, test, location, or order number.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Change filters or search with a different patient, MRN, test, location, or order
+                  number.
+                </p>
                 <Button className="mt-4" variant="outline" onClick={clearFilters}>
                   Clear filters
                 </Button>
@@ -972,7 +1112,9 @@ export function ResultsSidebarView({
                         <span>{isLaboratoryView ? "Specimen" : "Department"}</span>
                         <span>Status</span>
                         <span>Priority</span>
-                        <span className="text-right">{isLaboratoryView ? "Report" : "Availability"}</span>
+                        <span className="text-right">
+                          {isLaboratoryView ? "Report" : "Availability"}
+                        </span>
                       </div>
                       {records.map((result) => (
                         <ResultQueueRow
@@ -1003,7 +1145,6 @@ export function ResultsSidebarView({
             )}
           </CardContent>
         </Card>
-
       </div>
     </div>
   );
@@ -1098,7 +1239,18 @@ function UnifiedWorkspacePanel({
     verification: number;
     emergency: number;
   };
-  onPreset: (preset: "all" | ResultDepartment | "critical" | "reports" | "images" | "today" | "pending" | "verification" | "emergency") => void;
+  onPreset: (
+    preset:
+      | "all"
+      | ResultDepartment
+      | "critical"
+      | "reports"
+      | "images"
+      | "today"
+      | "pending"
+      | "verification"
+      | "emergency",
+  ) => void;
   status: StatusFilter;
 }) {
   return (
@@ -1106,7 +1258,10 @@ function UnifiedWorkspacePanel({
       <CardHeader className="px-5 py-4">
         <div>
           <CardTitle className="text-base">Unified Workspace</CardTitle>
-          <p className="mt-1 text-sm text-muted-foreground">One operating console for lab results, radiology images, POCT values, and critical alerts.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            One operating console for lab results, radiology images, POCT values, and critical
+            alerts.
+          </p>
         </div>
         <Badge tone="info">Command view</Badge>
       </CardHeader>
@@ -1204,7 +1359,8 @@ function FilterChip({
       onClick={onClick}
       className={cn(
         "relative inline-flex h-10 w-full min-w-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-transparent bg-[#fbfbff] px-2.5 text-xs font-semibold text-[#4c5062] shadow-[0_6px_16px_rgba(40,45,90,0.045)] transition hover:bg-white hover:shadow-[0_8px_18px_rgba(79,70,229,0.075)] disabled:cursor-not-allowed disabled:opacity-45",
-        active && "bg-white text-primary shadow-[0_8px_18px_rgba(79,70,229,0.10)] after:absolute after:inset-x-0 after:-bottom-[8px] after:h-[2px] after:rounded-full after:bg-primary",
+        active &&
+          "bg-white text-primary shadow-[0_8px_18px_rgba(79,70,229,0.10)] after:absolute after:inset-x-0 after:-bottom-[8px] after:h-[2px] after:rounded-full after:bg-primary",
       )}
     >
       {children}
@@ -1231,7 +1387,8 @@ function StatusActionChip({
     <span
       className={cn(
         "relative inline-flex h-10 w-full min-w-0 overflow-visible rounded-xl border border-transparent bg-[#fbfbff] text-xs font-semibold text-[#4c5062] shadow-[0_6px_16px_rgba(40,45,90,0.045)] transition hover:bg-white hover:shadow-[0_8px_18px_rgba(79,70,229,0.075)]",
-        active && "bg-white text-primary shadow-[0_8px_18px_rgba(79,70,229,0.10)] after:absolute after:inset-x-0 after:-bottom-[8px] after:h-[2px] after:rounded-full after:bg-primary",
+        active &&
+          "bg-white text-primary shadow-[0_8px_18px_rgba(79,70,229,0.10)] after:absolute after:inset-x-0 after:-bottom-[8px] after:h-[2px] after:rounded-full after:bg-primary",
         disabled && "opacity-45",
       )}
     >
@@ -1243,7 +1400,9 @@ function StatusActionChip({
       >
         <FileText className="h-4 w-4 shrink-0 text-slate-500" />
         <span className="min-w-0 truncate">{label}</span>
-        <span className="ml-auto rounded-md bg-current/10 px-1.5 py-0.5 text-[11px] font-bold leading-none text-current">{count}</span>
+        <span className="ml-auto rounded-md bg-current/10 px-1.5 py-0.5 text-[11px] font-bold leading-none text-current">
+          {count}
+        </span>
       </button>
 
       <DropdownMenu.Root>
@@ -1326,7 +1485,9 @@ function ResultDetailsDialog({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] flex max-h-[90vh] w-[min(94vw,980px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border bg-background px-5 py-4">
             <div className="min-w-0">
-              <Dialog.Title className="truncate text-lg font-semibold text-foreground">{result.patientName}</Dialog.Title>
+              <Dialog.Title className="truncate text-lg font-semibold text-foreground">
+                {result.patientName}
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted-foreground">
                 {result.mrn} | {result.ageSex} | {result.visitType} | {result.testName}
               </Dialog.Description>
@@ -1343,16 +1504,28 @@ function ResultDetailsDialog({
 
           <div className="space-y-4 overflow-y-auto p-4 md:p-5">
             <div className="grid grid-cols-4 gap-2 rounded-lg bg-surface-muted p-1">
-              <PreviewTab active={previewMode === "summary"} onClick={() => onSetPreviewMode("summary")}>
+              <PreviewTab
+                active={previewMode === "summary"}
+                onClick={() => onSetPreviewMode("summary")}
+              >
                 Summary
               </PreviewTab>
-              <PreviewTab active={previewMode === "report"} onClick={() => onSetPreviewMode("report")}>
+              <PreviewTab
+                active={previewMode === "report"}
+                onClick={() => onSetPreviewMode("report")}
+              >
                 Report
               </PreviewTab>
-              <PreviewTab active={previewMode === "image"} onClick={() => onSetPreviewMode("image")}>
+              <PreviewTab
+                active={previewMode === "image"}
+                onClick={() => onSetPreviewMode("image")}
+              >
                 Image
               </PreviewTab>
-              <PreviewTab active={previewMode === "audit"} onClick={() => onSetPreviewMode("audit")}>
+              <PreviewTab
+                active={previewMode === "audit"}
+                onClick={() => onSetPreviewMode("audit")}
+              >
                 Audit
               </PreviewTab>
             </div>
@@ -1360,10 +1533,16 @@ function ResultDetailsDialog({
             {previewMode === "summary" ? <SummaryPanel result={result} /> : null}
             {previewMode === "report" ? <ReportPanel result={result} /> : null}
             {previewMode === "image" ? <ImagePanel result={result} /> : null}
-            {previewMode === "audit" ? <AuditPanel acknowledged={acknowledged} ackNote={ackNote} result={result} /> : null}
+            {previewMode === "audit" ? (
+              <AuditPanel acknowledged={acknowledged} ackNote={ackNote} result={result} />
+            ) : null}
 
             {result.department === "laboratory" ? (
-              <LaboratoryWorkflowActions result={result} onAdvance={() => onAdvanceLaboratory(result)} onRelease={() => onReleaseLaboratory(result)} />
+              <LaboratoryWorkflowActions
+                result={result}
+                onAdvance={() => onAdvanceLaboratory(result)}
+                onRelease={() => onReleaseLaboratory(result)}
+              />
             ) : null}
 
             {result.status === "Critical" ? (
@@ -1372,7 +1551,9 @@ function ResultDetailsDialog({
                   <AlertTriangle className="h-4 w-4" />
                   Critical result action required
                 </div>
-                <p className="text-xs">Notify the clinical team and record acknowledgement before closing this alert.</p>
+                <p className="text-xs">
+                  Notify the clinical team and record acknowledgement before closing this alert.
+                </p>
                 <textarea
                   className="min-h-20 w-full resize-none rounded-md border border-critical/30 bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-critical/20"
                   onChange={(event) => onAckNoteChange(event.target.value)}
@@ -1411,7 +1592,12 @@ function ResultDetailsDialog({
                 onDownloaded={(format) => onSetNotice(`${result.id} downloaded as ${format}.`)}
                 result={result}
                 trigger={
-                  <Button disabled={!result.reportAvailable} title={result.reportAvailable ? "Download report" : "Report is not ready"} type="button" variant="outline">
+                  <Button
+                    disabled={!result.reportAvailable}
+                    title={result.reportAvailable ? "Download report" : "Report is not ready"}
+                    type="button"
+                    variant="outline"
+                  >
                     <Download className="h-4 w-4" />
                     Download
                   </Button>
@@ -1451,7 +1637,9 @@ function ResultQueueRow({
       {selected ? <span className="absolute inset-y-0 left-0 w-1 bg-primary" /> : null}
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-base font-semibold text-foreground">{result.patientName}</span>
+          <span className="truncate text-base font-semibold text-foreground">
+            {result.patientName}
+          </span>
           {selected ? <Badge tone="info">Selected</Badge> : null}
           {acknowledged ? <Badge tone="success">Acknowledged</Badge> : null}
         </div>
@@ -1461,20 +1649,30 @@ function ResultQueueRow({
         <div className="mt-1 text-xs text-muted-foreground">{result.id}</div>
       </div>
       <div className="min-w-0 text-sm text-muted-foreground">
-        <div className="font-medium capitalize text-foreground">{isLaboratoryView ? result.specimen ?? "Lab specimen" : result.department}</div>
-        <div className="mt-1 truncate text-xs">{isLaboratoryView ? result.location : formatDateTime(result.orderedAt)}</div>
+        <div className="font-medium capitalize text-foreground">
+          {isLaboratoryView ? (result.specimen ?? "Lab specimen") : result.department}
+        </div>
+        <div className="mt-1 truncate text-xs">
+          {isLaboratoryView ? result.location : formatDateTime(result.orderedAt)}
+        </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">Status</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">
+          Status
+        </span>
         <Badge tone={statusTone[result.status]}>{result.status}</Badge>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">Priority</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:hidden">
+          Priority
+        </span>
         <Badge tone={priorityTone[result.priority]}>{result.priority}</Badge>
       </div>
       <div className="flex justify-start gap-2 lg:justify-end">
         <AvailabilityIcon active={result.reportAvailable} label="Report" icon="report" />
-        {!isLaboratoryView ? <AvailabilityIcon active={result.imageAvailable} label="Image" icon="image" /> : null}
+        {!isLaboratoryView ? (
+          <AvailabilityIcon active={result.imageAvailable} label="Image" icon="image" />
+        ) : null}
         <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium text-muted-foreground">
           {isLaboratoryView ? (result.reportAvailable ? "Ready" : "Pending") : "View"}
         </span>
@@ -1503,8 +1701,12 @@ function TestHistoryPanel({
   const currentPage = historyTable.getState().pagination.pageIndex + 1;
   const pageSize = historyTable.getState().pagination.pageSize;
   const pageCount = Math.max(historyTable.getPageCount(), 1);
-  const pageStart = totalCount === 0 ? 0 : historyTable.getState().pagination.pageIndex * pageSize + 1;
-  const pageEnd = totalCount === 0 ? 0 : Math.min(totalCount, pageStart + historyTable.getRowModel().rows.length - 1);
+  const pageStart =
+    totalCount === 0 ? 0 : historyTable.getState().pagination.pageIndex * pageSize + 1;
+  const pageEnd =
+    totalCount === 0
+      ? 0
+      : Math.min(totalCount, pageStart + historyTable.getRowModel().rows.length - 1);
 
   return (
     <section className="rounded-xl border border-border bg-background p-4">
@@ -1529,14 +1731,17 @@ function TestHistoryPanel({
             <button
               className={cn(
                 "grid w-full gap-3 rounded-lg border border-border bg-surface px-3 py-3 text-left transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[1fr_auto] md:items-center",
-                selectedId === result.id && "border-primary bg-primary/5 ring-1 ring-inset ring-primary/20",
+                selectedId === result.id &&
+                  "border-primary bg-primary/5 ring-1 ring-inset ring-primary/20",
               )}
               key={result.id}
               onClick={() => onSelect(result)}
               type="button"
             >
               <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-foreground">{result.patientName}</span>
+                <span className="block truncate text-sm font-semibold text-foreground">
+                  {result.patientName}
+                </span>
                 <span className="mt-1 block truncate text-xs text-muted-foreground">
                   {formatDateTime(result.orderedAt)} | {result.mrn} | {result.testName}
                 </span>
@@ -1658,7 +1863,9 @@ function CustomDateFilterDialog({
 }) {
   const fallbackDate = availableDates[0]?.dateKey ?? getLocalDateKey(new Date());
   const [draftDate, setDraftDate] = useState(value || fallbackDate);
-  const [visibleMonth, setVisibleMonth] = useState(() => new Date(`${value || fallbackDate}T00:00:00`));
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => new Date(`${value || fallbackDate}T00:00:00`),
+  );
 
   const dateCounts = useMemo(() => {
     return availableDates.reduce<Record<string, number>>((counts, item) => {
@@ -1708,13 +1915,20 @@ function CustomDateFilterDialog({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] w-[min(88vw,340px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-base font-semibold text-foreground">Select Custom Date</Dialog.Title>
+              <Dialog.Title className="text-base font-semibold text-foreground">
+                Select Custom Date
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted-foreground">
                 Use the calendar or type a date manually for date-wise results.
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
-              <Button aria-label="Close custom date calendar" size="icon" type="button" variant="ghost">
+              <Button
+                aria-label="Close custom date calendar"
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </Dialog.Close>
@@ -1722,7 +1936,9 @@ function CustomDateFilterDialog({
 
           <div className="space-y-3 p-3">
             <label className="block rounded-lg border border-border bg-background p-2.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Manual date</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Manual date
+              </span>
               <Input
                 className="mt-2 h-9"
                 inputMode="numeric"
@@ -1731,7 +1947,14 @@ function CustomDateFilterDialog({
                 placeholder="YYYY-MM-DD"
                 value={draftDate}
               />
-              <span className={cn("mt-2 block text-xs", canApply ? "text-muted-foreground" : "text-critical")}>{selectedLabel}</span>
+              <span
+                className={cn(
+                  "mt-2 block text-xs",
+                  canApply ? "text-muted-foreground" : "text-critical",
+                )}
+              >
+                {selectedLabel}
+              </span>
             </label>
 
             {availableDates.length > 0 ? (
@@ -1740,7 +1963,9 @@ function CustomDateFilterDialog({
                   <button
                     className={cn(
                       "rounded-full border px-3 py-1.5 text-xs font-medium transition hover:bg-surface-muted",
-                      draftDate === item.dateKey ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground",
+                      draftDate === item.dateKey
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-muted-foreground",
                     )}
                     key={item.dateKey}
                     onClick={() => changeManualDate(item.dateKey)}
@@ -1754,11 +1979,25 @@ function CustomDateFilterDialog({
 
             <div className="rounded-xl border border-border bg-background p-2.5">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <Button aria-label="Previous month" onClick={() => moveMonth(-1)} size="icon" type="button" variant="outline">
+                <Button
+                  aria-label="Previous month"
+                  onClick={() => moveMonth(-1)}
+                  size="icon"
+                  type="button"
+                  variant="outline"
+                >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <div className="text-sm font-semibold text-foreground">{monthFormatter.format(visibleMonth)}</div>
-                <Button aria-label="Next month" onClick={() => moveMonth(1)} size="icon" type="button" variant="outline">
+                <div className="text-sm font-semibold text-foreground">
+                  {monthFormatter.format(visibleMonth)}
+                </div>
+                <Button
+                  aria-label="Next month"
+                  onClick={() => moveMonth(1)}
+                  size="icon"
+                  type="button"
+                  variant="outline"
+                >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -1781,9 +2020,12 @@ function CustomDateFilterDialog({
                     <button
                       className={cn(
                         "relative flex h-8 items-center justify-center rounded-md border text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        cell.inCurrentMonth ? "border-border bg-surface text-foreground hover:bg-surface-muted" : "border-transparent bg-transparent text-muted-foreground/45",
+                        cell.inCurrentMonth
+                          ? "border-border bg-surface text-foreground hover:bg-surface-muted"
+                          : "border-transparent bg-transparent text-muted-foreground/45",
                         isToday && "border-info/50 text-info",
-                        isSelected && "border-primary bg-primary text-primary-foreground hover:bg-primary",
+                        isSelected &&
+                          "border-primary bg-primary text-primary-foreground hover:bg-primary",
                       )}
                       key={cell.dateKey}
                       onClick={() => changeManualDate(cell.dateKey)}
@@ -1851,7 +2093,8 @@ function DateWiseHistoryDialog({
   const pageSize = table.getState().pagination.pageSize;
   const pageCount = Math.max(table.getPageCount(), 1);
   const pageStart = totalCount === 0 ? 0 : table.getState().pagination.pageIndex * pageSize + 1;
-  const pageEnd = totalCount === 0 ? 0 : Math.min(totalCount, pageStart + table.getRowModel().rows.length - 1);
+  const pageEnd =
+    totalCount === 0 ? 0 : Math.min(totalCount, pageStart + table.getRowModel().rows.length - 1);
   const activeDateLabel = dateValue ? formatDateKeyLabel(dateValue) : "All dates";
 
   return (
@@ -1861,13 +2104,20 @@ function DateWiseHistoryDialog({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] flex max-h-[88vh] w-[min(94vw,1040px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
             <div>
-              <Dialog.Title className="text-lg font-semibold text-foreground">All Tests History</Dialog.Title>
+              <Dialog.Title className="text-lg font-semibold text-foreground">
+                All Tests History
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted-foreground">
                 Review detailed result history by selected date with paginated patient records.
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
-              <Button aria-label="Close date wise history" size="icon" type="button" variant="ghost">
+              <Button
+                aria-label="Close date wise history"
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </Dialog.Close>
@@ -1879,7 +2129,9 @@ function DateWiseHistoryDialog({
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-foreground">Available dates</div>
-                    <div className="text-xs text-muted-foreground">Choose a date bucket or keep all history visible.</div>
+                    <div className="text-xs text-muted-foreground">
+                      Choose a date bucket or keep all history visible.
+                    </div>
                   </div>
                   <Badge tone="info">{activeDateLabel}</Badge>
                 </div>
@@ -1901,14 +2153,18 @@ function DateWiseHistoryDialog({
                       variant={dateValue === item.dateKey ? "default" : "outline"}
                     >
                       {item.label}
-                      <Badge tone={dateValue === item.dateKey ? "default" : "muted"}>{item.count}</Badge>
+                      <Badge tone={dateValue === item.dateKey ? "default" : "muted"}>
+                        {item.count}
+                      </Badge>
                     </Button>
                   ))}
                 </div>
               </div>
 
               <label className="rounded-lg border border-border bg-background p-3">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Custom date</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Custom date
+                </span>
                 <Input
                   className="mt-2 h-10"
                   onChange={(event) => onDateChange(event.target.value)}
@@ -1930,7 +2186,9 @@ function DateWiseHistoryDialog({
               {table.getRowModel().rows.length === 0 ? (
                 <div className="px-4 py-10 text-center">
                   <div className="text-sm font-semibold text-foreground">No history found</div>
-                  <p className="mt-1 text-xs text-muted-foreground">Choose another date or clear the custom date filter.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Choose another date or clear the custom date filter.
+                  </p>
                 </div>
               ) : (
                 table.getRowModel().rows.map((row) => {
@@ -1940,22 +2198,31 @@ function DateWiseHistoryDialog({
                     <button
                       className={cn(
                         "grid w-full gap-3 border-b border-border px-4 py-4 text-left transition last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid-cols-[1.15fr_0.8fr_1fr_0.72fr_0.72fr] lg:items-center",
-                        selectedId === result.id && "bg-primary/5 ring-1 ring-inset ring-primary/25",
+                        selectedId === result.id &&
+                          "bg-primary/5 ring-1 ring-inset ring-primary/25",
                       )}
                       key={`date-history-${result.id}`}
                       onClick={() => onSelect(result)}
                       type="button"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold text-foreground">{result.patientName}</span>
+                        <span className="block truncate text-sm font-semibold text-foreground">
+                          {result.patientName}
+                        </span>
                         <span className="mt-1 block truncate text-xs text-muted-foreground">
                           {result.mrn} | {result.ageSex} | {result.testName}
                         </span>
-                        <span className="mt-1 block text-xs text-muted-foreground">{result.id}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {result.id}
+                        </span>
                       </span>
                       <span className="min-w-0 text-sm">
-                        <span className="block capitalize text-foreground">{result.department}</span>
-                        <span className="mt-1 block truncate text-xs text-muted-foreground">{result.location}</span>
+                        <span className="block capitalize text-foreground">
+                          {result.department}
+                        </span>
+                        <span className="mt-1 block truncate text-xs text-muted-foreground">
+                          {result.location}
+                        </span>
                       </span>
                       <span className="min-w-0 text-sm text-muted-foreground">
                         <span className="block truncate">{formatDateTime(result.orderedAt)}</span>
@@ -1966,8 +2233,18 @@ function DateWiseHistoryDialog({
                         <Badge tone={priorityTone[result.priority]}>{result.priority}</Badge>
                       </span>
                       <span className="flex justify-start gap-2 lg:justify-end">
-                        <AvailabilityIcon active={result.reportAvailable} label="Report" icon="report" />
-                        {result.department !== "laboratory" ? <AvailabilityIcon active={result.imageAvailable} label="Image" icon="image" /> : null}
+                        <AvailabilityIcon
+                          active={result.reportAvailable}
+                          label="Report"
+                          icon="report"
+                        />
+                        {result.department !== "laboratory" ? (
+                          <AvailabilityIcon
+                            active={result.imageAvailable}
+                            label="Image"
+                            icon="image"
+                          />
+                        ) : null}
                       </span>
                     </button>
                   );
@@ -2082,7 +2359,9 @@ function PreviewTab({
       onClick={onClick}
       className={cn(
         "h-9 rounded-md px-3 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-45",
-        active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-background",
+        active
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "text-muted-foreground hover:bg-background",
       )}
     >
       {children}
@@ -2105,10 +2384,14 @@ function LaboratoryWorkflowActions({
     <div className="rounded-lg border border-border bg-background p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Laboratory workflow</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Laboratory workflow
+          </div>
           <div className="mt-1 text-sm font-semibold text-foreground">{result.status}</div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {nextStatus ? `Next step: ${nextStatus}` : "Result is ready for report viewing and delivery."}
+            {nextStatus
+              ? `Next step: ${nextStatus}`
+              : "Result is ready for report viewing and delivery."}
           </p>
         </div>
         <Badge tone={statusTone[result.status]}>{result.status}</Badge>
@@ -2127,14 +2410,24 @@ function LaboratoryWorkflowActions({
   );
 }
 
-function AvailabilityIcon({ active, label, icon }: { active: boolean; label: string; icon: "report" | "image" }) {
+function AvailabilityIcon({
+  active,
+  label,
+  icon,
+}: {
+  active: boolean;
+  label: string;
+  icon: "report" | "image";
+}) {
   const Icon = icon === "report" ? FileText : ImageIcon;
 
   return (
     <span
       className={cn(
         "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs font-medium",
-        active ? "border-success/30 bg-success/10 text-success" : "border-border bg-background text-muted-foreground",
+        active
+          ? "border-success/30 bg-success/10 text-success"
+          : "border-border bg-background text-muted-foreground",
       )}
       title={`${label} ${active ? "available" : "not available"}`}
     >
@@ -2147,7 +2440,9 @@ function SummaryPanel({ result }: { result: ResultRecord }) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-background p-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Selected test</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Selected test
+        </div>
         <div className="mt-1 text-sm font-semibold text-foreground">{result.testName}</div>
         <p className="mt-2 text-sm text-muted-foreground">{result.resultSummary}</p>
       </div>
@@ -2158,7 +2453,10 @@ function SummaryPanel({ result }: { result: ResultRecord }) {
         <InfoRow label="Ordered at" value={formatDateTime(result.orderedAt)} />
         <InfoRow label="Completed at" value={formatDateTime(result.completedAt)} />
         <InfoRow label="Location" value={result.location} />
-        <InfoRow label="Specimen / Accession" value={result.specimen ?? result.accessionNo ?? "-"} />
+        <InfoRow
+          label="Specimen / Accession"
+          value={result.specimen ?? result.accessionNo ?? "-"}
+        />
       </div>
 
       <ResultValues result={result} />
@@ -2169,19 +2467,38 @@ function SummaryPanel({ result }: { result: ResultRecord }) {
 function ResultValues({ result }: { result: ResultRecord }) {
   return (
     <div className="space-y-2">
-      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Result values</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Result values
+      </div>
       <div className="overflow-hidden rounded-lg border border-border">
         {result.values.map((value) => (
-          <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-border px-3 py-2 last:border-b-0" key={`${result.id}-${value.name}`}>
+          <div
+            className="grid grid-cols-[1fr_auto] gap-3 border-b border-border px-3 py-2 last:border-b-0"
+            key={`${result.id}-${value.name}`}
+          >
             <div className="min-w-0">
               <div className="truncate text-sm font-medium text-foreground">{value.name}</div>
-              <div className="text-xs text-muted-foreground">{value.range ? `Range ${value.range}` : "Reference not applicable"}</div>
+              <div className="text-xs text-muted-foreground">
+                {value.range ? `Range ${value.range}` : "Reference not applicable"}
+              </div>
             </div>
             <div className="text-right">
               <div className="text-sm font-semibold text-foreground">
                 {value.value} {value.unit ?? ""}
               </div>
-              {value.flag ? <Badge tone={value.flag === "Critical" ? "critical" : value.flag === "Normal" ? "success" : "warning"}>{value.flag}</Badge> : null}
+              {value.flag ? (
+                <Badge
+                  tone={
+                    value.flag === "Critical"
+                      ? "critical"
+                      : value.flag === "Normal"
+                        ? "success"
+                        : "warning"
+                  }
+                >
+                  {value.flag}
+                </Badge>
+              ) : null}
             </div>
           </div>
         ))}
@@ -2196,7 +2513,9 @@ function ReportPanel({ result }: { result: ResultRecord }) {
       <div className="rounded-lg border border-dashed border-border bg-background p-6 text-center">
         <FileText className="mx-auto h-7 w-7 text-muted-foreground" />
         <div className="mt-2 text-sm font-semibold text-foreground">Report is not ready</div>
-        <p className="mt-1 text-xs text-muted-foreground">The result is still processing or awaiting verification.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          The result is still processing or awaiting verification.
+        </p>
       </div>
     );
   }
@@ -2217,7 +2536,9 @@ function ReportPanel({ result }: { result: ResultRecord }) {
         <InfoLine label="Doctor" value={result.orderingDoctor} />
       </div>
       <div className="rounded-md border border-border bg-surface-muted p-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Interpretation</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Interpretation
+        </div>
         <p className="mt-1 text-sm text-foreground">{result.resultSummary}</p>
       </div>
       <ResultValues result={result} />
@@ -2235,7 +2556,9 @@ function ImagePanel({ result }: { result: ResultRecord }) {
       <div className="rounded-lg border border-dashed border-border bg-background p-6 text-center">
         <ImageIcon className="mx-auto h-7 w-7 text-muted-foreground" />
         <div className="mt-2 text-sm font-semibold text-foreground">Images are not available</div>
-        <p className="mt-1 text-xs text-muted-foreground">PACS image preview will appear after the study is completed and synced.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          PACS image preview will appear after the study is completed and synced.
+        </p>
       </div>
     );
   }
@@ -2264,13 +2587,26 @@ function ImagePanel({ result }: { result: ResultRecord }) {
   );
 }
 
-function AuditPanel({ result, acknowledged, ackNote }: { result: ResultRecord; acknowledged: boolean; ackNote: string }) {
+function AuditPanel({
+  result,
+  acknowledged,
+  ackNote,
+}: {
+  result: ResultRecord;
+  acknowledged: boolean;
+  ackNote: string;
+}) {
   return (
     <div className="space-y-3">
       <div className="space-y-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Timeline</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Timeline
+        </div>
         {result.timeline.map((event) => (
-          <div className="flex gap-3 rounded-lg border border-border bg-background p-3" key={`${result.id}-${event.label}`}>
+          <div
+            className="flex gap-3 rounded-lg border border-border bg-background p-3"
+            key={`${result.id}-${event.label}`}
+          >
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
             <div className="min-w-0">
               <div className="text-sm font-medium text-foreground">{event.label}</div>
@@ -2284,8 +2620,12 @@ function AuditPanel({ result, acknowledged, ackNote }: { result: ResultRecord; a
           <div className="flex gap-3 rounded-lg border border-success/30 bg-success/10 p-3">
             <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
             <div className="min-w-0">
-              <div className="text-sm font-medium text-foreground">Critical acknowledgement recorded</div>
-              <div className="text-xs text-muted-foreground">{ackNote || "Acknowledgement note saved in the audit trail."}</div>
+              <div className="text-sm font-medium text-foreground">
+                Critical acknowledgement recorded
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {ackNote || "Acknowledgement note saved in the audit trail."}
+              </div>
             </div>
           </div>
         ) : null}
@@ -2297,7 +2637,9 @@ function AuditPanel({ result, acknowledged, ackNote }: { result: ResultRecord; a
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-border bg-background px-3 py-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 break-words text-sm font-medium text-foreground">{value}</div>
     </div>
   );
@@ -2306,7 +2648,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function InfoLine({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-0.5 text-sm font-medium text-foreground">{value}</div>
     </div>
   );

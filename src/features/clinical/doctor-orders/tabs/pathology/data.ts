@@ -17,13 +17,7 @@ export const pathologySubTabs = [
   "Order history",
 ] as const;
 
-export const visitProblems = [
-  "Anemia",
-  "Leukocytosis",
-  "Thrombocytopenia",
-  "Hematuria",
-  "Fever",
-];
+export const visitProblems = ["Anemia", "Leukocytosis", "Thrombocytopenia", "Hematuria", "Fever"];
 
 export const specimenSources = [
   "Blood",
@@ -37,12 +31,7 @@ export const specimenSources = [
   "FNAC Sample",
 ];
 
-export const priorities: PathologyPriority[] = [
-  "Routine",
-  "Urgent",
-  "STAT",
-  "ASAP",
-];
+export const priorities: PathologyPriority[] = ["Routine", "Urgent", "STAT", "ASAP"];
 
 export const pathologyDepartments = [
   "Hematology",
@@ -207,9 +196,7 @@ export const previousTestOrders: PathologyOrderHistory[] = [
 ];
 
 const today = new Date();
-const orderDateTime = `${today.toISOString().slice(0, 10)} ${today
-  .toTimeString()
-  .slice(0, 5)}`;
+const orderDateTime = `${today.toISOString().slice(0, 10)} ${today.toTimeString().slice(0, 5)}`;
 
 export const summaryRows: PathologySummaryRow[] = [
   {
@@ -328,8 +315,4 @@ export const resultBlocks: PathologyResultBlock[] = [
   },
 ];
 
-export const diagnosisTypes = [
-  "Primary",
-  "Secondary",
-  "Differential",
-];
+export const diagnosisTypes = ["Primary", "Secondary", "Differential"];

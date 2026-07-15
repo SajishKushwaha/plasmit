@@ -21,7 +21,9 @@ function patientText(patient: AdmissionPatient) {
 export function PatientLookupWorkspace() {
   const { state, selectedPatient, actions } = useAdmissionStore();
   const [search, setSearch] = React.useState("");
-  const rows = state.patients.filter((patient) => patientText(patient).includes(search.toLowerCase()));
+  const rows = state.patients.filter((patient) =>
+    patientText(patient).includes(search.toLowerCase()),
+  );
 
   function startScenario(scenario: AdmissionScenario) {
     if (scenario === "Old Patient / Re-admission" && !selectedPatient) {
@@ -60,7 +62,9 @@ export function PatientLookupWorkspace() {
                   type="button"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-foreground">{patient.name}</span>
+                    <span className="block truncate text-sm font-semibold text-foreground">
+                      {patient.name}
+                    </span>
                     <span className="block truncate text-xs text-muted-foreground">
                       {patient.uhid} | {patient.ageSex} | {patient.phone}
                     </span>
@@ -70,13 +74,17 @@ export function PatientLookupWorkspace() {
               );
             })}
             {!rows.length ? (
-              <div className="px-3 py-8 text-center text-sm text-muted-foreground">No patient matched. Start a new or emergency admission.</div>
+              <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                No patient matched. Start a new or emergency admission.
+              </div>
             ) : null}
           </div>
         </div>
 
         <div className="rounded-lg border border-border bg-surface-muted p-4">
-          <div className="text-sm font-semibold text-foreground">{selectedPatient ? selectedPatient.name : "No patient selected"}</div>
+          <div className="text-sm font-semibold text-foreground">
+            {selectedPatient ? selectedPatient.name : "No patient selected"}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {selectedPatient
               ? `${selectedPatient.uhid} selected. Continue with the matching admission flow.`
@@ -89,7 +97,11 @@ export function PatientLookupWorkspace() {
           ) : null}
 
           <div className="mt-4 grid gap-2">
-            <Button variant="outline" className="border-info text-info" onClick={() => startScenario("Old Patient / Re-admission")}>
+            <Button
+              variant="outline"
+              className="border-info text-info"
+              onClick={() => startScenario("Old Patient / Re-admission")}
+            >
               <UserPlus className="h-4 w-4" />
               Old Patient / Re-admission
             </Button>
@@ -97,7 +109,11 @@ export function PatientLookupWorkspace() {
               <UserPlus className="h-4 w-4" />
               New Patient Admission
             </Button>
-            <Button variant="outline" className="border-danger text-danger" onClick={() => startScenario("Emergency Unknown Patient")}>
+            <Button
+              variant="outline"
+              className="border-danger text-danger"
+              onClick={() => startScenario("Emergency Unknown Patient")}
+            >
               <AlertCircle className="h-4 w-4" />
               Emergency Unknown Patient
             </Button>

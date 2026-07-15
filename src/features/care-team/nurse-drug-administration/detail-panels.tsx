@@ -8,9 +8,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import type { AdministrationAction, AdministrationDetail, FluidAdministrationDetail } from "./types";
+import type {
+  AdministrationAction,
+  AdministrationDetail,
+  FluidAdministrationDetail,
+} from "./types";
 
-const administrationActions: AdministrationAction[] = ["Administered", "Not administered", "Late administered"];
+const administrationActions: AdministrationAction[] = [
+  "Administered",
+  "Not administered",
+  "Late administered",
+];
 const priorityOptions = ["Routine", "Urgent", "Immediate"] as const;
 
 function formatCurrentDate() {
@@ -110,7 +118,11 @@ function Modal({
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
               <Dialog.Title className="text-sm font-semibold text-foreground">{title}</Dialog.Title>
-              {description ? <Dialog.Description className="mt-1 text-xs text-muted-foreground">{description}</Dialog.Description> : null}
+              {description ? (
+                <Dialog.Description className="mt-1 text-xs text-muted-foreground">
+                  {description}
+                </Dialog.Description>
+              ) : null}
             </div>
             <Dialog.Close asChild>
               <Button size="icon" variant="ghost" aria-label="Close popup">
@@ -151,10 +163,18 @@ function CounterCheckFields({
       {checked ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <FormField label="Nurse name">
-            <Input value={checkedBy} onChange={(event) => onChange({ checkedBy: event.target.value })} placeholder="Counter-check nurse" />
+            <Input
+              value={checkedBy}
+              onChange={(event) => onChange({ checkedBy: event.target.value })}
+              placeholder="Counter-check nurse"
+            />
           </FormField>
           <FormField label="Counter-check time">
-            <Input type="time" value={checkedAt} onChange={(event) => onChange({ checkedAt: event.target.value })} />
+            <Input
+              type="time"
+              value={checkedAt}
+              onChange={(event) => onChange({ checkedAt: event.target.value })}
+            />
           </FormField>
         </div>
       ) : null}
@@ -219,18 +239,14 @@ export function AdministrationDetailsPanel({
               type="date"
               max={formatCurrentDate()}
               value={detail.administrationDate}
-              onChange={(event) =>
-                onChange({ ...detail, administrationDate: event.target.value })
-              }
+              onChange={(event) => onChange({ ...detail, administrationDate: event.target.value })}
             />
           </FormField>
 
           <FormField label="Dosage">
             <Input
               value={detail.dosage}
-              onChange={(event) =>
-                onChange({ ...detail, dosage: event.target.value })
-              }
+              onChange={(event) => onChange({ ...detail, dosage: event.target.value })}
             />
           </FormField>
 
@@ -238,9 +254,7 @@ export function AdministrationDetailsPanel({
             <Input
               type="time"
               value={detail.time}
-              onChange={(event) =>
-                onChange({ ...detail, time: event.target.value })
-              }
+              onChange={(event) => onChange({ ...detail, time: event.target.value })}
             />
           </FormField>
 
@@ -255,15 +269,9 @@ export function AdministrationDetailsPanel({
 
         {/* Row 2 */}
         <div className="grid gap-3 md:grid-cols-2">
-          <ReadOnlyField
-            label="Last administered at"
-            value={detail.lastAdministeredAt}
-          />
+          <ReadOnlyField label="Last administered at" value={detail.lastAdministeredAt} />
 
-          <ReadOnlyField
-            label="Last administered by"
-            value={detail.lastAdministeredBy}
-          />
+          <ReadOnlyField label="Last administered by" value={detail.lastAdministeredBy} />
         </div>
 
         {/* Row 3 */}
@@ -280,9 +288,7 @@ export function AdministrationDetailsPanel({
             <FormField label="Reason">
               <Input
                 value={detail.reason}
-                onChange={(event) =>
-                  onChange({ ...detail, reason: event.target.value })
-                }
+                onChange={(event) => onChange({ ...detail, reason: event.target.value })}
                 placeholder="Enter reason"
               />
             </FormField>
@@ -363,7 +369,13 @@ export function FluidAdministrationDetailsPanel({
       toast.error("Volume administered cannot be more than bag volume");
       return;
     }
-    if (isStopBeforeAdministration(detail.stopAdministrationAt, detail.administrationDate, detail.time)) {
+    if (
+      isStopBeforeAdministration(
+        detail.stopAdministrationAt,
+        detail.administrationDate,
+        detail.time,
+      )
+    ) {
       toast.error("Stop administration time cannot be before administration time");
       return;
     }
@@ -401,9 +413,7 @@ export function FluidAdministrationDetailsPanel({
               type="date"
               max={formatCurrentDate()}
               value={detail.administrationDate}
-              onChange={(event) =>
-                onChange({ ...detail, administrationDate: event.target.value })
-              }
+              onChange={(event) => onChange({ ...detail, administrationDate: event.target.value })}
             />
           </FormField>
 
@@ -412,9 +422,7 @@ export function FluidAdministrationDetailsPanel({
               value={detail.rate}
               readOnly={!canEditRate}
               className={!canEditRate ? "bg-surface-muted" : undefined}
-              onChange={(event) =>
-                onChange({ ...detail, rate: event.target.value })
-              }
+              onChange={(event) => onChange({ ...detail, rate: event.target.value })}
             />
           </FormField>
 
@@ -422,28 +430,24 @@ export function FluidAdministrationDetailsPanel({
             <Input
               type="time"
               value={detail.time}
-              onChange={(event) =>
-                onChange({ ...detail, time: event.target.value })
-              }
+              onChange={(event) => onChange({ ...detail, time: event.target.value })}
             />
           </FormField>
 
           <FormField label="Diluent">
-            <Input value={detail.diluent} onChange={(event) => onChange({ ...detail, diluent: event.target.value })} placeholder="Diluent name" />
+            <Input
+              value={detail.diluent}
+              onChange={(event) => onChange({ ...detail, diluent: event.target.value })}
+              placeholder="Diluent name"
+            />
           </FormField>
         </div>
 
         {/* Row 2 */}
         <div className="grid gap-3 md:grid-cols-3">
-          <ReadOnlyField
-            label="Last administered at"
-            value={detail.lastAdministeredAt}
-          />
+          <ReadOnlyField label="Last administered at" value={detail.lastAdministeredAt} />
 
-          <ReadOnlyField
-            label="Last administered by"
-            value={detail.lastAdministeredBy}
-          />
+          <ReadOnlyField label="Last administered by" value={detail.lastAdministeredBy} />
 
           <ReadOnlyField
             label="Volume remaining"
@@ -458,9 +462,7 @@ export function FluidAdministrationDetailsPanel({
               type="number"
               min={0}
               value={detail.bagVolume}
-              onChange={(event) =>
-                onChange({ ...detail, bagVolume: event.target.value })
-              }
+              onChange={(event) => onChange({ ...detail, bagVolume: event.target.value })}
             />
           </FormField>
 
@@ -515,9 +517,7 @@ export function FluidAdministrationDetailsPanel({
           <FormField label="Reason">
             <Input
               value={detail.reason}
-              onChange={(event) =>
-                onChange({ ...detail, reason: event.target.value })
-              }
+              onChange={(event) => onChange({ ...detail, reason: event.target.value })}
               placeholder="Optional note"
             />
           </FormField>
@@ -537,10 +537,8 @@ export function FluidAdministrationDetailsPanel({
             onChange({
               ...detail,
               counterChecked: values.checked ?? detail.counterChecked,
-              counterCheckedBy:
-                values.checkedBy ?? detail.counterCheckedBy,
-              counterCheckedAt:
-                values.checkedAt ?? detail.counterCheckedAt,
+              counterCheckedBy: values.checkedBy ?? detail.counterCheckedBy,
+              counterCheckedAt: values.checkedAt ?? detail.counterCheckedAt,
             })
           }
         />

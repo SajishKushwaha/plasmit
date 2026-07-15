@@ -15,14 +15,14 @@ Goal ye hai ki aap manager ke saamne confidently explain kar sako ki har module 
 
 ## 2. High-Level Summary
 
-| Module | Primary User | Main Purpose |
-| --- | --- | --- |
-| Clinical Examination | Doctor / Consultant | Structured patient examination, specialty templates, scoring, notes |
-| Billing Desk | Billing Executive / Front Office | Patient selection, services/tests/packages billing, payment collection |
-| CVS Monitoring | ICU Doctor / ICU Nurse | Cardiovascular vitals and trends monitoring |
-| Abdominal Monitoring | ICU Doctor / ICU Nurse | Abdominal pressure and output monitoring |
-| Drains & Tubes | ICU Nurse / Surgeon / ICU Doctor | Drain/tube output, site status, alerts, history |
-| Lines & Devices | ICU Nurse / ICU Doctor | Catheter/line/device patency, site, flow, alerts, history |
+| Module               | Primary User                     | Main Purpose                                                           |
+| -------------------- | -------------------------------- | ---------------------------------------------------------------------- |
+| Clinical Examination | Doctor / Consultant              | Structured patient examination, specialty templates, scoring, notes    |
+| Billing Desk         | Billing Executive / Front Office | Patient selection, services/tests/packages billing, payment collection |
+| CVS Monitoring       | ICU Doctor / ICU Nurse           | Cardiovascular vitals and trends monitoring                            |
+| Abdominal Monitoring | ICU Doctor / ICU Nurse           | Abdominal pressure and output monitoring                               |
+| Drains & Tubes       | ICU Nurse / Surgeon / ICU Doctor | Drain/tube output, site status, alerts, history                        |
+| Lines & Devices      | ICU Nurse / ICU Doctor           | Catheter/line/device patency, site, flow, alerts, history              |
 
 ## 3. Clinical Examination Module
 
@@ -226,14 +226,14 @@ Manager closing line:
 
 ### 4.1 Routes
 
-| Screen | Route |
-| --- | --- |
-| Billing Desk Main | `/billing-desk` |
-| Patient | `/billing-desk/patient` |
-| Tests | `/billing-desk/tests` |
-| Packages | `/billing-desk/packages` |
-| Bill Summary | `/billing-desk/summary` |
-| Payment | `/billing-desk/payment` |
+| Screen            | Route                    |
+| ----------------- | ------------------------ |
+| Billing Desk Main | `/billing-desk`          |
+| Patient           | `/billing-desk/patient`  |
+| Tests             | `/billing-desk/tests`    |
+| Packages          | `/billing-desk/packages` |
+| Bill Summary      | `/billing-desk/summary`  |
+| Payment           | `/billing-desk/payment`  |
 
 ### 4.2 Business Purpose
 
@@ -488,18 +488,18 @@ Manager explanation:
 
 ### 6.1 Routes
 
-| Screen | Route |
-| --- | --- |
-| CVS Dashboard | `/icu-monitoring/cvs` |
-| Add Record | `/icu-monitoring/cvs/add` |
-| Heart Rate | `/icu-monitoring/cvs/heart-rate` |
-| Temperature | `/icu-monitoring/cvs/temperature` |
-| BP NIBP | `/icu-monitoring/cvs/bp-nibp` |
-| BP Arterial | `/icu-monitoring/cvs/bp-arterial` |
-| CVP | `/icu-monitoring/cvs/cvp` |
-| PCWP | `/icu-monitoring/cvs/pcwp` |
-| Records | `/icu-monitoring/cvs/records` |
-| Trends | `/icu-monitoring/cvs/trends` |
+| Screen        | Route                             |
+| ------------- | --------------------------------- |
+| CVS Dashboard | `/icu-monitoring/cvs`             |
+| Add Record    | `/icu-monitoring/cvs/add`         |
+| Heart Rate    | `/icu-monitoring/cvs/heart-rate`  |
+| Temperature   | `/icu-monitoring/cvs/temperature` |
+| BP NIBP       | `/icu-monitoring/cvs/bp-nibp`     |
+| BP Arterial   | `/icu-monitoring/cvs/bp-arterial` |
+| CVP           | `/icu-monitoring/cvs/cvp`         |
+| PCWP          | `/icu-monitoring/cvs/pcwp`        |
+| Records       | `/icu-monitoring/cvs/records`     |
+| Trends        | `/icu-monitoring/cvs/trends`      |
 
 ### 6.2 Business Purpose
 
@@ -587,11 +587,11 @@ Manager closing line:
 
 ### 7.1 Routes
 
-| Screen | Route |
-| --- | --- |
-| Abdominal Dashboard | `/icu-monitoring/abdominal` |
-| Abdominal Trends | `/icu-monitoring/abdominal/trends` |
-| Abdominal Records | `/icu-monitoring/abdominal/records` |
+| Screen              | Route                               |
+| ------------------- | ----------------------------------- |
+| Abdominal Dashboard | `/icu-monitoring/abdominal`         |
+| Abdominal Trends    | `/icu-monitoring/abdominal/trends`  |
+| Abdominal Records   | `/icu-monitoring/abdominal/records` |
 
 ### 7.2 Business Purpose
 
@@ -692,13 +692,13 @@ Manager closing line:
 
 ### 8.1 Routes
 
-| Screen | Route |
-| --- | --- |
-| Drains Overview | `/icu-monitoring/drains` |
-| Add Drain | `/icu-monitoring/drains/add` |
-| Drain Detail | `/icu-monitoring/drains/[id]` |
-| Drain History | `/icu-monitoring/drains/[id]/history` |
-| Drain Alerts | `/icu-monitoring/drains/alerts` |
+| Screen          | Route                                 |
+| --------------- | ------------------------------------- |
+| Drains Overview | `/icu-monitoring/drains`              |
+| Add Drain       | `/icu-monitoring/drains/add`          |
+| Drain Detail    | `/icu-monitoring/drains/[id]`         |
+| Drain History   | `/icu-monitoring/drains/[id]/history` |
+| Drain Alerts    | `/icu-monitoring/drains/alerts`       |
 
 ### 8.2 Business Purpose
 
@@ -830,13 +830,13 @@ Manager closing line:
 
 ### 9.1 Routes
 
-| Screen | Route |
-| --- | --- |
-| Lines & Devices Overview | `/icu-monitoring/lines-devices` |
-| Add Line/Device | `/icu-monitoring/lines-devices/add` |
-| Line/Device Detail | `/icu-monitoring/lines-devices/[id]` |
-| Line/Device History | `/icu-monitoring/lines-devices/[id]/history` |
-| Line/Device Alerts | `/icu-monitoring/lines-devices/alerts` |
+| Screen                   | Route                                        |
+| ------------------------ | -------------------------------------------- |
+| Lines & Devices Overview | `/icu-monitoring/lines-devices`              |
+| Add Line/Device          | `/icu-monitoring/lines-devices/add`          |
+| Line/Device Detail       | `/icu-monitoring/lines-devices/[id]`         |
+| Line/Device History      | `/icu-monitoring/lines-devices/[id]/history` |
+| Line/Device Alerts       | `/icu-monitoring/lines-devices/alerts`       |
 
 ### 9.2 Business Purpose
 
@@ -1039,4 +1039,3 @@ Environment note:
 
 - Production build previously stopped because system disk was full (`ENOSPC`).
 - This is storage-related, not module-specific business logic failure.
-

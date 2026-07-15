@@ -23,7 +23,18 @@ export const formWiseCategories = {
 } as const satisfies Record<string, readonly DraftCategory[]>;
 
 export function categoriesForForm(form: string): readonly DraftCategory[] {
-  return formWiseCategories[form as keyof typeof formWiseCategories] ?? ["Scheduled", "SOS", "STAT", "Bolus", "Diluent", "Intermittent", "Continuous", "Discontinued"];
+  return (
+    formWiseCategories[form as keyof typeof formWiseCategories] ?? [
+      "Scheduled",
+      "SOS",
+      "STAT",
+      "Bolus",
+      "Diluent",
+      "Intermittent",
+      "Continuous",
+      "Discontinued",
+    ]
+  );
 }
 
 const continuousInfusionDrugNames = [
@@ -67,17 +78,23 @@ export function isFormADrug(form: string) {
 }
 
 export function routeOptionsForForm(form: string, continuous: boolean, intermittent: boolean) {
-  if (continuous || (isInjectionForm(form) && intermittent) || isContinuousFluid(form)) return ["Intravenous (IV)"];
+  if (continuous || (isInjectionForm(form) && intermittent) || isContinuousFluid(form))
+    return ["Intravenous (IV)"];
   if (isInjectionForm(form)) return injectionRoutes;
   return formARoutes;
 }
 
 const autoQtyForms = ["Tablet", "Capsule", "Lozenge"] as const;
 export function isAutoQtyForm(form: string) {
-  return autoQtyForms.includes(form as typeof autoQtyForms[number]);
+  return autoQtyForms.includes(form as (typeof autoQtyForms)[number]);
 }
 
-export function deriveCategory(draft: Pick<OrderDraft, "name" | "genericName" | "sos" | "stat" | "bolus" | "intermittent" | "continuous" | "category">): DraftCategory {
+export function deriveCategory(
+  draft: Pick<
+    OrderDraft,
+    "name" | "genericName" | "sos" | "stat" | "bolus" | "intermittent" | "continuous" | "category"
+  >,
+): DraftCategory {
   if (isContinuousInfusionDrug(draft.name, draft.genericName)) return "Continuous";
   if (draft.continuous) return "Continuous";
   if (draft.intermittent) return "Intermittent";
@@ -145,7 +162,9 @@ export function calculateAutoQty({
     const parsedRate = toNumber(rateDose);
     const parsedDuration = toNumber(totalDuration);
     if (!parsedRate || !parsedDuration) return 0;
-    return Math.ceil(parsedRate * durationInRateUnits(parsedDuration, totalDurationUnit, rateTimeUnit));
+    return Math.ceil(
+      parsedRate * durationInRateUnits(parsedDuration, totalDurationUnit, rateTimeUnit),
+    );
   }
 
   const parsedDays = toNumber(days);
@@ -159,8 +178,18 @@ export function makeDraft(order: DrugOrder): OrderDraft {
   const continuousInfusion = isContinuousInfusionDrug(order.name, order.genericName);
   const intermittent = !continuousInfusion && isInjectionForm(order.form) && isIvRoute(order.route);
   const continuous = continuousInfusion || isContinuousFluid(order.form);
-  const category = continuous ? "Continuous" : intermittent ? "Intermittent" : order.category === "SOS" || order.category === "STAT" || order.category === "Bolus" || order.category === "Diluent" ? order.category : "";
-  const defaultContinuousDuration = continuous && Number(order.days) > 0 ? String(Number(order.days) * 24) : "";
+  const category = continuous
+    ? "Continuous"
+    : intermittent
+      ? "Intermittent"
+      : order.category === "SOS" ||
+          order.category === "STAT" ||
+          order.category === "Bolus" ||
+          order.category === "Diluent"
+        ? order.category
+        : "";
+  const defaultContinuousDuration =
+    continuous && Number(order.days) > 0 ? String(Number(order.days) * 24) : "";
   const orderedQty = isAutoQtyForm(order.form) ? String(order.orderedQty || 1) : "1";
 
   return {

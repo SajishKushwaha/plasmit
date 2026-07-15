@@ -174,8 +174,13 @@ npm run start
 ```
 
 No environment variables are required for the current static frontend implementation.
+
 # plasmit
+
 # plasmit
+
 # plasmit
+
 # plasmit
+
 # plasmit

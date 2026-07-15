@@ -1,4 +1,5 @@
-export type HeadNurseReviewStatus = "Waiting Review" | "Reviewed" | "On Hold" | "Verification Failed";
+export type HeadNurseReviewStatus =
+  "Waiting Review" | "Reviewed" | "On Hold" | "Verification Failed";
 export type HeadNurseAssignmentStatus = "Not Ready" | "Pending Assignment" | "Assigned";
 export type HeadNurseCareItem = "Ventilator" | "Oxygen" | "Isolation" | "Monitor" | "Infusion Pump";
 
@@ -19,11 +20,19 @@ export function canAssignUnitNurse(admission: HeadNurseAdmission) {
 }
 
 export function canRunHeadNurseAudit(admission: HeadNurseAdmission) {
-  return admission.reviewStatus === "Reviewed" && admission.assignmentStatus === "Assigned" && admission.handoverStatus !== "Handover Verified";
+  return (
+    admission.reviewStatus === "Reviewed" &&
+    admission.assignmentStatus === "Assigned" &&
+    admission.handoverStatus !== "Handover Verified"
+  );
 }
 
 export function canVerifyHeadNurseHandover(admission: HeadNurseAdmission) {
-  return admission.reviewStatus === "Reviewed" && admission.assignmentStatus === "Assigned" && admission.auditStatus === "Audit Complete";
+  return (
+    admission.reviewStatus === "Reviewed" &&
+    admission.assignmentStatus === "Assigned" &&
+    admission.auditStatus === "Audit Complete"
+  );
 }
 
 export type HeadNurseAdmission = {
@@ -86,7 +95,9 @@ export function normalizeHeadNurseAdmission(admission: HeadNurseAdmission): Head
       : admission.manualVerification;
   const assignmentStatus =
     reviewStatus === "Reviewed"
-      ? (admission.assignmentStatus === "Assigned" ? "Assigned" : "Pending Assignment")
+      ? admission.assignmentStatus === "Assigned"
+        ? "Assigned"
+        : "Pending Assignment"
       : reviewStatus === "On Hold" || reviewStatus === "Verification Failed"
         ? "Not Ready"
         : admission.assignmentStatus;
@@ -131,7 +142,10 @@ const defaultAdmissions: HeadNurseAdmission[] = [
     careRequired: ["Ventilator", "Monitor"],
     reviewStatus: "Waiting Review",
     staffAvailability: "Available",
-    assignmentStatus: "Not Ready",    auditStatus: "Pending Audit",    handoverStatus: "Not Ready",    availableUnitNurses: 3,
+    assignmentStatus: "Not Ready",
+    auditStatus: "Pending Audit",
+    handoverStatus: "Not Ready",
+    availableUnitNurses: 3,
     availableWardNurses: 2,
     nursePatientRatio: "1:2",
     workloadStatus: "Balanced",
@@ -168,7 +182,10 @@ const defaultAdmissions: HeadNurseAdmission[] = [
     reviewedBy: "Dr. Khanna",
     reviewedAt: "2026-07-03 09:45",
     staffAvailability: "Busy",
-    assignmentStatus: "Pending Assignment",    auditStatus: "Pending Audit",    handoverStatus: "Not Ready",    availableUnitNurses: 2,
+    assignmentStatus: "Pending Assignment",
+    auditStatus: "Pending Audit",
+    handoverStatus: "Not Ready",
+    availableUnitNurses: 2,
     availableWardNurses: 1,
     nursePatientRatio: "1:3",
     workloadStatus: "Moderate",
@@ -205,7 +222,10 @@ const defaultAdmissions: HeadNurseAdmission[] = [
     holdReason: "Awaiting family consent",
     failedReasons: ["Admission handover note missing"],
     staffAvailability: "Available",
-    assignmentStatus: "Not Ready",    auditStatus: "Under Audit",    handoverStatus: "Not Ready",    availableUnitNurses: 1,
+    assignmentStatus: "Not Ready",
+    auditStatus: "Under Audit",
+    handoverStatus: "Not Ready",
+    availableUnitNurses: 1,
     availableWardNurses: 1,
     nursePatientRatio: "1:4",
     workloadStatus: "High",
@@ -241,7 +261,10 @@ const defaultAdmissions: HeadNurseAdmission[] = [
     reviewStatus: "Verification Failed",
     failedReasons: ["ICU bed not yet confirmed", "Ventilator allocation pending"],
     staffAvailability: "Critical",
-    assignmentStatus: "Not Ready",    auditStatus: "Pending Audit",    handoverStatus: "Not Ready",    availableUnitNurses: 0,
+    assignmentStatus: "Not Ready",
+    auditStatus: "Pending Audit",
+    handoverStatus: "Not Ready",
+    availableUnitNurses: 0,
     availableWardNurses: 1,
     nursePatientRatio: "1:5",
     workloadStatus: "Overloaded",
@@ -288,24 +311,48 @@ function saveAdmissions(admissions: HeadNurseAdmission[]) {
 import React from "react";
 
 export function useHeadNurseAdmissions() {
-  const [admissions, setAdmissions] = React.useState<HeadNurseAdmission[]>(() => defaultAdmissions.map(normalizeHeadNurseAdmission));
+  const [admissions, setAdmissions] = React.useState<HeadNurseAdmission[]>(() =>
+    defaultAdmissions.map(normalizeHeadNurseAdmission),
+  );
 
   React.useEffect(() => {
     setAdmissions(loadAdmissions());
   }, []);
 
-  const updateAdmission = React.useCallback((patientId: string, updater: (admission: HeadNurseAdmission) => HeadNurseAdmission) => {
-    setAdmissions((current) => {
-      const next = current.map((admission) => (admission.patientId === patientId ? updater(admission) : admission));
-      saveAdmissions(next);
-      return next;
-    });
-  }, []);
+  const updateAdmission = React.useCallback(
+    (patientId: string, updater: (admission: HeadNurseAdmission) => HeadNurseAdmission) => {
+      setAdmissions((current) => {
+        const next = current.map((admission) =>
+          admission.patientId === patientId ? updater(admission) : admission,
+        );
+        saveAdmissions(next);
+        return next;
+      });
+    },
+    [],
+  );
 
   const updateReview = React.useCallback(
     (
       patientId: string,
-      payload: Partial<Pick<HeadNurseAdmission, "reviewStatus" | "reviewedBy" | "reviewedAt" | "remarks" | "holdReason" | "assignmentStatus" | "failedReasons" | "manualVerification" | "auditStatus" | "auditFindings" | "handoverStatus" | "handoverBy" | "handoverAt">>
+      payload: Partial<
+        Pick<
+          HeadNurseAdmission,
+          | "reviewStatus"
+          | "reviewedBy"
+          | "reviewedAt"
+          | "remarks"
+          | "holdReason"
+          | "assignmentStatus"
+          | "failedReasons"
+          | "manualVerification"
+          | "auditStatus"
+          | "auditFindings"
+          | "handoverStatus"
+          | "handoverBy"
+          | "handoverAt"
+        >
+      >,
     ) => {
       updateAdmission(patientId, (admission) =>
         normalizeHeadNurseAdmission({
@@ -343,23 +390,25 @@ export function getHeadNurseAdmissionByPatientId(patientId: string) {
 }
 
 export const headNurseUnitNurseOptions = [
-  { value: "Nurse Kavita", label: "Nurse Kavita", shift: "Morning", patientCount: 2, availabilityStatus: "Available" },
-  { value: "Nurse Rina", label: "Nurse Rina", shift: "Evening", patientCount: 3, availabilityStatus: "Busy" },
-  { value: "Nurse Aditi", label: "Nurse Aditi", shift: "Night", patientCount: 1, availabilityStatus: "Available" },
+  {
+    value: "Nurse Kavita",
+    label: "Nurse Kavita",
+    shift: "Morning",
+    patientCount: 2,
+    availabilityStatus: "Available",
+  },
+  {
+    value: "Nurse Rina",
+    label: "Nurse Rina",
+    shift: "Evening",
+    patientCount: 3,
+    availabilityStatus: "Busy",
+  },
+  {
+    value: "Nurse Aditi",
+    label: "Nurse Aditi",
+    shift: "Night",
+    patientCount: 1,
+    availabilityStatus: "Available",
+  },
 ] as const;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

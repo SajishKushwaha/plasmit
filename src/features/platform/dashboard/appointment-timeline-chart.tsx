@@ -9,8 +9,17 @@ export function AppointmentTimelineChart() {
     <ResponsiveContainer height={220} width="100%">
       <BarChart data={appointmentTimeline} margin={{ left: -24, right: 8, top: 8, bottom: 0 }}>
         <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
-        <XAxis dataKey="time" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} tickLine={false} axisLine={false} />
-        <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} tickLine={false} axisLine={false} />
+        <XAxis
+          dataKey="time"
+          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+        />
         <Tooltip
           cursor={{ fill: "hsl(var(--surface-muted))" }}
           contentStyle={{

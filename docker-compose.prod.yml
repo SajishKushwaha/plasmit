@@ -1,0 +1,22 @@
+# Pull-only compose for VPS / production hosts.
+# Image: ghcr.io/plasmit-vector/plasmit-hospital-hms
+#
+# One-time login (private packages):
+#   echo "$GHCR_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+# Token needs at least: read:packages
+#
+# Start:
+#   cp .env.example .env   # edit IMAGE_TAG as needed
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+
+services:
+  web:
+    image: ghcr.io/plasmit-vector/plasmit-hospital-hms:${IMAGE_TAG:-latest}
+    pull_policy: always
+    ports:
+      - "49153:49153"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    restart: unless-stopped

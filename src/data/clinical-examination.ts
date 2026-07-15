@@ -1,8 +1,32 @@
 import type { LucideIcon } from "lucide-react";
-import { Activity, Bone, Brain, Ear, Eye, HeartPulse, ShieldAlert, Smile, Stethoscope, Users, Workflow } from "lucide-react";
+import {
+  Activity,
+  Bone,
+  Brain,
+  Ear,
+  Eye,
+  HeartPulse,
+  ShieldAlert,
+  Smile,
+  Stethoscope,
+  Users,
+  Workflow,
+} from "lucide-react";
 
 export type ClinicalSeverity = "Normal" | "Mild" | "Moderate" | "Severe" | "Critical";
-export type SpecialtyId = "cvs" | "cns" | "respiratory" | "gastro" | "orthopedic" | "ent" | "ophthalmology" | "gynecology" | "pediatrics" | "dermatology" | "psychiatry" | "general";
+export type SpecialtyId =
+  | "cvs"
+  | "cns"
+  | "respiratory"
+  | "gastro"
+  | "orthopedic"
+  | "ent"
+  | "ophthalmology"
+  | "gynecology"
+  | "pediatrics"
+  | "dermatology"
+  | "psychiatry"
+  | "general";
 
 export type ClinicalSpecialty = {
   id: SpecialtyId;
@@ -48,12 +72,34 @@ export const clinicalPatient = {
   flags: ["Fall risk", "High BP watch", "Anticoagulant review"],
 };
 
-export const quickClinicalActions = ["Clinical Examination", "Progress Notes", "Orders", "Prescription", "Vitals", "Reports", "Nursing Notes", "Discharge Summary"];
+export const quickClinicalActions = [
+  "Clinical Examination",
+  "Progress Notes",
+  "Orders",
+  "Prescription",
+  "Vitals",
+  "Reports",
+  "Nursing Notes",
+  "Discharge Summary",
+];
 
 export const clinicalSpecialties: ClinicalSpecialty[] = [
-  { id: "cvs", label: "CVS", department: "Medicine", favorite: true, recentlyUsed: true, icon: HeartPulse },
+  {
+    id: "cvs",
+    label: "CVS",
+    department: "Medicine",
+    favorite: true,
+    recentlyUsed: true,
+    icon: HeartPulse,
+  },
   { id: "cns", label: "CNS", department: "Neurology", recentlyUsed: true, icon: Brain },
-  { id: "respiratory", label: "Respiratory", department: "Pulmonology", favorite: true, icon: Stethoscope },
+  {
+    id: "respiratory",
+    label: "Respiratory",
+    department: "Pulmonology",
+    favorite: true,
+    icon: Stethoscope,
+  },
   { id: "gastro", label: "Gastroenterology", department: "Medicine", icon: Activity },
   { id: "orthopedic", label: "Orthopedic", department: "Orthopedics", icon: Bone },
   { id: "ent", label: "ENT", department: "ENT", icon: Ear },
@@ -62,22 +108,123 @@ export const clinicalSpecialties: ClinicalSpecialty[] = [
   { id: "pediatrics", label: "Pediatrics", department: "Pediatrics", icon: Smile },
   { id: "dermatology", label: "Dermatology", department: "Dermatology", icon: ShieldAlert },
   { id: "psychiatry", label: "Psychiatry", department: "Psychiatry", icon: Brain },
-  { id: "general", label: "General Medicine", department: "Medicine", recentlyUsed: true, icon: Workflow },
+  {
+    id: "general",
+    label: "General Medicine",
+    department: "Medicine",
+    recentlyUsed: true,
+    icon: Workflow,
+  },
 ];
 
 export const examinationSections = {
-  cvs: ["Heart sounds", "Murmur", "Pulse", "BP", "Peripheral edema", "JVP", "Cyanosis", "Capillary refill", "Chest pain", "Rhythm"],
-  cns: ["Consciousness", "Orientation", "Speech", "Motor power", "Sensory exam", "Reflexes", "Cranial nerves", "GCS", "Tremors", "Coordination", "Gait"],
-  respiratory: ["Breath sounds", "Wheezing", "Crepitations", "SpO2", "Distress", "Cough", "Chest expansion", "Trachea position"],
-  gastro: ["Tenderness", "Distension", "Bowel sounds", "Liver/Spleen", "Vomiting", "Stool history", "Appetite"],
+  cvs: [
+    "Heart sounds",
+    "Murmur",
+    "Pulse",
+    "BP",
+    "Peripheral edema",
+    "JVP",
+    "Cyanosis",
+    "Capillary refill",
+    "Chest pain",
+    "Rhythm",
+  ],
+  cns: [
+    "Consciousness",
+    "Orientation",
+    "Speech",
+    "Motor power",
+    "Sensory exam",
+    "Reflexes",
+    "Cranial nerves",
+    "GCS",
+    "Tremors",
+    "Coordination",
+    "Gait",
+  ],
+  respiratory: [
+    "Breath sounds",
+    "Wheezing",
+    "Crepitations",
+    "SpO2",
+    "Distress",
+    "Cough",
+    "Chest expansion",
+    "Trachea position",
+  ],
+  gastro: [
+    "Tenderness",
+    "Distension",
+    "Bowel sounds",
+    "Liver/Spleen",
+    "Vomiting",
+    "Stool history",
+    "Appetite",
+  ],
   orthopedic: ["Joint movement", "Pain scale", "Swelling", "Tenderness", "Deformity", "Mobility"],
-  ent: ["Ear canal", "Tympanic membrane", "Nasal airway", "Throat", "Tonsils", "Hearing screen", "Neck nodes"],
-  ophthalmology: ["Visual acuity", "Conjunctiva", "Cornea", "Pupil reaction", "Fundus", "Eye movement", "IOP"],
-  gynecology: ["Menstrual history", "Pelvic pain", "Discharge", "Bleeding", "Obstetric risk", "Breast exam"],
-  pediatrics: ["Growth", "Feeding", "Activity", "Hydration", "Immunization", "Development", "Parent concern"],
-  dermatology: ["Lesion type", "Distribution", "Itching", "Erythema", "Scaling", "Infection signs", "Photos"],
-  psychiatry: ["Appearance", "Mood", "Thought", "Perception", "Cognition", "Insight", "Risk assessment"],
-  general: ["General appearance", "Hydration", "Pallor", "Icterus", "Clubbing", "Lymph nodes", "System review"],
+  ent: [
+    "Ear canal",
+    "Tympanic membrane",
+    "Nasal airway",
+    "Throat",
+    "Tonsils",
+    "Hearing screen",
+    "Neck nodes",
+  ],
+  ophthalmology: [
+    "Visual acuity",
+    "Conjunctiva",
+    "Cornea",
+    "Pupil reaction",
+    "Fundus",
+    "Eye movement",
+    "IOP",
+  ],
+  gynecology: [
+    "Menstrual history",
+    "Pelvic pain",
+    "Discharge",
+    "Bleeding",
+    "Obstetric risk",
+    "Breast exam",
+  ],
+  pediatrics: [
+    "Growth",
+    "Feeding",
+    "Activity",
+    "Hydration",
+    "Immunization",
+    "Development",
+    "Parent concern",
+  ],
+  dermatology: [
+    "Lesion type",
+    "Distribution",
+    "Itching",
+    "Erythema",
+    "Scaling",
+    "Infection signs",
+    "Photos",
+  ],
+  psychiatry: [
+    "Appearance",
+    "Mood",
+    "Thought",
+    "Perception",
+    "Cognition",
+    "Insight",
+    "Risk assessment",
+  ],
+  general: [
+    "General appearance",
+    "Hydration",
+    "Pallor",
+    "Icterus",
+    "Clubbing",
+    "Lymph nodes",
+    "System review",
+  ],
 };
 
 export const examinationFindings: Record<SpecialtyId, ExamFinding[]> = {
@@ -93,7 +240,12 @@ export const examinationFindings: Record<SpecialtyId, ExamFinding[]> = {
   ],
   cns: [
     { label: "Consciousness", value: "Alert and responsive", severity: "Normal", score: 0 },
-    { label: "Orientation", value: "Oriented to time, place, person", severity: "Normal", score: 0 },
+    {
+      label: "Orientation",
+      value: "Oriented to time, place, person",
+      severity: "Normal",
+      score: 0,
+    },
     { label: "Speech", value: "Clear, no dysarthria", severity: "Normal", score: 0 },
     { label: "Motor power", value: "5/5 all limbs", severity: "Normal", score: 0 },
     { label: "Reflexes", value: "Brisk right knee jerk", severity: "Mild", score: 1 },
@@ -106,7 +258,12 @@ export const examinationFindings: Record<SpecialtyId, ExamFinding[]> = {
     { label: "Wheezing", value: "Mild expiratory wheeze", severity: "Mild", score: 1 },
     { label: "Crepitations", value: "Absent", severity: "Normal", score: 0 },
     { label: "SpO2", value: "97% on room air", severity: "Normal", score: 0 },
-    { label: "Respiratory distress", value: "No accessory muscle use", severity: "Normal", score: 0 },
+    {
+      label: "Respiratory distress",
+      value: "No accessory muscle use",
+      severity: "Normal",
+      score: 0,
+    },
     { label: "Cough", value: "Dry cough improving", severity: "Mild", score: 1 },
     { label: "Chest expansion", value: "Symmetric", severity: "Normal", score: 0 },
     { label: "Trachea position", value: "Central", severity: "Normal", score: 0 },
@@ -121,7 +278,12 @@ export const examinationFindings: Record<SpecialtyId, ExamFinding[]> = {
     { label: "Appetite", value: "Reduced today", severity: "Mild", score: 1 },
   ],
   orthopedic: [
-    { label: "Joint movement", value: "Right knee ROM mildly restricted", severity: "Mild", score: 1 },
+    {
+      label: "Joint movement",
+      value: "Right knee ROM mildly restricted",
+      severity: "Mild",
+      score: 1,
+    },
     { label: "Pain scale", value: "3/10", severity: "Mild", score: 1 },
     { label: "Swelling", value: "Minimal periarticular swelling", severity: "Mild", score: 1 },
     { label: "Tenderness", value: "Localized medial joint line", severity: "Mild", score: 1 },
@@ -189,22 +351,52 @@ export const examinationFindings: Record<SpecialtyId, ExamFinding[]> = {
 export const examinationDefaultNotes: Record<SpecialtyId, string> = {
   cvs: "CVS: S1/S2 heard. No murmur. Pulse regular. BP elevated, continue monitoring and review trend before discharge planning.",
   cns: "CNS: Patient alert and oriented. GCS 15/15. Motor power preserved with mild reflex variation; compare with previous neuro exam.",
-  respiratory: "Respiratory: Bilateral air entry present. Mild wheeze noted, SpO2 stable on room air. Continue oxygen trend review.",
-  gastro: "Gastrointestinal: Abdomen soft, bowel sounds present, mild epigastric tenderness. No guarding or acute abdominal red flag.",
-  orthopedic: "Orthopedic: Mild right knee restriction with localized tenderness. Mobility support advised and pain score monitored.",
+  respiratory:
+    "Respiratory: Bilateral air entry present. Mild wheeze noted, SpO2 stable on room air. Continue oxygen trend review.",
+  gastro:
+    "Gastrointestinal: Abdomen soft, bowel sounds present, mild epigastric tenderness. No guarding or acute abdominal red flag.",
+  orthopedic:
+    "Orthopedic: Mild right knee restriction with localized tenderness. Mobility support advised and pain score monitored.",
   ent: "ENT: Mild nasal congestion and throat erythema. Ear canal clear, no acute otitis finding.",
-  ophthalmology: "Ophthalmology: Pupils equal and reactive, cornea clear, mild visual acuity variation. No acute ocular red flag.",
-  gynecology: "Gynecology: Pelvic pain mild and intermittent. No active bleeding or foul discharge. Obstetric risk screen reviewed.",
-  pediatrics: "Pediatrics: Child active, hydration adequate, feeding mildly reduced. Immunization due flag reviewed with guardian.",
-  dermatology: "Dermatology: Localized mild maculopapular rash with itching. No discharge, warmth, or secondary infection signs.",
-  psychiatry: "Psychiatry: Cooperative, coherent thought process, anxious affect. No self-harm intent reported during screening.",
-  general: "General medicine: Comfortable at rest, hydration adequate, no pallor/icterus/clubbing. Continue system-wise review.",
+  ophthalmology:
+    "Ophthalmology: Pupils equal and reactive, cornea clear, mild visual acuity variation. No acute ocular red flag.",
+  gynecology:
+    "Gynecology: Pelvic pain mild and intermittent. No active bleeding or foul discharge. Obstetric risk screen reviewed.",
+  pediatrics:
+    "Pediatrics: Child active, hydration adequate, feeding mildly reduced. Immunization due flag reviewed with guardian.",
+  dermatology:
+    "Dermatology: Localized mild maculopapular rash with itching. No discharge, warmth, or secondary infection signs.",
+  psychiatry:
+    "Psychiatry: Cooperative, coherent thought process, anxious affect. No self-harm intent reported during screening.",
+  general:
+    "General medicine: Comfortable at rest, hydration adequate, no pallor/icterus/clubbing. Continue system-wise review.",
 };
 
 export const clinicalTimeline: ClinicalTimelineItem[] = [
-  { id: "ce-001", time: "Today 10:45", specialty: "CVS", doctor: "Dr. Kavita Rao", summary: "BP elevated, perfusion warm, no murmur.", status: "Draft autosaved" },
-  { id: "ce-002", time: "Yesterday 18:20", specialty: "Respiratory", doctor: "Dr. Aman Verma", summary: "SpO2 stable on room air, no distress.", status: "Final submitted" },
-  { id: "ce-003", time: "Yesterday 10:10", specialty: "CNS", doctor: "Dr. Neha Malik", summary: "GCS 15, motor power symmetric.", status: "Consultant verified" },
+  {
+    id: "ce-001",
+    time: "Today 10:45",
+    specialty: "CVS",
+    doctor: "Dr. Kavita Rao",
+    summary: "BP elevated, perfusion warm, no murmur.",
+    status: "Draft autosaved",
+  },
+  {
+    id: "ce-002",
+    time: "Yesterday 18:20",
+    specialty: "Respiratory",
+    doctor: "Dr. Aman Verma",
+    summary: "SpO2 stable on room air, no distress.",
+    status: "Final submitted",
+  },
+  {
+    id: "ce-003",
+    time: "Yesterday 10:10",
+    specialty: "CNS",
+    doctor: "Dr. Neha Malik",
+    summary: "GCS 15, motor power symmetric.",
+    status: "Consultant verified",
+  },
 ];
 
 export const clinicalTrendData: ClinicalTrendPoint[] = [
@@ -217,10 +409,30 @@ export const clinicalTrendData: ClinicalTrendPoint[] = [
 ];
 
 export const clinicalScores = [
-  { label: "GCS", value: "15/15", severity: "Normal" as ClinicalSeverity, note: "Eye 4, Verbal 5, Motor 6" },
-  { label: "Pain score", value: "3/10", severity: "Mild" as ClinicalSeverity, note: "Controlled with current plan" },
-  { label: "NEWS score", value: "4", severity: "Moderate" as ClinicalSeverity, note: "BP and pulse watch" },
-  { label: "Fall risk", value: "High", severity: "Severe" as ClinicalSeverity, note: "Bed rail and assisted ambulation" },
+  {
+    label: "GCS",
+    value: "15/15",
+    severity: "Normal" as ClinicalSeverity,
+    note: "Eye 4, Verbal 5, Motor 6",
+  },
+  {
+    label: "Pain score",
+    value: "3/10",
+    severity: "Mild" as ClinicalSeverity,
+    note: "Controlled with current plan",
+  },
+  {
+    label: "NEWS score",
+    value: "4",
+    severity: "Moderate" as ClinicalSeverity,
+    note: "BP and pulse watch",
+  },
+  {
+    label: "Fall risk",
+    value: "High",
+    severity: "Severe" as ClinicalSeverity,
+    note: "Bed rail and assisted ambulation",
+  },
 ];
 
 export const reportLinks = [
@@ -230,6 +442,35 @@ export const reportLinks = [
   { type: "X-ray", name: "Chest PA", time: "Yesterday 11:20", status: "Attached" },
 ];
 
-export const builderFields = ["Radio", "Checkbox", "Numeric", "Text", "Dropdown", "Severity selector", "Image upload"];
-export const backendApis = ["GET /api/v1/patients/:id", "GET /api/v1/clinical/templates", "POST /api/v1/clinical/examinations", "GET /api/v1/clinical/graphs/:patientId", "POST /api/v1/clinical/scores/calculate", "GET /api/v1/clinical/history/:patientId", "POST /api/v1/clinical/approvals", "GET /api/v1/clinical/examinations/:id/pdf"];
-export const databaseTables = ["patients", "clinical_examinations", "examination_templates", "examination_sections", "examination_fields", "examination_results", "clinical_scores", "clinical_graph_data", "doctor_notes", "approvals", "attachments"];
+export const builderFields = [
+  "Radio",
+  "Checkbox",
+  "Numeric",
+  "Text",
+  "Dropdown",
+  "Severity selector",
+  "Image upload",
+];
+export const backendApis = [
+  "GET /api/v1/patients/:id",
+  "GET /api/v1/clinical/templates",
+  "POST /api/v1/clinical/examinations",
+  "GET /api/v1/clinical/graphs/:patientId",
+  "POST /api/v1/clinical/scores/calculate",
+  "GET /api/v1/clinical/history/:patientId",
+  "POST /api/v1/clinical/approvals",
+  "GET /api/v1/clinical/examinations/:id/pdf",
+];
+export const databaseTables = [
+  "patients",
+  "clinical_examinations",
+  "examination_templates",
+  "examination_sections",
+  "examination_fields",
+  "examination_results",
+  "clinical_scores",
+  "clinical_graph_data",
+  "doctor_notes",
+  "approvals",
+  "attachments",
+];

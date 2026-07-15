@@ -20,7 +20,15 @@ function getCell(order: NurseDrugOrder, time: string) {
   return order.cells.find((cell) => cell.time === time);
 }
 
-function LegendItem({ className, label, meaning }: { className: string; label: string; meaning: string }) {
+function LegendItem({
+  className,
+  label,
+  meaning,
+}: {
+  className: string;
+  label: string;
+  meaning: string;
+}) {
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1.5">
       <span className={["h-3 w-8 rounded-full", className].join(" ")} />
@@ -33,7 +41,9 @@ function LegendItem({ className, label, meaning }: { className: string; label: s
 function OrderInfo({ order }: { order: NurseDrugOrder }) {
   return (
     <div className="flex h-9 items-center border-r border-border bg-surface px-2 text-xs sm:px-3">
-      <div className="truncate font-semibold text-foreground" title={order.name}>{order.name}</div>
+      <div className="truncate font-semibold text-foreground" title={order.name}>
+        {order.name}
+      </div>
     </div>
   );
 }
@@ -56,11 +66,18 @@ export function AdministrationTimeline({
       <CardHeader>
         <div className="space-y-1">
           <CardTitle>Drug Administration Schedule</CardTitle>
-          <CardDescription>24 hour MAR grid with 1 hour intervals, dosage visibility, and overdue flagging.</CardDescription>
+          <CardDescription>
+            24 hour MAR grid with 1 hour intervals, dosage visibility, and overdue flagging.
+          </CardDescription>
         </div>
         <label className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
           Date
-          <Input className="h-9 w-[160px]" type="date" value={selectedDate} onChange={(event) => onDateChange(event.target.value)} />
+          <Input
+            className="h-9 w-[160px]"
+            type="date"
+            value={selectedDate}
+            onChange={(event) => onDateChange(event.target.value)}
+          />
           {selectedDate === today ? <Badge tone="info">Today</Badge> : null}
         </label>
       </CardHeader>
@@ -68,9 +85,21 @@ export function AdministrationTimeline({
         <div className="mb-2 flex max-w-full gap-2 overflow-x-auto pb-1 text-xs sm:flex-wrap sm:overflow-visible sm:pb-0">
           <LegendItem className="bg-warning" label="Due" meaning="Dose pending" />
           <LegendItem className="bg-success" label="Done" meaning="Dose administered" />
-          <LegendItem className="bg-danger" label="Overdue" meaning="Scheduled dose missed by 1 hour" />
-          <LegendItem className="bg-success/20" label="Infusion" meaning="Continuous fluid/medicine at ordered rate" />
-          <LegendItem className="bg-primary" label="IV bolus" meaning="One-time IV push/flush dose" />
+          <LegendItem
+            className="bg-danger"
+            label="Overdue"
+            meaning="Scheduled dose missed by 1 hour"
+          />
+          <LegendItem
+            className="bg-success/20"
+            label="Infusion"
+            meaning="Continuous fluid/medicine at ordered rate"
+          />
+          <LegendItem
+            className="bg-primary"
+            label="IV bolus"
+            meaning="One-time IV push/flush dose"
+          />
         </div>
         <div className="overflow-hidden rounded-lg border border-border">
           <div className="max-h-[70vh] max-w-full overflow-auto">
@@ -84,7 +113,10 @@ export function AdministrationTimeline({
                     </div>
                   </th>
                   {medicationTimeSlots.map((slot) => (
-                    <th key={slot} className="min-w-16 border-b border-r border-primary-foreground/20 px-2 py-2 text-center last:border-r-0 sm:min-w-20">
+                    <th
+                      key={slot}
+                      className="min-w-16 border-b border-r border-primary-foreground/20 px-2 py-2 text-center last:border-r-0 sm:min-w-20"
+                    >
                       {slot}
                     </th>
                   ))}
@@ -107,15 +139,26 @@ export function AdministrationTimeline({
                             ))}
                           </div>
                         ) : (
-                          <div className="rounded-md border border-dashed border-border p-3 text-muted-foreground">No orders</div>
+                          <div className="rounded-md border border-dashed border-border p-3 text-muted-foreground">
+                            No orders
+                          </div>
                         )}
                       </th>
-                      <td colSpan={medicationTimeSlots.length} className="border-b border-border p-0">
+                      <td
+                        colSpan={medicationTimeSlots.length}
+                        className="border-b border-border p-0"
+                      >
                         <div className="space-y-1.5 py-1.5">
                           <div className="h-7 border-b border-border/60 bg-surface-muted/45" />
                           {categoryOrders.length ? (
                             categoryOrders.map((order) => (
-                              <div key={order.id} className="grid" style={{ gridTemplateColumns: `repeat(${medicationTimeSlots.length}, minmax(4rem, 1fr))` }}>
+                              <div
+                                key={order.id}
+                                className="grid"
+                                style={{
+                                  gridTemplateColumns: `repeat(${medicationTimeSlots.length}, minmax(4rem, 1fr))`,
+                                }}
+                              >
                                 {medicationTimeSlots.map((slot) => {
                                   const cell = getCell(order, slot);
                                   return (
@@ -126,14 +169,24 @@ export function AdministrationTimeline({
                                       {cell && (cell.status !== "empty" || cell.label) ? (
                                         <button
                                           type="button"
-                                          className={["inline-flex min-h-6 max-w-full items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-ring/20", capsuleClass(cell)].join(" ")}
+                                          className={[
+                                            "inline-flex min-h-6 max-w-full items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-ring/20",
+                                            capsuleClass(cell),
+                                          ].join(" ")}
                                           onClick={() => onCellSelect(order, cell)}
-                                          title={cell.status === "overdue" ? "Overdue: not administered within 1 hour" : "Open administration popup"}
+                                          title={
+                                            cell.status === "overdue"
+                                              ? "Overdue: not administered within 1 hour"
+                                              : "Open administration popup"
+                                          }
                                         >
                                           <span className="line-clamp-2">
                                             {cell.status === "overdue" ? "Overdue" : null}
                                             {cell.status === "overdue" && cell.label ? " " : ""}
-                                            {cell.label?.replace("Overdue ", "") ?? (cell.status === "infusion" ? `Infusion ${order.dosage}` : "")}
+                                            {cell.label?.replace("Overdue ", "") ??
+                                              (cell.status === "infusion"
+                                                ? `Infusion ${order.dosage}`
+                                                : "")}
                                           </span>
                                         </button>
                                       ) : null}
@@ -143,9 +196,17 @@ export function AdministrationTimeline({
                               </div>
                             ))
                           ) : (
-                            <div className="grid" style={{ gridTemplateColumns: `repeat(${medicationTimeSlots.length}, minmax(4rem, 1fr))` }}>
+                            <div
+                              className="grid"
+                              style={{
+                                gridTemplateColumns: `repeat(${medicationTimeSlots.length}, minmax(4rem, 1fr))`,
+                              }}
+                            >
                               {medicationTimeSlots.map((slot) => (
-                                <div key={slot} className="h-9 border-r border-border bg-background last:border-r-0" />
+                                <div
+                                  key={slot}
+                                  className="h-9 border-r border-border bg-background last:border-r-0"
+                                />
                               ))}
                             </div>
                           )}

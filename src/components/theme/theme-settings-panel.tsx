@@ -22,7 +22,10 @@ export function ThemeSettingsPanel() {
   const draft = draftState.key === preferenceKey ? draftState.value : preference;
   const setDraft = (value: UiPreference) => setDraftState({ key: preferenceKey, value });
 
-  const customInvalid = draft.colorPreset === "custom" && draft.customPrimary ? !isHexColor(draft.customPrimary) : false;
+  const customInvalid =
+    draft.colorPreset === "custom" && draft.customPrimary
+      ? !isHexColor(draft.customPrimary)
+      : false;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -63,16 +66,24 @@ export function ThemeSettingsPanel() {
                 <button
                   className={cn(
                     "flex items-center gap-3 rounded-lg border border-border bg-surface p-3 text-left outline-none transition hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-ring",
-                    draft.colorPreset === preset.id && "border-primary bg-primary/10 ring-1 ring-primary/20",
+                    draft.colorPreset === preset.id &&
+                      "border-primary bg-primary/10 ring-1 ring-primary/20",
                   )}
                   key={preset.id}
                   onClick={() => setDraft({ ...draft, colorPreset: preset.id })}
                   type="button"
                 >
-                  <span className="h-8 w-8 rounded-md border border-border" style={{ backgroundColor: preset.primary }} />
+                  <span
+                    className="h-8 w-8 rounded-md border border-border"
+                    style={{ backgroundColor: preset.primary }}
+                  />
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium text-foreground">{preset.label}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{preset.description}</span>
+                    <span className="block text-sm font-medium text-foreground">
+                      {preset.label}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {preset.description}
+                    </span>
                   </span>
                 </button>
               ))}
@@ -91,9 +102,20 @@ export function ThemeSettingsPanel() {
                     setDraft({ ...draft, colorPreset: "custom", customPrimary: event.target.value })
                   }
                 />
-                <div className="h-9 w-12 rounded-md border border-border" style={{ backgroundColor: isHexColor(draft.customPrimary ?? "") ? draft.customPrimary : "#2563eb" }} />
+                <div
+                  className="h-9 w-12 rounded-md border border-border"
+                  style={{
+                    backgroundColor: isHexColor(draft.customPrimary ?? "")
+                      ? draft.customPrimary
+                      : "#2563eb",
+                  }}
+                />
               </div>
-              {customInvalid ? <p className="mt-2 text-xs text-danger">Use a valid 6-digit hex color, for example #0f766e.</p> : null}
+              {customInvalid ? (
+                <p className="mt-2 text-xs text-danger">
+                  Use a valid 6-digit hex color, for example #0f766e.
+                </p>
+              ) : null}
             </div>
           </CardContent>
         </Card>
@@ -146,9 +168,13 @@ export function ThemeSettingsPanel() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">Plasmit Hospital</p>
-                <p className="text-xs text-muted-foreground">Preview uses persisted tokens after apply.</p>
+                <p className="text-xs text-muted-foreground">
+                  Preview uses persisted tokens after apply.
+                </p>
               </div>
-              <span className="rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">Active</span>
+              <span className="rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
+                Active
+              </span>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <div className="rounded-md bg-success/10 p-2 text-xs text-success">Success state</div>
@@ -178,7 +204,9 @@ export function ThemeSettingsPanel() {
               Reset
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Default resets to {defaultPreference.colorPreset}, compact density, and system mode.</p>
+          <p className="text-xs text-muted-foreground">
+            Default resets to {defaultPreference.colorPreset}, compact density, and system mode.
+          </p>
         </CardContent>
       </Card>
     </div>

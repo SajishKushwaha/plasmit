@@ -23,7 +23,16 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -37,7 +46,12 @@ import { Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DetailRow, FilterBar, NativeSelect, StickyActionBar } from "@/features/operations/admin/admin-shared";
+import {
+  DetailRow,
+  FilterBar,
+  NativeSelect,
+  StickyActionBar,
+} from "@/features/operations/admin/admin-shared";
 import { PatientMini } from "@/features/operations/appointments/appointment-shared";
 import {
   BalanceBadge,
@@ -87,7 +101,16 @@ import type { StatusTone } from "@/types";
 
 type OverviewActionType = "entry" | "review" | "labs" | "order" | "billing" | "alert";
 type RenalEntryMode = "io" | "intake" | "output";
-type RenalDashboardTab = "dashboard" | "patient-chart" | "fluid-balance" | "drains" | "labs" | "reports" | "alert-queue" | "priority-queue" | "actions";
+type RenalDashboardTab =
+  | "dashboard"
+  | "patient-chart"
+  | "fluid-balance"
+  | "drains"
+  | "labs"
+  | "reports"
+  | "alert-queue"
+  | "priority-queue"
+  | "actions";
 
 type OverviewActionRequest = {
   type: OverviewActionType;
@@ -111,7 +134,15 @@ type RoleActionItem = {
   icon: typeof Plus;
 };
 
-type FhirResourceName = "Patient" | "Encounter" | "Observation" | "Device" | "DiagnosticReport" | "ServiceRequest" | "AuditEvent" | "Provenance";
+type FhirResourceName =
+  | "Patient"
+  | "Encounter"
+  | "Observation"
+  | "Device"
+  | "DiagnosticReport"
+  | "ServiceRequest"
+  | "AuditEvent"
+  | "Provenance";
 
 type RenalFhirResource = {
   resource: FhirResourceName;
@@ -144,9 +175,17 @@ function PrintButton({ label = "Print" }: { label?: string }) {
 
 function statusTone(value: string): StatusTone {
   const lower = value.toLowerCase();
-  if (lower.includes("critical") || lower.includes("escalated") || lower.includes("low")) return "critical";
-  if (lower.includes("watch") || lower.includes("pending") || lower.includes("review")) return "warning";
-  if (lower.includes("stable") || lower.includes("signed") || lower.includes("active") || lower.includes("normal")) return "success";
+  if (lower.includes("critical") || lower.includes("escalated") || lower.includes("low"))
+    return "critical";
+  if (lower.includes("watch") || lower.includes("pending") || lower.includes("review"))
+    return "warning";
+  if (
+    lower.includes("stable") ||
+    lower.includes("signed") ||
+    lower.includes("active") ||
+    lower.includes("normal")
+  )
+    return "success";
   if (lower.includes("high") || lower.includes("overload")) return "danger";
   return "info";
 }
@@ -179,21 +218,78 @@ function getRenalFhirBundle(chart: RenalPatientChart): RenalFhirResource[] {
   const latestLab = getRenalLabsByPatient(chart.patientId)[0];
   const activeOrder = getRenalOrdersByPatient(chart.patientId)[0];
   return [
-    { resource: "Patient", reference: `Patient/${chart.patientId}`, status: "Resolved", payload: "Identity, demographics, alerts" },
-    { resource: "Encounter", reference: `Encounter/${chart.admissionId}`, status: "Active", payload: `${chart.bedNo}, ${chart.ward}` },
-    { resource: "Observation", reference: `Observation/renal-io-${chart.patientId}`, status: "Current", payload: "Intake, output, UOP, balance" },
-    { resource: "Device", reference: `Device/renal-device-${chart.patientId}`, status: chart.catheterStatus.includes("No catheter") ? "Not present" : "Active", payload: chart.catheterStatus },
-    { resource: "DiagnosticReport", reference: `DiagnosticReport/renal-lab-${chart.patientId}`, status: latestLab?.flag ?? "Pending", payload: latestLab ? `Cr ${latestLab.creatinine}, K ${latestLab.potassium}` : "Renal labs pending" },
-    { resource: "ServiceRequest", reference: activeOrder ? `ServiceRequest/${activeOrder.id}` : `ServiceRequest/renal-review-${chart.patientId}`, status: activeOrder?.status ?? "Not ordered", payload: activeOrder?.order ?? "Renal review placeholder" },
-    { resource: "AuditEvent", reference: `AuditEvent/renal-access-${chart.patientId}`, status: "Tracked", payload: "View, print, acknowledge, sign-off" },
-    { resource: "Provenance", reference: `Provenance/renal-chart-${chart.patientId}`, status: "Source tagged", payload: "Nurse, doctor, lab authorship" },
+    {
+      resource: "Patient",
+      reference: `Patient/${chart.patientId}`,
+      status: "Resolved",
+      payload: "Identity, demographics, alerts",
+    },
+    {
+      resource: "Encounter",
+      reference: `Encounter/${chart.admissionId}`,
+      status: "Active",
+      payload: `${chart.bedNo}, ${chart.ward}`,
+    },
+    {
+      resource: "Observation",
+      reference: `Observation/renal-io-${chart.patientId}`,
+      status: "Current",
+      payload: "Intake, output, UOP, balance",
+    },
+    {
+      resource: "Device",
+      reference: `Device/renal-device-${chart.patientId}`,
+      status: chart.catheterStatus.includes("No catheter") ? "Not present" : "Active",
+      payload: chart.catheterStatus,
+    },
+    {
+      resource: "DiagnosticReport",
+      reference: `DiagnosticReport/renal-lab-${chart.patientId}`,
+      status: latestLab?.flag ?? "Pending",
+      payload: latestLab
+        ? `Cr ${latestLab.creatinine}, K ${latestLab.potassium}`
+        : "Renal labs pending",
+    },
+    {
+      resource: "ServiceRequest",
+      reference: activeOrder
+        ? `ServiceRequest/${activeOrder.id}`
+        : `ServiceRequest/renal-review-${chart.patientId}`,
+      status: activeOrder?.status ?? "Not ordered",
+      payload: activeOrder?.order ?? "Renal review placeholder",
+    },
+    {
+      resource: "AuditEvent",
+      reference: `AuditEvent/renal-access-${chart.patientId}`,
+      status: "Tracked",
+      payload: "View, print, acknowledge, sign-off",
+    },
+    {
+      resource: "Provenance",
+      reference: `Provenance/renal-chart-${chart.patientId}`,
+      status: "Source tagged",
+      payload: "Nurse, doctor, lab authorship",
+    },
   ];
 }
 
 function fhirStatusTone(status: string): StatusTone {
-  if (status === "Current" || status === "Resolved" || status === "Active" || status === "Tracked" || status === "Source tagged") return "success";
+  if (
+    status === "Current" ||
+    status === "Resolved" ||
+    status === "Active" ||
+    status === "Tracked" ||
+    status === "Source tagged"
+  )
+    return "success";
   if (status === "Critical" || status === "Escalated") return "critical";
-  if (status === "Watch" || status === "Pending" || status === "Pending sign" || status === "Not ordered") return "warning";
+  if (
+    status === "Watch" ||
+    status === "Pending" ||
+    status === "Pending sign" ||
+    status === "Not ordered"
+  )
+    return "warning";
   return "info";
 }
 
@@ -210,13 +306,17 @@ function renalPatientSearchText(chart: RenalPatientChart) {
     chart.dialysisStatus,
     chart.catheterStatus,
     chart.riskFlags.join(" "),
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function sortRenalPatients(rows: RenalPatientChart[], sort: string) {
   return rows.slice().sort((left, right) => {
-    if (sort === "Patient A-Z") return patientName(left.patientId).localeCompare(patientName(right.patientId));
-    if (sort === "Ward") return `${left.ward} ${left.bedNo}`.localeCompare(`${right.ward} ${right.bedNo}`);
+    if (sort === "Patient A-Z")
+      return patientName(left.patientId).localeCompare(patientName(right.patientId));
+    if (sort === "Ward")
+      return `${left.ward} ${left.bedNo}`.localeCompare(`${right.ward} ${right.bedNo}`);
     if (sort === "Balance high-low") return right.cumulativeBalanceMl - left.cumulativeBalanceMl;
     if (sort === "Dialysis review") {
       const leftReview = left.dialysisStatus.toLowerCase().includes("review") ? 1 : 0;
@@ -229,14 +329,20 @@ function sortRenalPatients(rows: RenalPatientChart[], sort: string) {
 
 function renalChartRiskMatch(chart: RenalPatientChart, risk: string) {
   if (risk === "All risk") return true;
-  if (risk === "Critical") return renalPriorityLabel(renalPriorityScore(chart)) === "Critical" || chart.renalStatus === "Critical";
+  if (risk === "Critical")
+    return (
+      renalPriorityLabel(renalPriorityScore(chart)) === "Critical" ||
+      chart.renalStatus === "Critical"
+    );
   if (risk === "Positive balance") return chart.cumulativeBalanceMl > chart.targetBalanceMl;
   if (risk === "Dialysis review") return chart.dialysisStatus.toLowerCase().includes("review");
   if (risk === "AKI watch") return chart.renalStatus === "AKI watch";
   return true;
 }
 
-function renalBalanceSearchText(row: RenalPatientChart & { totalIntakeMl: number; totalOutputMl: number; balanceMl: number }) {
+function renalBalanceSearchText(
+  row: RenalPatientChart & { totalIntakeMl: number; totalOutputMl: number; balanceMl: number },
+) {
   return [
     renalPatientSearchText(row),
     formatMl(row.totalIntakeMl),
@@ -246,10 +352,14 @@ function renalBalanceSearchText(row: RenalPatientChart & { totalIntakeMl: number
   ].join(" ");
 }
 
-function sortRenalBalanceRows<T extends RenalPatientChart & { totalIntakeMl: number; totalOutputMl: number; balanceMl: number }>(rows: T[], sort: string) {
+function sortRenalBalanceRows<
+  T extends RenalPatientChart & { totalIntakeMl: number; totalOutputMl: number; balanceMl: number },
+>(rows: T[], sort: string) {
   return rows.slice().sort((left, right) => {
-    if (sort === "Patient A-Z") return patientName(left.patientId).localeCompare(patientName(right.patientId));
-    if (sort === "Ward") return `${left.ward} ${left.bedNo}`.localeCompare(`${right.ward} ${right.bedNo}`);
+    if (sort === "Patient A-Z")
+      return patientName(left.patientId).localeCompare(patientName(right.patientId));
+    if (sort === "Ward")
+      return `${left.ward} ${left.bedNo}`.localeCompare(`${right.ward} ${right.bedNo}`);
     if (sort === "Intake high-low") return right.totalIntakeMl - left.totalIntakeMl;
     if (sort === "Output high-low") return right.totalOutputMl - left.totalOutputMl;
     if (sort === "Cumulative high-low") return right.cumulativeBalanceMl - left.cumulativeBalanceMl;
@@ -260,7 +370,8 @@ function sortRenalBalanceRows<T extends RenalPatientChart & { totalIntakeMl: num
 function renalBalanceFilterMatch(row: RenalPatientChart & { balanceMl: number }, filter: string) {
   if (filter === "Positive only") return row.balanceMl > 0;
   if (filter === "Negative only") return row.balanceMl < 0;
-  if (filter === "Above target") return row.balanceMl > row.targetBalanceMl || row.cumulativeBalanceMl > row.targetBalanceMl;
+  if (filter === "Above target")
+    return row.balanceMl > row.targetBalanceMl || row.cumulativeBalanceMl > row.targetBalanceMl;
   if (filter === "Critical status") return row.renalStatus === "Critical";
   return true;
 }
@@ -278,15 +389,19 @@ function renalDrainSearchText(drain: RenalDrainRecord) {
     drain.character,
     drain.concern,
     formatMl(drain.total24HrMl),
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function sortRenalDrains(rows: RenalDrainRecord[], sort: string) {
   return rows.slice().sort((left, right) => {
-    if (sort === "Patient A-Z") return patientName(left.patientId).localeCompare(patientName(right.patientId));
+    if (sort === "Patient A-Z")
+      return patientName(left.patientId).localeCompare(patientName(right.patientId));
     if (sort === "Drain A-Z") return left.drainName.localeCompare(right.drainName);
     if (sort === "Site A-Z") return left.site.localeCompare(right.site);
-    if (sort === "Concern first") return renalDrainConcernRank(right.concern) - renalDrainConcernRank(left.concern);
+    if (sort === "Concern first")
+      return renalDrainConcernRank(right.concern) - renalDrainConcernRank(left.concern);
     return right.total24HrMl - left.total24HrMl;
   });
 }
@@ -319,10 +434,15 @@ function renalAlertSeverityRank(severity: RenalAlert["severity"]) {
 
 function sortRenalAlerts(rows: RenalAlert[], sort: string) {
   return rows.slice().sort((left, right) => {
-    if (sort === "Patient") return patientName(left.patientId).localeCompare(patientName(right.patientId));
+    if (sort === "Patient")
+      return patientName(left.patientId).localeCompare(patientName(right.patientId));
     if (sort === "Owner") return left.owner.localeCompare(right.owner);
-    if (sort === "Status") return left.status.localeCompare(right.status) || renalAlertSeverityRank(right.severity) - renalAlertSeverityRank(left.severity);
-  return renalAlertSeverityRank(right.severity) - renalAlertSeverityRank(left.severity);
+    if (sort === "Status")
+      return (
+        left.status.localeCompare(right.status) ||
+        renalAlertSeverityRank(right.severity) - renalAlertSeverityRank(left.severity)
+      );
+    return renalAlertSeverityRank(right.severity) - renalAlertSeverityRank(left.severity);
   });
 }
 
@@ -353,10 +473,20 @@ function renalLabPotassiumValue(lab: RenalLabRecord) {
 
 function sortRenalLabs(rows: RenalLabRecord[], sort: string) {
   return rows.slice().sort((left, right) => {
-    if (sort === "Patient") return patientName(left.patientId).localeCompare(patientName(right.patientId));
-    if (sort === "Flag severity") return renalLabFlagRank(right.flag) - renalLabFlagRank(left.flag) || patientName(left.patientId).localeCompare(patientName(right.patientId));
-    if (sort === "Worsening first") return Number(right.trend === "Worsening") - Number(left.trend === "Worsening") || renalLabFlagRank(right.flag) - renalLabFlagRank(left.flag);
-    if (sort === "Potassium high-low") return renalLabPotassiumValue(right) - renalLabPotassiumValue(left);
+    if (sort === "Patient")
+      return patientName(left.patientId).localeCompare(patientName(right.patientId));
+    if (sort === "Flag severity")
+      return (
+        renalLabFlagRank(right.flag) - renalLabFlagRank(left.flag) ||
+        patientName(left.patientId).localeCompare(patientName(right.patientId))
+      );
+    if (sort === "Worsening first")
+      return (
+        Number(right.trend === "Worsening") - Number(left.trend === "Worsening") ||
+        renalLabFlagRank(right.flag) - renalLabFlagRank(left.flag)
+      );
+    if (sort === "Potassium high-low")
+      return renalLabPotassiumValue(right) - renalLabPotassiumValue(left);
     return right.id.localeCompare(left.id);
   });
 }
@@ -381,10 +511,13 @@ function dialysisStatusRank(status: DialysisSession["status"]) {
 
 function sortDialysisSessions(rows: DialysisSession[], sort: string) {
   return rows.slice().sort((left, right) => {
-    if (sort === "Patient") return patientName(left.patientId).localeCompare(patientName(right.patientId));
-    if (sort === "Status priority") return dialysisStatusRank(right.status) - dialysisStatusRank(left.status);
+    if (sort === "Patient")
+      return patientName(left.patientId).localeCompare(patientName(right.patientId));
+    if (sort === "Status priority")
+      return dialysisStatusRank(right.status) - dialysisStatusRank(left.status);
     if (sort === "UF target high-low") return right.ufTargetMl - left.ufTargetMl;
-    if (sort === "Billing pending") return Number(right.status === "Billing pending") - Number(left.status === "Billing pending");
+    if (sort === "Billing pending")
+      return Number(right.status === "Billing pending") - Number(left.status === "Billing pending");
     return right.id.localeCompare(left.id);
   });
 }
@@ -395,7 +528,8 @@ function dialysisBillingAmount(session: DialysisSession, packageMode: string) {
     "CRRT placeholder": 18000,
     "SLED placeholder": 8500,
   };
-  const packageAddOn = packageMode === "Consumables included" ? 1500 : packageMode === "Emergency add-on" ? 2500 : 0;
+  const packageAddOn =
+    packageMode === "Consumables included" ? 1500 : packageMode === "Emergency add-on" ? 2500 : 0;
   const ufAddOn = session.ufTargetMl > 1500 ? 750 : 0;
   return modalityBase[session.modality] + packageAddOn + ufAddOn;
 }
@@ -425,7 +559,9 @@ function patientRecordSearchText(patient: (typeof mockPatients)[number]) {
     visit?.visitType,
     visit?.referenceNumber,
     patient.alertFlags.join(" "),
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function getRoleActionItems(access: ReturnType<typeof useRenalAccess>): RoleActionItem[] {
@@ -476,7 +612,8 @@ function getRoleActionItems(access: ReturnType<typeof useRenalAccess>): RoleActi
       id: "order",
       type: "order",
       title: "Add renal order",
-      description: "Add a renal instruction such as repeat RFT, potassium watch, or dialysis review.",
+      description:
+        "Add a renal instruction such as repeat RFT, potassium watch, or dialysis review.",
       when: "Use when the doctor needs a new renal follow-up action.",
       result: "Order appears in labs, orders, and sign-off checklist.",
       lockedReason: "Doctor role required",
@@ -533,37 +670,54 @@ function roleActionSearchText(action: RoleActionItem) {
 function sortRoleActions(rows: RoleActionItem[], sort: string) {
   return rows.slice().sort((left, right) => {
     if (sort === "Role A-Z") return left.owner.localeCompare(right.owner) || left.rank - right.rank;
-    if (sort === "System record A-Z") return left.resource.localeCompare(right.resource) || left.rank - right.rank;
-    if (sort === "Locked first") return Number(left.enabled) - Number(right.enabled) || left.rank - right.rank;
+    if (sort === "System record A-Z")
+      return left.resource.localeCompare(right.resource) || left.rank - right.rank;
+    if (sort === "Locked first")
+      return Number(left.enabled) - Number(right.enabled) || left.rank - right.rank;
     if (sort === "Workflow order") return left.rank - right.rank;
     return Number(right.enabled) - Number(left.enabled) || left.rank - right.rank;
   });
 }
 
 function useRenalChartColumns(onOpen: (chart: RenalPatientChart) => void) {
-  return React.useMemo<ColumnDef<RenalPatientChart>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Bed/Ward", cell: ({ row }) => `${row.original.bedNo} • ${row.original.ward}` },
-    { header: "Consultant", accessorKey: "consultant" },
-    { header: "Renal status", cell: ({ row }) => <RenalStatusBadge status={row.original.renalStatus} /> },
-    { header: "Fluid target", cell: ({ row }) => formatMl(row.original.fluidRestrictionMl) },
-    { header: "Cumulative", cell: ({ row }) => <BalanceBadge value={row.original.cumulativeBalanceMl} /> },
-    { header: "Dialysis", accessorKey: "dialysisStatus" },
-    {
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1">
-          <Button size="sm" asChild>
-            <Link href={`/renal/patients/${row.original.patientId}`}>Open</Link>
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => onOpen(row.original)}>Review</Button>
-        </div>
-      ),
-    },
-  ], [onOpen]);
+  return React.useMemo<ColumnDef<RenalPatientChart>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Bed/Ward", cell: ({ row }) => `${row.original.bedNo} • ${row.original.ward}` },
+      { header: "Consultant", accessorKey: "consultant" },
+      {
+        header: "Renal status",
+        cell: ({ row }) => <RenalStatusBadge status={row.original.renalStatus} />,
+      },
+      { header: "Fluid target", cell: ({ row }) => formatMl(row.original.fluidRestrictionMl) },
+      {
+        header: "Cumulative",
+        cell: ({ row }) => <BalanceBadge value={row.original.cumulativeBalanceMl} />,
+      },
+      { header: "Dialysis", accessorKey: "dialysisStatus" },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-1">
+            <Button size="sm" asChild>
+              <Link href={`/renal/patients/${row.original.patientId}`}>Open</Link>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onOpen(row.original)}>
+              Review
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [onOpen],
+  );
 }
 
-export function RenalDashboardPage({ initialTab = "dashboard" }: { initialTab?: RenalDashboardTab }) {
+export function RenalDashboardPage({
+  initialTab = "dashboard",
+}: {
+  initialTab?: RenalDashboardTab;
+}) {
   const [selected, setSelected] = React.useState<RenalPatientChart | null>(null);
   const [action, setAction] = React.useState<OverviewActionRequest | null>(null);
   const [activeTab, setActiveTab] = React.useState<RenalDashboardTab>(initialTab);
@@ -575,8 +729,13 @@ export function RenalDashboardPage({ initialTab = "dashboard" }: { initialTab?: 
   const [actionSort, setActionSort] = React.useState("Available first");
   const columns = useRenalChartColumns(setSelected);
   const criticalAlerts = mockRenalAlerts.filter((alert) => alert.severity === "Critical");
-  const positiveBalance = mockRenalCharts.filter((chart) => chart.cumulativeBalanceMl > chart.targetBalanceMl);
-  const openAlerts = React.useMemo(() => mockRenalAlerts.filter((alert) => alert.status !== "Acknowledged"), []);
+  const positiveBalance = mockRenalCharts.filter(
+    (chart) => chart.cumulativeBalanceMl > chart.targetBalanceMl,
+  );
+  const openAlerts = React.useMemo(
+    () => mockRenalAlerts.filter((alert) => alert.status !== "Acknowledged"),
+    [],
+  );
   const patientRows = React.useMemo(() => {
     const search = patientSearch.trim();
     const rows = search
@@ -596,7 +755,9 @@ export function RenalDashboardPage({ initialTab = "dashboard" }: { initialTab?: 
     <ProtectedRenal>
       {(access) => {
         const roleActionRows = sortRoleActions(
-          getRoleActionItems(access).filter((item) => includes(roleActionSearchText(item), actionSearch.trim())),
+          getRoleActionItems(access).filter((item) =>
+            includes(roleActionSearchText(item), actionSearch.trim()),
+          ),
           actionSort,
         );
 
@@ -604,7 +765,9 @@ export function RenalDashboardPage({ initialTab = "dashboard" }: { initialTab?: 
           <div className="space-y-5">
             <div className="flex flex-wrap justify-end gap-2">
               <PrintButton label="Print renal list" />
-              <Button variant="outline" asChild><Link href="/renal/fluid-balance">Fluid balance</Link></Button>
+              <Button variant="outline" asChild>
+                <Link href="/renal/fluid-balance">Fluid balance</Link>
+              </Button>
               <Button disabled={!access.canEnterIO} onClick={() => setAction({ type: "entry" })}>
                 <Plus className="h-4 w-4" />
                 New renal entry
@@ -614,13 +777,45 @@ export function RenalDashboardPage({ initialTab = "dashboard" }: { initialTab?: 
             <RenalRoleBanner role={access.role} />
 
             <SummaryGrid>
-              <StatCard label="Active renal charts" value={mockRenalCharts.length} change="Live" context="Inpatient watch" tone="info" icon={Droplets} />
-              <StatCard label="Critical alerts" value={criticalAlerts.length} change="Escalate" context="Doctor review" tone="critical" icon={ShieldAlert} />
-              <StatCard label="Positive balance" value={positiveBalance.length} change="Fluid" context="Above target" tone="warning" icon={Gauge} />
-              <StatCard label="Dialysis queue" value={mockDialysisSessions.filter((item) => item.status !== "Completed").length} change="Renal" context="Sessions" tone="danger" icon={Activity} />
+              <StatCard
+                label="Active renal charts"
+                value={mockRenalCharts.length}
+                change="Live"
+                context="Inpatient watch"
+                tone="info"
+                icon={Droplets}
+              />
+              <StatCard
+                label="Critical alerts"
+                value={criticalAlerts.length}
+                change="Escalate"
+                context="Doctor review"
+                tone="critical"
+                icon={ShieldAlert}
+              />
+              <StatCard
+                label="Positive balance"
+                value={positiveBalance.length}
+                change="Fluid"
+                context="Above target"
+                tone="warning"
+                icon={Gauge}
+              />
+              <StatCard
+                label="Dialysis queue"
+                value={mockDialysisSessions.filter((item) => item.status !== "Completed").length}
+                change="Renal"
+                context="Sessions"
+                tone="danger"
+                icon={Activity}
+              />
             </SummaryGrid>
 
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as RenalDashboardTab)} className="space-y-4">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as RenalDashboardTab)}
+              className="space-y-4"
+            >
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="patient-chart">Patient Chart</TabsTrigger>
@@ -684,9 +879,20 @@ export function RenalDashboardPage({ initialTab = "dashboard" }: { initialTab?: 
                     onChange={setAlertSort}
                     options={["Severity", "Patient", "Owner", "Status"]}
                   />
-                  <Button variant="outline" onClick={() => { setAlertSearch(""); setAlertSort("Severity"); }}>Reset</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAlertSearch("");
+                      setAlertSort("Severity");
+                    }}
+                  >
+                    Reset
+                  </Button>
                 </FilterBar>
-                <RenalAlertQueue alerts={alertRows} onAction={(alert) => setAction({ type: "alert", alert })} />
+                <RenalAlertQueue
+                  alerts={alertRows}
+                  onAction={(alert) => setAction({ type: "alert", alert })}
+                />
               </TabsContent>
 
               <TabsContent value="priority-queue" className="space-y-4">
@@ -705,8 +911,16 @@ export function RenalDashboardPage({ initialTab = "dashboard" }: { initialTab?: 
                 />
               </TabsContent>
             </Tabs>
-            <RenalChartDrawer chart={selected} open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)} />
-            <RenalOverviewActionDrawer action={action} open={Boolean(action)} onOpenChange={(open) => !open && setAction(null)} />
+            <RenalChartDrawer
+              chart={selected}
+              open={Boolean(selected)}
+              onOpenChange={(open) => !open && setSelected(null)}
+            />
+            <RenalOverviewActionDrawer
+              action={action}
+              open={Boolean(action)}
+              onOpenChange={(open) => !open && setAction(null)}
+            />
           </div>
         );
       }}
@@ -726,7 +940,9 @@ function RenalPriorityQueueTab({
   const [sort, setSort] = React.useState("Priority");
   const rows = React.useMemo(() => {
     const filtered = charts.filter((chart) => {
-      const matchesSearch = search.trim() ? includes(renalPatientSearchText(chart), search.trim()) : true;
+      const matchesSearch = search.trim()
+        ? includes(renalPatientSearchText(chart), search.trim())
+        : true;
       return matchesSearch && renalChartRiskMatch(chart, risk);
     });
     return sortRenalPatients(filtered, sort);
@@ -734,11 +950,34 @@ function RenalPriorityQueueTab({
 
   return (
     <div className="space-y-4">
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, UHID, bed, ward, renal risk...">
+      <FilterBar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Search patient, UHID, bed, ward, renal risk..."
+      >
         <Badge tone="info">{rows.length} patients</Badge>
-        <NativeSelect label="Risk" value={risk} onChange={setRisk} options={["All risk", "Critical", "Positive balance", "Dialysis review", "AKI watch"]} />
-        <NativeSelect label="Sort queue" value={sort} onChange={setSort} options={["Priority", "Patient A-Z", "Ward", "Balance high-low", "Dialysis review"]} />
-        <Button variant="outline" onClick={() => { setSearch(""); setRisk("All risk"); setSort("Priority"); }}>Reset</Button>
+        <NativeSelect
+          label="Risk"
+          value={risk}
+          onChange={setRisk}
+          options={["All risk", "Critical", "Positive balance", "Dialysis review", "AKI watch"]}
+        />
+        <NativeSelect
+          label="Sort queue"
+          value={sort}
+          onChange={setSort}
+          options={["Priority", "Patient A-Z", "Ward", "Balance high-low", "Dialysis review"]}
+        />
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearch("");
+            setRisk("All risk");
+            setSort("Priority");
+          }}
+        >
+          Reset
+        </Button>
       </FilterBar>
       <RenalPriorityBoard charts={rows} onAction={onAction} />
       <RenalQueueDetailPanel charts={rows} onAction={onAction} />
@@ -779,7 +1018,14 @@ function RenalPatientChartsTab({
           label="Status"
           value={status}
           onChange={setStatus}
-          options={["All status", "Stable", "AKI watch", "Fluid overload", "Critical", "Dialysis review"]}
+          options={[
+            "All status",
+            "Stable",
+            "AKI watch",
+            "Fluid overload",
+            "Critical",
+            "Dialysis review",
+          ]}
         />
         <NativeSelect
           label="Sort patients"
@@ -787,7 +1033,16 @@ function RenalPatientChartsTab({
           onChange={onSort}
           options={["Priority", "Patient A-Z", "Ward", "Balance high-low", "Dialysis review"]}
         />
-        <Button variant="outline" onClick={() => { onSearch(""); onSort("Priority"); setStatus("All status"); }}>Reset</Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            onSearch("");
+            onSort("Priority");
+            setStatus("All status");
+          }}
+        >
+          Reset
+        </Button>
       </FilterBar>
       <DataTable data={filteredRows} columns={columns} />
     </div>
@@ -798,55 +1053,152 @@ function RenalFluidBalanceTab() {
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState("All balance");
   const [sort, setSort] = React.useState("Balance high-low");
-  const baseRows = React.useMemo(() => mockRenalCharts.map((chart) => {
-    const balanceRows = getRenalBalanceRows(chart.patientId);
-    return {
-      ...chart,
-      totalIntakeMl: sumValues(balanceRows, (row) => row.totalIntakeMl),
-      totalOutputMl: sumValues(balanceRows, (row) => row.totalOutputMl),
-      balanceMl: sumValues(balanceRows, (row) => row.balanceMl),
-    };
-  }), []);
+  const baseRows = React.useMemo(
+    () =>
+      mockRenalCharts.map((chart) => {
+        const balanceRows = getRenalBalanceRows(chart.patientId);
+        return {
+          ...chart,
+          totalIntakeMl: sumValues(balanceRows, (row) => row.totalIntakeMl),
+          totalOutputMl: sumValues(balanceRows, (row) => row.totalOutputMl),
+          balanceMl: sumValues(balanceRows, (row) => row.balanceMl),
+        };
+      }),
+    [],
+  );
   const rows = React.useMemo(() => {
     const filtered = baseRows.filter((row) => {
-      const matchesSearch = search.trim() ? includes(renalBalanceSearchText(row), search.trim()) : true;
+      const matchesSearch = search.trim()
+        ? includes(renalBalanceSearchText(row), search.trim())
+        : true;
       return matchesSearch && renalBalanceFilterMatch(row, filter);
     });
     return sortRenalBalanceRows(filtered, sort);
   }, [baseRows, filter, search, sort]);
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
-  const columns = React.useMemo<ColumnDef<(typeof rows)[number]>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Bed/Ward", cell: ({ row }) => `${row.original.bedNo} • ${row.original.ward}` },
-    { header: "Status", cell: ({ row }) => <RenalStatusBadge status={row.original.renalStatus} /> },
-    { header: "Intake", cell: ({ row }) => formatMl(row.original.totalIntakeMl) },
-    { header: "Output", cell: ({ row }) => formatMl(row.original.totalOutputMl) },
-    { header: "24h balance", cell: ({ row }) => <BalanceBadge value={row.original.balanceMl} /> },
-    { header: "Cumulative", cell: ({ row }) => <BalanceBadge value={row.original.cumulativeBalanceMl} /> },
-    { header: "Actions", cell: ({ row }) => <Button size="sm" variant="outline" asChild><Link href={`/renal/patients/${row.original.patientId}`}>Open</Link></Button> },
-  ], []);
+
+  const columns = React.useMemo<ColumnDef<(typeof rows)[number]>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Bed/Ward", cell: ({ row }) => `${row.original.bedNo} • ${row.original.ward}` },
+      {
+        header: "Status",
+        cell: ({ row }) => <RenalStatusBadge status={row.original.renalStatus} />,
+      },
+      { header: "Intake", cell: ({ row }) => formatMl(row.original.totalIntakeMl) },
+      { header: "Output", cell: ({ row }) => formatMl(row.original.totalOutputMl) },
+      { header: "24h balance", cell: ({ row }) => <BalanceBadge value={row.original.balanceMl} /> },
+      {
+        header: "Cumulative",
+        cell: ({ row }) => <BalanceBadge value={row.original.cumulativeBalanceMl} />,
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/renal/patients/${row.original.patientId}`}>Open</Link>
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <div className="space-y-4">
       <SectionShell
         title="Fluid Balance"
-        action={<><PrintButton label="Print balance" /><Button variant="outline"><Download className="h-4 w-4" />Export</Button></>}
+        action={
+          <>
+            <PrintButton label="Print balance" />
+            <Button variant="outline">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </>
+        }
       >
         <div className="space-y-3 p-4">
-          <p className="text-xs text-muted-foreground">24-hour intake, output, balance, and cumulative renal chart summary across active inpatients.</p>
+          <p className="text-xs text-muted-foreground">
+            24-hour intake, output, balance, and cumulative renal chart summary across active
+            inpatients.
+          </p>
           <SummaryGrid>
-            <StatCard label="Total intake" value={sumValues(rows, (row) => row.totalIntakeMl)} change="ml" context="All active charts" tone="info" icon={Droplets} />
-            <StatCard label="Total output" value={sumValues(rows, (row) => row.totalOutputMl)} change="ml" context="Urine + drains" tone="success" icon={Activity} />
-            <StatCard label="Positive balances" value={rows.filter((row) => row.balanceMl > 0).length} change="Review" context="Clinical watch" tone="warning" icon={Gauge} />
-            <StatCard label="Critical alerts" value={mockRenalAlerts.filter((alert) => alert.severity === "Critical").length} change="Escalate" context="Renal rules" tone="critical" icon={ShieldAlert} />
+            <StatCard
+              label="Total intake"
+              value={sumValues(rows, (row) => row.totalIntakeMl)}
+              change="ml"
+              context="All active charts"
+              tone="info"
+              icon={Droplets}
+            />
+            <StatCard
+              label="Total output"
+              value={sumValues(rows, (row) => row.totalOutputMl)}
+              change="ml"
+              context="Urine + drains"
+              tone="success"
+              icon={Activity}
+            />
+            <StatCard
+              label="Positive balances"
+              value={rows.filter((row) => row.balanceMl > 0).length}
+              change="Review"
+              context="Clinical watch"
+              tone="warning"
+              icon={Gauge}
+            />
+            <StatCard
+              label="Critical alerts"
+              value={mockRenalAlerts.filter((alert) => alert.severity === "Critical").length}
+              change="Escalate"
+              context="Renal rules"
+              tone="critical"
+              icon={ShieldAlert}
+            />
           </SummaryGrid>
         </div>
       </SectionShell>
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, UHID, ward, intake, output, balance...">
+      <FilterBar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Search patient, UHID, ward, intake, output, balance..."
+      >
         <Badge tone="info">{rows.length} records</Badge>
-        <NativeSelect label="Balance filter" value={filter} onChange={setFilter} options={["All balance", "Positive only", "Negative only", "Above target", "Critical status"]} />
-        <NativeSelect label="Sort balance" value={sort} onChange={setSort} options={["Balance high-low", "Intake high-low", "Output high-low", "Cumulative high-low", "Patient A-Z", "Ward"]} />
-        <Button variant="outline" onClick={() => { setSearch(""); setFilter("All balance"); setSort("Balance high-low"); }}>Reset</Button>
+        <NativeSelect
+          label="Balance filter"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            "All balance",
+            "Positive only",
+            "Negative only",
+            "Above target",
+            "Critical status",
+          ]}
+        />
+        <NativeSelect
+          label="Sort balance"
+          value={sort}
+          onChange={setSort}
+          options={[
+            "Balance high-low",
+            "Intake high-low",
+            "Output high-low",
+            "Cumulative high-low",
+            "Patient A-Z",
+            "Ward",
+          ]}
+        />
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearch("");
+            setFilter("All balance");
+            setSort("Balance high-low");
+          }}
+        >
+          Reset
+        </Button>
       </FilterBar>
       <DataTable data={rows} columns={columns} />
     </div>
@@ -862,50 +1214,159 @@ function RenalDrainsDevicesTab({ access }: { access: ReturnType<typeof useRenalA
   const [sort, setSort] = React.useState("Output high-low");
   const rows = React.useMemo(() => {
     const filtered = mockRenalDrains.filter((drain) => {
-      const matchesSearch = search.trim() ? includes(renalDrainSearchText(drain), search.trim()) : true;
+      const matchesSearch = search.trim()
+        ? includes(renalDrainSearchText(drain), search.trim())
+        : true;
       const matchesStatus = statusFilter === "All status" || drain.deviceStatus === statusFilter;
       const matchesConcern = concernFilter === "All concern" || drain.concern === concernFilter;
       return matchesSearch && matchesStatus && matchesConcern;
     });
     return sortRenalDrains(filtered, sort);
   }, [concernFilter, search, sort, statusFilter]);
-  const columns = React.useMemo<ColumnDef<RenalDrainRecord>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Drain", accessorKey: "drainName" },
-    { header: "Site", accessorKey: "site" },
-    { header: "Status", cell: ({ row }) => <StatusPill tone={statusTone(row.original.deviceStatus)}>{row.original.deviceStatus}</StatusPill> },
-    { header: "24h output", cell: ({ row }) => formatMl(row.original.total24HrMl) },
-    { header: "Character", accessorKey: "character" },
-    { header: "Concern", cell: ({ row }) => <StatusPill tone={statusTone(row.original.concern)}>{row.original.concern}</StatusPill> },
-    { header: "Actions", cell: ({ row }) => <Button size="sm" variant="outline" onClick={() => setSelected(row.original)}>Review</Button> },
-  ], []);
+  const columns = React.useMemo<ColumnDef<RenalDrainRecord>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Drain", accessorKey: "drainName" },
+      { header: "Site", accessorKey: "site" },
+      {
+        header: "Status",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.deviceStatus)}>
+            {row.original.deviceStatus}
+          </StatusPill>
+        ),
+      },
+      { header: "24h output", cell: ({ row }) => formatMl(row.original.total24HrMl) },
+      { header: "Character", accessorKey: "character" },
+      {
+        header: "Concern",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.concern)}>{row.original.concern}</StatusPill>
+        ),
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <Button size="sm" variant="outline" onClick={() => setSelected(row.original)}>
+            Review
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <div className="space-y-4">
       <SectionShell
         title="Drains & Devices"
-        action={<><PrintButton label="Print drains" /><Button disabled={!access.canEnterIO} onClick={() => setAddOpen(true)}><Plus className="h-4 w-4" />Add drain reading</Button></>}
+        action={
+          <>
+            <PrintButton label="Print drains" />
+            <Button disabled={!access.canEnterIO} onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Add drain reading
+            </Button>
+          </>
+        }
       >
         <div className="space-y-3 p-4">
-          <p className="text-xs text-muted-foreground">Drain-wise renal output monitoring with site, device state, character, concern, and review action.</p>
+          <p className="text-xs text-muted-foreground">
+            Drain-wise renal output monitoring with site, device state, character, concern, and
+            review action.
+          </p>
           <SummaryGrid>
-            <StatCard label="Active drains" value={mockRenalDrains.filter((drain) => drain.deviceStatus !== "Removed placeholder").length} change="Devices" context="Across renal charts" tone="info" icon={Droplets} />
-            <StatCard label="High output" value={mockRenalDrains.filter((drain) => drain.concern === "High output").length} change="Watch" context="Drain alerts" tone="warning" icon={AlertTriangle} />
-            <StatCard label="Total drain output" value={sumValues(mockRenalDrains, (drain) => drain.total24HrMl)} change="ml" context="24h" tone="success" icon={Activity} />
-            <StatCard label="Removed" value={mockRenalDrains.filter((drain) => drain.deviceStatus === "Removed placeholder").length} change="Audit" context="Line lifecycle" tone="muted" icon={ClipboardCheck} />
+            <StatCard
+              label="Active drains"
+              value={
+                mockRenalDrains.filter((drain) => drain.deviceStatus !== "Removed placeholder")
+                  .length
+              }
+              change="Devices"
+              context="Across renal charts"
+              tone="info"
+              icon={Droplets}
+            />
+            <StatCard
+              label="High output"
+              value={mockRenalDrains.filter((drain) => drain.concern === "High output").length}
+              change="Watch"
+              context="Drain alerts"
+              tone="warning"
+              icon={AlertTriangle}
+            />
+            <StatCard
+              label="Total drain output"
+              value={sumValues(mockRenalDrains, (drain) => drain.total24HrMl)}
+              change="ml"
+              context="24h"
+              tone="success"
+              icon={Activity}
+            />
+            <StatCard
+              label="Removed"
+              value={
+                mockRenalDrains.filter((drain) => drain.deviceStatus === "Removed placeholder")
+                  .length
+              }
+              change="Audit"
+              context="Line lifecycle"
+              tone="muted"
+              icon={ClipboardCheck}
+            />
           </SummaryGrid>
         </div>
       </SectionShell>
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, drain, site, device status, character, concern...">
+      <FilterBar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Search patient, drain, site, device status, character, concern..."
+      >
         <Badge tone="info">{rows.length} drains</Badge>
-        <NativeSelect label="Device status" value={statusFilter} onChange={setStatusFilter} options={["All status", ...Array.from(new Set(mockRenalDrains.map((drain) => drain.deviceStatus)))]} />
-        <NativeSelect label="Concern" value={concernFilter} onChange={setConcernFilter} options={["All concern", ...Array.from(new Set(mockRenalDrains.map((drain) => drain.concern)))]} />
-        <NativeSelect label="Sort drains" value={sort} onChange={setSort} options={["Output high-low", "Concern first", "Patient A-Z", "Drain A-Z", "Site A-Z"]} />
-        <Button variant="outline" onClick={() => { setSearch(""); setStatusFilter("All status"); setConcernFilter("All concern"); setSort("Output high-low"); }}>Reset</Button>
+        <NativeSelect
+          label="Device status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            "All status",
+            ...Array.from(new Set(mockRenalDrains.map((drain) => drain.deviceStatus))),
+          ]}
+        />
+        <NativeSelect
+          label="Concern"
+          value={concernFilter}
+          onChange={setConcernFilter}
+          options={[
+            "All concern",
+            ...Array.from(new Set(mockRenalDrains.map((drain) => drain.concern))),
+          ]}
+        />
+        <NativeSelect
+          label="Sort drains"
+          value={sort}
+          onChange={setSort}
+          options={["Output high-low", "Concern first", "Patient A-Z", "Drain A-Z", "Site A-Z"]}
+        />
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearch("");
+            setStatusFilter("All status");
+            setConcernFilter("All concern");
+            setSort("Output high-low");
+          }}
+        >
+          Reset
+        </Button>
       </FilterBar>
       <DataTable data={rows} columns={columns} />
       <DrainReadingModal open={addOpen} onOpenChange={setAddOpen} canSubmit={access.canEnterIO} />
-      <DrainReviewModal drain={selected} open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)} canSubmit={access.canEnterIO || access.canReview} />
+      <DrainReviewModal
+        drain={selected}
+        open={Boolean(selected)}
+        onOpenChange={(open) => !open && setSelected(null)}
+        canSubmit={access.canEnterIO || access.canReview}
+      />
     </div>
   );
 }
@@ -928,61 +1389,158 @@ function RenalLabsDashboardTab({ access }: { access: ReturnType<typeof useRenalA
     return sortRenalLabs(filtered, sort);
   }, [flagFilter, search, sort]);
 
-  const columns = React.useMemo<ColumnDef<RenalLabRecord>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Collected", accessorKey: "collectedAt" },
-    { header: "Creatinine", accessorKey: "creatinine" },
-    { header: "Urea", accessorKey: "urea" },
-    { header: "Sodium", accessorKey: "sodium" },
-    { header: "Potassium", accessorKey: "potassium" },
-    { header: "eGFR", accessorKey: "egfr" },
-    { header: "Flag", cell: ({ row }) => <StatusPill tone={statusTone(row.original.flag)}>{row.original.flag}</StatusPill> },
-    { header: "Trend", cell: ({ row }) => <StatusPill tone={statusTone(row.original.trend)}>{row.original.trend}</StatusPill> },
-    {
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1">
-          <Button size="sm" variant="outline" onClick={() => setReviewLab(row.original)}>Review</Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              setUpdatePatientId(row.original.patientId);
-              setUpdateOpen(true);
-            }}
-          >
-            Update
-          </Button>
-        </div>
-      ),
-    },
-  ], []);
+  const columns = React.useMemo<ColumnDef<RenalLabRecord>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Collected", accessorKey: "collectedAt" },
+      { header: "Creatinine", accessorKey: "creatinine" },
+      { header: "Urea", accessorKey: "urea" },
+      { header: "Sodium", accessorKey: "sodium" },
+      { header: "Potassium", accessorKey: "potassium" },
+      { header: "eGFR", accessorKey: "egfr" },
+      {
+        header: "Flag",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.flag)}>{row.original.flag}</StatusPill>
+        ),
+      },
+      {
+        header: "Trend",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.trend)}>{row.original.trend}</StatusPill>
+        ),
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-1">
+            <Button size="sm" variant="outline" onClick={() => setReviewLab(row.original)}>
+              Review
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setUpdatePatientId(row.original.patientId);
+                setUpdateOpen(true);
+              }}
+            >
+              Update
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <div className="space-y-4">
       <SectionShell
         title="Renal Lab"
-        action={<><PrintButton label="Print labs" /><Button disabled={!access.canUpdateLabs} onClick={() => { setUpdatePatientId(firstChart?.patientId ?? ""); setUpdateOpen(true); }}><FlaskConical className="h-4 w-4" />Update labs</Button></>}
+        action={
+          <>
+            <PrintButton label="Print labs" />
+            <Button
+              disabled={!access.canUpdateLabs}
+              onClick={() => {
+                setUpdatePatientId(firstChart?.patientId ?? "");
+                setUpdateOpen(true);
+              }}
+            >
+              <FlaskConical className="h-4 w-4" />
+              Update labs
+            </Button>
+          </>
+        }
       >
         <div className="space-y-3 p-4">
-          <p className="text-xs text-muted-foreground">Creatinine, urea, electrolytes, eGFR, urine protein, abnormal flags, and renal trend review.</p>
-          <AlertBanner icon={FlaskConical} tone="warning" title="Critical value visibility">Critical potassium, creatinine trend, and dialysis review indicators remain visible in the renal workspace.</AlertBanner>
+          <p className="text-xs text-muted-foreground">
+            Creatinine, urea, electrolytes, eGFR, urine protein, abnormal flags, and renal trend
+            review.
+          </p>
+          <AlertBanner icon={FlaskConical} tone="warning" title="Critical value visibility">
+            Critical potassium, creatinine trend, and dialysis review indicators remain visible in
+            the renal workspace.
+          </AlertBanner>
           <SummaryGrid>
-            <StatCard label="Total lab rows" value={mockRenalLabs.length} change="Results" context="Renal diagnostics" tone="info" icon={FlaskConical} />
-            <StatCard label="Critical results" value={mockRenalLabs.filter((lab) => lab.flag === "Critical").length} change="Escalate" context="Doctor acknowledgement" tone="critical" icon={ShieldAlert} />
-            <StatCard label="Worsening trend" value={mockRenalLabs.filter((lab) => lab.trend === "Worsening").length} change="Review" context="Creatinine / eGFR watch" tone="warning" icon={Activity} />
-            <StatCard label="Pending sign orders" value={mockRenalOrders.filter((order) => order.status === "Pending sign").length} change="Orders" context="Renal orders" tone="danger" icon={ClipboardCheck} />
+            <StatCard
+              label="Total lab rows"
+              value={mockRenalLabs.length}
+              change="Results"
+              context="Renal diagnostics"
+              tone="info"
+              icon={FlaskConical}
+            />
+            <StatCard
+              label="Critical results"
+              value={mockRenalLabs.filter((lab) => lab.flag === "Critical").length}
+              change="Escalate"
+              context="Doctor acknowledgement"
+              tone="critical"
+              icon={ShieldAlert}
+            />
+            <StatCard
+              label="Worsening trend"
+              value={mockRenalLabs.filter((lab) => lab.trend === "Worsening").length}
+              change="Review"
+              context="Creatinine / eGFR watch"
+              tone="warning"
+              icon={Activity}
+            />
+            <StatCard
+              label="Pending sign orders"
+              value={mockRenalOrders.filter((order) => order.status === "Pending sign").length}
+              change="Orders"
+              context="Renal orders"
+              tone="danger"
+              icon={ClipboardCheck}
+            />
           </SummaryGrid>
         </div>
       </SectionShell>
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, creatinine, potassium, eGFR, flag, trend...">
+      <FilterBar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Search patient, creatinine, potassium, eGFR, flag, trend..."
+      >
         <Badge tone="info">{rows.length} results</Badge>
-        <NativeSelect label="Flag" value={flagFilter} onChange={setFlagFilter} options={["All flags", "Critical", "Watch", "Normal"]} />
-        <NativeSelect label="Sort labs" value={sort} onChange={setSort} options={["Latest", "Patient", "Flag severity", "Worsening first", "Potassium high-low"]} />
-        <Button variant="outline" onClick={() => { setSearch(""); setFlagFilter("All flags"); setSort("Latest"); }}>Reset</Button>
+        <NativeSelect
+          label="Flag"
+          value={flagFilter}
+          onChange={setFlagFilter}
+          options={["All flags", "Critical", "Watch", "Normal"]}
+        />
+        <NativeSelect
+          label="Sort labs"
+          value={sort}
+          onChange={setSort}
+          options={["Latest", "Patient", "Flag severity", "Worsening first", "Potassium high-low"]}
+        />
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearch("");
+            setFlagFilter("All flags");
+            setSort("Latest");
+          }}
+        >
+          Reset
+        </Button>
       </FilterBar>
       <DataTable data={rows} columns={columns} />
-      <RenalLabEntryModal key={updatePatientId} open={updateOpen} onOpenChange={setUpdateOpen} patientId={updatePatientId} canSubmit={access.canUpdateLabs} />
-      <RenalLabReviewModal lab={reviewLab} open={Boolean(reviewLab)} onOpenChange={(open) => !open && setReviewLab(null)} canSubmit={access.canReview || access.canUpdateLabs} />
+      <RenalLabEntryModal
+        key={updatePatientId}
+        open={updateOpen}
+        onOpenChange={setUpdateOpen}
+        patientId={updatePatientId}
+        canSubmit={access.canUpdateLabs}
+      />
+      <RenalLabReviewModal
+        lab={reviewLab}
+        open={Boolean(reviewLab)}
+        onOpenChange={(open) => !open && setReviewLab(null)}
+        canSubmit={access.canReview || access.canUpdateLabs}
+      />
     </div>
   );
 }
@@ -991,54 +1549,143 @@ function RenalReportsDashboardTab({ access }: { access: ReturnType<typeof useRen
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("All status");
   const [sort, setSort] = React.useState("Status priority");
-  const [workflow, setWorkflow] = React.useState<"balance" | "signoff" | "billing" | "emr" | null>(null);
+  const [workflow, setWorkflow] = React.useState<"balance" | "signoff" | "billing" | "emr" | null>(
+    null,
+  );
   const [selectedSession, setSelectedSession] = React.useState<DialysisSession | null>(null);
 
   const rows = React.useMemo(() => {
     const filtered = mockDialysisSessions.filter((session) => {
-      const matchesSearch = search.trim() ? includes(dialysisSessionSearchText(session), search.trim()) : true;
+      const matchesSearch = search.trim()
+        ? includes(dialysisSessionSearchText(session), search.trim())
+        : true;
       const matchesStatus = statusFilter === "All status" || session.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
     return sortDialysisSessions(filtered, sort);
   }, [search, sort, statusFilter]);
 
-  const dialysisColumns = React.useMemo<ColumnDef<DialysisSession>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Session", accessorKey: "sessionNo" },
-    { header: "Modality", accessorKey: "modality" },
-    { header: "Scheduled", accessorKey: "scheduledAt" },
-    { header: "Access", accessorKey: "accessSite" },
-    { header: "UF target", cell: ({ row }) => formatMl(row.original.ufTargetMl) },
-    { header: "UF removed", cell: ({ row }) => formatMl(row.original.ufRemovedMl) },
-    { header: "Status", cell: ({ row }) => <StatusPill tone={statusTone(row.original.status)}>{row.original.status}</StatusPill> },
-    { header: "Actions", cell: ({ row }) => <Button size="sm" variant="outline" onClick={() => setSelectedSession(row.original)}>Review</Button> },
-  ], []);
+  const dialysisColumns = React.useMemo<ColumnDef<DialysisSession>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Session", accessorKey: "sessionNo" },
+      { header: "Modality", accessorKey: "modality" },
+      { header: "Scheduled", accessorKey: "scheduledAt" },
+      { header: "Access", accessorKey: "accessSite" },
+      { header: "UF target", cell: ({ row }) => formatMl(row.original.ufTargetMl) },
+      { header: "UF removed", cell: ({ row }) => formatMl(row.original.ufRemovedMl) },
+      {
+        header: "Status",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.status)}>{row.original.status}</StatusPill>
+        ),
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <Button size="sm" variant="outline" onClick={() => setSelectedSession(row.original)}>
+            Review
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <div className="space-y-4">
       <SectionShell
         title="Reports"
-        action={<><PrintButton label="Print renal report" /><Button variant="outline" onClick={() => toast.success("Renal report PDF export queued in static workflow")}><Download className="h-4 w-4" />Export PDF</Button><Button disabled={!access.canReview} onClick={() => setWorkflow("emr")}>Send to EMR</Button></>}
+        action={
+          <>
+            <PrintButton label="Print renal report" />
+            <Button
+              variant="outline"
+              onClick={() => toast.success("Renal report PDF export queued in static workflow")}
+            >
+              <Download className="h-4 w-4" />
+              Export PDF
+            </Button>
+            <Button disabled={!access.canReview} onClick={() => setWorkflow("emr")}>
+              Send to EMR
+            </Button>
+          </>
+        }
       >
         <div className="space-y-3 p-4">
-          <p className="text-xs text-muted-foreground">Renal chart print, doctor sign-off, dialysis session summary, billing-ready service rows, and EMR handoff.</p>
+          <p className="text-xs text-muted-foreground">
+            Renal chart print, doctor sign-off, dialysis session summary, billing-ready service
+            rows, and EMR handoff.
+          </p>
           <div className="grid gap-4 lg:grid-cols-3">
-            <ReportCard title="24h fluid balance" value={`${mockRenalCharts.length} patients`} status="Ready to print" actionLabel="Preview" onAction={() => setWorkflow("balance")} />
-            <ReportCard title="Doctor sign-off" value={`${mockRenalOrders.filter((order) => order.status === "Pending sign").length} pending`} status="Review required" actionLabel="Open sign-off" onAction={() => setWorkflow("signoff")} disabled={!access.canReview} />
-            <ReportCard title="Billing handoff" value={`${mockDialysisSessions.filter((session) => session.status === "Billing pending").length} pending`} status={access.canBill ? "Billing access" : "Read only"} actionLabel="Prepare" onAction={() => setWorkflow("billing")} disabled={!access.canBill} />
+            <ReportCard
+              title="24h fluid balance"
+              value={`${mockRenalCharts.length} patients`}
+              status="Ready to print"
+              actionLabel="Preview"
+              onAction={() => setWorkflow("balance")}
+            />
+            <ReportCard
+              title="Doctor sign-off"
+              value={`${mockRenalOrders.filter((order) => order.status === "Pending sign").length} pending`}
+              status="Review required"
+              actionLabel="Open sign-off"
+              onAction={() => setWorkflow("signoff")}
+              disabled={!access.canReview}
+            />
+            <ReportCard
+              title="Billing handoff"
+              value={`${mockDialysisSessions.filter((session) => session.status === "Billing pending").length} pending`}
+              status={access.canBill ? "Billing access" : "Read only"}
+              actionLabel="Prepare"
+              onAction={() => setWorkflow("billing")}
+              disabled={!access.canBill}
+            />
           </div>
         </div>
       </SectionShell>
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, dialysis session, modality, access, status...">
+      <FilterBar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Search patient, dialysis session, modality, access, status..."
+      >
         <Badge tone="info">{rows.length} sessions</Badge>
-        <NativeSelect label="Dialysis status" value={statusFilter} onChange={setStatusFilter} options={["All status", "Scheduled", "In progress", "Completed", "Billing pending"]} />
-        <NativeSelect label="Sort sessions" value={sort} onChange={setSort} options={["Status priority", "Patient", "UF target high-low", "Billing pending"]} />
-        <Button variant="outline" onClick={() => { setSearch(""); setStatusFilter("All status"); setSort("Status priority"); }}>Reset</Button>
+        <NativeSelect
+          label="Dialysis status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={["All status", "Scheduled", "In progress", "Completed", "Billing pending"]}
+        />
+        <NativeSelect
+          label="Sort sessions"
+          value={sort}
+          onChange={setSort}
+          options={["Status priority", "Patient", "UF target high-low", "Billing pending"]}
+        />
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearch("");
+            setStatusFilter("All status");
+            setSort("Status priority");
+          }}
+        >
+          Reset
+        </Button>
       </FilterBar>
       <DataTable data={rows} columns={dialysisColumns} />
-      <RenalReportWorkflowModal workflow={workflow} open={Boolean(workflow)} onOpenChange={(open) => !open && setWorkflow(null)} access={access} />
-      <DialysisSessionReviewModal session={selectedSession} open={Boolean(selectedSession)} onOpenChange={(open) => !open && setSelectedSession(null)} canSubmit={access.canReview || access.canBill} />
+      <RenalReportWorkflowModal
+        workflow={workflow}
+        open={Boolean(workflow)}
+        onOpenChange={(open) => !open && setWorkflow(null)}
+        access={access}
+      />
+      <DialysisSessionReviewModal
+        session={selectedSession}
+        open={Boolean(selectedSession)}
+        onOpenChange={(open) => !open && setSelectedSession(null)}
+        canSubmit={access.canReview || access.canBill}
+      />
     </div>
   );
 }
@@ -1062,7 +1709,13 @@ function RenalOverviewSearchBar({
   resultCount: number;
   onReset: () => void;
 }) {
-  const quickRisks = ["Critical alerts", "Positive balance", "Dialysis review", "Low urine output", "Stable only"];
+  const quickRisks = [
+    "Critical alerts",
+    "Positive balance",
+    "Dialysis review",
+    "Low urine output",
+    "Stable only",
+  ];
 
   return (
     <Card>
@@ -1077,15 +1730,41 @@ function RenalOverviewSearchBar({
               placeholder="Search patient, UHID, bed, ward, consultant, status, dialysis..."
               aria-label="Search renal overview"
             />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{resultCount} found</div>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+              {resultCount} found
+            </div>
           </div>
-          <NativeSelect label="Renal status" value={status} onChange={onStatus} options={["All status", "Stable", "AKI watch", "Fluid overload", "Critical", "Dialysis review"]} />
-          <NativeSelect label="Risk" value={risk} onChange={onRisk} options={["All risk", ...quickRisks]} />
-          <Button variant="outline" onClick={onReset}>Reset</Button>
+          <NativeSelect
+            label="Renal status"
+            value={status}
+            onChange={onStatus}
+            options={[
+              "All status",
+              "Stable",
+              "AKI watch",
+              "Fluid overload",
+              "Critical",
+              "Dialysis review",
+            ]}
+          />
+          <NativeSelect
+            label="Risk"
+            value={risk}
+            onChange={onRisk}
+            options={["All risk", ...quickRisks]}
+          />
+          <Button variant="outline" onClick={onReset}>
+            Reset
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {quickRisks.map((item) => (
-            <Button key={item} size="sm" variant={risk === item ? "default" : "outline"} onClick={() => onRisk(risk === item ? "All risk" : item)}>
+            <Button
+              key={item}
+              size="sm"
+              variant={risk === item ? "default" : "outline"}
+              onClick={() => onRisk(risk === item ? "All risk" : item)}
+            >
               {item}
             </Button>
           ))}
@@ -1118,12 +1797,35 @@ function RenalFhirOperationsStrip({
               HL7 FHIR R4
             </div>
             <div className="mt-2 text-lg font-semibold">Renal Resource Workbench</div>
-            <div className="mt-1 text-xs leading-5 text-sidebar-foreground/75">Patient, Encounter, Observation, Device, DiagnosticReport, ServiceRequest, AuditEvent, Provenance</div>
+            <div className="mt-1 text-xs leading-5 text-sidebar-foreground/75">
+              Patient, Encounter, Observation, Device, DiagnosticReport, ServiceRequest, AuditEvent,
+              Provenance
+            </div>
           </div>
-          <MetricCell label="Visible" value={visibleCharts} tone="info" helper={`of ${activeCharts} charts`} />
-          <MetricCell label="Critical" value={criticalAlerts} tone="critical" helper="Open alerts" />
-          <MetricCell label="Positive" value={positiveBalance} tone="warning" helper="Balance above target" />
-          <MetricCell label="Dialysis" value={dialysisQueue} tone="danger" helper="Queue / review" />
+          <MetricCell
+            label="Visible"
+            value={visibleCharts}
+            tone="info"
+            helper={`of ${activeCharts} charts`}
+          />
+          <MetricCell
+            label="Critical"
+            value={criticalAlerts}
+            tone="critical"
+            helper="Open alerts"
+          />
+          <MetricCell
+            label="Positive"
+            value={positiveBalance}
+            tone="warning"
+            helper="Balance above target"
+          />
+          <MetricCell
+            label="Dialysis"
+            value={dialysisQueue}
+            tone="danger"
+            helper="Queue / review"
+          />
           <div className="border-b border-border p-4 lg:border-b-0">
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
               <Workflow className="h-4 w-4" />
@@ -1131,7 +1833,9 @@ function RenalFhirOperationsStrip({
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
               {["Observation", "Device", "DiagnosticReport", "AuditEvent"].map((resource) => (
-                <Badge key={resource} tone="muted">{resource}</Badge>
+                <Badge key={resource} tone="muted">
+                  {resource}
+                </Badge>
               ))}
             </div>
           </div>
@@ -1141,7 +1845,17 @@ function RenalFhirOperationsStrip({
   );
 }
 
-function MetricCell({ label, value, tone, helper }: { label: string; value: number; tone: StatusTone; helper: string }) {
+function MetricCell({
+  label,
+  value,
+  tone,
+  helper,
+}: {
+  label: string;
+  value: number;
+  tone: StatusTone;
+  helper: string;
+}) {
   return (
     <div className="border-b border-border p-4 lg:border-b-0 lg:border-r">
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
@@ -1162,14 +1876,21 @@ function RenalOverviewPatientList({
   onReview: (chart: RenalPatientChart) => void;
   onAction: (action: OverviewActionRequest) => void;
 }) {
-  const sortedCharts = React.useMemo(() => charts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left)), [charts]);
+  const sortedCharts = React.useMemo(
+    () =>
+      charts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left)),
+    [charts],
+  );
 
   return (
     <Card className="min-w-0 overflow-hidden">
       <CardHeader>
         <div>
           <CardTitle>FHIR-Aligned Renal Worklist</CardTitle>
-          <CardDescription>Patient and encounter context with renal Observations, devices, lab reports, orders, and audit status.</CardDescription>
+          <CardDescription>
+            Patient and encounter context with renal Observations, devices, lab reports, orders, and
+            audit status.
+          </CardDescription>
         </div>
         <Badge tone="info">{sortedCharts.length} patients</Badge>
       </CardHeader>
@@ -1184,81 +1905,118 @@ function RenalOverviewPatientList({
               <span className="text-right">Actions</span>
             </div>
             <div className="max-h-[680px] overflow-y-auto">
-            {sortedCharts.map((chart) => {
-              const patient = getPatientById(chart.patientId);
-              const score = renalPriorityScore(chart);
-              const alerts = getRenalAlertsByPatient(chart.patientId);
-              const criticalAlerts = alerts.filter((alert) => alert.severity === "Critical").length;
-              const warningAlerts = alerts.filter((alert) => alert.severity === "Warning").length;
-              const fhirBundle = getRenalFhirBundle(chart);
-              return (
-                <div className="grid gap-3 border-b border-border p-4 last:border-0 hover:bg-surface-muted/55 2xl:grid-cols-[minmax(300px,1.05fr)_190px_minmax(260px,1fr)_minmax(240px,0.95fr)_170px] 2xl:items-center" key={chart.id}>
-                  <div className="flex min-w-0 gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-background text-sm font-semibold text-primary">
-                      {(patient?.firstName?.[0] ?? "P")}{(patient?.lastName?.[0] ?? "")}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="truncate text-sm font-semibold text-foreground">{patientName(chart.patientId)}</div>
-                        <Badge tone="muted">{patient?.uhid ?? "Unknown UHID"}</Badge>
+              {sortedCharts.map((chart) => {
+                const patient = getPatientById(chart.patientId);
+                const score = renalPriorityScore(chart);
+                const alerts = getRenalAlertsByPatient(chart.patientId);
+                const criticalAlerts = alerts.filter(
+                  (alert) => alert.severity === "Critical",
+                ).length;
+                const warningAlerts = alerts.filter((alert) => alert.severity === "Warning").length;
+                const fhirBundle = getRenalFhirBundle(chart);
+                return (
+                  <div
+                    className="grid gap-3 border-b border-border p-4 last:border-0 hover:bg-surface-muted/55 2xl:grid-cols-[minmax(300px,1.05fr)_190px_minmax(260px,1fr)_minmax(240px,0.95fr)_170px] 2xl:items-center"
+                    key={chart.id}
+                  >
+                    <div className="flex min-w-0 gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-background text-sm font-semibold text-primary">
+                        {patient?.firstName?.[0] ?? "P"}
+                        {patient?.lastName?.[0] ?? ""}
                       </div>
-                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span>{patient?.age ?? "-"} / {patient?.gender ?? "-"}</span>
-                        <span>{chart.bedNo}</span>
-                        <span>{chart.ward}</span>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <Badge tone="muted">{fhirBundle[0].reference}</Badge>
-                        <Badge tone="muted">{fhirBundle[1].reference}</Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-1 text-xs">
-                    <div className="flex flex-wrap gap-2">
-                      <RenalStatusBadge status={chart.renalStatus} />
-                      <StatusPill tone={statusTone(renalPriorityLabel(score))}>{renalPriorityLabel(score)}</StatusPill>
-                    </div>
-                    <span className="text-muted-foreground">{chart.nephrologist}</span>
-                    <span className="text-muted-foreground">{chart.dialysisStatus}</span>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <div className="grid gap-1 sm:grid-cols-2">
-                      {fhirBundle.slice(2, 6).map((item) => (
-                        <div className="rounded-md border border-border bg-background px-2 py-1.5" key={item.resource}>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="truncate text-[11px] font-semibold text-foreground">{item.resource}</span>
-                            <StatusPill tone={fhirStatusTone(item.status)}>{item.status}</StatusPill>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="truncate text-sm font-semibold text-foreground">
+                            {patientName(chart.patientId)}
                           </div>
-                          <div className="mt-1 truncate text-[11px] text-muted-foreground">{item.payload}</div>
+                          <Badge tone="muted">{patient?.uhid ?? "Unknown UHID"}</Badge>
                         </div>
-                      ))}
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span>
+                            {patient?.age ?? "-"} / {patient?.gender ?? "-"}
+                          </span>
+                          <span>{chart.bedNo}</span>
+                          <span>{chart.ward}</span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <Badge tone="muted">{fhirBundle[0].reference}</Badge>
+                          <Badge tone="muted">{fhirBundle[1].reference}</Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-1 text-xs">
+                      <div className="flex flex-wrap gap-2">
+                        <RenalStatusBadge status={chart.renalStatus} />
+                        <StatusPill tone={statusTone(renalPriorityLabel(score))}>
+                          {renalPriorityLabel(score)}
+                        </StatusPill>
+                      </div>
+                      <span className="text-muted-foreground">{chart.nephrologist}</span>
+                      <span className="text-muted-foreground">{chart.dialysisStatus}</span>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <div className="grid gap-1 sm:grid-cols-2">
+                        {fhirBundle.slice(2, 6).map((item) => (
+                          <div
+                            className="rounded-md border border-border bg-background px-2 py-1.5"
+                            key={item.resource}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate text-[11px] font-semibold text-foreground">
+                                {item.resource}
+                              </span>
+                              <StatusPill tone={fhirStatusTone(item.status)}>
+                                {item.status}
+                              </StatusPill>
+                            </div>
+                            <div className="mt-1 truncate text-[11px] text-muted-foreground">
+                              {item.payload}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <div className="text-sm font-medium text-foreground">
+                        {renalNextAction(chart)}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <BalanceBadge value={chart.cumulativeBalanceMl} />
+                        {criticalAlerts ? (
+                          <Badge tone="critical">{criticalAlerts} critical</Badge>
+                        ) : null}
+                        {warningAlerts ? (
+                          <Badge tone="warning">{warningAlerts} warning</Badge>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap items-start gap-2 2xl:justify-end">
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={`/renal/patients/${chart.patientId}`}>Open</Link>
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => onReview(chart)}>
+                        Review
+                      </Button>
+                      <Button size="sm" onClick={() => onAction({ type: "entry", chart })}>
+                        Entry
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="grid gap-2">
-                    <div className="text-sm font-medium text-foreground">{renalNextAction(chart)}</div>
-                    <div className="flex flex-wrap gap-2">
-                      <BalanceBadge value={chart.cumulativeBalanceMl} />
-                      {criticalAlerts ? <Badge tone="critical">{criticalAlerts} critical</Badge> : null}
-                      {warningAlerts ? <Badge tone="warning">{warningAlerts} warning</Badge> : null}
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 flex-wrap items-start gap-2 2xl:justify-end">
-                    <Button size="sm" variant="outline" asChild><Link href={`/renal/patients/${chart.patientId}`}>Open</Link></Button>
-                    <Button size="sm" variant="outline" onClick={() => onReview(chart)}>Review</Button>
-                    <Button size="sm" onClick={() => onAction({ type: "entry", chart })}>Entry</Button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           </>
         ) : (
           <div className="p-4">
-            <EmptyState icon={Search} title="No renal patients found" description="Change filters or clear search to see the renal worklist." />
+            <EmptyState
+              icon={Search}
+              title="No renal patients found"
+              description="Change filters or clear search to see the renal worklist."
+            />
           </div>
         )}
       </CardContent>
@@ -1266,21 +2024,38 @@ function RenalOverviewPatientList({
   );
 }
 
-function RenalPriorityBoard({ charts, onAction }: { charts: RenalPatientChart[]; onAction: (action: OverviewActionRequest) => void }) {
+function RenalPriorityBoard({
+  charts,
+  onAction,
+}: {
+  charts: RenalPatientChart[];
+  onAction: (action: OverviewActionRequest) => void;
+}) {
   const [queueFilter, setQueueFilter] = React.useState("Action queue");
-  const sortedCharts = React.useMemo(() => charts
-    .slice()
-    .sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left)), [charts]);
-  const queueCharts = React.useMemo(() => sortedCharts.filter((chart) => {
-    const label = renalPriorityLabel(renalPriorityScore(chart));
-    if (queueFilter === "Critical") return label === "Critical";
-    if (queueFilter === "Review") return label === "Review";
-    if (queueFilter === "Dialysis") return chart.dialysisStatus.toLowerCase().includes("review");
-    return label !== "Routine";
-  }), [queueFilter, sortedCharts]);
+  const sortedCharts = React.useMemo(
+    () =>
+      charts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left)),
+    [charts],
+  );
+  const queueCharts = React.useMemo(
+    () =>
+      sortedCharts.filter((chart) => {
+        const label = renalPriorityLabel(renalPriorityScore(chart));
+        if (queueFilter === "Critical") return label === "Critical";
+        if (queueFilter === "Review") return label === "Review";
+        if (queueFilter === "Dialysis")
+          return chart.dialysisStatus.toLowerCase().includes("review");
+        return label !== "Routine";
+      }),
+    [queueFilter, sortedCharts],
+  );
   const visibleCharts = queueCharts.length ? queueCharts : sortedCharts;
-  const criticalCount = sortedCharts.filter((chart) => renalPriorityLabel(renalPriorityScore(chart)) === "Critical").length;
-  const reviewCount = sortedCharts.filter((chart) => renalPriorityLabel(renalPriorityScore(chart)) === "Review").length;
+  const criticalCount = sortedCharts.filter(
+    (chart) => renalPriorityLabel(renalPriorityScore(chart)) === "Critical",
+  ).length;
+  const reviewCount = sortedCharts.filter(
+    (chart) => renalPriorityLabel(renalPriorityScore(chart)) === "Review",
+  ).length;
 
   return (
     <Card>
@@ -1306,39 +2081,63 @@ function RenalPriorityBoard({ charts, onAction }: { charts: RenalPatientChart[];
           </TabsList>
         </Tabs>
         <div className="max-h-[460px] overflow-y-auto rounded-lg border border-border">
-          {visibleCharts.length ? visibleCharts.map((chart, index) => {
-            const score = renalPriorityScore(chart);
-            const fhirBundle = getRenalFhirBundle(chart);
-            return (
-              <div className="border-b border-border bg-surface p-3 last:border-0 hover:bg-surface-muted/70" key={chart.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded bg-surface-muted text-[11px] font-semibold text-muted-foreground">{index + 1}</span>
-                      <div className="truncate text-sm font-semibold text-foreground">{patientName(chart.patientId)}</div>
+          {visibleCharts.length ? (
+            visibleCharts.map((chart, index) => {
+              const score = renalPriorityScore(chart);
+              const fhirBundle = getRenalFhirBundle(chart);
+              return (
+                <div
+                  className="border-b border-border bg-surface p-3 last:border-0 hover:bg-surface-muted/70"
+                  key={chart.id}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded bg-surface-muted text-[11px] font-semibold text-muted-foreground">
+                          {index + 1}
+                        </span>
+                        <div className="truncate text-sm font-semibold text-foreground">
+                          {patientName(chart.patientId)}
+                        </div>
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {chart.bedNo} • {chart.ward}
+                      </div>
                     </div>
-                    <div className="mt-1 text-xs text-muted-foreground">{chart.bedNo} • {chart.ward}</div>
+                    <StatusPill tone={statusTone(renalPriorityLabel(score))}>
+                      {renalPriorityLabel(score)}
+                    </StatusPill>
                   </div>
-                  <StatusPill tone={statusTone(renalPriorityLabel(score))}>{renalPriorityLabel(score)}</StatusPill>
+                  <div className="mt-2 text-xs font-medium text-foreground">
+                    {renalNextAction(chart)}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {fhirBundle.slice(2, 5).map((resource) => (
+                      <Badge key={resource.resource} tone={fhirStatusTone(resource.status)}>
+                        {resource.resource}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={`/renal/patients/${chart.patientId}`}>Open</Link>
+                    </Button>
+                    <Button size="sm" onClick={() => onAction({ type: "review", chart })}>
+                      Act now
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-2 text-xs font-medium text-foreground">{renalNextAction(chart)}</div>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {fhirBundle.slice(2, 5).map((resource) => (
-                    <Badge key={resource.resource} tone={fhirStatusTone(resource.status)}>{resource.resource}</Badge>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <Button size="sm" variant="outline" asChild><Link href={`/renal/patients/${chart.patientId}`}>Open</Link></Button>
-                  <Button size="sm" onClick={() => onAction({ type: "review", chart })}>Act now</Button>
-                </div>
-              </div>
-            );
-          }) : (
-            <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">No patients match this queue.</div>
+              );
+            })
+          ) : (
+            <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+              No patients match this queue.
+            </div>
           )}
         </div>
         <div className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-          For 50+ patients, this board stays scrollable and filterable while the main worklist remains sorted by priority.
+          For 50+ patients, this board stays scrollable and filterable while the main worklist
+          remains sorted by priority.
         </div>
       </CardContent>
     </Card>
@@ -1357,15 +2156,27 @@ function QueueCount({ label, value, tone }: { label: string; value: number; tone
   );
 }
 
-function RenalQueueDetailPanel({ charts, onAction }: { charts: RenalPatientChart[]; onAction: (action: OverviewActionRequest) => void }) {
-  const sortedCharts = React.useMemo(() => charts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left)), [charts]);
+function RenalQueueDetailPanel({
+  charts,
+  onAction,
+}: {
+  charts: RenalPatientChart[];
+  onAction: (action: OverviewActionRequest) => void;
+}) {
+  const sortedCharts = React.useMemo(
+    () =>
+      charts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left)),
+    [charts],
+  );
 
   return (
     <Card className="overflow-hidden">
       <CardHeader>
         <div>
           <CardTitle>Queue Detail</CardTitle>
-          <CardDescription>Priority, renal trigger, and action in a single review table.</CardDescription>
+          <CardDescription>
+            Priority, renal trigger, and action in a single review table.
+          </CardDescription>
         </div>
         <Badge tone="muted">{sortedCharts.length} rows</Badge>
       </CardHeader>
@@ -1389,17 +2200,29 @@ function RenalQueueDetailPanel({ charts, onAction }: { charts: RenalPatientChart
                   <ClinicalTd>{index + 1}</ClinicalTd>
                   <ClinicalTd>
                     <div className="font-medium">{patientName(chart.patientId)}</div>
-                    <div className="text-[11px] text-muted-foreground">{chart.bedNo} • {chart.ward}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {chart.bedNo} • {chart.ward}
+                    </div>
                   </ClinicalTd>
-                  <ClinicalTd><StatusPill tone={statusTone(priority)}>{priority}</StatusPill></ClinicalTd>
+                  <ClinicalTd>
+                    <StatusPill tone={statusTone(priority)}>{priority}</StatusPill>
+                  </ClinicalTd>
                   <ClinicalTd>{renalNextAction(chart)}</ClinicalTd>
                   <ClinicalTd>
                     <div className="flex flex-wrap gap-1">
-                      {getRenalFhirBundle(chart).slice(2, 5).map((resource) => <Badge key={resource.resource} tone="muted">{resource.resource}</Badge>)}
+                      {getRenalFhirBundle(chart)
+                        .slice(2, 5)
+                        .map((resource) => (
+                          <Badge key={resource.resource} tone="muted">
+                            {resource.resource}
+                          </Badge>
+                        ))}
                     </div>
                   </ClinicalTd>
                   <ClinicalTd className="text-right">
-                    <Button size="sm" onClick={() => onAction({ type: "review", chart })}>Act</Button>
+                    <Button size="sm" onClick={() => onAction({ type: "review", chart })}>
+                      Act
+                    </Button>
                   </ClinicalTd>
                 </tr>
               );
@@ -1412,7 +2235,9 @@ function RenalQueueDetailPanel({ charts, onAction }: { charts: RenalPatientChart
 }
 
 function RenalFhirMapPanel({ charts }: { charts: RenalPatientChart[] }) {
-  const chart = charts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left))[0] ?? mockRenalCharts[0];
+  const chart =
+    charts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left))[0] ??
+    mockRenalCharts[0];
   const bundle = getRenalFhirBundle(chart);
   const resourceRows = [
     ["Patient", "Identity, demographics, contact, clinical flags"],
@@ -1431,7 +2256,9 @@ function RenalFhirMapPanel({ charts }: { charts: RenalPatientChart[] }) {
         <CardHeader>
           <div>
             <CardTitle>FHIR Resource Map</CardTitle>
-            <CardDescription>Renal data grouped by interoperable clinical resource.</CardDescription>
+            <CardDescription>
+              Renal data grouped by interoperable clinical resource.
+            </CardDescription>
           </div>
           <Badge tone="info">HL7 FHIR R4</Badge>
         </CardHeader>
@@ -1452,7 +2279,11 @@ function RenalFhirMapPanel({ charts }: { charts: RenalPatientChart[] }) {
                   <tr key={resource}>
                     <ClinicalTd className="font-semibold">{resource}</ClinicalTd>
                     <ClinicalTd>{use}</ClinicalTd>
-                    <ClinicalTd><StatusPill tone={fhirStatusTone(mapped?.status ?? "Pending")}>{mapped?.status ?? "Pending"}</StatusPill></ClinicalTd>
+                    <ClinicalTd>
+                      <StatusPill tone={fhirStatusTone(mapped?.status ?? "Pending")}>
+                        {mapped?.status ?? "Pending"}
+                      </StatusPill>
+                    </ClinicalTd>
                     <ClinicalTd>{mapped?.reference ?? `${resource}/pending`}</ClinicalTd>
                   </tr>
                 );
@@ -1466,12 +2297,17 @@ function RenalFhirMapPanel({ charts }: { charts: RenalPatientChart[] }) {
         <CardHeader>
           <div>
             <CardTitle>Selected Bundle</CardTitle>
-            <CardDescription>{patientName(chart.patientId)} • {chart.bedNo}</CardDescription>
+            <CardDescription>
+              {patientName(chart.patientId)} • {chart.bedNo}
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
           {bundle.map((resource) => (
-            <div className="rounded-md border border-border bg-surface-muted p-3" key={resource.resource}>
+            <div
+              className="rounded-md border border-border bg-surface-muted p-3"
+              key={resource.resource}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold text-foreground">{resource.resource}</div>
@@ -1552,16 +2388,43 @@ export function RenalPatientsPage() {
             actions={
               <>
                 <PrintButton label="Print charts" />
-                <Button disabled={!access.canEnterIO} onClick={() => setAction({ type: "entry" })}><Plus className="h-4 w-4" />Create chart</Button>
+                <Button disabled={!access.canEnterIO} onClick={() => setAction({ type: "entry" })}>
+                  <Plus className="h-4 w-4" />
+                  Create chart
+                </Button>
               </>
             }
           />
-          <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, UHID, bed, ward, consultant, renal status...">
-            <NativeSelect label="Status" value={status} onChange={setStatus} options={["All status", "Stable", "AKI watch", "Fluid overload", "Critical", "Dialysis review"]} />
+          <FilterBar
+            search={search}
+            onSearch={setSearch}
+            placeholder="Search patient, UHID, bed, ward, consultant, renal status..."
+          >
+            <NativeSelect
+              label="Status"
+              value={status}
+              onChange={setStatus}
+              options={[
+                "All status",
+                "Stable",
+                "AKI watch",
+                "Fluid overload",
+                "Critical",
+                "Dialysis review",
+              ]}
+            />
           </FilterBar>
           <DataTable data={rows} columns={columns} />
-          <RenalChartDrawer chart={selected} open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)} />
-          <RenalOverviewActionDrawer action={action} open={Boolean(action)} onOpenChange={(open) => !open && setAction(null)} />
+          <RenalChartDrawer
+            chart={selected}
+            open={Boolean(selected)}
+            onOpenChange={(open) => !open && setSelected(null)}
+          />
+          <RenalOverviewActionDrawer
+            action={action}
+            open={Boolean(action)}
+            onOpenChange={(open) => !open && setAction(null)}
+          />
         </div>
       )}
     </ProtectedRenal>
@@ -1578,7 +2441,13 @@ export function RenalPatientWorkspace({ patientId }: { patientId: string }) {
   if (!chart) {
     return (
       <ProtectedRenal>
-        {() => <EmptyState icon={Search} title="Renal chart not found" description="No renal chart is available for the selected patient." />}
+        {() => (
+          <EmptyState
+            icon={Search}
+            title="Renal chart not found"
+            description="No renal chart is available for the selected patient."
+          />
+        )}
       </ProtectedRenal>
     );
   }
@@ -1605,11 +2474,18 @@ export function RenalPatientWorkspace({ patientId }: { patientId: string }) {
             actions={
               <>
                 <PrintButton label="Print report" />
-                <Button variant="outline" disabled={!access.canReview} onClick={() => setAction({ type: "review", chart })}>
+                <Button
+                  variant="outline"
+                  disabled={!access.canReview}
+                  onClick={() => setAction({ type: "review", chart })}
+                >
                   <ClipboardCheck className="h-4 w-4" />
                   Doctor sign-off
                 </Button>
-                <Button disabled={!access.canEnterIO} onClick={() => setAction({ type: "entry", chart, entryMode: "io" })}>
+                <Button
+                  disabled={!access.canEnterIO}
+                  onClick={() => setAction({ type: "entry", chart, entryMode: "io" })}
+                >
                   <Plus className="h-4 w-4" />
                   Add I/O entry
                 </Button>
@@ -1629,7 +2505,10 @@ export function RenalPatientWorkspace({ patientId }: { patientId: string }) {
 
           {alerts.some((alert) => alert.severity === "Critical") ? (
             <AlertBanner icon={ShieldAlert} tone="critical" title="Critical renal alert">
-              {alerts.filter((alert) => alert.severity === "Critical").map((alert) => alert.title).join(" • ")}
+              {alerts
+                .filter((alert) => alert.severity === "Critical")
+                .map((alert) => alert.title)
+                .join(" • ")}
             </AlertBanner>
           ) : (
             <RenalRoleBanner role={access.role} />
@@ -1652,18 +2531,28 @@ export function RenalPatientWorkspace({ patientId }: { patientId: string }) {
                   totalIntakeMl={totalIntakeMl}
                   totalOutputMl={totalOutputMl}
                   balanceMl={balanceMl}
-                  drainsCount={drains.filter((drain) => drain.deviceStatus !== "Removed placeholder").length}
+                  drainsCount={
+                    drains.filter((drain) => drain.deviceStatus !== "Removed placeholder").length
+                  }
                   latestCreatinine={latestLab?.creatinine ?? "Pending"}
                 />
                 <UrineHourlySection patientId={patientId} />
-                <FluidSummarySection chart={chart} intake={intake} output={output} balanceMl={balanceMl} />
+                <FluidSummarySection
+                  chart={chart}
+                  intake={intake}
+                  output={output}
+                  balanceMl={balanceMl}
+                />
               </div>
             </TabsContent>
 
             <TabsContent value="io" className="space-y-4">
               <DetailedIntakeSection intake={intake} />
               <DetailedDrainsSection drains={drains} />
-              <CompleteBalanceSection rows={balanceRows} cumulativeBalanceMl={chart.cumulativeBalanceMl} />
+              <CompleteBalanceSection
+                rows={balanceRows}
+                cumulativeBalanceMl={chart.cumulativeBalanceMl}
+              />
             </TabsContent>
 
             <TabsContent value="drains-labs" className="space-y-4">
@@ -1687,7 +2576,13 @@ export function RenalPatientWorkspace({ patientId }: { patientId: string }) {
                     toast.success("Renal note staged for this patient");
                   }}
                 />
-                <RenalSignOffSummary chart={chart} alerts={alerts} balanceMl={balanceMl} access={access} onAction={setAction} />
+                <RenalSignOffSummary
+                  chart={chart}
+                  alerts={alerts}
+                  balanceMl={balanceMl}
+                  access={access}
+                  onAction={setAction}
+                />
               </div>
             </TabsContent>
           </Tabs>
@@ -1707,7 +2602,11 @@ export function RenalPatientWorkspace({ patientId }: { patientId: string }) {
               toast.success(`Renal chart saved for ${patientName(patientId)}`);
             }}
           />
-          <RenalOverviewActionDrawer action={action} open={Boolean(action)} onOpenChange={(open) => !open && setAction(null)} />
+          <RenalOverviewActionDrawer
+            action={action}
+            open={Boolean(action)}
+            onOpenChange={(open) => !open && setAction(null)}
+          />
         </div>
       )}
     </ProtectedRenal>
@@ -1736,16 +2635,50 @@ function RenalOverviewSection({
     <SectionShell number={1} title="Renal System - Overview">
       <div className="space-y-3 p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <RenalMetricCard label="Urine output (12 hrs)" value={formatMl(currentUrine)} subtext={chart.shiftLabel} tone={currentUrine < 300 ? "critical" : "info"} />
-          <RenalMetricCard label="Fluid balance (24 hrs)" value={formatSignedMl(balanceMl)} subtext={`Target ${formatSignedMl(chart.targetBalanceMl)}`} tone={balanceMl > chart.targetBalanceMl ? "warning" : "success"} />
-          <RenalMetricCard label="Cumulative balance" value={formatSignedMl(chart.cumulativeBalanceMl)} subtext="Since renal chart opened" tone={chart.cumulativeBalanceMl > 3000 ? "critical" : "warning"} />
-          <RenalMetricCard label="Total intake (24 hrs)" value={formatMl(totalIntakeMl)} subtext={`Restriction ${formatMl(chart.fluidRestrictionMl)}`} tone={totalIntakeMl > chart.fluidRestrictionMl ? "danger" : "info"} />
-          <RenalMetricCard label="Total output (24 hrs)" value={formatMl(totalOutputMl)} subtext="Urine + drains + other" tone="success" />
-          <RenalMetricCard label="Active drains" value={drainsCount} subtext={`Creatinine ${latestCreatinine}`} tone={drainsCount > 2 ? "warning" : "muted"} />
+          <RenalMetricCard
+            label="Urine output (12 hrs)"
+            value={formatMl(currentUrine)}
+            subtext={chart.shiftLabel}
+            tone={currentUrine < 300 ? "critical" : "info"}
+          />
+          <RenalMetricCard
+            label="Fluid balance (24 hrs)"
+            value={formatSignedMl(balanceMl)}
+            subtext={`Target ${formatSignedMl(chart.targetBalanceMl)}`}
+            tone={balanceMl > chart.targetBalanceMl ? "warning" : "success"}
+          />
+          <RenalMetricCard
+            label="Cumulative balance"
+            value={formatSignedMl(chart.cumulativeBalanceMl)}
+            subtext="Since renal chart opened"
+            tone={chart.cumulativeBalanceMl > 3000 ? "critical" : "warning"}
+          />
+          <RenalMetricCard
+            label="Total intake (24 hrs)"
+            value={formatMl(totalIntakeMl)}
+            subtext={`Restriction ${formatMl(chart.fluidRestrictionMl)}`}
+            tone={totalIntakeMl > chart.fluidRestrictionMl ? "danger" : "info"}
+          />
+          <RenalMetricCard
+            label="Total output (24 hrs)"
+            value={formatMl(totalOutputMl)}
+            subtext="Urine + drains + other"
+            tone="success"
+          />
+          <RenalMetricCard
+            label="Active drains"
+            value={drainsCount}
+            subtext={`Creatinine ${latestCreatinine}`}
+            tone={drainsCount > 2 ? "warning" : "muted"}
+          />
         </div>
         <div className="rounded-lg border border-border bg-surface-muted p-3 text-xs text-muted-foreground">
           <div className="flex flex-wrap gap-2">
-            {chart.riskFlags.map((flag) => <Badge key={flag} tone={statusTone(flag)}>{flag}</Badge>)}
+            {chart.riskFlags.map((flag) => (
+              <Badge key={flag} tone={statusTone(flag)}>
+                {flag}
+              </Badge>
+            ))}
           </div>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <span>Catheter: {chart.catheterStatus}</span>
@@ -1779,7 +2712,9 @@ function UrineHourlySection({ patientId }: { patientId: string }) {
           <tr>
             <ClinicalTh>Time</ClinicalTh>
             <ClinicalTh className="text-right">Per hour</ClinicalTh>
-            <ClinicalTh className="text-right">{range === "12h" ? "12h total" : "Running total"}</ClinicalTh>
+            <ClinicalTh className="text-right">
+              {range === "12h" ? "12h total" : "Running total"}
+            </ClinicalTh>
             <ClinicalTh>ml/kg/hr</ClinicalTh>
           </tr>
         </thead>
@@ -1789,7 +2724,9 @@ function UrineHourlySection({ patientId }: { patientId: string }) {
               <ClinicalTd>{row.timeRange}</ClinicalTd>
               <ClinicalTd className="text-right font-medium">{row.perHourMl}</ClinicalTd>
               <ClinicalTd className="text-right">{row.runningTotalMl}</ClinicalTd>
-              <ClinicalTd><StatusPill tone={statusTone(row.status)}>{row.mlPerKgHr.toFixed(1)}</StatusPill></ClinicalTd>
+              <ClinicalTd>
+                <StatusPill tone={statusTone(row.status)}>{row.mlPerKgHr.toFixed(1)}</StatusPill>
+              </ClinicalTd>
             </tr>
           ))}
         </tbody>
@@ -1825,14 +2762,40 @@ function FluidSummarySection({
   ] as const;
 
   return (
-    <SectionShell number={3} title="Fluid Balance - 24 Hours Summary" action={<Badge tone="muted">{chart.lastReviewedAt}</Badge>}>
+    <SectionShell
+      number={3}
+      title="Fluid Balance - 24 Hours Summary"
+      action={<Badge tone="muted">{chart.lastReviewedAt}</Badge>}
+    >
       <div className="space-y-3 p-4">
-        <div className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground">{chart.windowLabel}</div>
+        <div className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+          {chart.windowLabel}
+        </div>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <RenalMetricCard label="Total intake" value={formatMl(totalIntakeMl)} subtext="24h" tone="info" />
-          <RenalMetricCard label="Total output" value={formatMl(totalOutputMl)} subtext="24h" tone="success" />
-          <RenalMetricCard label="24h balance" value={formatSignedMl(balanceMl)} subtext="Intake - output" tone={balanceMl > chart.targetBalanceMl ? "warning" : "success"} />
-          <RenalMetricCard label="Cumulative" value={formatSignedMl(chart.cumulativeBalanceMl)} subtext="Chart total" tone="critical" />
+          <RenalMetricCard
+            label="Total intake"
+            value={formatMl(totalIntakeMl)}
+            subtext="24h"
+            tone="info"
+          />
+          <RenalMetricCard
+            label="Total output"
+            value={formatMl(totalOutputMl)}
+            subtext="24h"
+            tone="success"
+          />
+          <RenalMetricCard
+            label="24h balance"
+            value={formatSignedMl(balanceMl)}
+            subtext="Intake - output"
+            tone={balanceMl > chart.targetBalanceMl ? "warning" : "success"}
+          />
+          <RenalMetricCard
+            label="Cumulative"
+            value={formatSignedMl(chart.cumulativeBalanceMl)}
+            subtext="Chart total"
+            tone="critical"
+          />
         </div>
         <div className="grid gap-3 lg:grid-cols-2">
           <SummaryList title="Intake summary" rows={intakeSummary} total={totalIntakeMl} />
@@ -1843,12 +2806,25 @@ function FluidSummarySection({
   );
 }
 
-function SummaryList({ title, rows, total }: { title: string; rows: readonly (readonly [string, number])[]; total: number }) {
+function SummaryList({
+  title,
+  rows,
+  total,
+}: {
+  title: string;
+  rows: readonly (readonly [string, number])[];
+  total: number;
+}) {
   return (
     <div className="overflow-hidden rounded-lg border border-border">
-      <div className="border-b border-border bg-surface-muted px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">{title}</div>
+      <div className="border-b border-border bg-surface-muted px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">
+        {title}
+      </div>
       {rows.map(([label, value]) => (
-        <div className="flex justify-between border-b border-border px-3 py-2 text-xs last:border-0" key={label}>
+        <div
+          className="flex justify-between border-b border-border px-3 py-2 text-xs last:border-0"
+          key={label}
+        >
           <span className="text-muted-foreground">{label}</span>
           <span className="font-medium text-foreground">{formatMl(value)}</span>
         </div>
@@ -1863,57 +2839,86 @@ function SummaryList({ title, rows, total }: { title: string; rows: readonly (re
 
 function DetailedIntakeSection({ intake }: { intake: RenalIntakeEntry[] }) {
   const [activeTab, setActiveTab] = React.useState("iv");
-  const intakeTabs = React.useMemo(() => [
-    {
-      value: "iv",
-      label: "IV Fluids",
-      shortLabel: "IV",
-      valueOf: (entry: RenalIntakeEntry) => entry.ivFluidsMl,
-      tone: "info" as StatusTone,
-    },
-    {
-      value: "oral",
-      label: "Oral Intake",
-      shortLabel: "Oral",
-      valueOf: (entry: RenalIntakeEntry) => entry.oralIntakeMl,
-      tone: "success" as StatusTone,
-    },
-    {
-      value: "flush",
-      label: "Medications / Flush",
-      shortLabel: "Med/Flush",
-      valueOf: (entry: RenalIntakeEntry) => entry.medicationsFlushMl,
-      tone: "warning" as StatusTone,
-    },
-    {
-      value: "blood",
-      label: "Blood / Products",
-      shortLabel: "Blood",
-      valueOf: (entry: RenalIntakeEntry) => entry.bloodProductsMl,
-      tone: "danger" as StatusTone,
-    },
-  ], []);
+  const intakeTabs = React.useMemo(
+    () => [
+      {
+        value: "iv",
+        label: "IV Fluids",
+        shortLabel: "IV",
+        valueOf: (entry: RenalIntakeEntry) => entry.ivFluidsMl,
+        tone: "info" as StatusTone,
+      },
+      {
+        value: "oral",
+        label: "Oral Intake",
+        shortLabel: "Oral",
+        valueOf: (entry: RenalIntakeEntry) => entry.oralIntakeMl,
+        tone: "success" as StatusTone,
+      },
+      {
+        value: "flush",
+        label: "Medications / Flush",
+        shortLabel: "Med/Flush",
+        valueOf: (entry: RenalIntakeEntry) => entry.medicationsFlushMl,
+        tone: "warning" as StatusTone,
+      },
+      {
+        value: "blood",
+        label: "Blood / Products",
+        shortLabel: "Blood",
+        valueOf: (entry: RenalIntakeEntry) => entry.bloodProductsMl,
+        tone: "danger" as StatusTone,
+      },
+    ],
+    [],
+  );
   const selectedTab = intakeTabs.find((tab) => tab.value === activeTab) ?? intakeTabs[0];
   const selectedTotal = sumValues(intake, selectedTab.valueOf);
   const activeSlots = intake.filter((entry) => selectedTab.valueOf(entry) > 0).length;
   const averageMl = intake.length ? Math.round(selectedTotal / intake.length) : 0;
 
   return (
-    <SectionShell number={4} title="Fluid Balance - Detailed Input" action={<Badge tone={selectedTab.tone}>{formatMl(selectedTotal)}</Badge>}>
+    <SectionShell
+      number={4}
+      title="Fluid Balance - Detailed Input"
+      action={<Badge tone={selectedTab.tone}>{formatMl(selectedTotal)}</Badge>}
+    >
       <div className="space-y-3 p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
             {intakeTabs.map((tab) => (
-              <TabsTrigger value={tab.value} key={tab.value}>{tab.label}</TabsTrigger>
+              <TabsTrigger value={tab.value} key={tab.value}>
+                {tab.label}
+              </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
 
         <div className="grid gap-2 sm:grid-cols-4">
-          <RenalMetricCard label={selectedTab.label} value={formatMl(selectedTotal)} subtext="24h category total" tone={selectedTab.tone} />
-          <RenalMetricCard label="Active slots" value={activeSlots} subtext={`${intake.length} hourly rows`} tone={activeSlots ? "info" : "muted"} />
-          <RenalMetricCard label="Average / slot" value={formatMl(averageMl)} subtext={selectedTab.shortLabel} tone="muted" />
-          <RenalMetricCard label="All intake" value={formatMl(sumValues(intake, totalIntake))} subtext="Across all tabs" tone="info" />
+          <RenalMetricCard
+            label={selectedTab.label}
+            value={formatMl(selectedTotal)}
+            subtext="24h category total"
+            tone={selectedTab.tone}
+          />
+          <RenalMetricCard
+            label="Active slots"
+            value={activeSlots}
+            subtext={`${intake.length} hourly rows`}
+            tone={activeSlots ? "info" : "muted"}
+          />
+          <RenalMetricCard
+            label="Average / slot"
+            value={formatMl(averageMl)}
+            subtext={selectedTab.shortLabel}
+            tone="muted"
+          />
+          <RenalMetricCard
+            label="All intake"
+            value={formatMl(sumValues(intake, totalIntake))}
+            subtext="Across all tabs"
+            tone="info"
+          />
         </div>
 
         <ClinicalTable minWidth="720px">
@@ -1930,18 +2935,28 @@ function DetailedIntakeSection({ intake }: { intake: RenalIntakeEntry[] }) {
             {intake.map((entry) => (
               <tr key={entry.id}>
                 <ClinicalTd>{entry.timeRange}</ClinicalTd>
-                <ClinicalTd className="text-right font-semibold">{formatMl(selectedTab.valueOf(entry))}</ClinicalTd>
+                <ClinicalTd className="text-right font-semibold">
+                  {formatMl(selectedTab.valueOf(entry))}
+                </ClinicalTd>
                 <ClinicalTd className="text-right">{formatMl(totalIntake(entry))}</ClinicalTd>
                 <ClinicalTd>{entry.enteredBy}</ClinicalTd>
-                <ClinicalTd><StatusPill tone={statusTone(entry.status)}>{entry.status}</StatusPill></ClinicalTd>
+                <ClinicalTd>
+                  <StatusPill tone={statusTone(entry.status)}>{entry.status}</StatusPill>
+                </ClinicalTd>
               </tr>
             ))}
             <tr>
               <ClinicalTd className="font-semibold">Total (24 hrs)</ClinicalTd>
-              <ClinicalTd className="text-right font-semibold">{formatMl(selectedTotal)}</ClinicalTd>
-              <ClinicalTd className="text-right font-semibold">{formatMl(sumValues(intake, totalIntake))}</ClinicalTd>
+              <ClinicalTd className="text-right font-semibold">
+                {formatMl(selectedTotal)}
+              </ClinicalTd>
+              <ClinicalTd className="text-right font-semibold">
+                {formatMl(sumValues(intake, totalIntake))}
+              </ClinicalTd>
               <ClinicalTd>{activeSlots} active slots</ClinicalTd>
-              <ClinicalTd><StatusPill tone={selectedTab.tone}>{selectedTab.shortLabel}</StatusPill></ClinicalTd>
+              <ClinicalTd>
+                <StatusPill tone={selectedTab.tone}>{selectedTab.shortLabel}</StatusPill>
+              </ClinicalTd>
             </tr>
           </tbody>
         </ClinicalTable>
@@ -1967,17 +2982,27 @@ function DetailedDrainsSection({ drains }: { drains: RenalDrainRecord[] }) {
             <tr key={drain.id}>
               <ClinicalTd>
                 <div className="font-medium">{drain.drainName}</div>
-                <div className="text-[11px] text-muted-foreground">{drain.site} • {drain.character}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {drain.site} • {drain.character}
+                </div>
               </ClinicalTd>
-              <ClinicalTd><StatusPill tone={statusTone(drain.deviceStatus)}>{drain.deviceStatus}</StatusPill></ClinicalTd>
-              <ClinicalTd className="text-right font-semibold">{formatMl(drain.total24HrMl)}</ClinicalTd>
-              <ClinicalTd><StatusPill tone={statusTone(drain.concern)}>{drain.concern}</StatusPill></ClinicalTd>
+              <ClinicalTd>
+                <StatusPill tone={statusTone(drain.deviceStatus)}>{drain.deviceStatus}</StatusPill>
+              </ClinicalTd>
+              <ClinicalTd className="text-right font-semibold">
+                {formatMl(drain.total24HrMl)}
+              </ClinicalTd>
+              <ClinicalTd>
+                <StatusPill tone={statusTone(drain.concern)}>{drain.concern}</StatusPill>
+              </ClinicalTd>
             </tr>
           ))}
           <tr>
             <ClinicalTd className="font-semibold">Total drains output</ClinicalTd>
             <ClinicalTd>{null}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{formatMl(sumValues(drains, (drain) => drain.total24HrMl))}</ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {formatMl(sumValues(drains, (drain) => drain.total24HrMl))}
+            </ClinicalTd>
             <ClinicalTd>{null}</ClinicalTd>
           </tr>
         </tbody>
@@ -1994,17 +3019,51 @@ function BalanceTrendSection({ rows }: { rows: ReturnType<typeof getRenalBalance
       { time: "8 AM", intakeMl: 170, outputMl: 150 },
       { time: "9 AM", intakeMl: 190, outputMl: 165 },
       { time: "10 AM", intakeMl: 210, outputMl: 180 },
-      { time: "11 AM", intakeMl: rows[0]?.totalIntakeMl ?? 280, outputMl: rows[0]?.totalOutputMl ?? 200 },
-      { time: "12 PM", intakeMl: rows[1]?.totalIntakeMl ?? 270, outputMl: rows[1]?.totalOutputMl ?? 170 },
-      { time: "1 PM", intakeMl: rows[2]?.totalIntakeMl ?? 240, outputMl: rows[2]?.totalOutputMl ?? 170 },
-      { time: "2 PM", intakeMl: rows[3]?.totalIntakeMl ?? 280, outputMl: rows[3]?.totalOutputMl ?? 200 },
-      { time: "3 PM", intakeMl: rows[4]?.totalIntakeMl ?? 290, outputMl: rows[4]?.totalOutputMl ?? 225 },
-      { time: "4 PM", intakeMl: rows[5]?.totalIntakeMl ?? 290, outputMl: rows[5]?.totalOutputMl ?? 240 },
-      { time: "5 PM", intakeMl: rows[6]?.totalIntakeMl ?? 290, outputMl: rows[6]?.totalOutputMl ?? 255 },
-      { time: "6 PM", intakeMl: rows[7]?.totalIntakeMl ?? 300, outputMl: rows[7]?.totalOutputMl ?? 270 },
+      {
+        time: "11 AM",
+        intakeMl: rows[0]?.totalIntakeMl ?? 280,
+        outputMl: rows[0]?.totalOutputMl ?? 200,
+      },
+      {
+        time: "12 PM",
+        intakeMl: rows[1]?.totalIntakeMl ?? 270,
+        outputMl: rows[1]?.totalOutputMl ?? 170,
+      },
+      {
+        time: "1 PM",
+        intakeMl: rows[2]?.totalIntakeMl ?? 240,
+        outputMl: rows[2]?.totalOutputMl ?? 170,
+      },
+      {
+        time: "2 PM",
+        intakeMl: rows[3]?.totalIntakeMl ?? 280,
+        outputMl: rows[3]?.totalOutputMl ?? 200,
+      },
+      {
+        time: "3 PM",
+        intakeMl: rows[4]?.totalIntakeMl ?? 290,
+        outputMl: rows[4]?.totalOutputMl ?? 225,
+      },
+      {
+        time: "4 PM",
+        intakeMl: rows[5]?.totalIntakeMl ?? 290,
+        outputMl: rows[5]?.totalOutputMl ?? 240,
+      },
+      {
+        time: "5 PM",
+        intakeMl: rows[6]?.totalIntakeMl ?? 290,
+        outputMl: rows[6]?.totalOutputMl ?? 255,
+      },
+      {
+        time: "6 PM",
+        intakeMl: rows[7]?.totalIntakeMl ?? 300,
+        outputMl: rows[7]?.totalOutputMl ?? 270,
+      },
     ];
 
-    return dayWindowRows.reduce<Array<{ time: string; intake: number; output: number; balance: number }>>((acc, row) => {
+    return dayWindowRows.reduce<
+      Array<{ time: string; intake: number; output: number; balance: number }>
+    >((acc, row) => {
       const previous = acc[acc.length - 1];
       const intake = (previous?.intake ?? 0) + row.intakeMl;
       const output = (previous?.output ?? 0) + row.outputMl;
@@ -2018,7 +3077,11 @@ function BalanceTrendSection({ rows }: { rows: ReturnType<typeof getRenalBalance
   }, [rows]);
 
   return (
-    <SectionShell number={6} title="Fluid Balance - Per Hour Overview" action={<Badge tone="muted">6 AM - 6 PM</Badge>}>
+    <SectionShell
+      number={6}
+      title="Fluid Balance - Per Hour Overview"
+      action={<Badge tone="muted">6 AM - 6 PM</Badge>}
+    >
       <div className="p-4">
         <Tabs defaultValue="graph">
           <TabsList>
@@ -2030,8 +3093,17 @@ function BalanceTrendSection({ rows }: { rows: ReturnType<typeof getRenalBalance
               <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={trend} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
                   <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="time" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <XAxis
+                    dataKey="time"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip
                     contentStyle={{
                       background: "hsl(var(--surface))",
@@ -2041,9 +3113,31 @@ function BalanceTrendSection({ rows }: { rows: ReturnType<typeof getRenalBalance
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="intake" name="Intake" stroke="hsl(var(--info))" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="output" name="Output" stroke="hsl(var(--danger))" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="balance" name="Balance" stroke="hsl(var(--success))" strokeDasharray="4 4" strokeWidth={2} dot={false} />
+                  <Line
+                    type="monotone"
+                    dataKey="intake"
+                    name="Intake"
+                    stroke="hsl(var(--info))"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="output"
+                    name="Output"
+                    stroke="hsl(var(--danger))"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="balance"
+                    name="Balance"
+                    stroke="hsl(var(--success))"
+                    strokeDasharray="4 4"
+                    strokeWidth={2}
+                    dot={false}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -2051,10 +3145,22 @@ function BalanceTrendSection({ rows }: { rows: ReturnType<typeof getRenalBalance
           <TabsContent value="table">
             <ClinicalTable minWidth="520px">
               <thead>
-                <tr><ClinicalTh>Time</ClinicalTh><ClinicalTh className="text-right">Intake</ClinicalTh><ClinicalTh className="text-right">Output</ClinicalTh><ClinicalTh className="text-right">Balance</ClinicalTh></tr>
+                <tr>
+                  <ClinicalTh>Time</ClinicalTh>
+                  <ClinicalTh className="text-right">Intake</ClinicalTh>
+                  <ClinicalTh className="text-right">Output</ClinicalTh>
+                  <ClinicalTh className="text-right">Balance</ClinicalTh>
+                </tr>
               </thead>
               <tbody>
-                {trend.map((row) => <tr key={row.time}><ClinicalTd>{row.time}</ClinicalTd><ClinicalTd className="text-right">{formatMl(row.intake)}</ClinicalTd><ClinicalTd className="text-right">{formatMl(row.output)}</ClinicalTd><ClinicalTd className="text-right">{formatSignedMl(row.balance)}</ClinicalTd></tr>)}
+                {trend.map((row) => (
+                  <tr key={row.time}>
+                    <ClinicalTd>{row.time}</ClinicalTd>
+                    <ClinicalTd className="text-right">{formatMl(row.intake)}</ClinicalTd>
+                    <ClinicalTd className="text-right">{formatMl(row.output)}</ClinicalTd>
+                    <ClinicalTd className="text-right">{formatSignedMl(row.balance)}</ClinicalTd>
+                  </tr>
+                ))}
               </tbody>
             </ClinicalTable>
           </TabsContent>
@@ -2064,12 +3170,25 @@ function BalanceTrendSection({ rows }: { rows: ReturnType<typeof getRenalBalance
   );
 }
 
-function CompleteBalanceSection({ rows, cumulativeBalanceMl }: { rows: ReturnType<typeof getRenalBalanceRows>; cumulativeBalanceMl: number }) {
-  const displayRows = React.useMemo(() => rows.reduce<Array<ReturnType<typeof getRenalBalanceRows>[number] & { cumulativeMl: number }>>((acc, row) => {
-    const previous = acc[acc.length - 1];
-    const cumulativeMl = (previous?.cumulativeMl ?? 0) + row.balanceMl;
-    return acc.concat({ ...row, cumulativeMl });
-  }, []), [rows]);
+function CompleteBalanceSection({
+  rows,
+  cumulativeBalanceMl,
+}: {
+  rows: ReturnType<typeof getRenalBalanceRows>;
+  cumulativeBalanceMl: number;
+}) {
+  const displayRows = React.useMemo(
+    () =>
+      rows.reduce<Array<ReturnType<typeof getRenalBalanceRows>[number] & { cumulativeMl: number }>>(
+        (acc, row) => {
+          const previous = acc[acc.length - 1];
+          const cumulativeMl = (previous?.cumulativeMl ?? 0) + row.balanceMl;
+          return acc.concat({ ...row, cumulativeMl });
+        },
+        [],
+      ),
+    [rows],
+  );
 
   return (
     <SectionShell number={7} title="Fluid Balance - Complete 24 Hours Table">
@@ -2109,17 +3228,39 @@ function CompleteBalanceSection({ rows, cumulativeBalanceMl }: { rows: ReturnTyp
           ))}
           <tr>
             <ClinicalTd className="font-semibold">24h total</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.ivFluidsMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.oralIntakeMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.medicationsFlushMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.bloodProductsMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.totalIntakeMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.urineOutputMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.drainsOutputMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.stoolOtherMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{sumValues(rows, (row) => row.totalOutputMl)}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{formatSignedMl(sumValues(rows, (row) => row.balanceMl))}</ClinicalTd>
-            <ClinicalTd className="text-right font-semibold">{formatSignedMl(cumulativeBalanceMl)}</ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.ivFluidsMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.oralIntakeMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.medicationsFlushMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.bloodProductsMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.totalIntakeMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.urineOutputMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.drainsOutputMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.stoolOtherMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {sumValues(rows, (row) => row.totalOutputMl)}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {formatSignedMl(sumValues(rows, (row) => row.balanceMl))}
+            </ClinicalTd>
+            <ClinicalTd className="text-right font-semibold">
+              {formatSignedMl(cumulativeBalanceMl)}
+            </ClinicalTd>
           </tr>
         </tbody>
       </ClinicalTable>
@@ -2149,11 +3290,20 @@ function RenalLabsOrdersSection({
       title="Renal Labs & Orders"
       action={
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" disabled={!access.canUpdateLabs} onClick={() => onAction({ type: "labs", chart })}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!access.canUpdateLabs}
+            onClick={() => onAction({ type: "labs", chart })}
+          >
             <FlaskConical className="h-4 w-4" />
             Update labs
           </Button>
-          <Button size="sm" disabled={!access.canReview} onClick={() => onAction({ type: "order", chart })}>
+          <Button
+            size="sm"
+            disabled={!access.canReview}
+            onClick={() => onAction({ type: "order", chart })}
+          >
             <Plus className="h-4 w-4" />
             Add order
           </Button>
@@ -2162,12 +3312,46 @@ function RenalLabsOrdersSection({
     >
       <div className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-          <RenalMetricCard label="Latest creatinine" value={latestLab?.creatinine ?? "Pending"} subtext={latestLab?.collectedAt ?? "No sample"} tone={statusTone(latestLab?.flag ?? "Pending")} />
-          <RenalMetricCard label="Potassium" value={latestLab?.potassium ?? "Pending"} subtext="Electrolyte watch" tone={latestLab?.potassium.includes("5.") || latestLab?.potassium.includes("6.") ? "warning" : "info"} />
-          <RenalMetricCard label="eGFR" value={latestLab?.egfr ?? "Pending"} subtext={latestLab?.trend ?? "Trend pending"} tone={statusTone(latestLab?.trend ?? "Pending")} />
-          <RenalMetricCard label="Urine protein" value={latestLab?.urineProtein ?? "Pending"} subtext="Urinalysis" tone={latestLab?.urineProtein === "Nil" ? "success" : "warning"} />
-          <RenalMetricCard label="Active orders" value={activeOrders.length} subtext={`${orders.length} total orders`} tone="info" />
-          <RenalMetricCard label="Pending sign" value={pendingOrders.length} subtext={`${abnormalLabs.length} flagged labs`} tone={pendingOrders.length ? "warning" : "success"} />
+          <RenalMetricCard
+            label="Latest creatinine"
+            value={latestLab?.creatinine ?? "Pending"}
+            subtext={latestLab?.collectedAt ?? "No sample"}
+            tone={statusTone(latestLab?.flag ?? "Pending")}
+          />
+          <RenalMetricCard
+            label="Potassium"
+            value={latestLab?.potassium ?? "Pending"}
+            subtext="Electrolyte watch"
+            tone={
+              latestLab?.potassium.includes("5.") || latestLab?.potassium.includes("6.")
+                ? "warning"
+                : "info"
+            }
+          />
+          <RenalMetricCard
+            label="eGFR"
+            value={latestLab?.egfr ?? "Pending"}
+            subtext={latestLab?.trend ?? "Trend pending"}
+            tone={statusTone(latestLab?.trend ?? "Pending")}
+          />
+          <RenalMetricCard
+            label="Urine protein"
+            value={latestLab?.urineProtein ?? "Pending"}
+            subtext="Urinalysis"
+            tone={latestLab?.urineProtein === "Nil" ? "success" : "warning"}
+          />
+          <RenalMetricCard
+            label="Active orders"
+            value={activeOrders.length}
+            subtext={`${orders.length} total orders`}
+            tone="info"
+          />
+          <RenalMetricCard
+            label="Pending sign"
+            value={pendingOrders.length}
+            subtext={`${abnormalLabs.length} flagged labs`}
+            tone={pendingOrders.length ? "warning" : "success"}
+          />
         </div>
 
         <ClinicalTable minWidth="980px">
@@ -2194,8 +3378,12 @@ function RenalLabsOrdersSection({
                 <ClinicalTd className="font-semibold">{lab.potassium}</ClinicalTd>
                 <ClinicalTd>{lab.egfr}</ClinicalTd>
                 <ClinicalTd>{lab.urineProtein}</ClinicalTd>
-                <ClinicalTd><StatusPill tone={statusTone(lab.trend)}>{lab.trend}</StatusPill></ClinicalTd>
-                <ClinicalTd><StatusPill tone={statusTone(lab.flag)}>{lab.flag}</StatusPill></ClinicalTd>
+                <ClinicalTd>
+                  <StatusPill tone={statusTone(lab.trend)}>{lab.trend}</StatusPill>
+                </ClinicalTd>
+                <ClinicalTd>
+                  <StatusPill tone={statusTone(lab.flag)}>{lab.flag}</StatusPill>
+                </ClinicalTd>
               </tr>
             ))}
           </tbody>
@@ -2218,7 +3406,9 @@ function RenalLabsOrdersSection({
                 <ClinicalTd>{order.target}</ClinicalTd>
                 <ClinicalTd>{order.orderedBy}</ClinicalTd>
                 <ClinicalTd>{order.orderedAt}</ClinicalTd>
-                <ClinicalTd><StatusPill tone={statusTone(order.status)}>{order.status}</StatusPill></ClinicalTd>
+                <ClinicalTd>
+                  <StatusPill tone={statusTone(order.status)}>{order.status}</StatusPill>
+                </ClinicalTd>
               </tr>
             ))}
           </tbody>
@@ -2242,18 +3432,48 @@ function RenalSignOffSummary({
   onAction: (action: OverviewActionRequest) => void;
 }) {
   const openAlerts = alerts.filter((alert) => alert.status !== "Acknowledged");
-  const pendingOrders = getRenalOrdersByPatient(chart.patientId).filter((order) => order.status === "Pending sign");
+  const pendingOrders = getRenalOrdersByPatient(chart.patientId).filter(
+    (order) => order.status === "Pending sign",
+  );
   const balanceTone: StatusTone = balanceMl > chart.targetBalanceMl ? "warning" : "success";
 
   return (
-    <SectionShell number={10} title="Sign-off Checklist" action={<Badge tone={access.canReview ? "info" : "muted"}>{access.role}</Badge>}>
+    <SectionShell
+      number={10}
+      title="Sign-off Checklist"
+      action={<Badge tone={access.canReview ? "info" : "muted"}>{access.role}</Badge>}
+    >
       <div className="space-y-3 p-4">
-        <SignOffCheck label="Clinical review" value={access.canReview ? "Enabled" : "Read only"} tone={access.canReview ? "success" : "muted"} />
-        <SignOffCheck label="24h balance" value={`${formatSignedMl(balanceMl)} / target ${formatSignedMl(chart.targetBalanceMl)}`} tone={balanceTone} />
-        <SignOffCheck label="Open alerts" value={`${openAlerts.length} pending`} tone={openAlerts.length ? "warning" : "success"} />
-        <SignOffCheck label="Pending orders" value={`${pendingOrders.length} require sign`} tone={pendingOrders.length ? "warning" : "success"} />
-        <SignOffCheck label="Dialysis state" value={chart.dialysisStatus} tone={statusTone(chart.dialysisStatus)} />
-        <Button className="w-full" disabled={!access.canReview} onClick={() => onAction({ type: "review", chart })}>
+        <SignOffCheck
+          label="Clinical review"
+          value={access.canReview ? "Enabled" : "Read only"}
+          tone={access.canReview ? "success" : "muted"}
+        />
+        <SignOffCheck
+          label="24h balance"
+          value={`${formatSignedMl(balanceMl)} / target ${formatSignedMl(chart.targetBalanceMl)}`}
+          tone={balanceTone}
+        />
+        <SignOffCheck
+          label="Open alerts"
+          value={`${openAlerts.length} pending`}
+          tone={openAlerts.length ? "warning" : "success"}
+        />
+        <SignOffCheck
+          label="Pending orders"
+          value={`${pendingOrders.length} require sign`}
+          tone={pendingOrders.length ? "warning" : "success"}
+        />
+        <SignOffCheck
+          label="Dialysis state"
+          value={chart.dialysisStatus}
+          tone={statusTone(chart.dialysisStatus)}
+        />
+        <Button
+          className="w-full"
+          disabled={!access.canReview}
+          onClick={() => onAction({ type: "review", chart })}
+        >
           <ClipboardCheck className="h-4 w-4" />
           Open doctor sign-off
         </Button>
@@ -2305,16 +3525,28 @@ function RenalNotesActions({
             disabled={!canWriteNote}
           />
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span>{note.trim() ? `${note.trim().length} characters drafted` : "No note drafted"}</span>
-            <Button size="sm" variant="outline" disabled={!canWriteNote || !note.trim()} onClick={onStageNote}>
+            <span>
+              {note.trim() ? `${note.trim().length} characters drafted` : "No note drafted"}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!canWriteNote || !note.trim()}
+              onClick={onStageNote}
+            >
               Stage note
             </Button>
           </div>
           <div className="space-y-2">
             {orders.map((order) => (
-              <div className="rounded-md border border-border bg-surface-muted p-2 text-xs" key={order.id}>
+              <div
+                className="rounded-md border border-border bg-surface-muted p-2 text-xs"
+                key={order.id}
+              >
                 <div className="font-semibold text-foreground">{order.order}</div>
-                <div className="mt-1 text-muted-foreground">{order.target} • {order.status}</div>
+                <div className="mt-1 text-muted-foreground">
+                  {order.target} • {order.status}
+                </div>
               </div>
             ))}
           </div>
@@ -2322,19 +3554,33 @@ function RenalNotesActions({
       </SectionShell>
       <SectionShell number={9} title="Actions">
         <div className="grid gap-2 p-3">
-          <Button variant="outline" disabled={!access.canEnterIO} onClick={() => onAction({ type: "entry", chart, entryMode: "intake" })}>
+          <Button
+            variant="outline"
+            disabled={!access.canEnterIO}
+            onClick={() => onAction({ type: "entry", chart, entryMode: "intake" })}
+          >
             <Plus className="h-4 w-4" />
             Add intake entry
           </Button>
-          <Button variant="outline" disabled={!access.canEnterIO} onClick={() => onAction({ type: "entry", chart, entryMode: "output" })}>
+          <Button
+            variant="outline"
+            disabled={!access.canEnterIO}
+            onClick={() => onAction({ type: "entry", chart, entryMode: "output" })}
+          >
             <Droplets className="h-4 w-4" />
             Add output entry
           </Button>
-          <Button variant="outline" disabled={!access.canUpdateLabs} onClick={() => onAction({ type: "labs", chart })}>
+          <Button
+            variant="outline"
+            disabled={!access.canUpdateLabs}
+            onClick={() => onAction({ type: "labs", chart })}
+          >
             <FlaskConical className="h-4 w-4" />
             Update renal labs
           </Button>
-          <Button variant="outline" asChild><Link href="/renal/fluid-balance">View all records</Link></Button>
+          <Button variant="outline" asChild>
+            <Link href="/renal/fluid-balance">View all records</Link>
+          </Button>
           <Button disabled={!access.canReview} onClick={() => onAction({ type: "review", chart })}>
             <ClipboardCheck className="h-4 w-4" />
             Sign report
@@ -2355,27 +3601,84 @@ export function RenalFluidBalancePage() {
       balanceMl: sumValues(balanceRows, (row) => row.balanceMl),
     };
   });
-  const columns = React.useMemo<ColumnDef<(typeof rows)[number]>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Bed/Ward", cell: ({ row }) => `${row.original.bedNo} • ${row.original.ward}` },
-    { header: "Status", cell: ({ row }) => <RenalStatusBadge status={row.original.renalStatus} /> },
-    { header: "Intake", cell: ({ row }) => formatMl(row.original.totalIntakeMl) },
-    { header: "Output", cell: ({ row }) => formatMl(row.original.totalOutputMl) },
-    { header: "24h balance", cell: ({ row }) => <BalanceBadge value={row.original.balanceMl} /> },
-    { header: "Cumulative", cell: ({ row }) => <BalanceBadge value={row.original.cumulativeBalanceMl} /> },
-    { header: "Actions", cell: ({ row }) => <Button size="sm" variant="outline" asChild><Link href={`/renal/patients/${row.original.patientId}`}>Open</Link></Button> },
-  ], []);
+  const columns = React.useMemo<ColumnDef<(typeof rows)[number]>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Bed/Ward", cell: ({ row }) => `${row.original.bedNo} • ${row.original.ward}` },
+      {
+        header: "Status",
+        cell: ({ row }) => <RenalStatusBadge status={row.original.renalStatus} />,
+      },
+      { header: "Intake", cell: ({ row }) => formatMl(row.original.totalIntakeMl) },
+      { header: "Output", cell: ({ row }) => formatMl(row.original.totalOutputMl) },
+      { header: "24h balance", cell: ({ row }) => <BalanceBadge value={row.original.balanceMl} /> },
+      {
+        header: "Cumulative",
+        cell: ({ row }) => <BalanceBadge value={row.original.cumulativeBalanceMl} />,
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/renal/patients/${row.original.patientId}`}>Open</Link>
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <ProtectedRenal>
       {() => (
         <div className="space-y-5">
-          <PageHeader eyebrow="Renal System" title="Fluid Balance" description="24-hour intake, output, balance, and cumulative renal chart summary across active inpatients." actions={<><PrintButton label="Print balance" /><Button variant="outline"><Download className="h-4 w-4" />Export</Button></>} />
+          <PageHeader
+            eyebrow="Renal System"
+            title="Fluid Balance"
+            description="24-hour intake, output, balance, and cumulative renal chart summary across active inpatients."
+            actions={
+              <>
+                <PrintButton label="Print balance" />
+                <Button variant="outline">
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </>
+            }
+          />
           <SummaryGrid>
-            <StatCard label="Total intake" value={sumValues(rows, (row) => row.totalIntakeMl)} change="ml" context="All active charts" tone="info" icon={Droplets} />
-            <StatCard label="Total output" value={sumValues(rows, (row) => row.totalOutputMl)} change="ml" context="Urine + drains" tone="success" icon={Activity} />
-            <StatCard label="Positive balances" value={rows.filter((row) => row.balanceMl > 0).length} change="Review" context="Clinical watch" tone="warning" icon={Gauge} />
-            <StatCard label="Critical alerts" value={mockRenalAlerts.filter((alert) => alert.severity === "Critical").length} change="Escalate" context="Renal rules" tone="critical" icon={ShieldAlert} />
+            <StatCard
+              label="Total intake"
+              value={sumValues(rows, (row) => row.totalIntakeMl)}
+              change="ml"
+              context="All active charts"
+              tone="info"
+              icon={Droplets}
+            />
+            <StatCard
+              label="Total output"
+              value={sumValues(rows, (row) => row.totalOutputMl)}
+              change="ml"
+              context="Urine + drains"
+              tone="success"
+              icon={Activity}
+            />
+            <StatCard
+              label="Positive balances"
+              value={rows.filter((row) => row.balanceMl > 0).length}
+              change="Review"
+              context="Clinical watch"
+              tone="warning"
+              icon={Gauge}
+            />
+            <StatCard
+              label="Critical alerts"
+              value={mockRenalAlerts.filter((alert) => alert.severity === "Critical").length}
+              change="Escalate"
+              context="Renal rules"
+              tone="critical"
+              icon={ShieldAlert}
+            />
           </SummaryGrid>
           <DataTable data={rows} columns={columns} />
         </div>
@@ -2387,31 +3690,109 @@ export function RenalFluidBalancePage() {
 export function RenalDrainsPage() {
   const [selected, setSelected] = React.useState<RenalDrainRecord | null>(null);
   const [addOpen, setAddOpen] = React.useState(false);
-  const columns = React.useMemo<ColumnDef<RenalDrainRecord>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Drain", accessorKey: "drainName" },
-    { header: "Site", accessorKey: "site" },
-    { header: "Status", cell: ({ row }) => <StatusPill tone={statusTone(row.original.deviceStatus)}>{row.original.deviceStatus}</StatusPill> },
-    { header: "24h output", cell: ({ row }) => formatMl(row.original.total24HrMl) },
-    { header: "Character", accessorKey: "character" },
-    { header: "Concern", cell: ({ row }) => <StatusPill tone={statusTone(row.original.concern)}>{row.original.concern}</StatusPill> },
-    { header: "Actions", cell: ({ row }) => <Button size="sm" variant="outline" onClick={() => setSelected(row.original)}>Review</Button> },
-  ], []);
+  const columns = React.useMemo<ColumnDef<RenalDrainRecord>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Drain", accessorKey: "drainName" },
+      { header: "Site", accessorKey: "site" },
+      {
+        header: "Status",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.deviceStatus)}>
+            {row.original.deviceStatus}
+          </StatusPill>
+        ),
+      },
+      { header: "24h output", cell: ({ row }) => formatMl(row.original.total24HrMl) },
+      { header: "Character", accessorKey: "character" },
+      {
+        header: "Concern",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.concern)}>{row.original.concern}</StatusPill>
+        ),
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <Button size="sm" variant="outline" onClick={() => setSelected(row.original)}>
+            Review
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <ProtectedRenal>
       {(access) => (
         <div className="space-y-5">
-          <PageHeader eyebrow="Renal System" title="Drains & Devices" description="Drain-wise renal output monitoring with site, device state, character, concern, and review action." actions={<><PrintButton label="Print drains" /><Button disabled={!access.canEnterIO} onClick={() => setAddOpen(true)}><Plus className="h-4 w-4" />Add drain reading</Button></>} />
+          <PageHeader
+            eyebrow="Renal System"
+            title="Drains & Devices"
+            description="Drain-wise renal output monitoring with site, device state, character, concern, and review action."
+            actions={
+              <>
+                <PrintButton label="Print drains" />
+                <Button disabled={!access.canEnterIO} onClick={() => setAddOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Add drain reading
+                </Button>
+              </>
+            }
+          />
           <SummaryGrid>
-            <StatCard label="Active drains" value={mockRenalDrains.filter((drain) => drain.deviceStatus !== "Removed placeholder").length} change="Devices" context="Across renal charts" tone="info" icon={Droplets} />
-            <StatCard label="High output" value={mockRenalDrains.filter((drain) => drain.concern === "High output").length} change="Watch" context="Drain alerts" tone="warning" icon={AlertTriangle} />
-            <StatCard label="Total drain output" value={sumValues(mockRenalDrains, (drain) => drain.total24HrMl)} change="ml" context="24h" tone="success" icon={Activity} />
-            <StatCard label="Removed" value={mockRenalDrains.filter((drain) => drain.deviceStatus === "Removed placeholder").length} change="Audit" context="Line lifecycle" tone="muted" icon={ClipboardCheck} />
+            <StatCard
+              label="Active drains"
+              value={
+                mockRenalDrains.filter((drain) => drain.deviceStatus !== "Removed placeholder")
+                  .length
+              }
+              change="Devices"
+              context="Across renal charts"
+              tone="info"
+              icon={Droplets}
+            />
+            <StatCard
+              label="High output"
+              value={mockRenalDrains.filter((drain) => drain.concern === "High output").length}
+              change="Watch"
+              context="Drain alerts"
+              tone="warning"
+              icon={AlertTriangle}
+            />
+            <StatCard
+              label="Total drain output"
+              value={sumValues(mockRenalDrains, (drain) => drain.total24HrMl)}
+              change="ml"
+              context="24h"
+              tone="success"
+              icon={Activity}
+            />
+            <StatCard
+              label="Removed"
+              value={
+                mockRenalDrains.filter((drain) => drain.deviceStatus === "Removed placeholder")
+                  .length
+              }
+              change="Audit"
+              context="Line lifecycle"
+              tone="muted"
+              icon={ClipboardCheck}
+            />
           </SummaryGrid>
           <DataTable data={mockRenalDrains} columns={columns} />
-          <DrainReadingModal open={addOpen} onOpenChange={setAddOpen} canSubmit={access.canEnterIO} />
-          <DrainReviewModal drain={selected} open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)} canSubmit={access.canEnterIO || access.canReview} />
+          <DrainReadingModal
+            open={addOpen}
+            onOpenChange={setAddOpen}
+            canSubmit={access.canEnterIO}
+          />
+          <DrainReviewModal
+            drain={selected}
+            open={Boolean(selected)}
+            onOpenChange={(open) => !open && setSelected(null)}
+            canSubmit={access.canEnterIO || access.canReview}
+          />
         </div>
       )}
     </ProtectedRenal>
@@ -2436,34 +3817,49 @@ export function RenalLabsPage() {
     return sortRenalLabs(filtered, sort);
   }, [flagFilter, search, sort]);
 
-  const columns = React.useMemo<ColumnDef<RenalLabRecord>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Collected", accessorKey: "collectedAt" },
-    { header: "Creatinine", accessorKey: "creatinine" },
-    { header: "Urea", accessorKey: "urea" },
-    { header: "Sodium", accessorKey: "sodium" },
-    { header: "Potassium", accessorKey: "potassium" },
-    { header: "eGFR", accessorKey: "egfr" },
-    { header: "Flag", cell: ({ row }) => <StatusPill tone={statusTone(row.original.flag)}>{row.original.flag}</StatusPill> },
-    { header: "Trend", cell: ({ row }) => <StatusPill tone={statusTone(row.original.trend)}>{row.original.trend}</StatusPill> },
-    {
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1">
-          <Button size="sm" variant="outline" onClick={() => setReviewLab(row.original)}>Review</Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              setUpdatePatientId(row.original.patientId);
-              setUpdateOpen(true);
-            }}
-          >
-            Update
-          </Button>
-        </div>
-      ),
-    },
-  ], []);
+  const columns = React.useMemo<ColumnDef<RenalLabRecord>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Collected", accessorKey: "collectedAt" },
+      { header: "Creatinine", accessorKey: "creatinine" },
+      { header: "Urea", accessorKey: "urea" },
+      { header: "Sodium", accessorKey: "sodium" },
+      { header: "Potassium", accessorKey: "potassium" },
+      { header: "eGFR", accessorKey: "egfr" },
+      {
+        header: "Flag",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.flag)}>{row.original.flag}</StatusPill>
+        ),
+      },
+      {
+        header: "Trend",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.trend)}>{row.original.trend}</StatusPill>
+        ),
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-1">
+            <Button size="sm" variant="outline" onClick={() => setReviewLab(row.original)}>
+              Review
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setUpdatePatientId(row.original.patientId);
+                setUpdateOpen(true);
+              }}
+            >
+              Update
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <ProtectedRenal>
@@ -2489,12 +3885,43 @@ export function RenalLabsPage() {
               </>
             }
           />
-          <AlertBanner icon={FlaskConical} tone="warning" title="Critical value visibility">Critical potassium, creatinine trend, and dialysis review indicators remain visible in the renal workspace.</AlertBanner>
+          <AlertBanner icon={FlaskConical} tone="warning" title="Critical value visibility">
+            Critical potassium, creatinine trend, and dialysis review indicators remain visible in
+            the renal workspace.
+          </AlertBanner>
           <SummaryGrid>
-            <StatCard label="Total lab rows" value={mockRenalLabs.length} change="Results" context="Renal diagnostics" tone="info" icon={FlaskConical} />
-            <StatCard label="Critical results" value={mockRenalLabs.filter((lab) => lab.flag === "Critical").length} change="Escalate" context="Doctor acknowledgement" tone="critical" icon={ShieldAlert} />
-            <StatCard label="Worsening trend" value={mockRenalLabs.filter((lab) => lab.trend === "Worsening").length} change="Review" context="Creatinine / eGFR watch" tone="warning" icon={Activity} />
-            <StatCard label="Pending sign orders" value={mockRenalOrders.filter((order) => order.status === "Pending sign").length} change="Orders" context="Renal orders" tone="danger" icon={ClipboardCheck} />
+            <StatCard
+              label="Total lab rows"
+              value={mockRenalLabs.length}
+              change="Results"
+              context="Renal diagnostics"
+              tone="info"
+              icon={FlaskConical}
+            />
+            <StatCard
+              label="Critical results"
+              value={mockRenalLabs.filter((lab) => lab.flag === "Critical").length}
+              change="Escalate"
+              context="Doctor acknowledgement"
+              tone="critical"
+              icon={ShieldAlert}
+            />
+            <StatCard
+              label="Worsening trend"
+              value={mockRenalLabs.filter((lab) => lab.trend === "Worsening").length}
+              change="Review"
+              context="Creatinine / eGFR watch"
+              tone="warning"
+              icon={Activity}
+            />
+            <StatCard
+              label="Pending sign orders"
+              value={mockRenalOrders.filter((order) => order.status === "Pending sign").length}
+              change="Orders"
+              context="Renal orders"
+              tone="danger"
+              icon={ClipboardCheck}
+            />
           </SummaryGrid>
           <FilterBar
             search={search}
@@ -2502,9 +3929,34 @@ export function RenalLabsPage() {
             placeholder="Search patient, creatinine, potassium, eGFR, flag, trend..."
           >
             <Badge tone="info">{rows.length} results</Badge>
-            <NativeSelect label="Flag" value={flagFilter} onChange={setFlagFilter} options={["All flags", "Critical", "Watch", "Normal"]} />
-            <NativeSelect label="Sort labs" value={sort} onChange={setSort} options={["Latest", "Patient", "Flag severity", "Worsening first", "Potassium high-low"]} />
-            <Button variant="outline" onClick={() => { setSearch(""); setFlagFilter("All flags"); setSort("Latest"); }}>Reset</Button>
+            <NativeSelect
+              label="Flag"
+              value={flagFilter}
+              onChange={setFlagFilter}
+              options={["All flags", "Critical", "Watch", "Normal"]}
+            />
+            <NativeSelect
+              label="Sort labs"
+              value={sort}
+              onChange={setSort}
+              options={[
+                "Latest",
+                "Patient",
+                "Flag severity",
+                "Worsening first",
+                "Potassium high-low",
+              ]}
+            />
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearch("");
+                setFlagFilter("All flags");
+                setSort("Latest");
+              }}
+            >
+              Reset
+            </Button>
           </FilterBar>
           <DataTable data={rows} columns={columns} />
           <RenalLabEntryModal
@@ -2514,7 +3966,12 @@ export function RenalLabsPage() {
             patientId={updatePatientId}
             canSubmit={access.canUpdateLabs}
           />
-          <RenalLabReviewModal lab={reviewLab} open={Boolean(reviewLab)} onOpenChange={(open) => !open && setReviewLab(null)} canSubmit={access.canReview || access.canUpdateLabs} />
+          <RenalLabReviewModal
+            lab={reviewLab}
+            open={Boolean(reviewLab)}
+            onOpenChange={(open) => !open && setReviewLab(null)}
+            canSubmit={access.canReview || access.canUpdateLabs}
+          />
         </div>
       )}
     </ProtectedRenal>
@@ -2525,29 +3982,48 @@ export function RenalReportsPage() {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("All status");
   const [sort, setSort] = React.useState("Status priority");
-  const [workflow, setWorkflow] = React.useState<"balance" | "signoff" | "billing" | "emr" | null>(null);
+  const [workflow, setWorkflow] = React.useState<"balance" | "signoff" | "billing" | "emr" | null>(
+    null,
+  );
   const [selectedSession, setSelectedSession] = React.useState<DialysisSession | null>(null);
 
   const rows = React.useMemo(() => {
     const filtered = mockDialysisSessions.filter((session) => {
-      const matchesSearch = search.trim() ? includes(dialysisSessionSearchText(session), search.trim()) : true;
+      const matchesSearch = search.trim()
+        ? includes(dialysisSessionSearchText(session), search.trim())
+        : true;
       const matchesStatus = statusFilter === "All status" || session.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
     return sortDialysisSessions(filtered, sort);
   }, [search, sort, statusFilter]);
 
-  const dialysisColumns = React.useMemo<ColumnDef<DialysisSession>[]>(() => [
-    { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
-    { header: "Session", accessorKey: "sessionNo" },
-    { header: "Modality", accessorKey: "modality" },
-    { header: "Scheduled", accessorKey: "scheduledAt" },
-    { header: "Access", accessorKey: "accessSite" },
-    { header: "UF target", cell: ({ row }) => formatMl(row.original.ufTargetMl) },
-    { header: "UF removed", cell: ({ row }) => formatMl(row.original.ufRemovedMl) },
-    { header: "Status", cell: ({ row }) => <StatusPill tone={statusTone(row.original.status)}>{row.original.status}</StatusPill> },
-    { header: "Actions", cell: ({ row }) => <Button size="sm" variant="outline" onClick={() => setSelectedSession(row.original)}>Review</Button> },
-  ], []);
+  const dialysisColumns = React.useMemo<ColumnDef<DialysisSession>[]>(
+    () => [
+      { header: "Patient", cell: ({ row }) => <PatientMini patientId={row.original.patientId} /> },
+      { header: "Session", accessorKey: "sessionNo" },
+      { header: "Modality", accessorKey: "modality" },
+      { header: "Scheduled", accessorKey: "scheduledAt" },
+      { header: "Access", accessorKey: "accessSite" },
+      { header: "UF target", cell: ({ row }) => formatMl(row.original.ufTargetMl) },
+      { header: "UF removed", cell: ({ row }) => formatMl(row.original.ufRemovedMl) },
+      {
+        header: "Status",
+        cell: ({ row }) => (
+          <StatusPill tone={statusTone(row.original.status)}>{row.original.status}</StatusPill>
+        ),
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <Button size="sm" variant="outline" onClick={() => setSelectedSession(row.original)}>
+            Review
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
     <ProtectedRenal>
@@ -2560,18 +4036,43 @@ export function RenalReportsPage() {
             actions={
               <>
                 <PrintButton label="Print renal report" />
-                <Button variant="outline" onClick={() => toast.success("Renal report PDF export queued in static workflow")}>
+                <Button
+                  variant="outline"
+                  onClick={() => toast.success("Renal report PDF export queued in static workflow")}
+                >
                   <Download className="h-4 w-4" />
                   Export PDF
                 </Button>
-                <Button disabled={!access.canReview} onClick={() => setWorkflow("emr")}>Send to EMR</Button>
+                <Button disabled={!access.canReview} onClick={() => setWorkflow("emr")}>
+                  Send to EMR
+                </Button>
               </>
             }
           />
           <div className="grid gap-4 lg:grid-cols-3">
-            <ReportCard title="24h fluid balance" value={`${mockRenalCharts.length} patients`} status="Ready to print" actionLabel="Preview" onAction={() => setWorkflow("balance")} />
-            <ReportCard title="Doctor sign-off" value={`${mockRenalOrders.filter((order) => order.status === "Pending sign").length} pending`} status="Review required" actionLabel="Open sign-off" onAction={() => setWorkflow("signoff")} disabled={!access.canReview} />
-            <ReportCard title="Billing handoff" value={`${mockDialysisSessions.filter((session) => session.status === "Billing pending").length} pending`} status={access.canBill ? "Billing access" : "Read only"} actionLabel="Prepare" onAction={() => setWorkflow("billing")} disabled={!access.canBill} />
+            <ReportCard
+              title="24h fluid balance"
+              value={`${mockRenalCharts.length} patients`}
+              status="Ready to print"
+              actionLabel="Preview"
+              onAction={() => setWorkflow("balance")}
+            />
+            <ReportCard
+              title="Doctor sign-off"
+              value={`${mockRenalOrders.filter((order) => order.status === "Pending sign").length} pending`}
+              status="Review required"
+              actionLabel="Open sign-off"
+              onAction={() => setWorkflow("signoff")}
+              disabled={!access.canReview}
+            />
+            <ReportCard
+              title="Billing handoff"
+              value={`${mockDialysisSessions.filter((session) => session.status === "Billing pending").length} pending`}
+              status={access.canBill ? "Billing access" : "Read only"}
+              actionLabel="Prepare"
+              onAction={() => setWorkflow("billing")}
+              disabled={!access.canBill}
+            />
           </div>
           <FilterBar
             search={search}
@@ -2579,13 +4080,42 @@ export function RenalReportsPage() {
             placeholder="Search patient, dialysis session, modality, access, status..."
           >
             <Badge tone="info">{rows.length} sessions</Badge>
-            <NativeSelect label="Dialysis status" value={statusFilter} onChange={setStatusFilter} options={["All status", "Scheduled", "In progress", "Completed", "Billing pending"]} />
-            <NativeSelect label="Sort sessions" value={sort} onChange={setSort} options={["Status priority", "Patient", "UF target high-low", "Billing pending"]} />
-            <Button variant="outline" onClick={() => { setSearch(""); setStatusFilter("All status"); setSort("Status priority"); }}>Reset</Button>
+            <NativeSelect
+              label="Dialysis status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={["All status", "Scheduled", "In progress", "Completed", "Billing pending"]}
+            />
+            <NativeSelect
+              label="Sort sessions"
+              value={sort}
+              onChange={setSort}
+              options={["Status priority", "Patient", "UF target high-low", "Billing pending"]}
+            />
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("All status");
+                setSort("Status priority");
+              }}
+            >
+              Reset
+            </Button>
           </FilterBar>
           <DataTable data={rows} columns={dialysisColumns} />
-          <RenalReportWorkflowModal workflow={workflow} open={Boolean(workflow)} onOpenChange={(open) => !open && setWorkflow(null)} access={access} />
-          <DialysisSessionReviewModal session={selectedSession} open={Boolean(selectedSession)} onOpenChange={(open) => !open && setSelectedSession(null)} canSubmit={access.canReview || access.canBill} />
+          <RenalReportWorkflowModal
+            workflow={workflow}
+            open={Boolean(workflow)}
+            onOpenChange={(open) => !open && setWorkflow(null)}
+            access={access}
+          />
+          <DialysisSessionReviewModal
+            session={selectedSession}
+            open={Boolean(selectedSession)}
+            onOpenChange={(open) => !open && setSelectedSession(null)}
+            canSubmit={access.canReview || access.canBill}
+          />
         </div>
       )}
     </ProtectedRenal>
@@ -2619,7 +4149,11 @@ function ReportCard({
         </div>
         <div className="flex items-center justify-between gap-3">
           <StatusPill tone={statusTone(status)}>{status}</StatusPill>
-          {actionLabel ? <Button size="sm" variant="outline" disabled={disabled} onClick={onAction}>{actionLabel}</Button> : null}
+          {actionLabel ? (
+            <Button size="sm" variant="outline" disabled={disabled} onClick={onAction}>
+              {actionLabel}
+            </Button>
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -2639,31 +4173,46 @@ function RenalReportWorkflowModal({
 }) {
   const [scope, setScope] = React.useState<"all" | "single" | "selected">("all");
   const [singlePatientId, setSinglePatientId] = React.useState(mockRenalCharts[0]?.patientId ?? "");
-  const [selectedPatientIds, setSelectedPatientIds] = React.useState<string[]>(() => mockRenalCharts.map((chart) => chart.patientId));
+  const [selectedPatientIds, setSelectedPatientIds] = React.useState<string[]>(() =>
+    mockRenalCharts.map((chart) => chart.patientId),
+  );
   const reportCharts = React.useMemo(() => {
-    if (scope === "single") return mockRenalCharts.filter((chart) => chart.patientId === singlePatientId);
-    if (scope === "selected") return mockRenalCharts.filter((chart) => selectedPatientIds.includes(chart.patientId));
+    if (scope === "single")
+      return mockRenalCharts.filter((chart) => chart.patientId === singlePatientId);
+    if (scope === "selected")
+      return mockRenalCharts.filter((chart) => selectedPatientIds.includes(chart.patientId));
     return mockRenalCharts;
   }, [scope, selectedPatientIds, singlePatientId]);
 
   if (!workflow) return null;
 
   const title =
-    workflow === "balance" ? "24h fluid balance report"
-      : workflow === "signoff" ? "Doctor sign-off queue"
-        : workflow === "billing" ? "Dialysis billing handoff"
+    workflow === "balance"
+      ? "24h fluid balance report"
+      : workflow === "signoff"
+        ? "Doctor sign-off queue"
+        : workflow === "billing"
+          ? "Dialysis billing handoff"
           : "EMR handoff";
   const description =
-    workflow === "balance" ? "Preview intake, output, balance, and cumulative values before printing."
-      : workflow === "signoff" ? "Review pending renal signatures, alerts, and orders before final report sign-off."
-        : workflow === "billing" ? "Prepare billing-ready dialysis rows without changing clinical charting."
+    workflow === "balance"
+      ? "Preview intake, output, balance, and cumulative values before printing."
+      : workflow === "signoff"
+        ? "Review pending renal signatures, alerts, and orders before final report sign-off."
+        : workflow === "billing"
+          ? "Prepare billing-ready dialysis rows without changing clinical charting."
           : "Send signed renal report resources into the EMR handoff workflow.";
   const submitLabel =
-    workflow === "balance" ? "Generate report"
-      : workflow === "signoff" ? "Mark sign-off reviewed"
-        : workflow === "billing" ? "Prepare billing handoff"
+    workflow === "balance"
+      ? "Generate report"
+      : workflow === "signoff"
+        ? "Mark sign-off reviewed"
+        : workflow === "billing"
+          ? "Prepare billing handoff"
           : "Send to EMR";
-  const canSubmit = reportCharts.length > 0 && (workflow === "billing" ? access.canBill : workflow === "balance" ? true : access.canReview);
+  const canSubmit =
+    reportCharts.length > 0 &&
+    (workflow === "billing" ? access.canBill : workflow === "balance" ? true : access.canReview);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -2673,7 +4222,9 @@ function RenalReportWorkflowModal({
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
               <Dialog.Title className="text-sm font-semibold text-foreground">{title}</Dialog.Title>
-              <Dialog.Description className="mt-1 text-xs text-muted-foreground">{description}</Dialog.Description>
+              <Dialog.Description className="mt-1 text-xs text-muted-foreground">
+                {description}
+              </Dialog.Description>
             </div>
             <Dialog.Close asChild>
               <Button size="icon" variant="ghost" aria-label="Close renal report workflow">
@@ -2685,7 +4236,9 @@ function RenalReportWorkflowModal({
             <div className="space-y-4">
               {!canSubmit ? (
                 <AlertBanner icon={ShieldAlert} tone="warning" title="Role limited">
-                  {reportCharts.length ? "Your current role can view this report workflow, but cannot submit it." : "Select at least one patient to generate this report."}
+                  {reportCharts.length
+                    ? "Your current role can view this report workflow, but cannot submit it."
+                    : "Select at least one patient to generate this report."}
                 </AlertBanner>
               ) : null}
               <RenalReportScopeSelector
@@ -2701,11 +4254,15 @@ function RenalReportWorkflowModal({
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {
-                toast.success(`${submitLabel} completed for ${reportCharts.length} patient${reportCharts.length === 1 ? "" : "s"} in static renal workflow`);
+                toast.success(
+                  `${submitLabel} completed for ${reportCharts.length} patient${reportCharts.length === 1 ? "" : "s"} in static renal workflow`,
+                );
                 onOpenChange(false);
               }}
             >
@@ -2735,25 +4292,33 @@ function RenalReportScopeSelector({
   onSelectedPatientIdsChange: (patientIds: string[]) => void;
   selectedCount: number;
 }) {
-  const togglePatient = React.useCallback((patientId: string) => {
-    onSelectedPatientIdsChange(
-      selectedPatientIds.includes(patientId)
-        ? selectedPatientIds.filter((id) => id !== patientId)
-        : [...selectedPatientIds, patientId],
-    );
-  }, [onSelectedPatientIdsChange, selectedPatientIds]);
+  const togglePatient = React.useCallback(
+    (patientId: string) => {
+      onSelectedPatientIdsChange(
+        selectedPatientIds.includes(patientId)
+          ? selectedPatientIds.filter((id) => id !== patientId)
+          : [...selectedPatientIds, patientId],
+      );
+    },
+    [onSelectedPatientIdsChange, selectedPatientIds],
+  );
 
   return (
     <Card>
       <CardHeader>
         <div>
           <CardTitle>Report scope</CardTitle>
-          <CardDescription>Generate for one patient, selected patients, or every active renal chart.</CardDescription>
+          <CardDescription>
+            Generate for one patient, selected patients, or every active renal chart.
+          </CardDescription>
         </div>
         <Badge tone={selectedCount ? "info" : "warning"}>{selectedCount} selected</Badge>
       </CardHeader>
       <CardContent className="space-y-3 p-4">
-        <Tabs value={scope} onValueChange={(value) => onScopeChange(value as "all" | "single" | "selected")}>
+        <Tabs
+          value={scope}
+          onValueChange={(value) => onScopeChange(value as "all" | "single" | "selected")}
+        >
           <TabsList className="grid h-9 w-full grid-cols-3 overflow-visible p-1">
             <TabsTrigger value="all">All active</TabsTrigger>
             <TabsTrigger value="single">Individual</TabsTrigger>
@@ -2766,7 +4331,10 @@ function RenalReportScopeSelector({
             label="Patient"
             value={singlePatientId}
             onChange={onSinglePatientChange}
-            options={mockRenalCharts.map((chart) => ({ value: chart.patientId, label: `${patientName(chart.patientId)} - ${chart.bedNo}, ${chart.ward}` }))}
+            options={mockRenalCharts.map((chart) => ({
+              value: chart.patientId,
+              label: `${patientName(chart.patientId)} - ${chart.bedNo}, ${chart.ward}`,
+            }))}
           />
         ) : null}
 
@@ -2775,7 +4343,14 @@ function RenalReportScopeSelector({
             {mockRenalCharts.map((chart) => {
               const checked = selectedPatientIds.includes(chart.patientId);
               return (
-                <label className={checked ? "flex min-h-[72px] items-start gap-3 rounded-lg border border-info bg-info/5 p-3" : "flex min-h-[72px] items-start gap-3 rounded-lg border border-border bg-surface-muted p-3"} key={chart.id}>
+                <label
+                  className={
+                    checked
+                      ? "flex min-h-[72px] items-start gap-3 rounded-lg border border-info bg-info/5 p-3"
+                      : "flex min-h-[72px] items-start gap-3 rounded-lg border border-border bg-surface-muted p-3"
+                  }
+                  key={chart.id}
+                >
                   <input
                     checked={checked}
                     className="mt-1 h-4 w-4 rounded border-input"
@@ -2783,8 +4358,12 @@ function RenalReportScopeSelector({
                     type="checkbox"
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-foreground">{patientName(chart.patientId)}</span>
-                    <span className="mt-1 block text-xs text-muted-foreground">{chart.bedNo} • {chart.ward} • {chart.renalStatus}</span>
+                    <span className="block truncate text-sm font-semibold text-foreground">
+                      {patientName(chart.patientId)}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {chart.bedNo} • {chart.ward} • {chart.renalStatus}
+                    </span>
                   </span>
                 </label>
               );
@@ -2796,9 +4375,22 @@ function RenalReportScopeSelector({
   );
 }
 
-function RenalReportWorkflowBody({ workflow, charts }: { workflow: "balance" | "signoff" | "billing" | "emr"; charts: RenalPatientChart[] }) {
+function RenalReportWorkflowBody({
+  workflow,
+  charts,
+}: {
+  workflow: "balance" | "signoff" | "billing" | "emr";
+  charts: RenalPatientChart[];
+}) {
   if (!charts.length) {
-    return <EmptyState icon={FileText} title="No patients selected" description="Choose an individual patient, selected patients, or all active renal charts." className="min-h-48" />;
+    return (
+      <EmptyState
+        icon={FileText}
+        title="No patients selected"
+        description="Choose an individual patient, selected patients, or all active renal charts."
+        className="min-h-48"
+      />
+    );
   }
 
   if (workflow === "balance") {
@@ -2815,7 +4407,8 @@ function RenalReportWorkflowBody({ workflow, charts }: { workflow: "balance" | "
     return (
       <>
         <AlertBanner icon={FileText} tone="info" title="Printable balance summary">
-          Report includes 24-hour intake, output, balance, cumulative balance, and patient renal status for {charts.length} patient{charts.length === 1 ? "" : "s"}.
+          Report includes 24-hour intake, output, balance, cumulative balance, and patient renal
+          status for {charts.length} patient{charts.length === 1 ? "" : "s"}.
         </AlertBanner>
         <ClinicalTable minWidth="760px">
           <thead>
@@ -2836,7 +4429,9 @@ function RenalReportWorkflowBody({ workflow, charts }: { workflow: "balance" | "
                 <ClinicalTd>{formatMl(intake)}</ClinicalTd>
                 <ClinicalTd>{formatMl(output)}</ClinicalTd>
                 <ClinicalTd>{formatSignedMl(balance)}</ClinicalTd>
-                <ClinicalTd><BalanceBadge value={chart.cumulativeBalanceMl} /></ClinicalTd>
+                <ClinicalTd>
+                  <BalanceBadge value={chart.cumulativeBalanceMl} />
+                </ClinicalTd>
               </tr>
             ))}
           </tbody>
@@ -2849,26 +4444,42 @@ function RenalReportWorkflowBody({ workflow, charts }: { workflow: "balance" | "
     return (
       <>
         <AlertBanner icon={Stethoscope} tone="warning" title="Sign-off readiness">
-          Doctor sign-off should happen only after open alerts, pending orders, and latest labs are reviewed.
+          Doctor sign-off should happen only after open alerts, pending orders, and latest labs are
+          reviewed.
         </AlertBanner>
         <div className="grid gap-3">
           {charts.map((chart) => {
-            const alerts = getRenalAlertsByPatient(chart.patientId).filter((alert) => alert.status !== "Acknowledged");
-            const pendingOrders = getRenalOrdersByPatient(chart.patientId).filter((order) => order.status === "Pending sign");
+            const alerts = getRenalAlertsByPatient(chart.patientId).filter(
+              (alert) => alert.status !== "Acknowledged",
+            );
+            const pendingOrders = getRenalOrdersByPatient(chart.patientId).filter(
+              (order) => order.status === "Pending sign",
+            );
             const latestLab = getRenalLabsByPatient(chart.patientId)[0];
             return (
               <div className="rounded-lg border border-border bg-surface-muted p-3" key={chart.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-foreground">{patientName(chart.patientId)}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{chart.bedNo} • {chart.ward} • {chart.renalStatus}</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {patientName(chart.patientId)}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {chart.bedNo} • {chart.ward} • {chart.renalStatus}
+                    </div>
                   </div>
-                  <StatusPill tone={alerts.length || pendingOrders.length ? "warning" : "success"}>{alerts.length || pendingOrders.length ? "Review required" : "Ready"}</StatusPill>
+                  <StatusPill tone={alerts.length || pendingOrders.length ? "warning" : "success"}>
+                    {alerts.length || pendingOrders.length ? "Review required" : "Ready"}
+                  </StatusPill>
                 </div>
                 <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
                   <RenalAlertMeta label="Open alerts" value={String(alerts.length)} />
                   <RenalAlertMeta label="Pending orders" value={String(pendingOrders.length)} />
-                  <RenalAlertMeta label="Latest labs" value={latestLab ? `Cr ${latestLab.creatinine}, K ${latestLab.potassium}` : "Pending"} />
+                  <RenalAlertMeta
+                    label="Latest labs"
+                    value={
+                      latestLab ? `Cr ${latestLab.creatinine}, K ${latestLab.potassium}` : "Pending"
+                    }
+                  />
                 </div>
               </div>
             );
@@ -2880,7 +4491,9 @@ function RenalReportWorkflowBody({ workflow, charts }: { workflow: "balance" | "
 
   if (workflow === "billing") {
     const patientIds = new Set(charts.map((chart) => chart.patientId));
-    const sourceSessions = mockDialysisSessions.filter((session) => patientIds.has(session.patientId));
+    const sourceSessions = mockDialysisSessions.filter((session) =>
+      patientIds.has(session.patientId),
+    );
     const rows = sourceSessions.filter((session) => session.status === "Billing pending");
     return (
       <>
@@ -2902,18 +4515,27 @@ function RenalReportWorkflowBody({ workflow, charts }: { workflow: "balance" | "
             <tbody>
               {(rows.length ? rows : sourceSessions).map((session) => (
                 <tr key={session.id}>
-                  <ClinicalTd className="font-semibold">{patientName(session.patientId)}</ClinicalTd>
+                  <ClinicalTd className="font-semibold">
+                    {patientName(session.patientId)}
+                  </ClinicalTd>
                   <ClinicalTd>{session.sessionNo}</ClinicalTd>
                   <ClinicalTd>{session.modality}</ClinicalTd>
                   <ClinicalTd>{session.scheduledAt}</ClinicalTd>
                   <ClinicalTd>{formatMl(session.ufTargetMl)}</ClinicalTd>
-                  <ClinicalTd><StatusPill tone={statusTone(session.status)}>{session.status}</StatusPill></ClinicalTd>
+                  <ClinicalTd>
+                    <StatusPill tone={statusTone(session.status)}>{session.status}</StatusPill>
+                  </ClinicalTd>
                 </tr>
               ))}
             </tbody>
           </ClinicalTable>
         ) : (
-          <EmptyState icon={FileText} title="No dialysis sessions in scope" description="Selected patient scope has no dialysis rows for billing handoff." className="min-h-40" />
+          <EmptyState
+            icon={FileText}
+            title="No dialysis sessions in scope"
+            description="Selected patient scope has no dialysis rows for billing handoff."
+            className="min-h-40"
+          />
         )}
       </>
     );
@@ -2922,7 +4544,8 @@ function RenalReportWorkflowBody({ workflow, charts }: { workflow: "balance" | "
   return (
     <>
       <AlertBanner icon={Database} tone="info" title="FHIR-aligned EMR package">
-        Handoff includes Patient, Encounter, Observation, Device, DiagnosticReport, ServiceRequest, AuditEvent, and Provenance references.
+        Handoff includes Patient, Encounter, Observation, Device, DiagnosticReport, ServiceRequest,
+        AuditEvent, and Provenance references.
       </AlertBanner>
       <div className="grid gap-3">
         {charts.map((chart) => {
@@ -2931,14 +4554,22 @@ function RenalReportWorkflowBody({ workflow, charts }: { workflow: "balance" | "
             <div className="rounded-lg border border-border bg-surface-muted p-3" key={chart.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold text-foreground">{patientName(chart.patientId)}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">{chart.bedNo} • {chart.ward} • {chart.windowLabel}</div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {patientName(chart.patientId)}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {chart.bedNo} • {chart.ward} • {chart.windowLabel}
+                  </div>
                 </div>
                 <Badge tone="info">{resources.length} resources</Badge>
               </div>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {resources.slice(0, 4).map((resource) => (
-                  <RenalAlertMeta key={resource.reference} label={resource.resource} value={`${resource.status} - ${resource.payload}`} />
+                  <RenalAlertMeta
+                    key={resource.reference}
+                    label={resource.resource}
+                    value={`${resource.status} - ${resource.payload}`}
+                  />
                 ))}
               </div>
             </div>
@@ -2964,9 +4595,16 @@ function DialysisSessionReviewModal({
 
   if (!session) return null;
   const chart = getRenalChartByPatient(session.patientId);
-  const defaultDecision = session.status === "Billing pending" ? "Send billing handoff" : session.status === "Scheduled" ? "Confirm dialysis plan" : "Review session";
+  const defaultDecision =
+    session.status === "Billing pending"
+      ? "Send billing handoff"
+      : session.status === "Scheduled"
+        ? "Confirm dialysis plan"
+        : "Review session";
   const decision = decisionBySessionId[session.id] ?? defaultDecision;
-  const weightDelta = session.postWeightKg ? `${(session.preWeightKg - session.postWeightKg).toFixed(1)} kg removed` : "Pending post weight";
+  const weightDelta = session.postWeightKg
+    ? `${(session.preWeightKg - session.postWeightKg).toFixed(1)} kg removed`
+    : "Pending post weight";
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -2975,7 +4613,9 @@ function DialysisSessionReviewModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(620px,90dvh)] w-[min(660px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Dialysis session review</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Dialysis session review
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 {patientName(session.patientId)} • {session.sessionNo} • {session.status}
               </Dialog.Description>
@@ -2993,44 +4633,68 @@ function DialysisSessionReviewModal({
                   Your current role can view dialysis sessions, but cannot record this review.
                 </AlertBanner>
               ) : null}
-              <AlertBanner icon={Activity} tone={statusTone(session.status)} title={session.modality}>
+              <AlertBanner
+                icon={Activity}
+                tone={statusTone(session.status)}
+                title={session.modality}
+              >
                 {session.scheduledAt} • Access {session.accessSite}
               </AlertBanner>
               <Card>
                 <CardHeader>
                   <div>
                     <CardTitle>Session summary</CardTitle>
-                    <CardDescription>Clinical and billing values for the dialysis row.</CardDescription>
+                    <CardDescription>
+                      Clinical and billing values for the dialysis row.
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-x-5 gap-y-1 p-4 pt-0 sm:grid-cols-2">
                   <DetailRow label="Patient" value={patientName(session.patientId)} />
-                  <DetailRow label="Bed / ward" value={chart ? `${chart.bedNo} • ${chart.ward}` : "No active chart"} />
+                  <DetailRow
+                    label="Bed / ward"
+                    value={chart ? `${chart.bedNo} • ${chart.ward}` : "No active chart"}
+                  />
                   <DetailRow label="Access" value={session.accessSite} />
                   <DetailRow label="UF target" value={formatMl(session.ufTargetMl)} />
                   <DetailRow label="UF removed" value={formatMl(session.ufRemovedMl)} />
                   <DetailRow label="Weight change" value={weightDelta} />
                   <DetailRow label="Pre weight" value={`${session.preWeightKg} kg`} />
-                  <DetailRow label="Post weight" value={session.postWeightKg ? `${session.postWeightKg} kg` : "Pending"} />
+                  <DetailRow
+                    label="Post weight"
+                    value={session.postWeightKg ? `${session.postWeightKg} kg` : "Pending"}
+                  />
                 </CardContent>
               </Card>
               <div className="grid gap-3 sm:grid-cols-2">
                 <ActionSelect
                   label="Decision"
                   value={decision}
-                  onChange={(value) => setDecisionBySessionId((current) => ({ ...current, [session.id]: value }))}
-                  options={["Confirm dialysis plan", "Send billing handoff", "Hold for doctor review", "Mark completed"].map((item) => ({ value: item, label: item }))}
+                  onChange={(value) =>
+                    setDecisionBySessionId((current) => ({ ...current, [session.id]: value }))
+                  }
+                  options={[
+                    "Confirm dialysis plan",
+                    "Send billing handoff",
+                    "Hold for doctor review",
+                    "Mark completed",
+                  ].map((item) => ({ value: item, label: item }))}
                 />
                 <ActionInput label="Reviewed by" value="Current user" readOnly />
               </div>
-              <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Dialysis note / billing reason / clinical handoff" />
+              <textarea
+                className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                placeholder="Dialysis note / billing reason / clinical handoff"
+              />
             </div>
           </div>
           <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:justify-end">
             <Button variant="outline" asChild>
               <Link href={`/renal/patients/${session.patientId}`}>Open patient chart</Link>
             </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {
@@ -3108,9 +4772,13 @@ function RenalLabEntryModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(680px,90dvh)] w-[min(660px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Update renal labs</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Update renal labs
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
-                {selectedChart ? `${patientName(selectedPatientId)} • ${selectedChart.bedNo}, ${selectedChart.ward}` : "Select renal patient"}
+                {selectedChart
+                  ? `${patientName(selectedPatientId)} • ${selectedChart.bedNo}, ${selectedChart.ward}`
+                  : "Select renal patient"}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -3135,7 +4803,10 @@ function RenalLabEntryModal({
                     label="Patient"
                     value={selectedPatientId}
                     onChange={handlePatientChange}
-                    options={mockRenalCharts.map((chart) => ({ value: chart.patientId, label: `${patientName(chart.patientId)} - ${chart.bedNo}, ${chart.ward}` }))}
+                    options={mockRenalCharts.map((chart) => ({
+                      value: chart.patientId,
+                      label: `${patientName(chart.patientId)} - ${chart.bedNo}, ${chart.ward}`,
+                    }))}
                   />
                   <ActionInput label="Collected at" value={collectedAt} onChange={setCollectedAt} />
                   <ActionInput label="Creatinine" value={creatinine} onChange={setCreatinine} />
@@ -3143,17 +4814,48 @@ function RenalLabEntryModal({
                   <ActionInput label="Sodium" value={sodium} onChange={setSodium} />
                   <ActionInput label="Potassium" value={potassium} onChange={setPotassium} />
                   <ActionInput label="eGFR" value={egfr} onChange={setEgfr} />
-                  <ActionSelect label="Urine protein" value={urineProtein} onChange={setUrineProtein} options={["Nil", "Trace", "+", "++", "+++"].map((item) => ({ value: item, label: item }))} />
-                  <ActionSelect label="Flag" value={flag} onChange={(value) => setFlag(value as RenalLabRecord["flag"])} options={["Normal", "Watch", "Critical"].map((item) => ({ value: item, label: item }))} />
-                  <ActionSelect label="Trend" value={trend} onChange={(value) => setTrend(value as RenalLabRecord["trend"])} options={["Improving", "Stable", "Worsening"].map((item) => ({ value: item, label: item }))} />
+                  <ActionSelect
+                    label="Urine protein"
+                    value={urineProtein}
+                    onChange={setUrineProtein}
+                    options={["Nil", "Trace", "+", "++", "+++"].map((item) => ({
+                      value: item,
+                      label: item,
+                    }))}
+                  />
+                  <ActionSelect
+                    label="Flag"
+                    value={flag}
+                    onChange={(value) => setFlag(value as RenalLabRecord["flag"])}
+                    options={["Normal", "Watch", "Critical"].map((item) => ({
+                      value: item,
+                      label: item,
+                    }))}
+                  />
+                  <ActionSelect
+                    label="Trend"
+                    value={trend}
+                    onChange={(value) => setTrend(value as RenalLabRecord["trend"])}
+                    options={["Improving", "Stable", "Worsening"].map((item) => ({
+                      value: item,
+                      label: item,
+                    }))}
+                  />
                 </CardContent>
               </Card>
-              <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Lab note / critical value acknowledgement / sample condition" />
+              <textarea
+                className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                placeholder="Lab note / critical value acknowledgement / sample condition"
+              />
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button disabled={!canSubmit} onClick={handleSave}>Save lab update</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button disabled={!canSubmit} onClick={handleSave}>
+              Save lab update
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -3178,7 +4880,12 @@ function RenalLabReviewModal({
   const defaultDecision = lab.flag === "Critical" ? "Escalate to doctor" : "Continue monitoring";
   const decision = decisionByLabId[lab.id] ?? defaultDecision;
   const chart = getRenalChartByPatient(lab.patientId);
-  const alerts = getRenalAlertsByPatient(lab.patientId).filter((alert) => alert.title.toLowerCase().includes("potassium") || alert.title.toLowerCase().includes("renal") || lab.flag === "Critical");
+  const alerts = getRenalAlertsByPatient(lab.patientId).filter(
+    (alert) =>
+      alert.title.toLowerCase().includes("potassium") ||
+      alert.title.toLowerCase().includes("renal") ||
+      lab.flag === "Critical",
+  );
   const orders = getRenalOrdersByPatient(lab.patientId);
 
   return (
@@ -3188,7 +4895,9 @@ function RenalLabReviewModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(640px,90dvh)] w-[min(660px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Review renal lab</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Review renal lab
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 {patientName(lab.patientId)} • {lab.collectedAt} • {lab.flag}
               </Dialog.Description>
@@ -3206,66 +4915,107 @@ function RenalLabReviewModal({
                   Your current role can review this result, but cannot record a lab review.
                 </AlertBanner>
               ) : null}
-              <AlertBanner icon={FlaskConical} tone={statusTone(lab.flag)} title={`${lab.flag} renal result`}>
+              <AlertBanner
+                icon={FlaskConical}
+                tone={statusTone(lab.flag)}
+                title={`${lab.flag} renal result`}
+              >
                 Creatinine {lab.creatinine} • Potassium {lab.potassium} • Trend {lab.trend}
               </AlertBanner>
               <Card>
                 <CardHeader>
                   <div>
                     <CardTitle>Result summary</CardTitle>
-                    <CardDescription>Renal DiagnosticReport values linked to the active chart.</CardDescription>
+                    <CardDescription>
+                      Renal DiagnosticReport values linked to the active chart.
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-x-5 gap-y-1 p-4 pt-0 sm:grid-cols-2">
                   <DetailRow label="Patient" value={patientName(lab.patientId)} />
-                  <DetailRow label="Bed / ward" value={chart ? `${chart.bedNo} • ${chart.ward}` : "No active chart"} />
+                  <DetailRow
+                    label="Bed / ward"
+                    value={chart ? `${chart.bedNo} • ${chart.ward}` : "No active chart"}
+                  />
                   <DetailRow label="Creatinine" value={lab.creatinine} />
                   <DetailRow label="Urea" value={lab.urea} />
                   <DetailRow label="Sodium" value={lab.sodium} />
                   <DetailRow label="Potassium" value={lab.potassium} />
                   <DetailRow label="eGFR" value={lab.egfr} />
                   <DetailRow label="Urine protein" value={lab.urineProtein} />
-                  <DetailRow label="Flag" value={<StatusPill tone={statusTone(lab.flag)}>{lab.flag}</StatusPill>} />
-                  <DetailRow label="Trend" value={<StatusPill tone={statusTone(lab.trend)}>{lab.trend}</StatusPill>} />
+                  <DetailRow
+                    label="Flag"
+                    value={<StatusPill tone={statusTone(lab.flag)}>{lab.flag}</StatusPill>}
+                  />
+                  <DetailRow
+                    label="Trend"
+                    value={<StatusPill tone={statusTone(lab.trend)}>{lab.trend}</StatusPill>}
+                  />
                 </CardContent>
               </Card>
               <div className="grid gap-3 sm:grid-cols-2">
                 <ActionSelect
                   label="Review decision"
                   value={decision}
-                  onChange={(value) => setDecisionByLabId((current) => ({ ...current, [lab.id]: value }))}
-                  options={["Continue monitoring", "Repeat sample", "Escalate to doctor", "Prepare dialysis review"].map((item) => ({ value: item, label: item }))}
+                  onChange={(value) =>
+                    setDecisionByLabId((current) => ({ ...current, [lab.id]: value }))
+                  }
+                  options={[
+                    "Continue monitoring",
+                    "Repeat sample",
+                    "Escalate to doctor",
+                    "Prepare dialysis review",
+                  ].map((item) => ({ value: item, label: item }))}
                 />
                 <ActionInput label="Reviewed by" value="Current user" readOnly />
               </div>
               {alerts.length || orders.length ? (
                 <div className="space-y-2">
-                  <div className="text-xs font-semibold uppercase text-muted-foreground">Related alerts and orders</div>
+                  <div className="text-xs font-semibold uppercase text-muted-foreground">
+                    Related alerts and orders
+                  </div>
                   {alerts.map((alert) => (
-                    <div className="rounded-md border border-border bg-surface-muted p-2 text-xs" key={alert.id}>
+                    <div
+                      className="rounded-md border border-border bg-surface-muted p-2 text-xs"
+                      key={alert.id}
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <span className="font-semibold text-foreground">{alert.title}</span>
-                        <StatusPill tone={renalAlertTone(alert.severity)}>{alert.severity}</StatusPill>
+                        <StatusPill tone={renalAlertTone(alert.severity)}>
+                          {alert.severity}
+                        </StatusPill>
                       </div>
-                      <div className="mt-1 text-muted-foreground">{alert.metric} • {alert.status}</div>
+                      <div className="mt-1 text-muted-foreground">
+                        {alert.metric} • {alert.status}
+                      </div>
                     </div>
                   ))}
                   {orders.slice(0, 3).map((order) => (
-                    <div className="rounded-md border border-border bg-surface-muted p-2 text-xs" key={order.id}>
+                    <div
+                      className="rounded-md border border-border bg-surface-muted p-2 text-xs"
+                      key={order.id}
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <span className="font-semibold text-foreground">{order.order}</span>
                         <StatusPill tone={statusTone(order.status)}>{order.status}</StatusPill>
                       </div>
-                      <div className="mt-1 text-muted-foreground">{order.target} • {order.orderedAt}</div>
+                      <div className="mt-1 text-muted-foreground">
+                        {order.target} • {order.orderedAt}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : null}
-              <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Review note / repeat sample reason / escalation plan" />
+              <textarea
+                className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                placeholder="Review note / repeat sample reason / escalation plan"
+              />
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {
@@ -3282,7 +5032,13 @@ function RenalLabReviewModal({
   );
 }
 
-function RenalAlertQueue({ alerts, onAction }: { alerts: RenalAlert[]; onAction?: (alert: RenalAlert) => void }) {
+function RenalAlertQueue({
+  alerts,
+  onAction,
+}: {
+  alerts: RenalAlert[];
+  onAction?: (alert: RenalAlert) => void;
+}) {
   const criticalCount = alerts.filter((alert) => alert.severity === "Critical").length;
   const warningCount = alerts.filter((alert) => alert.severity === "Warning").length;
   const escalatedCount = alerts.filter((alert) => alert.status === "Escalated").length;
@@ -3294,17 +5050,43 @@ function RenalAlertQueue({ alerts, onAction }: { alerts: RenalAlert[]; onAction?
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <RenalAlertQueueMetric icon={ShieldAlert} label="Critical" value={criticalCount} subtext="Immediate doctor review" tone="critical" />
-        <RenalAlertQueueMetric icon={AlertTriangle} label="Warning" value={warningCount} subtext="Review during current shift" tone="warning" />
-        <RenalAlertQueueMetric icon={Activity} label="Escalated" value={escalatedCount} subtext="Already escalated to owner" tone="danger" />
-        <RenalAlertQueueMetric icon={Gauge} label="Patients" value={patientCount} subtext="Affected renal charts" tone="info" />
+        <RenalAlertQueueMetric
+          icon={ShieldAlert}
+          label="Critical"
+          value={criticalCount}
+          subtext="Immediate doctor review"
+          tone="critical"
+        />
+        <RenalAlertQueueMetric
+          icon={AlertTriangle}
+          label="Warning"
+          value={warningCount}
+          subtext="Review during current shift"
+          tone="warning"
+        />
+        <RenalAlertQueueMetric
+          icon={Activity}
+          label="Escalated"
+          value={escalatedCount}
+          subtext="Already escalated to owner"
+          tone="danger"
+        />
+        <RenalAlertQueueMetric
+          icon={Gauge}
+          label="Patients"
+          value={patientCount}
+          subtext="Affected renal charts"
+          tone="info"
+        />
       </div>
 
       <Card className="overflow-hidden">
         <CardHeader className="items-start">
           <div>
             <CardTitle>Renal Alert Queue</CardTitle>
-            <CardDescription>Open clinical rules grouped by severity with patient context and action ownership.</CardDescription>
+            <CardDescription>
+              Open clinical rules grouped by severity with patient context and action ownership.
+            </CardDescription>
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Badge tone="critical">{alerts.length} open</Badge>
@@ -3318,9 +5100,13 @@ function RenalAlertQueue({ alerts, onAction }: { alerts: RenalAlert[]; onAction?
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <StatusPill tone={renalAlertTone(lane.severity)}>{lane.severity}</StatusPill>
-                    <span className="text-xs font-semibold text-foreground">{lane.rows.length} active</span>
+                    <span className="text-xs font-semibold text-foreground">
+                      {lane.rows.length} active
+                    </span>
                   </div>
-                  <div className="text-xs text-muted-foreground">{renalAlertLanePurpose(lane.severity)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {renalAlertLanePurpose(lane.severity)}
+                  </div>
                 </div>
                 <div className="grid gap-3">
                   {lane.rows.map((alert) => (
@@ -3381,11 +5167,19 @@ function RenalAlertQueueMetric({
   );
 }
 
-function RenalAlertQueueItem({ alert, onAction }: { alert: RenalAlert; onAction?: (alert: RenalAlert) => void }) {
+function RenalAlertQueueItem({
+  alert,
+  onAction,
+}: {
+  alert: RenalAlert;
+  onAction?: (alert: RenalAlert) => void;
+}) {
   const chart = getRenalChartByPatient(alert.patientId);
   const patient = getPatientById(alert.patientId);
   const latestLab = getRenalLabsByPatient(alert.patientId)[0];
-  const pendingOrders = getRenalOrdersByPatient(alert.patientId).filter((order) => order.status === "Pending sign").length;
+  const pendingOrders = getRenalOrdersByPatient(alert.patientId).filter(
+    (order) => order.status === "Pending sign",
+  ).length;
   const highRisk = alert.severity === "Critical" || alert.status === "Escalated";
   const containerClass = highRisk
     ? "rounded-lg border border-critical/35 bg-critical/5 p-3"
@@ -3401,7 +5195,10 @@ function RenalAlertQueueItem({ alert, onAction }: { alert: RenalAlert; onAction?
             <StatusPill tone={statusTone(alert.status)}>{alert.status}</StatusPill>
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {patientName(alert.patientId)} • {patient?.uhid ?? "UHID not linked"} • {chart ? `${chart.bedNo}, ${chart.ward}` : patient?.department ?? "No active renal chart"}
+            {patientName(alert.patientId)} • {patient?.uhid ?? "UHID not linked"} •{" "}
+            {chart
+              ? `${chart.bedNo}, ${chart.ward}`
+              : (patient?.department ?? "No active renal chart")}
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             <RenalAlertMeta label="Metric" value={alert.metric} />
@@ -3412,9 +5209,20 @@ function RenalAlertQueueItem({ alert, onAction }: { alert: RenalAlert; onAction?
         </div>
 
         <div className="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-1">
-          <RenalAlertMeta label="Renal status" value={chart ? chart.renalStatus : "No renal chart"} />
-          <RenalAlertMeta label="Cumulative balance" value={chart ? formatSignedMl(chart.cumulativeBalanceMl) : "Not available"} />
-          <RenalAlertMeta label="Latest labs" value={latestLab ? `Cr ${latestLab.creatinine}, K ${latestLab.potassium}` : "Not available"} />
+          <RenalAlertMeta
+            label="Renal status"
+            value={chart ? chart.renalStatus : "No renal chart"}
+          />
+          <RenalAlertMeta
+            label="Cumulative balance"
+            value={chart ? formatSignedMl(chart.cumulativeBalanceMl) : "Not available"}
+          />
+          <RenalAlertMeta
+            label="Latest labs"
+            value={
+              latestLab ? `Cr ${latestLab.creatinine}, K ${latestLab.potassium}` : "Not available"
+            }
+          />
           <RenalAlertMeta label="Pending signs" value={`${pendingOrders} orders`} />
         </div>
 
@@ -3422,7 +5230,12 @@ function RenalAlertQueueItem({ alert, onAction }: { alert: RenalAlert; onAction?
           <Button size="sm" variant="outline" asChild>
             <Link href={`/renal/patients/${alert.patientId}`}>Open chart</Link>
           </Button>
-          <Button size="sm" onClick={() => onAction ? onAction(alert) : toast.success(`${alert.title} acknowledged`)}>
+          <Button
+            size="sm"
+            onClick={() =>
+              onAction ? onAction(alert) : toast.success(`${alert.title} acknowledged`)
+            }
+          >
             Acknowledge
           </Button>
         </div>
@@ -3482,16 +5295,33 @@ function RoleActionPanel({
           label="Sort actions"
           value={sort}
           onChange={onSort}
-          options={["Available first", "Workflow order", "Role A-Z", "System record A-Z", "Locked first"]}
+          options={[
+            "Available first",
+            "Workflow order",
+            "Role A-Z",
+            "System record A-Z",
+            "Locked first",
+          ]}
         />
-        <Button variant="outline" onClick={() => { onSearch(""); onSort("Available first"); }}>Reset</Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            onSearch("");
+            onSort("Available first");
+          }}
+        >
+          Reset
+        </Button>
       </FilterBar>
 
       <Card>
         <CardHeader>
           <div>
             <CardTitle>My Actions</CardTitle>
-            <CardDescription>Current role: {role}. Ready actions can be submitted now; locked actions show the required role.</CardDescription>
+            <CardDescription>
+              Current role: {role}. Ready actions can be submitted now; locked actions show the
+              required role.
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -3507,15 +5337,27 @@ function RoleActionPanel({
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-start gap-3">
-                          <div className={item.enabled ? "rounded-lg border border-info/25 bg-info/5 p-2 text-info" : "rounded-lg border border-border bg-background p-2 text-muted-foreground"}>
+                          <div
+                            className={
+                              item.enabled
+                                ? "rounded-lg border border-info/25 bg-info/5 p-2 text-info"
+                                : "rounded-lg border border-border bg-background p-2 text-muted-foreground"
+                            }
+                          >
                             <Icon className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
-                            <div className="text-sm font-semibold text-foreground">{item.title}</div>
-                            <div className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</div>
+                            <div className="text-sm font-semibold text-foreground">
+                              {item.title}
+                            </div>
+                            <div className="mt-1 text-xs leading-5 text-muted-foreground">
+                              {item.description}
+                            </div>
                           </div>
                         </div>
-                        <StatusPill tone={item.enabled ? "success" : "muted"}>{item.enabled ? "Ready" : "Locked"}</StatusPill>
+                        <StatusPill tone={item.enabled ? "success" : "muted"}>
+                          {item.enabled ? "Ready" : "Locked"}
+                        </StatusPill>
                       </div>
                       <div className="grid gap-2 text-xs">
                         <div className="rounded-md border border-border bg-background px-3 py-2">
@@ -3534,13 +5376,21 @@ function RoleActionPanel({
                         </div>
                         <div className="rounded-md border border-border bg-background px-3 py-2">
                           <div className="font-medium text-muted-foreground">System record</div>
-                          <div className="mt-0.5 font-semibold text-foreground">{item.resource}</div>
+                          <div className="mt-0.5 font-semibold text-foreground">
+                            {item.resource}
+                          </div>
                         </div>
                       </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="text-xs text-muted-foreground">{item.enabled ? "You can submit this action now." : item.lockedReason}</span>
-                      <Button size="sm" disabled={!item.enabled} onClick={() => onAction(item.type)}>
+                      <span className="text-xs text-muted-foreground">
+                        {item.enabled ? "You can submit this action now." : item.lockedReason}
+                      </span>
+                      <Button
+                        size="sm"
+                        disabled={!item.enabled}
+                        onClick={() => onAction(item.type)}
+                      >
                         {item.enabled ? "Start" : "Locked"}
                       </Button>
                     </div>
@@ -3571,17 +5421,21 @@ function RenalOverviewActionDrawer({
   onOpenChange: (open: boolean) => void;
 }) {
   const access = useRenalAccess();
-  const activeAlert = action?.type === "alert"
-    ? action.alert ?? mockRenalAlerts.find((alert) => alert.status !== "Acknowledged")
-    : action?.alert;
+  const activeAlert =
+    action?.type === "alert"
+      ? (action.alert ?? mockRenalAlerts.find((alert) => alert.status !== "Acknowledged"))
+      : action?.alert;
   const newEntryWorkflow = action?.type === "entry" && !action.chart && !action.entryMode;
   if (newEntryWorkflow) {
     return <RenalEntryWorkflowModal open={open} onOpenChange={onOpenChange} access={access} />;
   }
 
-  const chart = action?.chart
-    ?? (activeAlert ? getRenalChartByPatient(activeAlert.patientId) : undefined)
-    ?? mockRenalCharts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left))[0];
+  const chart =
+    action?.chart ??
+    (activeAlert ? getRenalChartByPatient(activeAlert.patientId) : undefined) ??
+    mockRenalCharts
+      .slice()
+      .sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left))[0];
   const entryModal = action?.type === "entry" && Boolean(chart);
   const labsModal = action?.type === "labs" && Boolean(chart);
   const orderModal = action?.type === "order" && Boolean(chart);
@@ -3589,30 +5443,49 @@ function RenalOverviewActionDrawer({
   const alertModal = action?.type === "alert" && Boolean(activeAlert);
   const billingModal = action?.type === "billing";
   const canSubmit =
-    action?.type === "entry" ? access.canEnterIO
-      : action?.type === "review" ? access.canReview
-        : action?.type === "labs" ? access.canUpdateLabs
-          : action?.type === "order" ? access.canReview
-            : action?.type === "billing" ? access.canBill
+    action?.type === "entry"
+      ? access.canEnterIO
+      : action?.type === "review"
+        ? access.canReview
+        : action?.type === "labs"
+          ? access.canUpdateLabs
+          : action?.type === "order"
+            ? access.canReview
+            : action?.type === "billing"
+              ? access.canBill
               : Boolean(action) && (access.canReview || access.canEnterIO);
   const title =
-    action?.type === "entry" && action.entryMode === "intake" ? "Add intake entry"
-      : action?.type === "entry" && action.entryMode === "output" ? "Add output entry"
-        : action?.type === "entry" ? "New renal entry"
-      : action?.type === "review" ? "Sign renal report"
-        : action?.type === "labs" ? "Update renal labs"
-          : action?.type === "order" ? "Add renal order"
-            : action?.type === "billing" ? "Dialysis billing handoff"
-              : "Renal alert action";
+    action?.type === "entry" && action.entryMode === "intake"
+      ? "Add intake entry"
+      : action?.type === "entry" && action.entryMode === "output"
+        ? "Add output entry"
+        : action?.type === "entry"
+          ? "New renal entry"
+          : action?.type === "review"
+            ? "Sign renal report"
+            : action?.type === "labs"
+              ? "Update renal labs"
+              : action?.type === "order"
+                ? "Add renal order"
+                : action?.type === "billing"
+                  ? "Dialysis billing handoff"
+                  : "Renal alert action";
   const primaryLabel =
-    action?.type === "entry" && action.entryMode === "intake" ? "Save intake entry"
-      : action?.type === "entry" && action.entryMode === "output" ? "Save output entry"
-        : action?.type === "entry" ? "Save I/O entry"
-      : action?.type === "review" ? "Sign renal report"
-        : action?.type === "labs" ? "Save lab update"
-          : action?.type === "order" ? "Save renal order"
-            : action?.type === "billing" ? "Prepare billing handoff"
-              : "Acknowledge alert";
+    action?.type === "entry" && action.entryMode === "intake"
+      ? "Save intake entry"
+      : action?.type === "entry" && action.entryMode === "output"
+        ? "Save output entry"
+        : action?.type === "entry"
+          ? "Save I/O entry"
+          : action?.type === "review"
+            ? "Sign renal report"
+            : action?.type === "labs"
+              ? "Save lab update"
+              : action?.type === "order"
+                ? "Save renal order"
+                : action?.type === "billing"
+                  ? "Prepare billing handoff"
+                  : "Acknowledge alert";
 
   if (entryModal && chart) {
     return (
@@ -3691,22 +5564,28 @@ function RenalOverviewActionDrawer({
       open={open}
       onOpenChange={onOpenChange}
       title={title}
-      description={chart ? `${patientName(chart.patientId)} • ${chart.bedNo} • ${access.role}` : access.role}
+      description={
+        chart ? `${patientName(chart.patientId)} • ${chart.bedNo} • ${access.role}` : access.role
+      }
       className="md:w-[620px]"
-      footer={action ? (
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button
-            disabled={!canSubmit}
-            onClick={() => {
-              toast.success(`${primaryLabel} recorded in static renal workflow`);
-              onOpenChange(false);
-            }}
-          >
-            {primaryLabel}
-          </Button>
-        </div>
-      ) : undefined}
+      footer={
+        action ? (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!canSubmit}
+              onClick={() => {
+                toast.success(`${primaryLabel} recorded in static renal workflow`);
+                onOpenChange(false);
+              }}
+            >
+              {primaryLabel}
+            </Button>
+          </div>
+        ) : undefined
+      }
     >
       {action ? (
         <div className="space-y-4">
@@ -3715,11 +5594,15 @@ function RenalOverviewActionDrawer({
               Your current role can view this action, but cannot submit it.
             </AlertBanner>
           ) : null}
-          {action.type === "entry" && chart ? <RenalEntryActionForm chart={chart} mode={action.entryMode ?? "io"} /> : null}
+          {action.type === "entry" && chart ? (
+            <RenalEntryActionForm chart={chart} mode={action.entryMode ?? "io"} />
+          ) : null}
           {action.type === "review" && chart ? <RenalReviewActionForm chart={chart} /> : null}
           {action.type === "labs" && chart ? <RenalLabActionForm chart={chart} /> : null}
           {action.type === "billing" ? <RenalBillingActionForm /> : null}
-          {action.type === "alert" && activeAlert ? <RenalAlertActionForm alert={activeAlert} /> : null}
+          {action.type === "alert" && activeAlert ? (
+            <RenalAlertActionForm alert={activeAlert} />
+          ) : null}
         </div>
       ) : null}
     </Drawer>
@@ -3742,7 +5625,9 @@ function RenalEntryWorkflowModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(740px,90dvh)] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Create renal chart / entry</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Create renal chart / entry
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 Existing chart or new chart • {access.role}
               </Dialog.Description>
@@ -3760,12 +5645,50 @@ function RenalEntryWorkflowModal({
   );
 }
 
-const renalNewChartWardOptions = ["Assign current bed", "Renal ward", "ICU", "Ortho Ward", "Cardiac Ward", "Emergency observation"].map((item) => ({ value: item, label: item }));
-const renalFluidRestrictionOptions = ["No restriction", "1500 ml / 24h", "1800 ml / 24h", "2000 ml / 24h", "2200 ml / 24h"].map((item) => ({ value: item, label: item }));
-const renalNephrologistOptions = ["Assign nephrologist", "Dr. Mohan Ahluvia", "Dr. Ritu Menon", "Nephrology on call", "Not required"].map((item) => ({ value: item, label: item }));
-const renalTargetBalanceOptions = ["Neutral 0 ml", "+500 ml", "+750 ml", "-500 ml", "Doctor defined"].map((item) => ({ value: item, label: item }));
-const renalTimeSlotOptions = ["Current hour", "Previous hour", "Next hour", "Morning shift", "Evening shift", "Night shift"].map((item) => ({ value: item, label: item }));
-const renalEnteredByOptions = ["Current user", "Bedside nurse", "Shift in-charge", "ICU nurse", "Night nurse"].map((item) => ({ value: item, label: item }));
+const renalNewChartWardOptions = [
+  "Assign current bed",
+  "Renal ward",
+  "ICU",
+  "Ortho Ward",
+  "Cardiac Ward",
+  "Emergency observation",
+].map((item) => ({ value: item, label: item }));
+const renalFluidRestrictionOptions = [
+  "No restriction",
+  "1500 ml / 24h",
+  "1800 ml / 24h",
+  "2000 ml / 24h",
+  "2200 ml / 24h",
+].map((item) => ({ value: item, label: item }));
+const renalNephrologistOptions = [
+  "Assign nephrologist",
+  "Dr. Mohan Ahluvia",
+  "Dr. Ritu Menon",
+  "Nephrology on call",
+  "Not required",
+].map((item) => ({ value: item, label: item }));
+const renalTargetBalanceOptions = [
+  "Neutral 0 ml",
+  "+500 ml",
+  "+750 ml",
+  "-500 ml",
+  "Doctor defined",
+].map((item) => ({ value: item, label: item }));
+const renalTimeSlotOptions = [
+  "Current hour",
+  "Previous hour",
+  "Next hour",
+  "Morning shift",
+  "Evening shift",
+  "Night shift",
+].map((item) => ({ value: item, label: item }));
+const renalEnteredByOptions = [
+  "Current user",
+  "Bedside nurse",
+  "Shift in-charge",
+  "ICU nurse",
+  "Night nurse",
+].map((item) => ({ value: item, label: item }));
 
 function RenalEntryActionModal({
   chart,
@@ -3789,7 +5712,9 @@ function RenalEntryActionModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(680px,90dvh)] w-[min(620px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">{entryModeLabel(mode)} entry</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                {entryModeLabel(mode)} entry
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 {patientName(chart.patientId)} • {chart.bedNo} • {chart.ward}
               </Dialog.Description>
@@ -3804,7 +5729,9 @@ function RenalEntryActionModal({
             <RenalEntryActionForm chart={chart} mode={mode} />
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {
@@ -3841,7 +5768,9 @@ function RenalLabActionModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(620px,90dvh)] w-[min(620px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Update renal labs</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Update renal labs
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 {patientName(chart.patientId)} • {chart.bedNo} • {chart.ward}
               </Dialog.Description>
@@ -3856,7 +5785,9 @@ function RenalLabActionModal({
             <RenalLabActionForm chart={chart} />
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {
@@ -3897,11 +5828,14 @@ function RenalOrderActionModal({
   const [target, setTarget] = React.useState(templates[0].target);
   const [status, setStatus] = React.useState("Active");
 
-  const handleOrderChange = React.useCallback((value: string) => {
-    const template = templates.find((item) => item.order === value);
-    setOrderName(value);
-    setTarget(template?.target ?? "");
-  }, [templates]);
+  const handleOrderChange = React.useCallback(
+    (value: string) => {
+      const template = templates.find((item) => item.order === value);
+      setOrderName(value);
+      setTarget(template?.target ?? "");
+    },
+    [templates],
+  );
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -3910,7 +5844,9 @@ function RenalOrderActionModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(560px,90dvh)] w-[min(620px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Add renal order</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Add renal order
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 {patientName(chart.patientId)} • {chart.bedNo} • {chart.ward}
               </Dialog.Description>
@@ -3935,17 +5871,35 @@ function RenalOrderActionModal({
                 <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
                   <ActionInput label="Patient" value={patientName(chart.patientId)} readOnly />
                   <ActionInput label="Renal status" value={chart.renalStatus} readOnly />
-                  <ActionSelect label="Order" value={orderName} onChange={handleOrderChange} options={templates.map((item) => ({ value: item.order, label: item.order }))} />
-                  <ActionSelect label="Status" value={status} onChange={setStatus} options={["Active", "Pending sign", "Completed"].map((item) => ({ value: item, label: item }))} />
+                  <ActionSelect
+                    label="Order"
+                    value={orderName}
+                    onChange={handleOrderChange}
+                    options={templates.map((item) => ({ value: item.order, label: item.order }))}
+                  />
+                  <ActionSelect
+                    label="Status"
+                    value={status}
+                    onChange={setStatus}
+                    options={["Active", "Pending sign", "Completed"].map((item) => ({
+                      value: item,
+                      label: item,
+                    }))}
+                  />
                   <ActionInput label="Target / instruction" value={target} onChange={setTarget} />
                   <ActionInput label="Ordered by" value="Current doctor" readOnly />
                 </CardContent>
               </Card>
-              <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Clinical reason / order note" />
+              <textarea
+                className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                placeholder="Clinical reason / order note"
+              />
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {
@@ -3986,7 +5940,9 @@ function RenalSignReportModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(680px,90dvh)] w-[min(660px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Sign renal report</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Sign renal report
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 {patientName(chart.patientId)} • {chart.bedNo} • {chart.ward}
               </Dialog.Description>
@@ -4001,7 +5957,9 @@ function RenalSignReportModal({
             <RenalReviewActionForm chart={chart} />
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {
@@ -4040,9 +5998,12 @@ function RenalAlertActionModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(560px,90dvh)] w-[min(620px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Acknowledge renal alert</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Acknowledge renal alert
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
-                {patientName(alert.patientId)} • {chart ? `${chart.bedNo}, ${chart.ward}` : alert.owner} • {alert.severity}
+                {patientName(alert.patientId)} •{" "}
+                {chart ? `${chart.bedNo}, ${chart.ward}` : alert.owner} • {alert.severity}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -4062,7 +6023,9 @@ function RenalAlertActionModal({
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {
@@ -4091,7 +6054,10 @@ function RenalBillingActionModal({
   primaryLabel: string;
 }) {
   const defaultSelected = React.useMemo(
-    () => mockDialysisSessions.filter((session) => session.status === "Billing pending").map((session) => session.id),
+    () =>
+      mockDialysisSessions
+        .filter((session) => session.status === "Billing pending")
+        .map((session) => session.id),
     [],
   );
   const [search, setSearch] = React.useState("");
@@ -4102,7 +6068,9 @@ function RenalBillingActionModal({
   const [handoffTo, setHandoffTo] = React.useState("Billing desk");
   const [patientScope, setPatientScope] = React.useState("All patients");
   const [singlePatientId, setSinglePatientId] = React.useState(mockRenalCharts[0]?.patientId ?? "");
-  const [selectedPatientIds, setSelectedPatientIds] = React.useState<string[]>(() => mockRenalCharts.map((chart) => chart.patientId));
+  const [selectedPatientIds, setSelectedPatientIds] = React.useState<string[]>(() =>
+    mockRenalCharts.map((chart) => chart.patientId),
+  );
   const [selectedIds, setSelectedIds] = React.useState<string[]>(defaultSelected);
   const scopedPatientIds = React.useMemo(() => {
     if (patientScope === "Individual patient") return singlePatientId ? [singlePatientId] : [];
@@ -4113,28 +6081,50 @@ function RenalBillingActionModal({
   const rows = React.useMemo(() => {
     return mockDialysisSessions.filter((session) => {
       const matchesPatientScope = scopedPatientSet.has(session.patientId);
-      const matchesSearch = search.trim() ? includes(dialysisSessionSearchText(session), search.trim()) : true;
+      const matchesSearch = search.trim()
+        ? includes(dialysisSessionSearchText(session), search.trim())
+        : true;
       const matchesStatus = statusFilter === "All status" || session.status === statusFilter;
       return matchesPatientScope && matchesSearch && matchesStatus;
     });
   }, [scopedPatientSet, search, statusFilter]);
-  const selectedSessions = mockDialysisSessions.filter((session) => selectedIds.includes(session.id));
-  const selectedEstimate = selectedSessions.reduce((total, session) => total + dialysisBillingAmount(session, packageMode), 0);
+  const selectedSessions = mockDialysisSessions.filter((session) =>
+    selectedIds.includes(session.id),
+  );
+  const selectedEstimate = selectedSessions.reduce(
+    (total, session) => total + dialysisBillingAmount(session, packageMode),
+    0,
+  );
   const visibleIds = rows.map((session) => session.id);
   const visibleSelectedCount = visibleIds.filter((id) => selectedIds.includes(id)).length;
-  const patientOptions = mockRenalCharts.map((chart) => ({ value: chart.patientId, label: `${patientName(chart.patientId)} - ${chart.bedNo}, ${chart.ward}` }));
+  const patientOptions = mockRenalCharts.map((chart) => ({
+    value: chart.patientId,
+    label: `${patientName(chart.patientId)} - ${chart.bedNo}, ${chart.ward}`,
+  }));
 
   const toggleSession = React.useCallback((sessionId: string) => {
-    setSelectedIds((current) => current.includes(sessionId) ? current.filter((id) => id !== sessionId) : [...current, sessionId]);
+    setSelectedIds((current) =>
+      current.includes(sessionId)
+        ? current.filter((id) => id !== sessionId)
+        : [...current, sessionId],
+    );
   }, []);
 
   const togglePatient = React.useCallback((patientId: string) => {
-    setSelectedPatientIds((current) => current.includes(patientId) ? current.filter((id) => id !== patientId) : [...current, patientId]);
+    setSelectedPatientIds((current) =>
+      current.includes(patientId)
+        ? current.filter((id) => id !== patientId)
+        : [...current, patientId],
+    );
   }, []);
 
   const applyPatientScope = React.useCallback(() => {
     const scopedSessionIds = mockDialysisSessions
-      .filter((session) => scopedPatientSet.has(session.patientId) && (statusFilter === "All status" || session.status === statusFilter))
+      .filter(
+        (session) =>
+          scopedPatientSet.has(session.patientId) &&
+          (statusFilter === "All status" || session.status === statusFilter),
+      )
       .map((session) => session.id);
     setSelectedIds(scopedSessionIds);
   }, [scopedPatientSet, statusFilter]);
@@ -4154,9 +6144,12 @@ function RenalBillingActionModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(720px,90dvh)] w-[min(780px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Prepare dialysis billing</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Prepare dialysis billing
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
-                Select dialysis sessions, confirm billing package, and send billing-ready service rows.
+                Select dialysis sessions, confirm billing package, and send billing-ready service
+                rows.
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -4170,31 +6163,87 @@ function RenalBillingActionModal({
             <div className="space-y-4">
               {!canSubmit ? (
                 <AlertBanner icon={ShieldAlert} tone="warning" title="Role limited">
-                  Your current role can view dialysis billing, but cannot prepare the billing handoff.
+                  Your current role can view dialysis billing, but cannot prepare the billing
+                  handoff.
                 </AlertBanner>
               ) : null}
               <AlertBanner icon={FileText} tone="info" title="Billing handoff">
-                Clinical dialysis details stay read-only. Billing receives selected service rows, package, payer status, and priority.
+                Clinical dialysis details stay read-only. Billing receives selected service rows,
+                package, payer status, and priority.
               </AlertBanner>
 
               <div className="grid gap-3 sm:grid-cols-3">
-                <RenalMetricCard label="Selected sessions" value={selectedSessions.length} subtext={`${visibleSelectedCount} visible`} tone={selectedSessions.length ? "success" : "warning"} />
-                <RenalMetricCard label="Estimated amount" value={formatInr(selectedEstimate)} subtext={packageMode} tone="info" />
-                <RenalMetricCard label="Billing pending" value={mockDialysisSessions.filter((session) => session.status === "Billing pending").length} subtext="Open service rows" tone="warning" />
+                <RenalMetricCard
+                  label="Selected sessions"
+                  value={selectedSessions.length}
+                  subtext={`${visibleSelectedCount} visible`}
+                  tone={selectedSessions.length ? "success" : "warning"}
+                />
+                <RenalMetricCard
+                  label="Estimated amount"
+                  value={formatInr(selectedEstimate)}
+                  subtext={packageMode}
+                  tone="info"
+                />
+                <RenalMetricCard
+                  label="Billing pending"
+                  value={
+                    mockDialysisSessions.filter((session) => session.status === "Billing pending")
+                      .length
+                  }
+                  subtext="Open service rows"
+                  tone="warning"
+                />
               </div>
 
               <Card>
                 <CardHeader>
                   <div>
                     <CardTitle>Billing setup</CardTitle>
-                    <CardDescription>Choose how selected dialysis sessions should be handed over.</CardDescription>
+                    <CardDescription>
+                      Choose how selected dialysis sessions should be handed over.
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
-                  <ActionSelect label="Package" value={packageMode} onChange={setPackageMode} options={["Procedure only", "Consumables included", "Emergency add-on"].map((item) => ({ value: item, label: item }))} />
-                  <ActionSelect label="Payer status" value={payerStatus} onChange={setPayerStatus} options={["Cash billing", "Insurance / TPA review", "Corporate panel", "Government scheme"].map((item) => ({ value: item, label: item }))} />
-                  <ActionSelect label="Priority" value={priority} onChange={setPriority} options={["Routine", "Discharge priority", "Emergency billing", "Hold for clarification"].map((item) => ({ value: item, label: item }))} />
-                  <ActionSelect label="Handoff to" value={handoffTo} onChange={setHandoffTo} options={["Billing desk", "TPA desk", "Cash counter", "Discharge billing"].map((item) => ({ value: item, label: item }))} />
+                  <ActionSelect
+                    label="Package"
+                    value={packageMode}
+                    onChange={setPackageMode}
+                    options={["Procedure only", "Consumables included", "Emergency add-on"].map(
+                      (item) => ({ value: item, label: item }),
+                    )}
+                  />
+                  <ActionSelect
+                    label="Payer status"
+                    value={payerStatus}
+                    onChange={setPayerStatus}
+                    options={[
+                      "Cash billing",
+                      "Insurance / TPA review",
+                      "Corporate panel",
+                      "Government scheme",
+                    ].map((item) => ({ value: item, label: item }))}
+                  />
+                  <ActionSelect
+                    label="Priority"
+                    value={priority}
+                    onChange={setPriority}
+                    options={[
+                      "Routine",
+                      "Discharge priority",
+                      "Emergency billing",
+                      "Hold for clarification",
+                    ].map((item) => ({ value: item, label: item }))}
+                  />
+                  <ActionSelect
+                    label="Handoff to"
+                    value={handoffTo}
+                    onChange={setHandoffTo}
+                    options={["Billing desk", "TPA desk", "Cash counter", "Discharge billing"].map(
+                      (item) => ({ value: item, label: item }),
+                    )}
+                  />
                 </CardContent>
               </Card>
 
@@ -4202,7 +6251,9 @@ function RenalBillingActionModal({
                 <CardHeader>
                   <div>
                     <CardTitle>Patient selection</CardTitle>
-                    <CardDescription>Filter billing rows by all patients, one patient, or selected patients.</CardDescription>
+                    <CardDescription>
+                      Filter billing rows by all patients, one patient, or selected patients.
+                    </CardDescription>
                   </div>
                   <Badge tone="info">{scopedPatientIds.length} patients</Badge>
                 </CardHeader>
@@ -4212,16 +6263,27 @@ function RenalBillingActionModal({
                       label="Patient scope"
                       value={patientScope}
                       onChange={setPatientScope}
-                      options={["All patients", "Individual patient", "Selected patients"].map((item) => ({ value: item, label: item }))}
+                      options={["All patients", "Individual patient", "Selected patients"].map(
+                        (item) => ({ value: item, label: item }),
+                      )}
                     />
                     {patientScope === "Individual patient" ? (
-                      <ActionSelect label="Patient" value={singlePatientId} onChange={setSinglePatientId} options={patientOptions} />
+                      <ActionSelect
+                        label="Patient"
+                        value={singlePatientId}
+                        onChange={setSinglePatientId}
+                        options={patientOptions}
+                      />
                     ) : (
                       <div className="text-xs text-muted-foreground">
-                        {patientScope === "All patients" ? "Showing dialysis sessions for every active renal chart." : "Choose multiple patients below."}
+                        {patientScope === "All patients"
+                          ? "Showing dialysis sessions for every active renal chart."
+                          : "Choose multiple patients below."}
                       </div>
                     )}
-                    <Button variant="outline" onClick={applyPatientScope}>Apply scope</Button>
+                    <Button variant="outline" onClick={applyPatientScope}>
+                      Apply scope
+                    </Button>
                   </div>
 
                   {patientScope === "Selected patients" ? (
@@ -4229,7 +6291,14 @@ function RenalBillingActionModal({
                       {mockRenalCharts.map((chart) => {
                         const checked = selectedPatientIds.includes(chart.patientId);
                         return (
-                          <label className={checked ? "flex min-h-[68px] items-start gap-3 rounded-lg border border-info bg-info/5 p-3" : "flex min-h-[68px] items-start gap-3 rounded-lg border border-border bg-surface-muted p-3"} key={chart.id}>
+                          <label
+                            className={
+                              checked
+                                ? "flex min-h-[68px] items-start gap-3 rounded-lg border border-info bg-info/5 p-3"
+                                : "flex min-h-[68px] items-start gap-3 rounded-lg border border-border bg-surface-muted p-3"
+                            }
+                            key={chart.id}
+                          >
                             <input
                               checked={checked}
                               className="mt-1 h-4 w-4 rounded border-input"
@@ -4237,8 +6306,12 @@ function RenalBillingActionModal({
                               type="checkbox"
                             />
                             <span className="min-w-0">
-                              <span className="block truncate text-sm font-semibold text-foreground">{patientName(chart.patientId)}</span>
-                              <span className="mt-1 block text-xs text-muted-foreground">{chart.bedNo} • {chart.ward} • {chart.renalStatus}</span>
+                              <span className="block truncate text-sm font-semibold text-foreground">
+                                {patientName(chart.patientId)}
+                              </span>
+                              <span className="mt-1 block text-xs text-muted-foreground">
+                                {chart.bedNo} • {chart.ward} • {chart.renalStatus}
+                              </span>
                             </span>
                           </label>
                         );
@@ -4252,7 +6325,9 @@ function RenalBillingActionModal({
                 <CardHeader>
                   <div>
                     <CardTitle>Dialysis sessions</CardTitle>
-                    <CardDescription>Select one or more sessions for billing handoff.</CardDescription>
+                    <CardDescription>
+                      Select one or more sessions for billing handoff.
+                    </CardDescription>
                   </div>
                   <Badge tone="info">{rows.length} shown</Badge>
                 </CardHeader>
@@ -4267,9 +6342,24 @@ function RenalBillingActionModal({
                         placeholder="Search patient, session, modality, access..."
                       />
                     </div>
-                    <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={["All status", "Scheduled", "In progress", "Completed", "Billing pending"]} />
-                    <Button size="sm" variant="outline" onClick={selectVisible}>Select shown</Button>
-                    <Button size="sm" variant="outline" onClick={clearVisible}>Clear shown</Button>
+                    <NativeSelect
+                      label="Status"
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                      options={[
+                        "All status",
+                        "Scheduled",
+                        "In progress",
+                        "Completed",
+                        "Billing pending",
+                      ]}
+                    />
+                    <Button size="sm" variant="outline" onClick={selectVisible}>
+                      Select shown
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={clearVisible}>
+                      Clear shown
+                    </Button>
                   </div>
 
                   {rows.length ? (
@@ -4279,7 +6369,11 @@ function RenalBillingActionModal({
                         const chart = getRenalChartByPatient(session.patientId);
                         return (
                           <label
-                            className={checked ? "flex gap-3 rounded-lg border border-info bg-info/5 p-3" : "flex gap-3 rounded-lg border border-border bg-surface-muted p-3"}
+                            className={
+                              checked
+                                ? "flex gap-3 rounded-lg border border-info bg-info/5 p-3"
+                                : "flex gap-3 rounded-lg border border-border bg-surface-muted p-3"
+                            }
                             key={session.id}
                           >
                             <input
@@ -4291,16 +6385,35 @@ function RenalBillingActionModal({
                             <span className="min-w-0 flex-1">
                               <span className="flex flex-wrap items-start justify-between gap-3">
                                 <span>
-                                  <span className="block text-sm font-semibold text-foreground">{session.sessionNo} • {patientName(session.patientId)}</span>
-                                  <span className="mt-1 block text-xs text-muted-foreground">{session.modality} • {session.scheduledAt} • {session.accessSite}</span>
+                                  <span className="block text-sm font-semibold text-foreground">
+                                    {session.sessionNo} • {patientName(session.patientId)}
+                                  </span>
+                                  <span className="mt-1 block text-xs text-muted-foreground">
+                                    {session.modality} • {session.scheduledAt} •{" "}
+                                    {session.accessSite}
+                                  </span>
                                 </span>
-                                <StatusPill tone={statusTone(session.status)}>{session.status}</StatusPill>
+                                <StatusPill tone={statusTone(session.status)}>
+                                  {session.status}
+                                </StatusPill>
                               </span>
                               <span className="mt-3 grid gap-2 text-xs sm:grid-cols-4">
-                                <RenalAlertMeta label="Bed / ward" value={chart ? `${chart.bedNo} • ${chart.ward}` : "No chart"} />
-                                <RenalAlertMeta label="UF target" value={formatMl(session.ufTargetMl)} />
-                                <RenalAlertMeta label="UF removed" value={formatMl(session.ufRemovedMl)} />
-                                <RenalAlertMeta label="Estimate" value={formatInr(dialysisBillingAmount(session, packageMode))} />
+                                <RenalAlertMeta
+                                  label="Bed / ward"
+                                  value={chart ? `${chart.bedNo} • ${chart.ward}` : "No chart"}
+                                />
+                                <RenalAlertMeta
+                                  label="UF target"
+                                  value={formatMl(session.ufTargetMl)}
+                                />
+                                <RenalAlertMeta
+                                  label="UF removed"
+                                  value={formatMl(session.ufRemovedMl)}
+                                />
+                                <RenalAlertMeta
+                                  label="Estimate"
+                                  value={formatInr(dialysisBillingAmount(session, packageMode))}
+                                />
                               </span>
                             </span>
                           </label>
@@ -4308,21 +6421,33 @@ function RenalBillingActionModal({
                       })}
                     </div>
                   ) : (
-                    <EmptyState icon={Search} title="No dialysis sessions found" description="Adjust search or status filter to find billing rows." className="min-h-40" />
+                    <EmptyState
+                      icon={Search}
+                      title="No dialysis sessions found"
+                      description="Adjust search or status filter to find billing rows."
+                      className="min-h-40"
+                    />
                   )}
                 </CardContent>
               </Card>
 
-              <textarea className="min-h-[88px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Billing note / package clarification / payer instruction" />
+              <textarea
+                className="min-h-[88px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                placeholder="Billing note / package clarification / payer instruction"
+              />
             </div>
           </div>
 
           <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-muted-foreground">
-              {selectedSessions.length ? `${selectedSessions.length} session${selectedSessions.length === 1 ? "" : "s"} selected • ${formatInr(selectedEstimate)}` : "Select at least one session to continue."}
+              {selectedSessions.length
+                ? `${selectedSessions.length} session${selectedSessions.length === 1 ? "" : "s"} selected • ${formatInr(selectedEstimate)}`
+                : "Select at least one session to continue."}
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
               <Button
                 disabled={!canSubmit || !selectedSessions.length}
                 onClick={() => {
@@ -4330,7 +6455,9 @@ function RenalBillingActionModal({
                     toast.error("Select at least one dialysis session");
                     return;
                   }
-                  toast.success(`${primaryLabel}: ${selectedSessions.length} session${selectedSessions.length === 1 ? "" : "s"} sent to ${handoffTo} (${formatInr(selectedEstimate)})`);
+                  toast.success(
+                    `${primaryLabel}: ${selectedSessions.length} session${selectedSessions.length === 1 ? "" : "s"} sent to ${handoffTo} (${formatInr(selectedEstimate)})`,
+                  );
                   onOpenChange(false);
                 }}
               >
@@ -4351,21 +6478,37 @@ function NewRenalEntryWorkflow({
   access: ReturnType<typeof useRenalAccess>;
   onOpenChange: (open: boolean) => void;
 }) {
-  const existingCharts = React.useMemo(() => mockRenalCharts.slice().sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left)), []);
-  const newCandidates = React.useMemo(() => mockPatients.filter((patient) => !getRenalChartByPatient(patient.id)), []);
+  const existingCharts = React.useMemo(
+    () =>
+      mockRenalCharts
+        .slice()
+        .sort((left, right) => renalPriorityScore(right) - renalPriorityScore(left)),
+    [],
+  );
+  const newCandidates = React.useMemo(
+    () => mockPatients.filter((patient) => !getRenalChartByPatient(patient.id)),
+    [],
+  );
   const [scenario, setScenario] = React.useState<"existing" | "new">("new");
   const [entryMode, setEntryMode] = React.useState<RenalEntryMode>("io");
-  const [selectedExistingId, setSelectedExistingId] = React.useState(existingCharts[0]?.patientId ?? "");
+  const [selectedExistingId, setSelectedExistingId] = React.useState(
+    existingCharts[0]?.patientId ?? "",
+  );
   const [selectedNewId, setSelectedNewId] = React.useState(newCandidates[0]?.id ?? "");
   const [newBedWard, setNewBedWard] = React.useState("Assign current bed");
   const [newFluidRestriction, setNewFluidRestriction] = React.useState("1800 ml / 24h");
   const [newConsultant, setNewConsultant] = React.useState("Use visit provider");
   const [newNephrologist, setNewNephrologist] = React.useState("Assign nephrologist");
   const [newTargetBalance, setNewTargetBalance] = React.useState("+500 ml");
-  const selectedChart = existingCharts.find((chart) => chart.patientId === selectedExistingId) ?? existingCharts[0];
-  const selectedNewPatient = newCandidates.find((patient) => patient.id === selectedNewId) ?? newCandidates[0];
-  const selectedPatient = scenario === "existing" ? getPatientById(selectedChart?.patientId ?? "") : selectedNewPatient;
-  const selectedVisit = selectedPatient ? mockPatientVisits.find((visit) => visit.patientId === selectedPatient.id) : undefined;
+  const selectedChart =
+    existingCharts.find((chart) => chart.patientId === selectedExistingId) ?? existingCharts[0];
+  const selectedNewPatient =
+    newCandidates.find((patient) => patient.id === selectedNewId) ?? newCandidates[0];
+  const selectedPatient =
+    scenario === "existing" ? getPatientById(selectedChart?.patientId ?? "") : selectedNewPatient;
+  const selectedVisit = selectedPatient
+    ? mockPatientVisits.find((visit) => visit.patientId === selectedPatient.id)
+    : undefined;
   const newPatientBlocked = scenario === "new" && selectedNewPatient?.status === "Deceased";
   const canSubmit = access.canEnterIO && Boolean(selectedPatient) && !newPatientBlocked;
   const submitLabel = scenario === "existing" ? "Save entry" : "Create chart";
@@ -4375,16 +6518,21 @@ function NewRenalEntryWorkflow({
   }));
   const newPatientOptions = newCandidates.length
     ? newCandidates.map((patient) => {
-      const visit = mockPatientVisits.find((item) => item.patientId === patient.id);
-      const blocked = patient.status === "Deceased";
-      return {
-        value: patient.id,
-        label: `${patientRecordName(patient)} - ${patient.uhid} - ${visit?.visitType ?? patient.department}${blocked ? " - blocked" : ""}`,
-      };
-    })
+        const visit = mockPatientVisits.find((item) => item.patientId === patient.id);
+        const blocked = patient.status === "Deceased";
+        return {
+          value: patient.id,
+          label: `${patientRecordName(patient)} - ${patient.uhid} - ${visit?.visitType ?? patient.department}${blocked ? " - blocked" : ""}`,
+        };
+      })
     : [{ value: "", label: "No patient available for new renal chart" }];
   const consultantOptions = [
-    { value: "Use visit provider", label: selectedVisit?.provider ? `Use visit provider - ${selectedVisit.provider}` : "Use visit provider" },
+    {
+      value: "Use visit provider",
+      label: selectedVisit?.provider
+        ? `Use visit provider - ${selectedVisit.provider}`
+        : "Use visit provider",
+    },
     { value: "Dr. Aman Verma", label: "Dr. Aman Verma" },
     { value: "Dr. Neha Malik", label: "Dr. Neha Malik" },
     { value: "Dr. Kavita Rao", label: "Dr. Kavita Rao" },
@@ -4402,103 +6550,191 @@ function NewRenalEntryWorkflow({
     }
 
     if (scenario === "existing") {
-      toast.success(`${entryModeLabel(entryMode)} staged for existing renal chart: ${patientRecordName(selectedPatient)}`);
+      toast.success(
+        `${entryModeLabel(entryMode)} staged for existing renal chart: ${patientRecordName(selectedPatient)}`,
+      );
     } else {
-      toast.success(`New renal chart created for ${patientRecordName(selectedPatient)} - ${newBedWard}, target ${newTargetBalance}`);
+      toast.success(
+        `New renal chart created for ${patientRecordName(selectedPatient)} - ${newBedWard}, target ${newTargetBalance}`,
+      );
     }
     onOpenChange(false);
-  }, [access.canEnterIO, entryMode, newBedWard, newPatientBlocked, newTargetBalance, onOpenChange, scenario, selectedPatient]);
+  }, [
+    access.canEnterIO,
+    entryMode,
+    newBedWard,
+    newPatientBlocked,
+    newTargetBalance,
+    onOpenChange,
+    scenario,
+    selectedPatient,
+  ]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="border-b border-border p-3">
         <div className="grid gap-3 md:grid-cols-[auto_1fr_auto] md:items-center">
-          <Tabs value={scenario} onValueChange={(value) => setScenario(value as "existing" | "new")}>
+          <Tabs
+            value={scenario}
+            onValueChange={(value) => setScenario(value as "existing" | "new")}
+          >
             <TabsList className="grid h-9 w-full grid-cols-2 overflow-visible p-1 md:w-[220px]">
-              <TabsTrigger className="min-w-0 px-2" value="new">New chart</TabsTrigger>
-              <TabsTrigger className="min-w-0 px-2" value="existing">Existing</TabsTrigger>
+              <TabsTrigger className="min-w-0 px-2" value="new">
+                New chart
+              </TabsTrigger>
+              <TabsTrigger className="min-w-0 px-2" value="existing">
+                Existing
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           {scenario === "existing" ? (
-            <ActionSelect label="Existing renal chart" value={selectedExistingId} onChange={setSelectedExistingId} options={existingChartOptions} />
+            <ActionSelect
+              label="Existing renal chart"
+              value={selectedExistingId}
+              onChange={setSelectedExistingId}
+              options={existingChartOptions}
+            />
           ) : (
-            <ActionSelect label="Patient for new chart" value={selectedNewId} onChange={setSelectedNewId} options={newPatientOptions} />
+            <ActionSelect
+              label="Patient for new chart"
+              value={selectedNewId}
+              onChange={setSelectedNewId}
+              options={newPatientOptions}
+            />
           )}
-          <Badge tone={scenario === "existing" ? "info" : "warning"}>{scenario === "existing" ? `${existingCharts.length} charts` : `${newCandidates.length} candidates`}</Badge>
+          <Badge tone={scenario === "existing" ? "info" : "warning"}>
+            {scenario === "existing"
+              ? `${existingCharts.length} charts`
+              : `${newCandidates.length} candidates`}
+          </Badge>
         </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold text-foreground">{selectedPatient ? patientRecordName(selectedPatient) : "Select patient"}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {selectedPatient ? `${selectedPatient.uhid} • ${selectedVisit?.visitType ?? selectedPatient.department}` : "Choose a patient from the dropdown."}
-                  </div>
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-foreground">
+                  {selectedPatient ? patientRecordName(selectedPatient) : "Select patient"}
                 </div>
-                {scenario === "existing" && selectedChart ? <RenalStatusBadge status={selectedChart.renalStatus} /> : <Badge tone="info">New renal chart</Badge>}
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {selectedPatient
+                    ? `${selectedPatient.uhid} • ${selectedVisit?.visitType ?? selectedPatient.department}`
+                    : "Choose a patient from the dropdown."}
+                </div>
               </div>
-              {newPatientBlocked ? (
-                <div className="mt-3">
-                  <AlertBanner icon={ShieldAlert} tone="danger" title="Patient blocked">
-                    Deceased/read-only records cannot start a new renal chart.
-                  </AlertBanner>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <label className="space-y-1 text-sm sm:col-span-3">
-                <span className="font-medium text-foreground">Entry type</span>
-                <Tabs value={entryMode} onValueChange={(value) => setEntryMode(value as RenalEntryMode)}>
-                  <TabsList className="grid h-9 w-full grid-cols-3 overflow-visible p-1">
-                    <TabsTrigger className="min-w-0 px-2" value="io">I/O</TabsTrigger>
-                    <TabsTrigger className="min-w-0 px-2" value="intake">Intake</TabsTrigger>
-                    <TabsTrigger className="min-w-0 px-2" value="output">Output</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </label>
               {scenario === "existing" && selectedChart ? (
-                <>
-                  <ActionInput label="Bed / Ward" value={`${selectedChart.bedNo} • ${selectedChart.ward}`} readOnly />
-                  <ActionInput label="Fluid restriction" value={formatMl(selectedChart.fluidRestrictionMl)} readOnly />
-                </>
+                <RenalStatusBadge status={selectedChart.renalStatus} />
               ) : (
-                <>
-                  <ActionSelect label="Bed / Ward" value={newBedWard} onChange={setNewBedWard} options={renalNewChartWardOptions} />
-                  <ActionSelect label="Fluid restriction" value={newFluidRestriction} onChange={setNewFluidRestriction} options={renalFluidRestrictionOptions} />
-                </>
+                <Badge tone="info">New renal chart</Badge>
               )}
             </div>
-
-            {scenario === "new" ? (
-              <div className="grid gap-3 sm:grid-cols-3">
-                <ActionSelect label="Consultant" value={newConsultant} onChange={setNewConsultant} options={consultantOptions} />
-                <ActionSelect label="Nephrologist" value={newNephrologist} onChange={setNewNephrologist} options={renalNephrologistOptions} />
-                <ActionSelect label="Target balance" value={newTargetBalance} onChange={setNewTargetBalance} options={renalTargetBalanceOptions} />
+            {newPatientBlocked ? (
+              <div className="mt-3">
+                <AlertBanner icon={ShieldAlert} tone="danger" title="Patient blocked">
+                  Deceased/read-only records cannot start a new renal chart.
+                </AlertBanner>
               </div>
             ) : null}
-
-            <RenalFirstEntryDraft mode={entryMode} />
           </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="space-y-1 text-sm sm:col-span-3">
+              <span className="font-medium text-foreground">Entry type</span>
+              <Tabs
+                value={entryMode}
+                onValueChange={(value) => setEntryMode(value as RenalEntryMode)}
+              >
+                <TabsList className="grid h-9 w-full grid-cols-3 overflow-visible p-1">
+                  <TabsTrigger className="min-w-0 px-2" value="io">
+                    I/O
+                  </TabsTrigger>
+                  <TabsTrigger className="min-w-0 px-2" value="intake">
+                    Intake
+                  </TabsTrigger>
+                  <TabsTrigger className="min-w-0 px-2" value="output">
+                    Output
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </label>
+            {scenario === "existing" && selectedChart ? (
+              <>
+                <ActionInput
+                  label="Bed / Ward"
+                  value={`${selectedChart.bedNo} • ${selectedChart.ward}`}
+                  readOnly
+                />
+                <ActionInput
+                  label="Fluid restriction"
+                  value={formatMl(selectedChart.fluidRestrictionMl)}
+                  readOnly
+                />
+              </>
+            ) : (
+              <>
+                <ActionSelect
+                  label="Bed / Ward"
+                  value={newBedWard}
+                  onChange={setNewBedWard}
+                  options={renalNewChartWardOptions}
+                />
+                <ActionSelect
+                  label="Fluid restriction"
+                  value={newFluidRestriction}
+                  onChange={setNewFluidRestriction}
+                  options={renalFluidRestrictionOptions}
+                />
+              </>
+            )}
+          </div>
+
+          {scenario === "new" ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <ActionSelect
+                label="Consultant"
+                value={newConsultant}
+                onChange={setNewConsultant}
+                options={consultantOptions}
+              />
+              <ActionSelect
+                label="Nephrologist"
+                value={newNephrologist}
+                onChange={setNewNephrologist}
+                options={renalNephrologistOptions}
+              />
+              <ActionSelect
+                label="Target balance"
+                value={newTargetBalance}
+                onChange={setNewTargetBalance}
+                options={renalTargetBalanceOptions}
+              />
+            </div>
+          ) : null}
+
+          <RenalFirstEntryDraft mode={entryMode} />
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-xs text-muted-foreground">
-          {scenario === "existing" ? "Saves an entry without recreating the renal chart." : "Creates chart context and first renal entry together."}
+          {scenario === "existing"
+            ? "Saves an entry without recreating the renal chart."
+            : "Creates chart context and first renal entry together."}
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-        {scenario === "existing" && selectedChart ? (
-          <Button variant="outline" asChild>
-            <Link href={`/renal/patients/${selectedChart.patientId}`}>Open chart</Link>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
           </Button>
-        ) : null}
-        <Button disabled={!canSubmit} onClick={handleSubmit}>
-          {submitLabel}
-        </Button>
+          {scenario === "existing" && selectedChart ? (
+            <Button variant="outline" asChild>
+              <Link href={`/renal/patients/${selectedChart.patientId}`}>Open chart</Link>
+            </Button>
+          ) : null}
+          <Button disabled={!canSubmit} onClick={handleSubmit}>
+            {submitLabel}
+          </Button>
         </div>
       </div>
     </div>
@@ -4520,7 +6756,12 @@ function RenalFirstEntryDraft({ mode }: { mode: RenalEntryMode }) {
         </div>
       </CardHeader>
       <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
-        <ActionSelect label="Time slot" value={timeSlot} onChange={setTimeSlot} options={renalTimeSlotOptions} />
+        <ActionSelect
+          label="Time slot"
+          value={timeSlot}
+          onChange={setTimeSlot}
+          options={renalTimeSlotOptions}
+        />
         {showIntake ? <ActionInput label="IV fluids (ml)" value="0" /> : null}
         {showIntake ? <ActionInput label="Oral intake (ml)" value="0" /> : null}
         {showIntake ? <ActionInput label="Med / flush (ml)" value="0" /> : null}
@@ -4528,21 +6769,34 @@ function RenalFirstEntryDraft({ mode }: { mode: RenalEntryMode }) {
         {showOutput ? <ActionInput label="Urine output (ml)" value="0" /> : null}
         {showOutput ? <ActionInput label="Drain output (ml)" value="0" /> : null}
         {showOutput ? <ActionInput label="Stool / other (ml)" value="0" /> : null}
-        <ActionSelect label="Entered by" value={enteredBy} onChange={setEnteredBy} options={renalEnteredByOptions} />
+        <ActionSelect
+          label="Entered by"
+          value={enteredBy}
+          onChange={setEnteredBy}
+          options={renalEnteredByOptions}
+        />
       </CardContent>
     </Card>
   );
 }
 
-function RenalEntryActionForm({ chart, mode = "io" }: { chart: RenalPatientChart; mode?: RenalEntryMode }) {
+function RenalEntryActionForm({
+  chart,
+  mode = "io",
+}: {
+  chart: RenalPatientChart;
+  mode?: RenalEntryMode;
+}) {
   const showIntake = mode !== "output";
   const showOutput = mode !== "intake";
-  const title = mode === "intake" ? "Intake entry" : mode === "output" ? "Output entry" : "Fast renal entry";
-  const helper = mode === "intake"
-    ? "Capture IV, oral intake, medication flush, and blood products for this time slot."
-    : mode === "output"
-      ? "Capture urine output, drain output, stool/other output, and bedside note."
-      : "Use this quick action for bedside intake, output, drain, and shift note capture.";
+  const title =
+    mode === "intake" ? "Intake entry" : mode === "output" ? "Output entry" : "Fast renal entry";
+  const helper =
+    mode === "intake"
+      ? "Capture IV, oral intake, medication flush, and blood products for this time slot."
+      : mode === "output"
+        ? "Capture urine output, drain output, stool/other output, and bedside note."
+        : "Use this quick action for bedside intake, output, drain, and shift note capture.";
 
   return (
     <>
@@ -4564,7 +6818,10 @@ function RenalEntryActionForm({ chart, mode = "io" }: { chart: RenalPatientChart
           <ActionInput label="Entered by" value="Current user" />
         </CardContent>
       </Card>
-      <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Renal shift note / correction reason" />
+      <textarea
+        className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+        placeholder="Renal shift note / correction reason"
+      />
     </>
   );
 }
@@ -4576,25 +6833,43 @@ function RenalReviewActionForm({ chart }: { chart: RenalPatientChart }) {
   const pendingOrders = orders.filter((order) => order.status === "Pending sign").length;
   return (
     <>
-      <AlertBanner icon={Stethoscope} tone={renalStatusToneForDrawer(chart.renalStatus)} title="Final renal report sign-off">
-        Use this only after intake/output, drains, labs, alerts, and renal orders are reviewed for EMR handoff.
+      <AlertBanner
+        icon={Stethoscope}
+        tone={renalStatusToneForDrawer(chart.renalStatus)}
+        title="Final renal report sign-off"
+      >
+        Use this only after intake/output, drains, labs, alerts, and renal orders are reviewed for
+        EMR handoff.
       </AlertBanner>
       <Card>
         <CardHeader>
           <div>
             <CardTitle>Sign-off checklist</CardTitle>
-            <CardDescription>Confirm the renal report is clinically ready before signing.</CardDescription>
+            <CardDescription>
+              Confirm the renal report is clinically ready before signing.
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="grid gap-x-5 gap-y-1 p-4 pt-0 sm:grid-cols-2">
-          <DetailRow label="Patient status" value={<RenalStatusBadge status={chart.renalStatus} />} />
+          <DetailRow
+            label="Patient status"
+            value={<RenalStatusBadge status={chart.renalStatus} />}
+          />
           <DetailRow label="Next action" value={renalNextAction(chart)} />
-          <DetailRow label="Cumulative balance" value={<BalanceBadge value={chart.cumulativeBalanceMl} />} />
+          <DetailRow
+            label="Cumulative balance"
+            value={<BalanceBadge value={chart.cumulativeBalanceMl} />}
+          />
           <DetailRow label="Fluid restriction" value={formatMl(chart.fluidRestrictionMl)} />
           <DetailRow label="Dialysis" value={chart.dialysisStatus} />
           <DetailRow label="Open alerts" value={String(alerts.length)} />
           <DetailRow label="Pending orders" value={String(pendingOrders)} />
-          <DetailRow label="Latest labs" value={latestLab ? `Cr ${latestLab.creatinine}, K ${latestLab.potassium}` : "Not available"} />
+          <DetailRow
+            label="Latest labs"
+            value={
+              latestLab ? `Cr ${latestLab.creatinine}, K ${latestLab.potassium}` : "Not available"
+            }
+          />
         </CardContent>
       </Card>
       <Card>
@@ -4614,25 +6889,38 @@ function RenalReviewActionForm({ chart }: { chart: RenalPatientChart }) {
       <div className="space-y-2">
         <div className="text-xs font-semibold uppercase text-muted-foreground">Items reviewed</div>
         {alerts.map((alert) => (
-          <div className="rounded-md border border-border bg-surface-muted p-2 text-xs" key={alert.id}>
+          <div
+            className="rounded-md border border-border bg-surface-muted p-2 text-xs"
+            key={alert.id}
+          >
             <div className="flex items-start justify-between gap-3">
               <span className="font-semibold text-foreground">{alert.title}</span>
               <StatusPill tone={renalAlertTone(alert.severity)}>{alert.severity}</StatusPill>
             </div>
-            <div className="mt-1 text-muted-foreground">{alert.metric} • {alert.status}</div>
+            <div className="mt-1 text-muted-foreground">
+              {alert.metric} • {alert.status}
+            </div>
           </div>
         ))}
         {orders.map((order) => (
-          <div className="rounded-md border border-border bg-surface-muted p-2 text-xs" key={order.id}>
+          <div
+            className="rounded-md border border-border bg-surface-muted p-2 text-xs"
+            key={order.id}
+          >
             <div className="flex items-start justify-between gap-3">
               <span className="font-semibold text-foreground">{order.order}</span>
               <StatusPill tone={statusTone(order.status)}>{order.status}</StatusPill>
             </div>
-            <div className="mt-1 text-muted-foreground">{order.target} • {order.orderedBy} • {order.orderedAt}</div>
+            <div className="mt-1 text-muted-foreground">
+              {order.target} • {order.orderedBy} • {order.orderedAt}
+            </div>
           </div>
         ))}
       </div>
-      <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Sign-off note / renal plan / escalation reason" />
+      <textarea
+        className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+        placeholder="Sign-off note / renal plan / escalation reason"
+      />
     </>
   );
 }
@@ -4668,11 +6956,16 @@ function RenalBillingActionForm() {
       </AlertBanner>
       <div className="space-y-2">
         {mockDialysisSessions.map((session) => (
-          <div className="rounded-lg border border-border bg-surface-muted p-3 text-sm" key={session.id}>
+          <div
+            className="rounded-lg border border-border bg-surface-muted p-3 text-sm"
+            key={session.id}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="font-semibold text-foreground">{session.sessionNo}</div>
-                <div className="mt-1 text-xs text-muted-foreground">{patientName(session.patientId)} • {session.modality} • {session.scheduledAt}</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {patientName(session.patientId)} • {session.modality} • {session.scheduledAt}
+                </div>
               </div>
               <StatusPill tone={statusTone(session.status)}>{session.status}</StatusPill>
             </div>
@@ -4694,10 +6987,16 @@ function RenalAlertActionForm({ alert }: { alert: RenalAlert }) {
           <DetailRow label="Patient" value={patientName(alert.patientId)} />
           <DetailRow label="Owner" value={alert.owner} />
           <DetailRow label="Status" value={alert.status} />
-          <DetailRow label="Severity" value={<StatusPill tone={renalAlertTone(alert.severity)}>{alert.severity}</StatusPill>} />
+          <DetailRow
+            label="Severity"
+            value={<StatusPill tone={renalAlertTone(alert.severity)}>{alert.severity}</StatusPill>}
+          />
         </CardContent>
       </Card>
-      <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Acknowledgement note / escalation reason" />
+      <textarea
+        className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+        placeholder="Acknowledgement note / escalation reason"
+      />
     </>
   );
 }
@@ -4746,14 +7045,24 @@ function ActionSelect({
         onChange={(event) => onChange(event.target.value)}
       >
         {options.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
         ))}
       </select>
     </label>
   );
 }
 
-function RenalChartDrawer({ chart, open, onOpenChange }: { chart: RenalPatientChart | null; open: boolean; onOpenChange: (open: boolean) => void }) {
+function RenalChartDrawer({
+  chart,
+  open,
+  onOpenChange,
+}: {
+  chart: RenalPatientChart | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -4761,9 +7070,13 @@ function RenalChartDrawer({ chart, open, onOpenChange }: { chart: RenalPatientCh
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(560px,90dvh)] w-[min(620px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Renal chart review</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Renal chart review
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
-                {chart ? `${patientName(chart.patientId)} • ${chart.bedNo}, ${chart.ward}` : "Select renal chart"}
+                {chart
+                  ? `${patientName(chart.patientId)} • ${chart.bedNo}, ${chart.ward}`
+                  : "Select renal chart"}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -4775,14 +7088,20 @@ function RenalChartDrawer({ chart, open, onOpenChange }: { chart: RenalPatientCh
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {chart ? (
               <div className="space-y-4">
-                <AlertBanner icon={ShieldAlert} tone={renalStatusToneForDrawer(chart.renalStatus)} title={chart.renalStatus}>
+                <AlertBanner
+                  icon={ShieldAlert}
+                  tone={renalStatusToneForDrawer(chart.renalStatus)}
+                  title={chart.renalStatus}
+                >
                   {chart.riskFlags.join(" • ")}
                 </AlertBanner>
                 <Card>
                   <CardHeader>
                     <div>
                       <CardTitle>Chart summary</CardTitle>
-                      <CardDescription>Quick review before opening the full renal workspace.</CardDescription>
+                      <CardDescription>
+                        Quick review before opening the full renal workspace.
+                      </CardDescription>
                     </div>
                   </CardHeader>
                   <CardContent className="grid gap-x-5 gap-y-1 p-4 pt-0 sm:grid-cols-2">
@@ -4790,8 +7109,14 @@ function RenalChartDrawer({ chart, open, onOpenChange }: { chart: RenalPatientCh
                     <DetailRow label="Consultant" value={chart.consultant} />
                     <DetailRow label="Nephrologist" value={chart.nephrologist} />
                     <DetailRow label="Fluid limit" value={formatMl(chart.fluidRestrictionMl)} />
-                    <DetailRow label="Cumulative" value={<BalanceBadge value={chart.cumulativeBalanceMl} />} />
-                    <DetailRow label="Target balance" value={formatSignedMl(chart.targetBalanceMl)} />
+                    <DetailRow
+                      label="Cumulative"
+                      value={<BalanceBadge value={chart.cumulativeBalanceMl} />}
+                    />
+                    <DetailRow
+                      label="Target balance"
+                      value={formatSignedMl(chart.targetBalanceMl)}
+                    />
                     <DetailRow label="Catheter" value={chart.catheterStatus} />
                     <DetailRow label="Dialysis" value={chart.dialysisStatus} />
                   </CardContent>
@@ -4800,7 +7125,9 @@ function RenalChartDrawer({ chart, open, onOpenChange }: { chart: RenalPatientCh
             ) : null}
           </div>
           <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             {chart ? (
               <Button asChild>
                 <Link href={`/renal/patients/${chart.patientId}`}>Open full renal chart</Link>
@@ -4821,10 +7148,22 @@ function renalStatusToneForDrawer(status: RenalPatientChart["renalStatus"]): Sta
 }
 
 const renalDrainDeviceCatalog = [
-  { name: "Surgical drain", sites: ["Right lower abdomen", "Left lower abdomen", "Pelvic drain site"], character: "Serous" },
-  { name: "Abdominal drain", sites: ["Right lower abdomen", "Left lower abdomen", "Subhepatic drain"], character: "Serous" },
+  {
+    name: "Surgical drain",
+    sites: ["Right lower abdomen", "Left lower abdomen", "Pelvic drain site"],
+    character: "Serous",
+  },
+  {
+    name: "Abdominal drain",
+    sites: ["Right lower abdomen", "Left lower abdomen", "Subhepatic drain"],
+    character: "Serous",
+  },
   { name: "Chest drain", sites: ["Right chest", "Left chest"], character: "Serosanguinous" },
-  { name: "NG tube output", sites: ["NG tube", "Right nostril", "Left nostril"], character: "Bilious" },
+  {
+    name: "NG tube output",
+    sites: ["NG tube", "Right nostril", "Left nostril"],
+    character: "Bilious",
+  },
   { name: "Gastrostomy output", sites: ["Gastrostomy", "Left upper abdomen"], character: "Clear" },
   { name: "Flexi seal", sites: ["Rectal tube"], character: "Liquid stool" },
   { name: "Pericardial drain", sites: ["Pericardial"], character: "Serous" },
@@ -4847,7 +7186,10 @@ function DrainReadingModal({
   const [mode, setMode] = React.useState<"existing" | "new">("existing");
   const [patientId, setPatientId] = React.useState(firstChart?.patientId ?? "");
   const patientDrains = React.useMemo(
-    () => mockRenalDrains.filter((drain) => drain.patientId === patientId && drain.deviceStatus !== "Removed placeholder"),
+    () =>
+      mockRenalDrains.filter(
+        (drain) => drain.patientId === patientId && drain.deviceStatus !== "Removed placeholder",
+      ),
     [patientId],
   );
   const [drainId, setDrainId] = React.useState(patientDrains[0]?.id ?? "");
@@ -4862,7 +7204,9 @@ function DrainReadingModal({
   const newDeviceSites = renalDrainDeviceSites(newDrainName);
 
   const handlePatientChange = React.useCallback((nextPatientId: string) => {
-    const nextDrain = mockRenalDrains.find((drain) => drain.patientId === nextPatientId && drain.deviceStatus !== "Removed placeholder");
+    const nextDrain = mockRenalDrains.find(
+      (drain) => drain.patientId === nextPatientId && drain.deviceStatus !== "Removed placeholder",
+    );
     setPatientId(nextPatientId);
     setDrainId(nextDrain?.id ?? "");
   }, []);
@@ -4898,7 +7242,9 @@ function DrainReadingModal({
     }
 
     const label = mode === "existing" ? selectedDrain?.drainName : newDrainName.trim();
-    toast.success(`${formatMl(outputValue)} drain reading staged for ${label} - ${patientName(patientId)}`);
+    toast.success(
+      `${formatMl(outputValue)} drain reading staged for ${label} - ${patientName(patientId)}`,
+    );
     onOpenChange(false);
   }, [canSubmit, mode, newDrainName, newSite, onOpenChange, patientId, readingMl, selectedDrain]);
 
@@ -4909,7 +7255,9 @@ function DrainReadingModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(700px,90dvh)] w-[min(680px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Add drain reading</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Add drain reading
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 Capture drain/device output and bedside condition for renal fluid balance.
               </Dialog.Description>
@@ -4941,7 +7289,11 @@ function DrainReadingModal({
                     label: `${patientName(chart.patientId)} - ${chart.bedNo}, ${chart.ward}`,
                   }))}
                 />
-                <ActionInput label="Renal window" value={selectedChart?.windowLabel ?? "No active renal chart"} readOnly />
+                <ActionInput
+                  label="Renal window"
+                  value={selectedChart?.windowLabel ?? "No active renal chart"}
+                  readOnly
+                />
               </div>
 
               <Tabs value={mode} onValueChange={(value) => setMode(value as "existing" | "new")}>
@@ -4956,7 +7308,9 @@ function DrainReadingModal({
                   <CardHeader>
                     <div>
                       <CardTitle>Existing drain</CardTitle>
-                      <CardDescription>Select the active drain/device receiving this reading.</CardDescription>
+                      <CardDescription>
+                        Select the active drain/device receiving this reading.
+                      </CardDescription>
                     </div>
                   </CardHeader>
                   <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
@@ -4964,11 +7318,30 @@ function DrainReadingModal({
                       label="Drain / device"
                       value={selectedDrain?.id ?? ""}
                       onChange={setDrainId}
-                      options={patientDrains.map((drain) => ({ value: drain.id, label: `${drain.drainName} - ${drain.site}` }))}
+                      options={patientDrains.map((drain) => ({
+                        value: drain.id,
+                        label: `${drain.drainName} - ${drain.site}`,
+                      }))}
                     />
-                    <ActionInput label="Current 24h total" value={selectedDrain ? formatMl(selectedDrain.total24HrMl) : "No active drain"} readOnly />
-                    <ActionInput label="Current shift" value={selectedDrain ? formatMl(selectedDrain.currentShiftMl) : "No active drain"} readOnly />
-                    <ActionInput label="Last checked" value={selectedDrain?.lastCheckedAt ?? "Not checked"} readOnly />
+                    <ActionInput
+                      label="Current 24h total"
+                      value={
+                        selectedDrain ? formatMl(selectedDrain.total24HrMl) : "No active drain"
+                      }
+                      readOnly
+                    />
+                    <ActionInput
+                      label="Current shift"
+                      value={
+                        selectedDrain ? formatMl(selectedDrain.currentShiftMl) : "No active drain"
+                      }
+                      readOnly
+                    />
+                    <ActionInput
+                      label="Last checked"
+                      value={selectedDrain?.lastCheckedAt ?? "Not checked"}
+                      readOnly
+                    />
                   </CardContent>
                 </Card>
               ) : (
@@ -4976,7 +7349,9 @@ function DrainReadingModal({
                   <CardHeader>
                     <div>
                       <CardTitle>New drain / device</CardTitle>
-                      <CardDescription>Create the device context and first reading together.</CardDescription>
+                      <CardDescription>
+                        Create the device context and first reading together.
+                      </CardDescription>
                     </div>
                   </CardHeader>
                   <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
@@ -4984,7 +7359,10 @@ function DrainReadingModal({
                       label="Drain / device name"
                       value={newDrainName}
                       onChange={handleNewDrainNameChange}
-                      options={renalDrainDeviceCatalog.map((item) => ({ value: item.name, label: item.name }))}
+                      options={renalDrainDeviceCatalog.map((item) => ({
+                        value: item.name,
+                        label: item.name,
+                      }))}
                     />
                     <ActionSelect
                       label="Site"
@@ -4992,7 +7370,15 @@ function DrainReadingModal({
                       onChange={setNewSite}
                       options={newDeviceSites.map((item) => ({ value: item, label: item }))}
                     />
-                    <ActionSelect label="Device status" value={deviceStatus} onChange={setDeviceStatus} options={["Active", "Clamp trial", "Removed placeholder"].map((item) => ({ value: item, label: item }))} />
+                    <ActionSelect
+                      label="Device status"
+                      value={deviceStatus}
+                      onChange={setDeviceStatus}
+                      options={["Active", "Clamp trial", "Removed placeholder"].map((item) => ({
+                        value: item,
+                        label: item,
+                      }))}
+                    />
                     <ActionInput label="Created by" value="Current user" readOnly />
                   </CardContent>
                 </Card>
@@ -5002,22 +7388,54 @@ function DrainReadingModal({
                 <CardHeader>
                   <div>
                     <CardTitle>Reading details</CardTitle>
-                    <CardDescription>Capture output, appearance, concern, and nursing note.</CardDescription>
+                    <CardDescription>
+                      Capture output, appearance, concern, and nursing note.
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
-                  <ActionInput label="Output this check (ml)" value={readingMl} onChange={setReadingMl} />
+                  <ActionInput
+                    label="Output this check (ml)"
+                    value={readingMl}
+                    onChange={setReadingMl}
+                  />
                   <ActionInput label="Checked at" value="Current time" readOnly />
-                  <ActionSelect label="Character" value={character} onChange={setCharacter} options={["Serous", "Serosanguinous", "Clear", "Bilious", "Liquid stool", "Coffee-ground watch"].map((item) => ({ value: item, label: item }))} />
-                  <ActionSelect label="Concern" value={concern} onChange={setConcern} options={["None", "High output", "Blockage watch", "Infection watch"].map((item) => ({ value: item, label: item }))} />
+                  <ActionSelect
+                    label="Character"
+                    value={character}
+                    onChange={setCharacter}
+                    options={[
+                      "Serous",
+                      "Serosanguinous",
+                      "Clear",
+                      "Bilious",
+                      "Liquid stool",
+                      "Coffee-ground watch",
+                    ].map((item) => ({ value: item, label: item }))}
+                  />
+                  <ActionSelect
+                    label="Concern"
+                    value={concern}
+                    onChange={setConcern}
+                    options={["None", "High output", "Blockage watch", "Infection watch"].map(
+                      (item) => ({ value: item, label: item }),
+                    )}
+                  />
                 </CardContent>
               </Card>
-              <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Drain note / dressing condition / escalation reason" />
+              <textarea
+                className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                placeholder="Drain note / dressing condition / escalation reason"
+              />
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button disabled={!canSubmit} onClick={handleSave}>Save drain reading</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button disabled={!canSubmit} onClick={handleSave}>
+              Save drain reading
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -5042,7 +7460,9 @@ function DrainReviewModal({
   const defaultDecision = drain.concern === "None" ? "Continue monitoring" : "Escalate to doctor";
   const decision = decisionByDrainId[drain.id] ?? defaultDecision;
   const chart = getRenalChartByPatient(drain.patientId);
-  const relatedAlerts = getRenalAlertsByPatient(drain.patientId).filter((alert) => includes(`${alert.title} ${alert.metric}`, "drain") || drain.concern !== "None");
+  const relatedAlerts = getRenalAlertsByPatient(drain.patientId).filter(
+    (alert) => includes(`${alert.title} ${alert.metric}`, "drain") || drain.concern !== "None",
+  );
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -5051,7 +7471,9 @@ function DrainReviewModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex h-[min(640px,90dvh)] w-[min(660px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Drain review</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Drain review
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 {patientName(drain.patientId)} • {drain.drainName} • {drain.site}
               </Dialog.Description>
@@ -5077,18 +7499,35 @@ function DrainReviewModal({
                 <CardHeader>
                   <div>
                     <CardTitle>Device summary</CardTitle>
-                    <CardDescription>Review drain status before signing the shift check.</CardDescription>
+                    <CardDescription>
+                      Review drain status before signing the shift check.
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-x-5 gap-y-1 p-4 pt-0 sm:grid-cols-2">
                   <DetailRow label="Patient" value={patientName(drain.patientId)} />
-                  <DetailRow label="Bed / ward" value={chart ? `${chart.bedNo} • ${chart.ward}` : "No active chart"} />
+                  <DetailRow
+                    label="Bed / ward"
+                    value={chart ? `${chart.bedNo} • ${chart.ward}` : "No active chart"}
+                  />
                   <DetailRow label="Site" value={drain.site} />
-                  <DetailRow label="Status" value={<StatusPill tone={statusTone(drain.deviceStatus)}>{drain.deviceStatus}</StatusPill>} />
+                  <DetailRow
+                    label="Status"
+                    value={
+                      <StatusPill tone={statusTone(drain.deviceStatus)}>
+                        {drain.deviceStatus}
+                      </StatusPill>
+                    }
+                  />
                   <DetailRow label="Shift output" value={formatMl(drain.currentShiftMl)} />
                   <DetailRow label="24h output" value={formatMl(drain.total24HrMl)} />
                   <DetailRow label="Character" value={drain.character} />
-                  <DetailRow label="Concern" value={<StatusPill tone={statusTone(drain.concern)}>{drain.concern}</StatusPill>} />
+                  <DetailRow
+                    label="Concern"
+                    value={
+                      <StatusPill tone={statusTone(drain.concern)}>{drain.concern}</StatusPill>
+                    }
+                  />
                 </CardContent>
               </Card>
 
@@ -5096,45 +7535,72 @@ function DrainReviewModal({
                 <CardHeader>
                   <div>
                     <CardTitle>Review action</CardTitle>
-                    <CardDescription>Record what should happen next for this drain/device.</CardDescription>
+                    <CardDescription>
+                      Record what should happen next for this drain/device.
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2">
                   <ActionSelect
                     label="Decision"
                     value={decision}
-                    onChange={(value) => setDecisionByDrainId((current) => ({ ...current, [drain.id]: value }))}
-                    options={["Continue monitoring", "Escalate to doctor", "Check patency", "Prepare removal review"].map((item) => ({ value: item, label: item }))}
+                    onChange={(value) =>
+                      setDecisionByDrainId((current) => ({ ...current, [drain.id]: value }))
+                    }
+                    options={[
+                      "Continue monitoring",
+                      "Escalate to doctor",
+                      "Check patency",
+                      "Prepare removal review",
+                    ].map((item) => ({ value: item, label: item }))}
                   />
                   <ActionInput label="Reviewed by" value="Current user" readOnly />
                   <ActionInput label="Next check" value="Next shift" />
-                  <ActionInput label="Report status" value={drain.concern === "None" ? "Routine" : "Needs follow-up"} readOnly />
+                  <ActionInput
+                    label="Report status"
+                    value={drain.concern === "None" ? "Routine" : "Needs follow-up"}
+                    readOnly
+                  />
                 </CardContent>
               </Card>
 
               {relatedAlerts.length ? (
                 <div className="space-y-2">
-                  <div className="text-xs font-semibold uppercase text-muted-foreground">Related renal alerts</div>
+                  <div className="text-xs font-semibold uppercase text-muted-foreground">
+                    Related renal alerts
+                  </div>
                   {relatedAlerts.map((alert) => (
-                    <div className="rounded-md border border-border bg-surface-muted p-2 text-xs" key={alert.id}>
+                    <div
+                      className="rounded-md border border-border bg-surface-muted p-2 text-xs"
+                      key={alert.id}
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <span className="font-semibold text-foreground">{alert.title}</span>
-                        <StatusPill tone={renalAlertTone(alert.severity)}>{alert.severity}</StatusPill>
+                        <StatusPill tone={renalAlertTone(alert.severity)}>
+                          {alert.severity}
+                        </StatusPill>
                       </div>
-                      <div className="mt-1 text-muted-foreground">{alert.metric} • {alert.status}</div>
+                      <div className="mt-1 text-muted-foreground">
+                        {alert.metric} • {alert.status}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : null}
 
-              <textarea className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Drain review note / action taken / escalation reason" />
+              <textarea
+                className="min-h-[96px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                placeholder="Drain review note / action taken / escalation reason"
+              />
             </div>
           </div>
           <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:justify-end">
             <Button variant="outline" asChild>
               <Link href={`/renal/patients/${drain.patientId}`}>Open patient chart</Link>
             </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button
               disabled={!canSubmit}
               onClick={() => {

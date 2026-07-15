@@ -13,7 +13,15 @@ import { Input } from "@/components/ui/input";
 import { getBundleItem } from "@/features/platform/bundle/bundle-registry";
 import type { BundlePreviewApi } from "@/features/platform/bundle/bundle-types";
 
-function CodePanel({ code, onCopy, copied }: { code: string; onCopy: () => void; copied: boolean }) {
+function CodePanel({
+  code,
+  onCopy,
+  copied,
+}: {
+  code: string;
+  onCopy: () => void;
+  copied: boolean;
+}) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-surface">
       <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
@@ -74,13 +82,15 @@ export function BundlePage({ itemId }: { itemId?: string }) {
               <ActiveIcon className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-base font-semibold text-foreground">{activeItem.title} Preview</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Only this component type is shown here.</p>
+              <h2 className="truncate text-base font-semibold text-foreground">
+                {activeItem.title} Preview
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Only this component type is shown here.
+              </p>
             </div>
           </div>
-          <div className="p-4">
-            {activeItem.renderPreview(previewApi)}
-          </div>
+          <div className="p-4">{activeItem.renderPreview(previewApi)}</div>
         </section>
 
         <section className="min-w-0">
@@ -89,7 +99,8 @@ export function BundlePage({ itemId }: { itemId?: string }) {
       </div>
 
       <div className="rounded-lg border border-border bg-surface-muted p-3 text-xs text-muted-foreground">
-        Sidebar ke `UI Bundle` submenu se doosra item select karoge to page sirf usi item ka preview aur code dikhayega.
+        Sidebar ke `UI Bundle` submenu se doosra item select karoge to page sirf usi item ka preview
+        aur code dikhayega.
       </div>
 
       <Drawer
@@ -99,7 +110,9 @@ export function BundlePage({ itemId }: { itemId?: string }) {
         description="Review details before save."
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDrawerOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDrawerOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={() => setDrawerOpen(false)}>Save</Button>
           </div>
         }

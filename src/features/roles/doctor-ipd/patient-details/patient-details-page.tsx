@@ -12,13 +12,25 @@ import { orderedPatients } from "@/features/roles/doctor-ipd/dashboard/dashboard
 import type { DoctorIpdPatient } from "@/features/roles/doctor-ipd/dashboard/dashboard.types";
 import { patientTone } from "@/features/roles/doctor-ipd/dashboard/dashboard.utils";
 import { PatientBanner } from "@/features/roles/doctor-ipd/patient-details/components/patient-banner";
-import { PatientMetric, dashboardBpTone, dashboardBpValue } from "@/features/roles/doctor-ipd/patient-details/components/patient-metrics";
+import {
+  PatientMetric,
+  dashboardBpTone,
+  dashboardBpValue,
+} from "@/features/roles/doctor-ipd/patient-details/components/patient-metrics";
 import { PatientNavigation } from "@/features/roles/doctor-ipd/patient-details/components/patient-navigation";
 import { PatientOverview } from "@/features/roles/doctor-ipd/patient-details/components/patient-overview";
-import type { DashboardPoctMode, PatientTabValue, RequestedOrderTab, ResultsAutoView } from "@/features/roles/doctor-ipd/patient-details/patient-details.types";
+import type {
+  DashboardPoctMode,
+  PatientTabValue,
+  RequestedOrderTab,
+  ResultsAutoView,
+} from "@/features/roles/doctor-ipd/patient-details/patient-details.types";
 import { IpdUnifiedModulePage } from "@/features/clinical/ipd/ipd-pages";
 import { LiveMonitoringPage } from "@/features/clinical/live-monitoring/live-monitoring-page";
-import { rapidReviewPatients, type RapidReviewPatient } from "@/features/clinical/rapid-review/rapid-review-data";
+import {
+  rapidReviewPatients,
+  type RapidReviewPatient,
+} from "@/features/clinical/rapid-review/rapid-review-data";
 import { PatientVitalsGraph } from "@/features/clinical/rapid-review/rapid-review-graph";
 import { ResultsCenterView } from "@/features/diagnostics/results/components/ResultsCenterView";
 import { DoctorOrdersPage } from "@/features/clinical/doctor-orders/doctor-orders";
@@ -88,10 +100,14 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
   const requestedOrderTab = getRequestedOrderTab(searchParams.get("orderTab"));
   const [activeTab, setActiveTab] = React.useState<PatientTabValue>(requestedTab ?? "overview");
   const [poctMode, setPoctMode] = React.useState<DashboardPoctMode>(requestedPoctMode ?? "add");
-  const [ordersDefaultTab, setOrdersDefaultTab] = React.useState(requestedOrderTab ?? (requestedPoctMode === "add" ? "poct" : "blood"));
+  const [ordersDefaultTab, setOrdersDefaultTab] = React.useState(
+    requestedOrderTab ?? (requestedPoctMode === "add" ? "poct" : "blood"),
+  );
   const [isPatientHeaderCompact, setIsPatientHeaderCompact] = React.useState(false);
   const patient = orderedPatients.find((item) => String(item.id) === patientId);
-  const rapidReviewPatient = patient ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId) : undefined;
+  const rapidReviewPatient = patient
+    ? rapidReviewPatients.find((item) => item.id === patient.rapidReviewPatientId)
+    : undefined;
 
   React.useEffect(() => {
     const updatePatientHeader = () => {
@@ -126,7 +142,9 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
 
   React.useEffect(() => {
     const openPoctInPlace = (event: Event) => {
-      const mode = getRequestedPoctMode((event as CustomEvent<{ mode?: string }>).detail?.mode ?? null);
+      const mode = getRequestedPoctMode(
+        (event as CustomEvent<{ mode?: string }>).detail?.mode ?? null,
+      );
       if (!mode) return;
       setActiveTab(mode === "results" ? "results" : "orders");
       setPoctMode(mode);
@@ -161,7 +179,7 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
         <div
           className={cn(
             "fixed left-0 right-0 space-y-1.5 bg-background/95 px-4 pb-1.5 pt-1.5 backdrop-blur transition-[top,box-shadow] duration-200 md:px-6 lg:left-[var(--app-sidebar-offset)]",
-            isPatientHeaderCompact ? "top-0 z-50 shadow-sm" : "top-16 z-30"
+            isPatientHeaderCompact ? "top-0 z-50 shadow-sm" : "top-16 z-30",
           )}
         >
           <PatientBanner
@@ -186,16 +204,25 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
           </TabsContent>
           <TabsContent className="mt-0" value="results">
             {poctMode === "results" ? (
-              <ViewPoctResultPage embedded key={`poct-results-${patient.id}`} mode="results" showModeActions={false} />
+              <ViewPoctResultPage
+                embedded
+                key={`poct-results-${patient.id}`}
+                mode="results"
+                showModeActions={false}
+              />
             ) : (
               <ResultsCenterView
-                autoOpenAllDepartment={requestedResultsAutoView === "laboratory-all" ? "laboratory" : undefined}
+                autoOpenAllDepartment={
+                  requestedResultsAutoView === "laboratory-all" ? "laboratory" : undefined
+                }
                 defaultDepartment="all"
                 key={`results-${patient.id}`}
                 patientContext={{
                   ageSex: rapidReviewPatient?.ageGender,
                   allergy: "Meropenem",
-                  bed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+                  bed: rapidReviewPatient
+                    ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}`
+                    : patient.bed,
                   bloodGroup: "AB +ve",
                   consultantDoctor: rapidReviewPatient?.consultant,
                   dob: "30-12-1995",
@@ -203,7 +230,9 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
                   name: patient.name,
                   patientId: String(patient.id),
                   uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
-                  wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+                  wardBed: rapidReviewPatient
+                    ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}`
+                    : patient.bed,
                 }}
                 onAddLaboratoryOrder={() => {
                   setActiveTab("orders");
@@ -232,7 +261,13 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
             <h1>under development</h1>
           </TabsContent>
           <TabsContent className="mt-0" value="add-progress">
-            <React.Suspense fallback={<div className="rounded-md border border-border bg-white p-4 text-sm font-semibold text-muted-foreground">Loading notes...</div>}>
+            <React.Suspense
+              fallback={
+                <div className="rounded-md border border-border bg-white p-4 text-sm font-semibold text-muted-foreground">
+                  Loading notes...
+                </div>
+              }
+            >
               <NotesPage />
             </React.Suspense>
           </TabsContent>
@@ -250,7 +285,9 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
                 name: patient.name,
                 radiologyPatientId: getRadiologyPatientId(patient.id),
                 uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
-                wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+                wardBed: rapidReviewPatient
+                  ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}`
+                  : patient.bed,
               }}
             />
           </TabsContent>
@@ -285,20 +322,44 @@ function getResultPatientMrn(patientId: number) {
   return resultMrns[(patientId - 1) % resultMrns.length];
 }
 
-function NurseShiftSummaryTimeline({ patient, rapidReviewPatient }: { patient: DoctorIpdPatient; rapidReviewPatient?: RapidReviewPatient }) {
-  return <ProgressNotesPanel patient={patient} rapidReviewPatient={rapidReviewPatient} tone={patientTone(patient)} />;
+function NurseShiftSummaryTimeline({
+  patient,
+  rapidReviewPatient,
+}: {
+  patient: DoctorIpdPatient;
+  rapidReviewPatient?: RapidReviewPatient;
+}) {
+  return (
+    <ProgressNotesPanel
+      patient={patient}
+      rapidReviewPatient={rapidReviewPatient}
+      tone={patientTone(patient)}
+    />
+  );
 }
 
-function PatientVitalsTabs({ patient, rapidReviewPatient }: { patient: DoctorIpdPatient; rapidReviewPatient?: RapidReviewPatient }) {
+function PatientVitalsTabs({
+  patient,
+  rapidReviewPatient,
+}: {
+  patient: DoctorIpdPatient;
+  rapidReviewPatient?: RapidReviewPatient;
+}) {
   return (
     <Tabs className="space-y-4" defaultValue="chart">
       <div className="flex justify-start rounded-xl border border-border bg-white p-1.5 shadow-sm">
         <TabsList className="no-tab-scroll-hint grid w-full max-w-[420px] grid-cols-2 rounded-lg bg-surface-muted/70 p-1">
-          <TabsTrigger className="h-10 justify-center gap-2 rounded-lg bg-transparent text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm" value="chart">
+          <TabsTrigger
+            className="h-10 justify-center gap-2 rounded-lg bg-transparent text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+            value="chart"
+          >
             <ClipboardCheck className="h-4 w-4" />
             Chart
           </TabsTrigger>
-          <TabsTrigger className="h-10 justify-center gap-2 rounded-lg bg-transparent text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm" value="graph">
+          <TabsTrigger
+            className="h-10 justify-center gap-2 rounded-lg bg-transparent text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+            value="graph"
+          >
             <ChartNoAxesCombined className="h-4 w-4" />
             Graph
           </TabsTrigger>
@@ -306,7 +367,11 @@ function PatientVitalsTabs({ patient, rapidReviewPatient }: { patient: DoctorIpd
       </div>
 
       <TabsContent className="mt-0" value="chart">
-        <PatientMonitoring key={`monitoring-${patient.id}`} patient={patient} rapidReviewPatient={rapidReviewPatient} />
+        <PatientMonitoring
+          key={`monitoring-${patient.id}`}
+          patient={patient}
+          rapidReviewPatient={rapidReviewPatient}
+        />
       </TabsContent>
 
       <TabsContent className="mt-0 " value="graph">
@@ -322,20 +387,39 @@ function PatientVitalsTabs({ patient, rapidReviewPatient }: { patient: DoctorIpd
   );
 }
 
-function PatientMonitoring({ patient, rapidReviewPatient }: { patient: DoctorIpdPatient; rapidReviewPatient?: RapidReviewPatient }) {
+function PatientMonitoring({
+  patient,
+  rapidReviewPatient,
+}: {
+  patient: DoctorIpdPatient;
+  rapidReviewPatient?: RapidReviewPatient;
+}) {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-gradient-to-br from-white to-surface-muted/70 p-4 shadow-sm">
-        
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <PatientMetric label="HR" value={`${patient.hr.value} bpm`} tone={patient.hr.tone} />
           <PatientMetric label="SpO2" value={`${patient.spo2.value}%`} tone={patient.spo2.tone} />
-          <PatientMetric label="BP" value={`${dashboardBpValue(patient)} mmHg`} tone={dashboardBpTone(patient)} />
-          <PatientMetric label="Temperature" value={`${patient.temperature.value} °C`} tone={patient.temperature.tone} />
+          <PatientMetric
+            label="BP"
+            value={`${dashboardBpValue(patient)} mmHg`}
+            tone={dashboardBpTone(patient)}
+          />
+          <PatientMetric
+            label="Temperature"
+            value={`${patient.temperature.value} °C`}
+            tone={patient.temperature.tone}
+          />
         </div>
       </div>
       <div className="rounded-xl border border-border bg-surface p-3 shadow-sm">
-        <React.Suspense fallback={<div className="py-8 text-center text-sm text-muted-foreground">Loading monitoring...</div>}>
+        <React.Suspense
+          fallback={
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              Loading monitoring...
+            </div>
+          }
+        >
           <IpdUnifiedModulePage
             embedded
             hideIpdTab
@@ -346,7 +430,9 @@ function PatientMonitoring({ patient, rapidReviewPatient }: { patient: DoctorIpd
               id: `patient-${patient.id}`,
               name: patient.name,
               uhid: rapidReviewPatient?.uhid ?? `DASH-${String(patient.id).padStart(4, "0")}`,
-              wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
+              wardBed: rapidReviewPatient
+                ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}`
+                : patient.bed,
             }}
           />
         </React.Suspense>

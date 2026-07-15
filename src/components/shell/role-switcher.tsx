@@ -7,7 +7,13 @@ import { useRole } from "@/components/providers/role-provider";
 import { getRoleDisplayName } from "@/lib/role-display";
 import { cn } from "@/lib/utils";
 
-export function RoleSwitcher({ className, portal = true }: { className?: string; portal?: boolean }) {
+export function RoleSwitcher({
+  className,
+  portal = true,
+}: {
+  className?: string;
+  portal?: boolean;
+}) {
   const { role, setRole, roles } = useRole();
   const selectableRoles = roles;
 

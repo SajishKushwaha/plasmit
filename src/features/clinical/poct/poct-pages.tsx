@@ -1,7 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Eye, Search, X } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Search,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useRole } from "@/components/providers/role-provider";
@@ -75,7 +83,9 @@ function draftsReducer(drafts: DraftCard[], action: DraftAction) {
     case "syncPerformer":
       return drafts.map((draft) => ({ ...draft, performedBy: action.performedBy }));
     case "update":
-      return drafts.map((draft) => (draft.id === action.id ? { ...draft, ...action.patch } : draft));
+      return drafts.map((draft) =>
+        draft.id === action.id ? { ...draft, ...action.patch } : draft,
+      );
   }
 }
 
@@ -101,7 +111,11 @@ function parseDateValue(value: string) {
   const parsedMonth = Number(month);
   const parsedYear = Number(year);
   const date = new Date(parsedYear, parsedMonth - 1, parsedDay);
-  return date.getFullYear() === parsedYear && date.getMonth() === parsedMonth - 1 && date.getDate() === parsedDay ? date : null;
+  return date.getFullYear() === parsedYear &&
+    date.getMonth() === parsedMonth - 1 &&
+    date.getDate() === parsedDay
+    ? date
+    : null;
 }
 
 function formatDateInput(value: string) {
@@ -133,7 +147,8 @@ function yearRangeStart(year: number) {
 
 function yearRangeLabel(start: number) {
   const end = start + 5;
-  const endLabel = Math.floor(start / 100) === Math.floor(end / 100) ? String(end).slice(2) : String(end);
+  const endLabel =
+    Math.floor(start / 100) === Math.floor(end / 100) ? String(end).slice(2) : String(end);
   return `${start} - ${endLabel}`;
 }
 
@@ -150,9 +165,15 @@ function YearRangePicker({
 }) {
   const currentYear = new Date().getFullYear();
   const lastYear = Math.max(currentYear + 125, yearRangeStart(visibleYear) + 25);
-  const ranges = React.useMemo(() => Array.from({ length: Math.ceil((lastYear - 1900) / 5) + 1 }, (_, index) => 1900 + index * 5), [lastYear]);
+  const ranges = React.useMemo(
+    () =>
+      Array.from({ length: Math.ceil((lastYear - 1900) / 5) + 1 }, (_, index) => 1900 + index * 5),
+    [lastYear],
+  );
   const [selectedRangeStart, setSelectedRangeStart] = React.useState<number | null>(null);
-  const exactYears = selectedRangeStart ? Array.from({ length: 6 }, (_, index) => selectedRangeStart + index) : [];
+  const exactYears = selectedRangeStart
+    ? Array.from({ length: 6 }, (_, index) => selectedRangeStart + index)
+    : [];
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col overflow-hidden rounded-lg bg-surface">
@@ -162,15 +183,21 @@ function YearRangePicker({
             <CalendarDays className="h-5 w-5 text-primary" />
             {selectedRangeStart ? yearRangeLabel(selectedRangeStart) : "Select Year"}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{selectedRangeStart ? "Choose exact year" : "Choose a year range"}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {selectedRangeStart ? "Choose exact year" : "Choose a year range"}
+          </p>
         </div>
         <div className="grid flex-1 gap-2 overflow-auto p-3 sm:grid-cols-2">
           {(selectedRangeStart ? exactYears : ranges).map((value) => {
-            const active = selectedRangeStart ? visibleYear === value : visibleYear >= value && visibleYear <= value + 5;
+            const active = selectedRangeStart
+              ? visibleYear === value
+              : visibleYear >= value && visibleYear <= value + 5;
             return selectedRangeStart ? (
               <button
                 className={`min-h-12 rounded-md border px-3 text-sm font-medium transition ${
-                  active ? "border-primary bg-primary/5 text-primary shadow-sm" : "border-border hover:border-primary/50 hover:bg-surface-muted"
+                  active
+                    ? "border-primary bg-primary/5 text-primary shadow-sm"
+                    : "border-border hover:border-primary/50 hover:bg-surface-muted"
                 }`}
                 key={value}
                 onClick={() => {
@@ -184,7 +211,9 @@ function YearRangePicker({
             ) : (
               <button
                 className={`min-h-12 rounded-md border px-3 text-sm font-medium transition ${
-                  active ? "border-primary bg-primary/5 text-primary shadow-sm" : "border-border hover:border-primary/50 hover:bg-surface-muted"
+                  active
+                    ? "border-primary bg-primary/5 text-primary shadow-sm"
+                    : "border-border hover:border-primary/50 hover:bg-surface-muted"
                 }`}
                 key={value}
                 onClick={() => setSelectedRangeStart(value)}
@@ -279,7 +308,10 @@ function DateTextInput({
   const [popoverStyle, setPopoverStyle] = React.useState<React.CSSProperties>({});
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const selected = parseDateValue(value);
-  const monthNames = React.useMemo(() => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], []);
+  const monthNames = React.useMemo(
+    () => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    [],
+  );
   const totalDays = daysInMonth(visibleMonth, visibleYear);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -384,32 +416,70 @@ function DateTextInput({
       </div>
 
       {open ? (
-        <div className="fixed z-[100] h-[356px] rounded-lg border border-border bg-surface p-3 shadow-soft" style={popoverStyle}>
+        <div
+          className="fixed z-[100] h-[356px] rounded-lg border border-border bg-surface p-3 shadow-soft"
+          style={popoverStyle}
+        >
           <div className="mb-3 flex items-center justify-between gap-2">
-            <Button aria-label="Previous month" onClick={() => moveMonth(-1)} size="icon" type="button" variant="ghost">
+            <Button
+              aria-label="Previous month"
+              onClick={() => moveMonth(-1)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="grid flex-1 grid-cols-[1fr_6rem] gap-2">
-              <select aria-label="Select month" className={selectClass} onChange={(event) => setVisibleMonth(Number(event.target.value))} value={visibleMonth}>
-                {monthNames.map((monthName, index) => <option key={monthName} value={index}>{monthName}</option>)}
+              <select
+                aria-label="Select month"
+                className={selectClass}
+                onChange={(event) => setVisibleMonth(Number(event.target.value))}
+                value={visibleMonth}
+              >
+                {monthNames.map((monthName, index) => (
+                  <option key={monthName} value={index}>
+                    {monthName}
+                  </option>
+                ))}
               </select>
-              <button aria-label="Select year" className={selectClass} onClick={() => setYearPickerOpen(true)} type="button">
+              <button
+                aria-label="Select year"
+                className={selectClass}
+                onClick={() => setYearPickerOpen(true)}
+                type="button"
+              >
                 <span className="flex-1 text-left">{visibleYear}</span>
                 <ChevronRight className="h-4 w-4 rotate-90 text-muted-foreground" />
               </button>
             </div>
-            <Button aria-label="Next month" onClick={() => moveMonth(1)} size="icon" type="button" variant="ghost">
+            <Button
+              aria-label="Next month"
+              onClick={() => moveMonth(1)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
-            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dayName) => <span key={dayName}>{dayName}</span>)}
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dayName) => (
+              <span key={dayName}>{dayName}</span>
+            ))}
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
-            {Array.from({ length: new Date(visibleYear, visibleMonth, 1).getDay() }).map((_, index) => <span key={`blank-${index}`} />)}
+            {Array.from({ length: new Date(visibleYear, visibleMonth, 1).getDay() }).map(
+              (_, index) => (
+                <span key={`blank-${index}`} />
+              ),
+            )}
             {Array.from({ length: totalDays }).map((_, index) => {
               const day = index + 1;
-              const active = selected?.getDate() === day && selected.getMonth() === visibleMonth && selected.getFullYear() === visibleYear;
+              const active =
+                selected?.getDate() === day &&
+                selected.getMonth() === visibleMonth &&
+                selected.getFullYear() === visibleYear;
               return (
                 <button
                   className={`h-8 rounded-md text-xs font-medium transition ${active ? "bg-primary text-primary-foreground" : "hover:bg-surface-muted"}`}
@@ -423,17 +493,34 @@ function DateTextInput({
             })}
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-            <Button onClick={clearDate} size="sm" type="button" variant="ghost">Clear</Button>
-            <Button onClick={selectToday} size="sm" type="button" variant="outline">Today</Button>
+            <Button onClick={clearDate} size="sm" type="button" variant="ghost">
+              Clear
+            </Button>
+            <Button onClick={selectToday} size="sm" type="button" variant="outline">
+              Today
+            </Button>
           </div>
-          {yearPickerOpen ? <YearRangePicker onClose={() => setYearPickerOpen(false)} onSelectYear={setVisibleYear} onToday={selectTodayYear} visibleYear={visibleYear} /> : null}
+          {yearPickerOpen ? (
+            <YearRangePicker
+              onClose={() => setYearPickerOpen(false)}
+              onSelectYear={setVisibleYear}
+              onToday={selectTodayYear}
+              visibleYear={visibleYear}
+            />
+          ) : null}
         </div>
       ) : null}
     </div>
   );
 }
 
-function ActionButtons({ mode, onModeChange }: { mode?: PoctWorkspaceMode; onModeChange?: (mode: PoctWorkspaceMode) => void }) {
+function ActionButtons({
+  mode,
+  onModeChange,
+}: {
+  mode?: PoctWorkspaceMode;
+  onModeChange?: (mode: PoctWorkspaceMode) => void;
+}) {
   return (
     <>
       <Button
@@ -479,46 +566,80 @@ function TestPicker({
   onAddAnotherTime: () => void;
   actions?: React.ReactNode;
 }) {
-  const filtered = poctTests.filter((test) => test.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = poctTests.filter((test) =>
+    test.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <Card className="shadow-none">
       <CardContent className="space-y-3 p-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-end">
           <div className="min-w-[180px] md:pb-2 xl:min-w-[220px]">
-            <span className={labelClass}>Configured POCT Tests <span className="text-danger">*</span></span>
+            <span className={labelClass}>
+              Configured POCT Tests <span className="text-danger">*</span>
+            </span>
           </div>
           <label className="min-w-[260px] flex-1 space-y-1.5">
             <span className="sr-only">Search configured POCT tests</span>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search lab master tests linked to equipment..." value={search} onChange={(event) => onSearchChange(event.target.value)} />
+              <Input
+                className="pl-9"
+                placeholder="Search lab master tests linked to equipment..."
+                value={search}
+                onChange={(event) => onSearchChange(event.target.value)}
+              />
             </div>
           </label>
           {/* <Button className="shrink-0" size="sm" type="button" onClick={onAddAnotherTime} disabled={!selectedTests.length}>
             Add another time
           </Button> */}
-          {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+          {actions ? (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+          ) : null}
         </div>
         <div className="rounded-md border border-border bg-background p-2">
           <div className="mb-2 flex flex-wrap gap-1">
-            {selectedTests.length ? selectedTests.map((id) => {
-              const test = poctTests.find((item) => item.id === id);
-              return test ? (
-                <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-xs font-medium text-primary" key={id}>
-                  {test.name}
-                  <button aria-label={`Remove ${test.name}`} type="button" onClick={() => onToggle(id)}><X className="h-3 w-3" /></button>
-                </span>
-              ) : null;
-            }) : <span className="text-xs text-muted-foreground">Select one or more tests</span>}
+            {selectedTests.length ? (
+              selectedTests.map((id) => {
+                const test = poctTests.find((item) => item.id === id);
+                return test ? (
+                  <span
+                    className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                    key={id}
+                  >
+                    {test.name}
+                    <button
+                      aria-label={`Remove ${test.name}`}
+                      type="button"
+                      onClick={() => onToggle(id)}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ) : null;
+              })
+            ) : (
+              <span className="text-xs text-muted-foreground">Select one or more tests</span>
+            )}
           </div>
           <div className="grid gap-1 border-t border-border pt-2 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((test) => (
-              <label className="grid cursor-pointer grid-cols-[auto_1fr] gap-2 rounded px-2 py-1.5 text-xs hover:bg-surface-muted" key={test.id}>
-                <input checked={selectedTests.includes(test.id)} className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring" onChange={() => onToggle(test.id)} type="checkbox" />
+              <label
+                className="grid cursor-pointer grid-cols-[auto_1fr] gap-2 rounded px-2 py-1.5 text-xs hover:bg-surface-muted"
+                key={test.id}
+              >
+                <input
+                  checked={selectedTests.includes(test.id)}
+                  className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring"
+                  onChange={() => onToggle(test.id)}
+                  type="checkbox"
+                />
                 <span>
                   <span className="block font-medium text-foreground">{test.name}</span>
-                  <span className="block text-[11px] text-muted-foreground">{test.labMasterCode} / {test.equipment}</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    {test.labMasterCode} / {test.equipment}
+                  </span>
                 </span>
               </label>
             ))}
@@ -547,52 +668,103 @@ function DraftCardForm({
       <CardHeader className="py-3">
         <div>
           <CardTitle className="text-primary">{draft.test.name}</CardTitle>
-          <div className="mt-1 text-xs text-muted-foreground">{draft.test.labMasterCode} / {draft.test.equipment}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {draft.test.labMasterCode} / {draft.test.equipment}
+          </div>
         </div>
-        <Button aria-label="Remove test card" size="icon" type="button" variant="ghost" onClick={() => onRemove(draft.id)}>
+        <Button
+          aria-label="Remove test card"
+          size="icon"
+          type="button"
+          variant="ghost"
+          onClick={() => onRemove(draft.id)}
+        >
           <X className="h-4 w-4" />
         </Button>
       </CardHeader>
       <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
         <label className={fieldClass}>
-          <span className={labelClass}>Result <span className="text-danger">*</span></span>
-          <Input className={errors?.result ? errorInputClass : undefined} value={draft.result} onChange={(event) => onChange(draft.id, { result: event.target.value })} />
-          {errors?.result ? <span className="text-[11px] font-medium text-danger">{errors.result}</span> : null}
+          <span className={labelClass}>
+            Result <span className="text-danger">*</span>
+          </span>
+          <Input
+            className={errors?.result ? errorInputClass : undefined}
+            value={draft.result}
+            onChange={(event) => onChange(draft.id, { result: event.target.value })}
+          />
+          {errors?.result ? (
+            <span className="text-[11px] font-medium text-danger">{errors.result}</span>
+          ) : null}
         </label>
         <label className={fieldClass}>
           <span className={labelClass}>Unit</span>
-          <select className={selectClass} value={draft.unit} onChange={(event) => onChange(draft.id, { unit: event.target.value })}>
+          <select
+            className={selectClass}
+            value={draft.unit}
+            onChange={(event) => onChange(draft.id, { unit: event.target.value })}
+          >
             <option>{draft.test.unit}</option>
             <option>value</option>
             <option>result</option>
           </select>
         </label>
         <label className={fieldClass}>
-          <span className={labelClass}>Date <span className="text-danger">*</span></span>
-          <DateTextInput value={displayDate(draft.date)} onChange={(value) => onChange(draft.id, { date: displayDateToIso(value) })} required />
-          {errors?.date ? <span className="text-[11px] font-medium text-danger">{errors.date}</span> : null}
+          <span className={labelClass}>
+            Date <span className="text-danger">*</span>
+          </span>
+          <DateTextInput
+            value={displayDate(draft.date)}
+            onChange={(value) => onChange(draft.id, { date: displayDateToIso(value) })}
+            required
+          />
+          {errors?.date ? (
+            <span className="text-[11px] font-medium text-danger">{errors.date}</span>
+          ) : null}
         </label>
         <label className={fieldClass}>
-          <span className={labelClass}>Time <span className="text-danger">*</span></span>
-          <Input className={errors?.time ? errorInputClass : undefined} type="time" value={draft.time} onChange={(event) => onChange(draft.id, { time: event.target.value })} />
-          {errors?.time ? <span className="text-[11px] font-medium text-danger">{errors.time}</span> : null}
+          <span className={labelClass}>
+            Time <span className="text-danger">*</span>
+          </span>
+          <Input
+            className={errors?.time ? errorInputClass : undefined}
+            type="time"
+            value={draft.time}
+            onChange={(event) => onChange(draft.id, { time: event.target.value })}
+          />
+          {errors?.time ? (
+            <span className="text-[11px] font-medium text-danger">{errors.time}</span>
+          ) : null}
         </label>
         <label className={fieldClass}>
-          <span className={labelClass}>Performed By <span className="text-danger">*</span></span>
+          <span className={labelClass}>
+            Performed By <span className="text-danger">*</span>
+          </span>
           <Input
             className={errors?.performedBy ? errorInputClass : undefined}
             readOnly
             value={draft.performedBy}
           />
-          {errors?.performedBy ? <span className="text-[11px] font-medium text-danger">{errors.performedBy}</span> : null}
+          {errors?.performedBy ? (
+            <span className="text-[11px] font-medium text-danger">{errors.performedBy}</span>
+          ) : null}
         </label>
         <label className={fieldClass}>
           <span className={labelClass}>Verified By</span>
-          <Input list="poct-staff-options" value={draft.verifiedBy} onChange={(event) => onChange(draft.id, { verifiedBy: event.target.value })} />
+          <Input
+            list="poct-staff-options"
+            value={draft.verifiedBy}
+            onChange={(event) => onChange(draft.id, { verifiedBy: event.target.value })}
+          />
         </label>
         <label className={fieldClass}>
-          <span className={labelClass}>Status <span className="text-danger">*</span></span>
-          <select className={selectClass} value={draft.status} onChange={(event) => onChange(draft.id, { status: event.target.value as PoctStatus })}>
+          <span className={labelClass}>
+            Status <span className="text-danger">*</span>
+          </span>
+          <select
+            className={selectClass}
+            value={draft.status}
+            onChange={(event) => onChange(draft.id, { status: event.target.value as PoctStatus })}
+          >
             <option>Completed</option>
             <option>Verified</option>
             <option>Pending</option>
@@ -615,7 +787,12 @@ function DraftCardForm({
   );
 }
 
-export function AddPoctPage({ embedded = false, mode, onModeChange, showModeActions = true }: PoctWorkspaceProps = {}) {
+export function AddPoctPage({
+  embedded = false,
+  mode,
+  onModeChange,
+  showModeActions = true,
+}: PoctWorkspaceProps = {}) {
   const { role } = useRole();
   const performedBy = getPoctPerformer(role);
   const [localMode, setLocalMode] = React.useState<PoctWorkspaceMode>("add");
@@ -630,17 +807,15 @@ export function AddPoctPage({ embedded = false, mode, onModeChange, showModeActi
   const [search, setSearch] = React.useState("");
   const [patientId, setPatientId] = React.useState("100123");
   const [selectedTests, setSelectedTests] = React.useState<string[]>(() => readSelectedPoctTests());
-  const [drafts, dispatchDrafts] = React.useReducer(
-    draftsReducer,
-    null,
-    () =>
+  const [drafts, dispatchDrafts] = React.useReducer(draftsReducer, null, () =>
     readSelectedPoctTests()
       .map((id) => poctTests.find((test) => test.id === id))
       .filter(Boolean)
       .map((test) => makeDraft(test as PoctTest, performedBy)),
   );
   const [draftErrors, setDraftErrors] = React.useState<Record<string, DraftErrors>>({});
-  const selectedPatient = poctPatients.find((patient) => patient.id === patientId) ?? poctPatients[0];
+  const selectedPatient =
+    poctPatients.find((patient) => patient.id === patientId) ?? poctPatients[0];
 
   React.useEffect(() => {
     writeSelectedPoctTests(selectedTests);
@@ -665,7 +840,9 @@ export function AddPoctPage({ embedded = false, mode, onModeChange, showModeActi
   }
 
   function addAnotherTimeForSelectedTests() {
-    const tests = selectedTests.map((id) => poctTests.find((test) => test.id === id)).filter(Boolean) as PoctTest[];
+    const tests = selectedTests
+      .map((id) => poctTests.find((test) => test.id === id))
+      .filter(Boolean) as PoctTest[];
     if (!tests.length) {
       toast.warning("Select at least one POCT test.");
       return;
@@ -752,13 +929,22 @@ export function AddPoctPage({ embedded = false, mode, onModeChange, showModeActi
   }
 
   if (activeMode === "results") {
-    return <ViewPoctResultPage embedded={embedded} mode="results" onModeChange={changeMode} showModeActions={showModeActions} />;
+    return (
+      <ViewPoctResultPage
+        embedded={embedded}
+        mode="results"
+        onModeChange={changeMode}
+        showModeActions={showModeActions}
+      />
+    );
   }
 
   return (
     <div className="space-y-4">
       <datalist id="poct-staff-options">
-        {poctUsers.map((user) => <option key={user} value={user} />)}
+        {poctUsers.map((user) => (
+          <option key={user} value={user} />
+        ))}
       </datalist>
       {/* <Card>
         <CardContent className="grid gap-3 p-4 md:grid-cols-3">
@@ -791,11 +977,21 @@ export function AddPoctPage({ embedded = false, mode, onModeChange, showModeActi
         onAddAnotherTime={addAnotherTimeForSelectedTests}
       />
       <section className="grid gap-4 xl:grid-cols-3">
-        {drafts.map((draft) => <DraftCardForm draft={draft} errors={draftErrors[draft.id]} key={draft.id} onChange={updateDraft} onRemove={removeDraft} />)}
+        {drafts.map((draft) => (
+          <DraftCardForm
+            draft={draft}
+            errors={draftErrors[draft.id]}
+            key={draft.id}
+            onChange={updateDraft}
+            onRemove={removeDraft}
+          />
+        ))}
       </section>
       <div className="sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={resetForm}>Reset</Button>
+          <Button type="button" variant="outline" onClick={resetForm}>
+            Reset
+          </Button>
           <Button type="button" onClick={saveResults}>
             <CheckCircle2 className="h-4 w-4" />
             Save & Submit
@@ -817,7 +1013,9 @@ function ResultsMatrix({ results }: { results: PoctResult[] }) {
   if (!results.length) {
     return (
       <Card>
-        <CardContent className="p-4 text-sm text-muted-foreground">No POCT results match the selected filters.</CardContent>
+        <CardContent className="p-4 text-sm text-muted-foreground">
+          No POCT results match the selected filters.
+        </CardContent>
       </Card>
     );
   }
@@ -832,13 +1030,20 @@ function ResultsMatrix({ results }: { results: PoctResult[] }) {
           <table className="w-full min-w-[860px] border-collapse text-left text-sm">
             <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="w-64 border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">Test</th>
+                <th className="w-64 border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                  Test
+                </th>
                 {slots.map((slot) => {
                   const [date, ...timeParts] = slot.split(" ");
                   return (
-                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]" key={slot}>
+                    <th
+                      className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]"
+                      key={slot}
+                    >
                       <span className="block">{displayDate(date)}</span>
-                      <span className="block normal-case text-muted-foreground">{timeParts.join(" ")}</span>
+                      <span className="block normal-case text-muted-foreground">
+                        {timeParts.join(" ")}
+                      </span>
                     </th>
                   );
                 })}
@@ -846,19 +1051,34 @@ function ResultsMatrix({ results }: { results: PoctResult[] }) {
             </thead>
             <tbody>
               {testNames.map((testName) => (
-                <tr className="border-b border-border last:border-0 hover:bg-surface-muted/70" key={testName}>
+                <tr
+                  className="border-b border-border last:border-0 hover:bg-surface-muted/70"
+                  key={testName}
+                >
                   <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] align-top">
                     <div className="font-medium text-foreground">{testName}</div>
                     <div className="text-xs text-muted-foreground">Result</div>
                   </td>
                   {slots.map((slot) => {
-                    const result = results.find((row) => row.testName === testName && buildResultSlot(row) === slot);
+                    const result = results.find(
+                      (row) => row.testName === testName && buildResultSlot(row) === slot,
+                    );
                     return (
-                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] align-top" key={slot}>
+                      <td
+                        className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] align-top"
+                        key={slot}
+                      >
                         {result ? (
                           <div className="space-y-1">
-                            <div className="font-semibold text-foreground">{result.result} <span className="font-normal text-muted-foreground">{result.unit}</span></div>
-                            <StatusPill tone={statusTone(result.status)}>{result.status}</StatusPill>
+                            <div className="font-semibold text-foreground">
+                              {result.result}{" "}
+                              <span className="font-normal text-muted-foreground">
+                                {result.unit}
+                              </span>
+                            </div>
+                            <StatusPill tone={statusTone(result.status)}>
+                              {result.status}
+                            </StatusPill>
                           </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>
@@ -876,7 +1096,12 @@ function ResultsMatrix({ results }: { results: PoctResult[] }) {
   );
 }
 
-export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showModeActions = true }: PoctWorkspaceProps = {}) {
+export function ViewPoctResultPage({
+  embedded = false,
+  mode,
+  onModeChange,
+  showModeActions = true,
+}: PoctWorkspaceProps = {}) {
   const [localMode, setLocalMode] = React.useState<PoctWorkspaceMode>("results");
   const activeMode = mode ?? localMode;
   const changeMode = React.useCallback(
@@ -915,10 +1140,16 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showM
   }, []);
 
   const syncedTestNames = React.useMemo(
-    () => syncedTestIds.map((id) => poctTests.find((item) => item.id === id)?.name).filter(Boolean) as string[],
+    () =>
+      syncedTestIds
+        .map((id) => poctTests.find((item) => item.id === id)?.name)
+        .filter(Boolean) as string[],
     [syncedTestIds],
   );
-  const testOptions = React.useMemo(() => (syncedTestNames.length ? syncedTestNames : poctTests.map((item) => item.name)), [syncedTestNames]);
+  const testOptions = React.useMemo(
+    () => (syncedTestNames.length ? syncedTestNames : poctTests.map((item) => item.name)),
+    [syncedTestNames],
+  );
   const effectiveTest = test !== "All" && testOptions.includes(test) ? test : "All";
 
   const filtered = results.filter((row) => {
@@ -951,7 +1182,14 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showM
   }
 
   if (activeMode === "add") {
-    return <AddPoctPage embedded={embedded} mode="add" onModeChange={changeMode} showModeActions={showModeActions} />;
+    return (
+      <AddPoctPage
+        embedded={embedded}
+        mode="add"
+        onModeChange={changeMode}
+        showModeActions={showModeActions}
+      />
+    );
   }
 
   return (
@@ -959,41 +1197,77 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showM
       <Card>
         <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[1.3fr_0.9fr_0.9fr_1fr_0.9fr_auto_auto_auto]">
           <label className={fieldClass}>
-            <span className={labelClass}>Patient <span className="text-danger">*</span></span>
-            <select className={selectClass} value={patient} onChange={(event) => setPatient(event.target.value)}>
+            <span className={labelClass}>
+              Patient <span className="text-danger">*</span>
+            </span>
+            <select
+              className={selectClass}
+              value={patient}
+              onChange={(event) => setPatient(event.target.value)}
+            >
               <option value="All">All patients</option>
-              {poctPatients.map((item) => <option key={item.id} value={item.id}>{item.id} - {item.name}</option>)}
+              {poctPatients.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.id} - {item.name}
+                </option>
+              ))}
             </select>
           </label>
           <label className={fieldClass}>
             <span className={labelClass}>From Date</span>
-            <DateTextInput value={displayDate(fromDate)} onChange={(value) => setFromDate(displayDateToIso(value))} />
+            <DateTextInput
+              value={displayDate(fromDate)}
+              onChange={(value) => setFromDate(displayDateToIso(value))}
+            />
           </label>
           <label className={fieldClass}>
             <span className={labelClass}>To Date</span>
-            <DateTextInput value={displayDate(toDate)} onChange={(value) => setToDate(displayDateToIso(value))} />
+            <DateTextInput
+              value={displayDate(toDate)}
+              onChange={(value) => setToDate(displayDateToIso(value))}
+            />
           </label>
           <label className={fieldClass}>
             <span className={labelClass}>Test</span>
-            <select className={selectClass} value={effectiveTest} onChange={(event) => setTest(event.target.value)}>
+            <select
+              className={selectClass}
+              value={effectiveTest}
+              onChange={(event) => setTest(event.target.value)}
+            >
               <option>All</option>
-              {testOptions.map((item) => <option key={item}>{item}</option>)}
+              {testOptions.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
             </select>
             <span className="text-[11px] text-muted-foreground">
-              {syncedTestNames.length ? "Synced with Add POCT selection" : "No tests selected in Add POCT"}
+              {syncedTestNames.length
+                ? "Synced with Add POCT selection"
+                : "No tests selected in Add POCT"}
             </span>
           </label>
           <label className={fieldClass}>
             <span className={labelClass}>Status</span>
-            <select className={selectClass} value={status} onChange={(event) => setStatus(event.target.value)}>
+            <select
+              className={selectClass}
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
               <option>All</option>
               <option>Completed</option>
               <option>Verified</option>
               <option>Pending</option>
             </select>
           </label>
-          <div className="flex items-end"><Button className="w-full" type="button" onClick={searchResults}>Search</Button></div>
-          <div className="flex items-end"><Button className="w-full" type="button" variant="outline" onClick={resetFilters}>Reset</Button></div>
+          <div className="flex items-end">
+            <Button className="w-full" type="button" onClick={searchResults}>
+              Search
+            </Button>
+          </div>
+          <div className="flex items-end">
+            <Button className="w-full" type="button" variant="outline" onClick={resetFilters}>
+              Reset
+            </Button>
+          </div>
           {showModeActions ? (
             <div className="flex items-end justify-end xl:min-w-[220px]">
               <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1011,26 +1285,72 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showM
           <table className="w-full min-w-[980px] border-collapse text-left text-sm">
             <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <tr>
-                {["#", "Date", "Time", "Test Name", "Result", "Unit", "Performed By", "Verified By", "Status", "Notes", "Action"].map((header) => (
-                  <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]" key={header}>{header}</th>
+                {[
+                  "#",
+                  "Date",
+                  "Time",
+                  "Test Name",
+                  "Result",
+                  "Unit",
+                  "Performed By",
+                  "Verified By",
+                  "Status",
+                  "Notes",
+                  "Action",
+                ].map((header) => (
+                  <th
+                    className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]"
+                    key={header}
+                  >
+                    {header}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {visibleRows.map((row, index) => (
-                <tr className="border-b border-border last:border-0 hover:bg-surface-muted/70" key={row.id}>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{(currentPage - 1) * pageSize + index + 1}</td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{displayDate(row.date)}</td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{row.time}</td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{row.testName}</td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{row.result}</td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{row.unit}</td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{row.performedBy}</td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{row.verifiedBy}</td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]"><StatusPill tone={statusTone(row.status)}>{row.status}</StatusPill></td>
-                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{row.notes}</td>
+                <tr
+                  className="border-b border-border last:border-0 hover:bg-surface-muted/70"
+                  key={row.id}
+                >
                   <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                    <Button aria-label="View POCT result" size="icon" type="button" variant="outline" onClick={() => setSelectedResult(row)}>
+                    {(currentPage - 1) * pageSize + index + 1}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    {displayDate(row.date)}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    {row.time}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    {row.testName}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    {row.result}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    {row.unit}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    {row.performedBy}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    {row.verifiedBy}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    <StatusPill tone={statusTone(row.status)}>{row.status}</StatusPill>
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    {row.notes}
+                  </td>
+                  <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
+                    <Button
+                      aria-label="View POCT result"
+                      size="icon"
+                      type="button"
+                      variant="outline"
+                      onClick={() => setSelectedResult(row)}
+                    >
                       <Eye className="h-4 w-4 text-primary" />
                     </Button>
                   </td>
@@ -1041,19 +1361,39 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showM
         </div>
         <div className="flex items-center justify-between border-t border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] text-xs text-muted-foreground">
           <span>
-            Showing {filtered.length ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} entries
+            Showing {filtered.length ? (currentPage - 1) * pageSize + 1 : 0} to{" "}
+            {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} entries
           </span>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>{"<"}</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={currentPage === 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              {"<"}
+            </Button>
             {Array.from({ length: Math.min(5, pageCount) }).map((_, index) => {
               const pageNumber = index + 1;
               return (
-                <Button key={pageNumber} size="sm" variant={pageNumber === currentPage ? "default" : "outline"} onClick={() => setPage(pageNumber)}>
+                <Button
+                  key={pageNumber}
+                  size="sm"
+                  variant={pageNumber === currentPage ? "default" : "outline"}
+                  onClick={() => setPage(pageNumber)}
+                >
                   {pageNumber}
                 </Button>
               );
             })}
-            <Button size="sm" variant="outline" disabled={currentPage === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>{">"}</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={currentPage === pageCount}
+              onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
+            >
+              {">"}
+            </Button>
           </div>
         </div>
       </div>
@@ -1061,13 +1401,20 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showM
         open={Boolean(selectedResult)}
         onOpenChange={(open) => !open && setSelectedResult(null)}
         title="POCT Result Detail"
-        description={selectedResult ? `${selectedResult.testName} / ${selectedResult.date} ${selectedResult.time}` : undefined}
+        description={
+          selectedResult
+            ? `${selectedResult.testName} / ${selectedResult.date} ${selectedResult.time}`
+            : undefined
+        }
         className="!inset-auto !bottom-auto !left-1/2 !right-auto !top-1/2 w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-lg md:!inset-auto md:!left-1/2 md:!right-auto md:!top-1/2 md:h-auto md:max-h-[90dvh] md:w-[560px] md:rounded-lg"
       >
         {selectedResult ? (
           <Card>
             <CardContent className="space-y-1 p-4">
-              <DetailRow label="Patient" value={`${selectedResult.patientId} - ${selectedResult.patientName}`} />
+              <DetailRow
+                label="Patient"
+                value={`${selectedResult.patientId} - ${selectedResult.patientName}`}
+              />
               <DetailRow label="Date" value={displayDate(selectedResult.date)} />
               <DetailRow label="Time" value={selectedResult.time} />
               <DetailRow label="Test Name" value={selectedResult.testName} />
@@ -1075,7 +1422,14 @@ export function ViewPoctResultPage({ embedded = false, mode, onModeChange, showM
               <DetailRow label="Unit" value={selectedResult.unit} />
               <DetailRow label="Performed By" value={selectedResult.performedBy} />
               <DetailRow label="Verified By" value={selectedResult.verifiedBy} />
-              <DetailRow label="Status" value={<StatusPill tone={statusTone(selectedResult.status)}>{selectedResult.status}</StatusPill>} />
+              <DetailRow
+                label="Status"
+                value={
+                  <StatusPill tone={statusTone(selectedResult.status)}>
+                    {selectedResult.status}
+                  </StatusPill>
+                }
+              />
               <DetailRow label="Notes" value={selectedResult.notes || "No notes"} />
             </CardContent>
           </Card>

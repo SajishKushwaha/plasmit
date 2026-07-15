@@ -43,7 +43,14 @@ export type PathologySummaryRow = {
   department: string;
   specimen: string;
   priority: PathologyPriority;
-  status: "Ordered" | "Sample Collected" | "Received" | "Processing" | "Verified" | "Released" | "Cancelled";
+  status:
+    | "Ordered"
+    | "Sample Collected"
+    | "Received"
+    | "Processing"
+    | "Verified"
+    | "Released"
+    | "Cancelled";
   orderedBy: string;
   orderDateTime: string;
 };

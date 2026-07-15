@@ -22,7 +22,7 @@ const statusConfig: Record<
     bg: "bg-emerald-50 hover:bg-emerald-100",
     border: "border-emerald-200",
     text: "text-emerald-700",
-    desc: "Active and taking OPD / patient consults"
+    desc: "Active and taking OPD / patient consults",
   },
   Busy: {
     label: "Busy",
@@ -30,7 +30,7 @@ const statusConfig: Record<
     bg: "bg-orange-50 hover:bg-orange-100",
     border: "border-orange-200",
     text: "text-orange-700",
-    desc: "Currently occupied with a patient or task"
+    desc: "Currently occupied with a patient or task",
   },
   "On Break": {
     label: "On Break",
@@ -38,7 +38,7 @@ const statusConfig: Record<
     bg: "bg-amber-50 hover:bg-amber-100",
     border: "border-amber-200",
     text: "text-amber-700",
-    desc: "Temporary break, returning shortly"
+    desc: "Temporary break, returning shortly",
   },
   "Off Duty": {
     label: "Off Duty",
@@ -46,7 +46,7 @@ const statusConfig: Record<
     bg: "bg-slate-50 hover:bg-slate-100",
     border: "border-slate-200",
     text: "text-slate-700",
-    desc: "Shift finished, not booking appointments"
+    desc: "Shift finished, not booking appointments",
   },
   "Emergency Call": {
     label: "Emergency",
@@ -54,7 +54,7 @@ const statusConfig: Record<
     bg: "bg-red-50 hover:bg-red-100",
     border: "border-red-200",
     text: "text-red-700 font-bold",
-    desc: "Attending emergency clinical escalation"
+    desc: "Attending emergency clinical escalation",
   },
 };
 
@@ -150,9 +150,13 @@ export function DoctorTopHeader() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1 font-medium">
                             <span className={cfg.text}>{cfg.label}</span>
-                            {isSelected && <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />}
+                            {isSelected && (
+                              <Check className="h-3.5 w-3.5 text-slate-900 shrink-0" />
+                            )}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5 font-normal leading-normal">{cfg.desc}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5 font-normal leading-normal">
+                            {cfg.desc}
+                          </div>
                         </div>
                       </button>
                     );
@@ -163,11 +167,7 @@ export function DoctorTopHeader() {
           </div>
 
           {/* Critical Alert Badge */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="relative gap-1.5 text-xs h-8"
-          >
+          <Button variant="ghost" size="sm" className="relative gap-1.5 text-xs h-8">
             <AlertCircle className="h-3.5 w-3.5 text-red-500" />
             <span className="hidden sm:inline">1 Critical</span>
           </Button>

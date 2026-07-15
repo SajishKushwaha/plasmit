@@ -60,14 +60,14 @@ export function useIsAdmin(): boolean {
  * Check if a module/route is doctor-specific
  */
 export function isDoctorModule(pathname: string): boolean {
-  return doctorAllowedModules.some(module => pathname.startsWith(module));
+  return doctorAllowedModules.some((module) => pathname.startsWith(module));
 }
 
 /**
  * Check if a module/route is admin-only
  */
 export function isAdminModule(pathname: string): boolean {
-  return doctorBlockedModules.some(module => pathname.startsWith(module as string));
+  return doctorBlockedModules.some((module) => pathname.startsWith(module as string));
 }
 
 /**
@@ -78,7 +78,7 @@ export function canSwitchToRole(fromRole: Role, toRole: Role): boolean {
   if (fromRole === "Super Admin" || fromRole === "Hospital Admin") {
     return true;
   }
-  
+
   // Regular users can only switch through role switcher (handled by UI)
   return false;
 }
@@ -96,7 +96,9 @@ export function getAccessibleModules(role: Role): string[] {
  * Get list of blocked modules for a role
  */
 export function getBlockedModules(role: Role): string[] {
-  return role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD" ? [...doctorBlockedModules] : [];
+  return role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD"
+    ? [...doctorBlockedModules]
+    : [];
 }
 
 /**
@@ -106,6 +108,6 @@ export function formatRouteName(route: string): string {
   return route
     .split("/")
     .filter(Boolean)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " "))
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " "))
     .join(" > ");
 }

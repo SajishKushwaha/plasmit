@@ -1,3 +1,5 @@
+"use client";
+
 import { HeadNurseDashboard } from "./head-nurse-dashboard";
 import type { HeadNurseModuleId, HeadNursePageProps } from "./head-nurse-types";
 import { AlertsDelaysPage } from "./pages/alerts-delays-page";

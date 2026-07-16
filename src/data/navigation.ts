@@ -598,6 +598,11 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
         group: "Main",
         allowedRoles: ["Receptionist"],
         status: "ready",
+        children: [
+          { id: "receptionist-emergency-reception", label: "Emergency Reception", route: "/receptionist/emergency-reception", status: "ready" },
+          { id: "receptionist-admission-workflow", label: "Admission Workflow", route: "/receptionist", status: "ready" },
+          { id: "receptionist-patient-details", label: "Patient Details", route: "/receptionist/patient-details", status: "ready" },
+        ],
       },
     ];
   }

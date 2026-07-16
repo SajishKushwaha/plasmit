@@ -3843,24 +3843,26 @@ function PatientSearchCommand({ patients }: { patients: IcuPatient[] }) {
 
   return (
     <div className="space-y-4">
-      <CollapsibleCommandPanel
-        summary={`${query.trim() || "All patients"} | ${risk} | ${ventilator} | ${rows.length} result(s)`}
-        title="Patient search filters"
-      >
-        <div className="grid gap-3 p-4 md:grid-cols-[minmax(240px,1fr)_220px_220px_auto] md:items-end">
-          <label className="space-y-1 text-sm">
-            <span className="font-medium text-foreground">Search MRN / patient / bed / doctor</span>
-            <Input placeholder="Search ICU patient..." value={query} onChange={(event) => setQuery(event.target.value)} />
-          </label>
-          <NativeSelect label="Risk" value={risk} onChange={setRisk} options={["All risk", "Critical score", "Critical", "Ventilated", "Stable ICU care", "Ready for transfer"]} />
-          <NativeSelect label="Ventilator" value={ventilator} onChange={setVentilator} options={["All ventilator", "On support", "Room air", "NIV support", "Invasive ventilation", "Oxygen mask"]} />
-          <Button variant="outline" onClick={() => {
-            setQuery("");
-            setRisk("All risk");
-            setVentilator("All ventilator");
-          }}>Reset</Button>
-        </div>
-      </CollapsibleCommandPanel>
+      <div className="grid gap-3 md:grid-cols-[minmax(240px,1fr)_220px_220px_auto_auto] md:items-center">
+        <Input placeholder="Search ICU patient..." value={query} onChange={(event) => setQuery(event.target.value)} />
+        <select className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={risk} onChange={(event) => setRisk(event.target.value)}>
+          {["All risk", "Critical score", "Critical", "Ventilated", "Stable ICU care", "Ready for transfer"].map((option) => <option key={option}>{option}</option>)}
+        </select>
+        <select className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={ventilator} onChange={(event) => setVentilator(event.target.value)}>
+          {["All ventilator", "On support", "Room air", "NIV support", "Invasive ventilation", "Oxygen mask"].map((option) => <option key={option}>{option}</option>)}
+        </select>
+        <Button variant="outline" onClick={() => {
+          setQuery("");
+          setRisk("All risk");
+          setVentilator("All ventilator");
+        }}>Reset</Button>
+        <Button asChild aria-label="Open admission module" title="Open admission module">
+          <Link href="/icu-command-center/patients/admissions">
+            <Plus className="h-4 w-4" />
+            New Patient
+          </Link>
+        </Button>
+      </div>
 
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -27325,7 +27327,6 @@ function TransferDischarge() {
   const { queryFocus, queryUnit } = useCommandRouteContext();
   const [search, setSearch] = React.useState("");
   const [unit, setUnit] = React.useState(queryUnit || "All ICU units");
-  const [destination, setDestination] = React.useState("All destinations");
   const [status, setStatus] = React.useState("All status");
   const [activeWorkflow, setActiveWorkflow] = React.useState<{ row: IcuDischargeWorkflowRow; initialTab: IcuDischargeDialogTab } | null>(null);
 
@@ -27343,45 +27344,22 @@ function TransferDischarge() {
         || row.patient.diagnosis.toLowerCase().includes(query)
         || row.destination.toLowerCase().includes(query);
       const unitMatch = unit === "All ICU units" || row.patient.unit === unit;
-      const destinationMatch = destination === "All destinations" || row.destinationType === destination;
       const statusMatch = status === "All status" || row.status === status;
-      return searchMatch && unitMatch && destinationMatch && statusMatch;
+      return searchMatch && unitMatch && statusMatch;
     }).sort((left, right) => dischargeFocusRank(right, queryFocus) - dischargeFocusRank(left, queryFocus));
-  }, [destination, queryFocus, search, status, unit]);
+  }, [queryFocus, search, status, unit]);
   const pagination = useIcuCommandPagination(filteredRows);
-
-  const readyCount = icuDischargeRows.filter((row) => row.status === "Ready" || row.status === "Ordered").length;
-  const inProgressCount = icuDischargeRows.filter((row) => row.status === "In progress").length;
-  const blockedCount = icuDischargeRows.filter((row) => row.status === "Blocked" || row.status === "Escalated").length;
-  const bedReleaseCount = icuDischargeRows.filter((row) => dischargeReadiness(row) >= 70).length;
-  const externalCount = icuDischargeRows.filter((row) => row.destinationType === "Other hospital" || row.destinationType === "Other ICU").length;
 
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
-      <CollapsibleCommandPanel
-        summary={`${unit} | ${destination} | ${status} | ${filteredRows.length} workflow(s)`}
-        title="Transfer metrics & filters"
-      >
-        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 px-3 py-3 sm:flex sm:flex-wrap sm:items-center">
-          <DashboardCommandMetric label="Workflows" value={icuDischargeRows.length} tone="info" />
-          <DashboardCommandMetric label="Visible" value={filteredRows.length} tone={filteredRows.length ? "info" : "muted"} />
-          <DashboardCommandMetric label="Ready / ordered" value={readyCount} tone={readyCount ? "success" : "muted"} />
-          <DashboardCommandMetric label="In progress" value={inProgressCount} tone={inProgressCount ? "warning" : "muted"} />
-          <DashboardCommandMetric label="Blocked" value={blockedCount} tone={blockedCount ? "danger" : "success"} />
-          <DashboardCommandMetric label="External" value={externalCount} tone={externalCount ? "critical" : "muted"} />
-          <DashboardCommandMetric label="Bed release" value={bedReleaseCount} tone={bedReleaseCount ? "success" : "warning"} />
-        </div>
-
-        <div className="grid gap-2 p-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.6fr)_repeat(3,minmax(160px,1fr))_auto]">
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="grid gap-2 p-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.6fr)_repeat(2,minmax(160px,1fr))_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input className="h-10 pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search ICU patient, MRN, bed, destination..." />
           </div>
           <select className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm" value={unit} onChange={(event) => setUnit(event.target.value)}>
             {unitOptions.map((option) => <option key={option}>{option}</option>)}
-          </select>
-          <select className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm" value={destination} onChange={(event) => setDestination(event.target.value)}>
-            {["All destinations", ...dischargeDestinationOptions].map((option) => <option key={option}>{option}</option>)}
           </select>
           <select className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm" value={status} onChange={(event) => setStatus(event.target.value)}>
             {["All status", ...dischargeStatusOptions].map((option) => <option key={option}>{option}</option>)}
@@ -27391,14 +27369,13 @@ function TransferDischarge() {
             onClick={() => {
               setSearch("");
               setUnit("All ICU units");
-              setDestination("All destinations");
               setStatus("All status");
             }}
           >
             Reset
           </Button>
         </div>
-      </CollapsibleCommandPanel>
+      </div>
 
       <div className="overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
         <div className="max-h-[650px] overflow-auto">

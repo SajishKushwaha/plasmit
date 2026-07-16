@@ -29,6 +29,7 @@ import {
   Save,
   ShieldAlert,
   Syringe,
+  UserPlus,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -388,10 +389,20 @@ type AdmissionPatientCandidate = {
 };
 
 type EmergencyAdmissionQuickDraft = {
+  patientId: string;
   patientName: string;
+  dob: string;
+  gender: string;
+  bloodGroup: string;
   ageGender: string;
+  source: string;
   mobile: string;
   relativeName: string;
+  height: string;
+  weight: string;
+  advanceDirective: string;
+  referral: string;
+  comorbidities: string[];
   diagnosis: string;
   allergy: string;
 };
@@ -822,13 +833,34 @@ function generatedAdmissionIdentity(source: string) {
 
 function createEmergencyAdmissionQuickDraft(patientName = ""): EmergencyAdmissionQuickDraft {
   return {
+    patientId: "",
     patientName,
+    dob: "",
+    gender: "",
+    bloodGroup: "",
     ageGender: "",
+    source: "Emergency direct ICU",
     mobile: "",
     relativeName: "",
+    height: "",
+    weight: "",
+    advanceDirective: "",
+    referral: "",
+    comorbidities: [],
     diagnosis: "",
     allergy: "",
   };
+}
+
+function calculateAdmissionAge(dob: string) {
+  if (!dob) return "";
+  const date = new Date(dob);
+  if (Number.isNaN(date.getTime())) return "";
+  const today = new Date();
+  let age = today.getFullYear() - date.getFullYear();
+  const monthDelta = today.getMonth() - date.getMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < date.getDate())) age -= 1;
+  return age >= 0 ? String(age) : "";
 }
 
 function admissionDefaultPastMedication(candidate?: AdmissionPatientCandidate) {
@@ -929,18 +961,20 @@ function createEmptyAdmissionDraft(): AdmissionDraft {
 }
 
 function createEmergencyAdmissionCandidate(form: EmergencyAdmissionQuickDraft, index: number): AdmissionPatientCandidate {
-  const identity = generatedAdmissionIdentity("Emergency direct ICU");
+  const identity = generatedAdmissionIdentity(form.source);
   const contactNote = [form.mobile.trim(), form.relativeName.trim()].filter(Boolean).join(" | ");
+  const source = form.source || "Emergency direct ICU";
+  const ageGender = form.ageGender.trim() || [calculateAdmissionAge(form.dob), form.gender].filter(Boolean).join("/");
 
   return {
     id: `emergency-icu-${Date.now()}-${index + 1}`,
     patientName: form.patientName.trim(),
-    mrn: identity.mrn,
-    ageGender: form.ageGender.trim(),
-    source: "Emergency direct ICU",
-    currentLocation: "Emergency triage red zone",
-    patientStatus: "Emergency direct ICU",
-    diagnosis: form.diagnosis.trim(),
+    mrn: form.patientId.trim() || identity.mrn,
+    ageGender,
+    source,
+    currentLocation: source === "Direct ICU admission" ? "Direct admission desk" : source === "External hospital transfer" ? "External transfer desk" : "Emergency triage red zone",
+    patientStatus: source === "External hospital transfer" ? "External transfer accepted" : source === "Direct ICU admission" ? "Planned ICU" : "Emergency direct ICU",
+    diagnosis: form.diagnosis.trim() || "Diagnosis pending",
     condition: "Critical",
     unit: "Medical ICU",
     bedNo: "ICU-C05",
@@ -952,10 +986,10 @@ function createEmergencyAdmissionCandidate(form: EmergencyAdmissionQuickDraft, i
     medication: "",
     risk: "Critical",
     isolation: "No",
-    sourceDetail: contactNote || "Emergency direct ICU admission",
-    handoverBy: "ER nurse / source unit team",
+    sourceDetail: contactNote || form.referral.trim() || `${source} admission`,
+    handoverBy: getAdmissionHandoverOptions(source)[0],
     acceptanceStatus: "Pending ICU doctor acceptance",
-    notes: contactNote,
+    notes: [contactNote, form.referral.trim(), form.comorbidities.join(", ")].filter(Boolean).join(" | "),
     allergy: form.allergy.trim(),
   };
 }
@@ -1787,6 +1821,7 @@ export function AdmissionWizardWorkspace() {
   const [created, setCreated] = React.useState<Array<AdmissionDraft & { id: string; status: string }>>([]);
   const [localAdmissionCandidates, setLocalAdmissionCandidates] = React.useState<AdmissionPatientCandidate[]>([]);
   const [patientQuery, setPatientQuery] = React.useState("");
+  const [admissionPath, setAdmissionPath] = React.useState<"new" | "transfer" | null>(null);
   const [showEmergencyCreate, setShowEmergencyCreate] = React.useState(false);
   const [emergencyDraft, setEmergencyDraft] = React.useState<EmergencyAdmissionQuickDraft>(() => createEmergencyAdmissionQuickDraft());
 
@@ -1802,29 +1837,34 @@ export function AdmissionWizardWorkspace() {
     if (!candidate) return;
     setDraft(applyAdmissionCandidate(candidate));
     setPatientQuery(candidate.patientName);
+    setAdmissionPath("transfer");
     setShowEmergencyCreate(false);
   };
-  const updateEmergencyDraft = (key: keyof EmergencyAdmissionQuickDraft, value: string) => {
+  const updateEmergencyDraft = <Key extends keyof EmergencyAdmissionQuickDraft>(key: Key, value: EmergencyAdmissionQuickDraft[Key]) => {
     setEmergencyDraft((current) => ({ ...current, [key]: value }));
   };
   const openEmergencyCreate = () => {
+    setAdmissionPath("new");
     setEmergencyDraft((current) => ({
       ...current,
       patientName: current.patientName || patientQuery.trim(),
+      source: current.source || draft.source || "Emergency direct ICU",
     }));
     setShowEmergencyCreate(true);
   };
   const createEmergencyAdmission = () => {
-    if (!emergencyDraft.patientName.trim() || !emergencyDraft.ageGender.trim() || !emergencyDraft.diagnosis.trim()) {
-      toast.error("Patient name, age/sex, and diagnosis are required.");
+    if (!emergencyDraft.patientName.trim() || !emergencyDraft.dob.trim() || !emergencyDraft.gender.trim() || !emergencyDraft.mobile.trim()) {
+      toast.error("Patient name, date of birth, gender, and contact number are required.");
       return;
     }
     const candidate = createEmergencyAdmissionCandidate(emergencyDraft, localAdmissionCandidates.length);
     setLocalAdmissionCandidates((current) => [candidate, ...current]);
     setDraft(applyAdmissionCandidate(candidate));
     setPatientQuery(candidate.patientName);
+    setAdmissionPath("new");
     setEmergencyDraft(createEmergencyAdmissionQuickDraft());
     setShowEmergencyCreate(false);
+    setStep(1);
     toast.success(`${candidate.patientName} added for ICU admission`);
   };
   const updateAdmissionSource = (source: string) => {
@@ -1849,6 +1889,7 @@ export function AdmissionWizardWorkspace() {
   const resetDraft = () => {
     setDraft(createEmptyAdmissionDraft());
     setPatientQuery("");
+    setAdmissionPath(null);
     setShowEmergencyCreate(false);
     setEmergencyDraft(createEmergencyAdmissionQuickDraft());
   };
@@ -1874,6 +1915,23 @@ export function AdmissionWizardWorkspace() {
   const admissionBlockReason = getAdmissionBlockReason(draft, created);
   const completenessBase = admissionRequiredFields.filter((key) => key !== "readiness").filter((key) => Boolean(draft[key])).length;
   const completeness = Math.round(((completenessBase + (readinessComplete(draft.readiness) ? 1 : 0)) / admissionRequiredFields.length) * 100);
+  const canContinue =
+    step === 0
+      ? admissionPath === "new"
+        ? Boolean(draft.patientName || (emergencyDraft.patientName && emergencyDraft.dob && emergencyDraft.gender && emergencyDraft.mobile))
+        : Boolean(admissionPath && draft.patientName && draft.mrn && draft.ageGender)
+      : step === 1 ? Boolean(draft.diagnosis && draft.condition && draft.risk && draft.isolation && draft.handoverBy)
+        : step === 2 ? Boolean(draft.unit && draft.bedNo && draft.ventilator && draft.devices && draft.nurse && draft.doctor)
+          : step === 3 ? Boolean(draft.currentMedication || draft.medication || draft.nursingNotes || draft.handedOver)
+            : !admissionBlockReason;
+  const patientChip = draft.patientName ? `${draft.patientName} | ${draft.mrn || "MRN pending"}` : "No patient selected";
+  const continueAdmission = () => {
+    if (step === 0 && admissionPath === "new" && !draft.patientName) {
+      createEmergencyAdmission();
+      return;
+    }
+    setStep((current) => Math.min(admissionSteps.length - 1, current + 1));
+  };
 
   React.useEffect(() => {
     if (availableAdmissionBedOptions.includes(draft.bedNo)) return;
@@ -1894,89 +1952,218 @@ export function AdmissionWizardWorkspace() {
   };
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[270px_minmax(0,1fr)]">
-      <Card>
-        <CardHeader>
+    <div className="overflow-hidden rounded-md border border-border bg-surface shadow-sm">
+      <div className="grid min-h-[calc(100dvh-170px)] xl:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="flex flex-col justify-between border-r border-border bg-background p-4">
           <div>
-            <CardTitle>ICU Admission Wizard</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
+            <p className="text-base font-semibold text-foreground">ICU Admission Wizard</p>
+            <p className="mt-1 text-xs text-muted-foreground">Unified - New Patient or Transfer</p>
+            <div className="mt-5 space-y-1">
           {admissionSteps.map((item, index) => (
             <button
               className={cn(
-                "flex w-full items-center gap-3 rounded-md border border-border p-3 text-left transition hover:bg-surface-muted",
-                index === step ? "border-primary bg-primary/5" : "bg-background",
+                "flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left transition hover:bg-surface-muted",
+                index === step ? "bg-primary/10 text-primary" : "text-muted-foreground",
               )}
               key={item}
               type="button"
               onClick={() => setStep(index)}
             >
-              <span className={cn("flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold", index <= step ? "bg-primary text-primary-foreground" : "bg-surface-muted text-muted-foreground")}>
-                {index + 1}
+              <span className={cn(
+                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                index < step ? "border-success bg-success text-white" : index === step ? "border-primary bg-surface text-primary" : "border-border bg-surface text-muted-foreground",
+              )}>
+                {index < step ? <Check className="h-3.5 w-3.5" /> : index + 1}
               </span>
               <span>
-                <span className="block text-sm font-semibold text-foreground">{item}</span>
-                <span className="block text-xs text-muted-foreground">{index < step ? "Complete" : index === step ? "Active" : "Pending"}</span>
+                <span className="block text-sm font-semibold">{item}</span>
+                <span className="block text-[11px]">{index < step ? "Complete" : index === step ? "In progress" : "Pending"}</span>
               </span>
             </button>
           ))}
-          <MetricTile label="Completion" value={`${completeness}%`} tone={completeness > 80 ? "success" : "warning"} icon={ClipboardCheck} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>{admissionSteps[step]}</CardTitle>
+            </div>
           </div>
-          <Badge tone={toneForStatus(step === admissionSteps.length - 1 ? "Ready" : "In progress")}>{step === admissionSteps.length - 1 ? "Review" : "In progress"}</Badge>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          <div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
+              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(step === 0 && !draft.patientName ? 10 : completeness, 10)}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">{Math.max(step === 0 && !draft.patientName ? 10 : completeness, 10)}% complete</p>
+          </div>
+        </aside>
+
+        <section className="flex min-w-0 flex-col bg-surface-muted/40">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface px-5 py-3">
+            <h2 className="text-lg font-semibold text-foreground">{admissionSteps[step]}</h2>
+            <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+              <span className="truncate">{patientChip}</span>
+              <Badge tone={toneForStatus(step === admissionSteps.length - 1 ? "Ready" : "In progress")}>{step === admissionSteps.length - 1 ? "Review" : "In progress"}</Badge>
+            </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-[920px] flex-1 space-y-4 p-5 pb-24">
           {step === 0 ? (
-            <FormGrid>
-              <TextField label="Search patient / MRN / location" value={patientQuery} onChange={setPatientQuery} placeholder="Search patient name, MRN, ER, ward, OT, external transfer..." wide />
-              {patientQuery.trim() ? (
-                <AdmissionPatientSearchRows
-                  rows={filteredPatientCandidates}
-                  searchedText={patientQuery}
-                  selectedPatientId={draft.patientId}
-                  onCreate={openEmergencyCreate}
-                  onSelect={updateAdmissionPatient}
-                />
+            <div className="space-y-4">
+              {!admissionPath ? (
+                <div className="rounded-md border border-border bg-surface p-5">
+                  <h3 className="text-base font-semibold text-foreground">How is this patient being admitted?</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Choose a path. Both continue into the same clinical admission steps below.</p>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <button
+                      className="rounded-md border border-border bg-surface p-5 text-left transition hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-ring/20"
+                      type="button"
+                      onClick={openEmergencyCreate}
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary"><UserPlus className="h-5 w-5" /></span>
+                      <span className="mt-3 block text-sm font-semibold text-foreground">New Patient</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">Patient has no existing record. Capture identity now; full history can be completed after admission.</span>
+                    </button>
+                    <button
+                      className="rounded-md border border-border bg-surface p-5 text-left transition hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-ring/20"
+                      type="button"
+                      onClick={() => {
+                        setAdmissionPath("transfer");
+                        setShowEmergencyCreate(false);
+                      }}
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-success/10 text-success"><ArrowRight className="h-5 w-5" /></span>
+                      <span className="mt-3 block text-sm font-semibold text-foreground">Transfer / Existing Patient</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">From ED, Ward, OT, or an external facility. Search by name, MRN, or location.</span>
+                    </button>
+                  </div>
+                </div>
               ) : null}
-              {showEmergencyCreate ? (
-                <EmergencyAdmissionCreatePanel
-                  draft={emergencyDraft}
-                  onCancel={() => setShowEmergencyCreate(false)}
-                  onChange={updateEmergencyDraft}
-                  onCreate={createEmergencyAdmission}
-                />
+
+              {admissionPath ? (
+                <div className="flex items-center justify-between">
+                  <Badge tone={admissionPath === "new" ? "info" : "success"}>{admissionPath === "new" ? "New Patient" : "Transfer / Existing Patient"}</Badge>
+                  <Button size="sm" type="button" variant="ghost" onClick={resetDraft}>Change path</Button>
+                </div>
               ) : null}
-              <SelectField label="Admission origin" value={draft.source} onChange={updateAdmissionSource} options={admissionSourceOptions} />
-              <ReadOnlyField label="Selected patient" value={draft.patientName && draft.mrn ? `${draft.patientName} | ${draft.mrn}` : ""} />
-              <ReadOnlyField label="ICU Admission No" value={draft.icuAdmissionNo} />
-              <ReadOnlyField label="Age / gender" value={draft.ageGender} />
-              <ReadOnlyField label="Location" value={draft.currentLocation} />
-              <ReadOnlyField label="Current status" value={draft.patientStatus} />
-            </FormGrid>
+
+              {admissionPath === "new" ? (
+                <div className="space-y-3">
+                  <EmergencyAdmissionCreatePanel
+                    draft={emergencyDraft}
+                    onCancel={resetDraft}
+                    onChange={updateEmergencyDraft}
+                    onCreate={createEmergencyAdmission}
+                  />
+                  <details className="rounded-md border border-border bg-surface" open>
+                    <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-semibold text-foreground">
+                      Additional Patient Information
+                      <Badge tone="warning">Optional - complete after admission</Badge>
+                    </summary>
+                    <div className="border-t border-border p-4">
+                      <p className="mb-4 text-sm text-foreground">Physical & clinical baseline and history. None of this blocks admission.</p>
+                      <div className="grid gap-3 md:grid-cols-2">
+                      <label className="space-y-1 text-sm">
+                        <span className="font-medium text-foreground">Height</span>
+                        <Input placeholder="cm" value={emergencyDraft.height} onChange={(event) => updateEmergencyDraft("height", event.target.value)} />
+                      </label>
+                      <label className="space-y-1 text-sm">
+                        <span className="font-medium text-foreground">Weight</span>
+                        <Input placeholder="kg" value={emergencyDraft.weight} onChange={(event) => updateEmergencyDraft("weight", event.target.value)} />
+                      </label>
+                      <label className="space-y-1 text-sm">
+                        <span className="font-medium text-foreground">Allergies</span>
+                        <Input placeholder="Enter allergies" value={emergencyDraft.allergy} onChange={(event) => updateEmergencyDraft("allergy", event.target.value)} />
+                      </label>
+                      <label className="space-y-1 text-sm">
+                        <span className="font-medium text-foreground">Advance Directive</span>
+                        <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={emergencyDraft.advanceDirective} onChange={(event) => updateEmergencyDraft("advanceDirective", event.target.value)}>
+                          <option value="">Select</option>
+                          <option>Yes</option>
+                          <option>No</option>
+                          <option>Not known</option>
+                        </select>
+                      </label>
+                      </div>
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-foreground">Known Comorbidities</p>
+                        <div className="mt-2 grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+                          {["Hypertension", "Diabetes Mellitus", "Ischemic Heart Disease", "COPD / Asthma", "CKD", "Hypothyroidism", "Malignancy", "Other"].map((item) => (
+                            <label className="flex items-center gap-2 text-sm text-foreground" key={item}>
+                              <input
+                                checked={emergencyDraft.comorbidities.includes(item)}
+                                className="h-4 w-4 rounded border-input"
+                                type="checkbox"
+                                onChange={() => {
+                                  updateEmergencyDraft(
+                                    "comorbidities",
+                                    emergencyDraft.comorbidities.includes(item)
+                                      ? emergencyDraft.comorbidities.filter((value) => value !== item)
+                                      : [...emergencyDraft.comorbidities, item],
+                                  );
+                                }}
+                              />
+                              <span>{item}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <label className="mt-4 block space-y-1 text-sm">
+                        <span className="font-medium text-foreground">Referral (optional)</span>
+                        <Input placeholder="Referred by (Dr. / Facility name)" value={emergencyDraft.referral} onChange={(event) => updateEmergencyDraft("referral", event.target.value)} />
+                      </label>
+                    </div>
+                  </details>
+                </div>
+              ) : null}
+
+              {admissionPath === "transfer" ? (
+                <div className="rounded-md border border-border bg-surface p-4">
+                  <h3 className="text-base font-semibold text-foreground">Find Patient</h3>
+                  <div className="mt-3">
+                    <TextField label="Search patient / MRN / location" value={patientQuery} onChange={setPatientQuery} placeholder="Search patient name, MRN, ER, ward, OT, external transfer..." wide />
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">Search across all active locations and recent registrations.</p>
+                  <div className="mt-3">
+                    {patientQuery.trim() ? (
+                      <AdmissionPatientSearchRows
+                        rows={filteredPatientCandidates}
+                        searchedText={patientQuery}
+                        selectedPatientId={draft.patientId}
+                        onCreate={openEmergencyCreate}
+                        onSelect={updateAdmissionPatient}
+                      />
+                    ) : (
+                      <div className="rounded-md border border-dashed border-border bg-surface-muted p-6 text-center text-sm text-muted-foreground">Start typing to find existing patient or transfer request.</div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {draft.patientName ? (
+                <div className="rounded-md border border-success/40 bg-success/10 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success text-sm font-bold text-white">{draft.patientName.charAt(0)}</div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{draft.patientName}</p>
+                        <p className="text-xs text-muted-foreground">{draft.mrn} | {draft.ageGender} | {draft.currentLocation || "Location pending"}</p>
+                      </div>
+                    </div>
+                    <Button size="sm" type="button" variant="outline" onClick={() => setStep(1)}>Continue</Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           ) : null}
 
           {step === 1 ? (
             <div className="space-y-3">
               <AdmissionFormSection title="Clinical Status" description="Current admission condition, recovery direction, risk, and isolation requirement.">
-                <TextField label="Diagnosis" value={draft.diagnosis} onChange={(value) => updateDraft("diagnosis", value)} placeholder="Primary ICU diagnosis" />
-                <SelectField label="Clinical status" value={draft.condition} onChange={(value) => updateDraft("condition", value)} options={["Critical", "Ill", "Ventilated", "Stable ICU care", "Ready for transfer"]} />
-                <SelectField label="Patient status" value={draft.recoveryStatus} onChange={(value) => updateDraft("recoveryStatus", value)} options={["Reviving", "Revived", "Other"]} />
-                <SelectField label="Risk level" value={draft.risk} onChange={(value) => updateDraft("risk", value)} options={["Critical", "High", "Medium", "Routine"]} />
-                <SelectField label="Isolation required" value={draft.isolation} onChange={(value) => updateDraft("isolation", value)} options={["No", "Yes", "Contact precaution", "Airborne precaution"]} />
-                <SelectField label={getAdmissionScenario(draft.source).handoverLabel} value={draft.handoverBy} onChange={(value) => updateDraft("handoverBy", value)} options={getAdmissionHandoverOptions(draft.source, draft.handoverBy)} />
+                <TextField label="Primary ICU Diagnosis" value={draft.diagnosis} onChange={(value) => updateDraft("diagnosis", value)} placeholder="Diagnosis" />
+                <SelectField label="Clinical Status" value={draft.condition} onChange={(value) => updateDraft("condition", value)} options={["Critical", "Stable", "Guarded"]} />
+                <SelectField label="Patient Status" value={draft.recoveryStatus} onChange={(value) => updateDraft("recoveryStatus", value)} options={["Other"]} />
+                <SelectField label="Risk Level" value={draft.risk} onChange={(value) => updateDraft("risk", value)} options={["High", "Medium", "Low"]} />
+                <SelectField label="Isolation Required" value={draft.isolation} onChange={(value) => updateDraft("isolation", value)} options={["No", "Yes"]} />
+                <TextField label="ER Handover By" value={draft.handoverBy} onChange={(value) => updateDraft("handoverBy", value)} placeholder="Nurse name" />
               </AdmissionFormSection>
 
               <AdmissionFormSection title="Investigations & Plan" description="Pending reports and immediate ICU care plan.">
                 <TextAreaField half label="Pending Investigations" value={draft.pendingInvestigations} onChange={(value) => updateDraft("pendingInvestigations", value)} placeholder="Lab, radiology, cultures, ABG, pending reports..." />
                 <TextAreaField half label="Planned Care / Treatment" value={draft.plannedCareTreatment} onChange={(value) => updateDraft("plannedCareTreatment", value)} placeholder="ICU plan, treatment goal, monitoring plan, escalation plan..." />
-                <TextField label={getAdmissionScenario(draft.source).detailLabel} value={draft.sourceDetail} onChange={(value) => updateDraft("sourceDetail", value)} placeholder="Admission source context..." wide />
               </AdmissionFormSection>
             </div>
           ) : null}
@@ -1993,10 +2180,8 @@ export function AdmissionWizardWorkspace() {
               />
               <SelectField label="Ventilator / oxygen" value={draft.ventilator} onChange={(value) => updateDraft("ventilator", value)} options={["Room air", "Oxygen mask", "NIV support", "Invasive ventilation", "Weaning trial"]} />
               <TextField label="Devices" value={draft.devices} onChange={(value) => updateDraft("devices", value)} placeholder="Monitor, pump, ventilator..." />
-              <SelectField label="Unit nurse" value={draft.nurse} onChange={(value) => updateDraft("nurse", value)} options={["Unit Nurse Priya", "Unit Nurse Meera", "Unit Nurse Sana"]} />
-              <SelectField label="Admitting doctor" value={draft.doctor} onChange={(value) => updateDraft("doctor", value)} options={["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma"]} />
-              <SelectField label="Admitting consultant" value={draft.admittingConsultant} onChange={(value) => updateDraft("admittingConsultant", value)} options={admittingConsultantOptions} />
-              <SelectField label="Admitting unit" value={draft.admittingTeam} onChange={(value) => updateDraft("admittingTeam", value)} options={admittingTeamOptions} />
+              <SelectField label="Unit Nurse" value={draft.nurse} onChange={(value) => updateDraft("nurse", value)} options={["Priya", "Unit Nurse Priya", "Unit Nurse Meera", "Unit Nurse Sana", "Ward Nurse Kavita", "Ward Nurse Arjun", "Ward Nurse Neha"]} />
+              <SelectField label="Admitting Doctor" value={draft.doctor} onChange={(value) => updateDraft("doctor", value)} options={["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma"]} />
               <AdmissionReadinessChecklist selected={selectedReadiness} onToggle={toggleReadiness} />
             </FormGrid>
           ) : null}
@@ -2029,22 +2214,27 @@ export function AdmissionWizardWorkspace() {
 
           {step === 4 ? <AdmissionReview draft={draft} blockReason={admissionBlockReason} bed={selectedBed} /> : null}
 
-          <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <Button variant="outline" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0}>Back</Button>
+          </div>
+
+          <div className="sticky bottom-0 mt-auto flex flex-col gap-2 border-t border-border bg-surface px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-2">
+              <Button variant="ghost" type="button" onClick={() => toast.success("Draft saved locally")}>Save Draft</Button>
+              <Button variant="ghost" type="button" onClick={resetDraft}>Cancel</Button>
+            </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={resetDraft}>Reset</Button>
+              <Button variant="outline" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0}>Back</Button>
               {step < admissionSteps.length - 1 ? (
-                <Button onClick={() => setStep((current) => Math.min(admissionSteps.length - 1, current + 1))}>Next <ArrowRight className="h-4 w-4" /></Button>
+                <Button disabled={!canContinue} onClick={continueAdmission}>Continue <ArrowRight className="h-4 w-4" /></Button>
               ) : (
                 <Button disabled={Boolean(admissionBlockReason)} onClick={saveAdmission}><Check className="h-4 w-4" />Admit patient</Button>
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </section>
+      </div>
 
       {created.length ? (
-        <Card className="xl:col-span-2">
+        <Card className="m-4">
           <CardHeader>
             <div>
               <CardTitle>Created Admissions</CardTitle>
@@ -7860,7 +8050,7 @@ function AdmissionPatientSearchRows({
           <p className="font-semibold text-foreground">No matching patient found</p>
           <p className="mt-1 text-xs text-muted-foreground">{searchedText.trim()}</p>
         </div>
-        <Button type="button" onClick={onCreate}>Create Emergency ICU Admission</Button>
+        <Button type="button" onClick={onCreate}>Add New Patient</Button>
       </div>
     );
   }
@@ -7869,7 +8059,7 @@ function AdmissionPatientSearchRows({
     <div className="overflow-hidden rounded-md border border-border bg-background md:col-span-2">
       <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-3 py-2">
         <p className="text-xs font-semibold text-muted-foreground">{rows.length} match(es)</p>
-        <Button type="button" variant="outline" onClick={onCreate}>Create Emergency ICU Admission</Button>
+        <Button type="button" variant="outline" onClick={onCreate}>Add New Patient</Button>
       </div>
       <div className="grid grid-cols-[minmax(180px,1.2fr)_minmax(180px,1fr)_minmax(160px,0.8fr)_120px] gap-3 border-b border-border bg-surface-muted px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <span>Patient</span>
@@ -7922,25 +8112,56 @@ function EmergencyAdmissionCreatePanel({
 }: {
   draft: EmergencyAdmissionQuickDraft;
   onCancel: () => void;
-  onChange: (key: keyof EmergencyAdmissionQuickDraft, value: string) => void;
+  onChange: <Key extends keyof EmergencyAdmissionQuickDraft>(key: Key, value: EmergencyAdmissionQuickDraft[Key]) => void;
   onCreate: () => void;
 }) {
   return (
-    <div className="rounded-md border border-primary/30 bg-primary/5 p-3 md:col-span-2">
-      <div className="mb-3 flex flex-col gap-2 border-b border-primary/20 pb-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-foreground">Create Emergency ICU Admission</p>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button type="button" onClick={onCreate}>Create & Select</Button>
+    <div className="rounded-md border border-border bg-surface p-5 md:col-span-2">
+      <div className="mb-4">
+        <div>
+          <p className="text-base font-semibold text-foreground">Patient Identity <span className="text-sm font-medium text-muted-foreground">- required to admit</span></p>
+          <p className="mt-1 text-sm text-muted-foreground">Only what's needed to safely admit. Everything else can be completed later.</p>
         </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        <TextField label="Patient name" value={draft.patientName} onChange={(value) => onChange("patientName", value)} placeholder="Patient name" />
-        <TextField label="Age / sex" value={draft.ageGender} onChange={(value) => onChange("ageGender", value)} placeholder="45/M" />
-        <TextField label="Mobile" value={draft.mobile} onChange={(value) => onChange("mobile", value)} placeholder="Mobile number" />
-        <TextField label="Relative / attendant" value={draft.relativeName} onChange={(value) => onChange("relativeName", value)} placeholder="Relative name" />
-        <TextAreaField half label="Diagnosis / reason" value={draft.diagnosis} onChange={(value) => onChange("diagnosis", value)} placeholder="Reason for direct ICU admission" />
-        <TextAreaField half label="Allergy" value={draft.allergy} onChange={(value) => onChange("allergy", value)} placeholder="Known allergy or no known allergy" />
+      <div className="grid gap-3 md:grid-cols-3">
+        <label className="space-y-1 text-sm">
+          <span className="font-semibold text-foreground">MRN / UHID</span>
+          <Input placeholder="Auto-assign or enter manually" value={draft.patientId} onChange={(event) => onChange("patientId", event.target.value)} />
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="font-semibold text-foreground">Patient Name <span className="text-danger">*</span></span>
+          <Input placeholder="Full name" value={draft.patientName} onChange={(event) => onChange("patientName", event.target.value)} />
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="font-semibold text-foreground">Date of Birth <span className="text-danger">*</span></span>
+          <Input type="date" value={draft.dob} onChange={(event) => onChange("dob", event.target.value)} />
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="font-semibold text-foreground">Gender <span className="text-danger">*</span></span>
+          <div className="grid h-10 grid-cols-3 overflow-hidden rounded-md border border-input bg-background">
+            {["Male", "Female", "Other"].map((gender) => (
+              <button
+                className={cn("border-r border-input text-sm font-medium last:border-r-0", draft.gender === gender ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-surface-muted")}
+                key={gender}
+                type="button"
+                onClick={() => onChange("gender", gender)}
+              >
+                {gender}
+              </button>
+            ))}
+          </div>
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="font-semibold text-foreground">Blood Group</span>
+          <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.bloodGroup} onChange={(event) => onChange("bloodGroup", event.target.value)}>
+            <option value="">Select</option>
+            {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", "Unknown"].map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </label>
+        <label className="space-y-1 text-sm">
+          <span className="font-semibold text-foreground">Contact Number <span className="text-danger">*</span></span>
+          <Input placeholder="Phone number" value={draft.mobile} onChange={(event) => onChange("mobile", event.target.value)} />
+        </label>
       </div>
     </div>
   );

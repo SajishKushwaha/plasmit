@@ -23,6 +23,7 @@ const authStorageKey = "hk-general-auth";
 const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
 const wardNurseRoute = "/icu-command-center/clinical-workspace/patient-overview";
+const icuDashboardRoute = "/icu-command-center/patients/search";
 
 const loginCredentials = [
   {
@@ -37,7 +38,7 @@ const loginCredentials = [
     password: "icu123",
     role: "ICU" as Role,
     scope: "icu",
-    route: "/icu-command-center/patients/search",
+    route: icuDashboardRoute,
   },
   {
     email: "admin@hospital.com",
@@ -170,7 +171,7 @@ export function LoginPage() {
         return;
       }
       if (savedScope === "icu") {
-        router.replace("/icu-command-center/patients/search");
+        router.replace(icuDashboardRoute);
         return;
       }
       if (savedScope === "unit-nurse") {

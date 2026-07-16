@@ -62,7 +62,7 @@ const patientHistoryTabOrder: HistoryTab[] = ["medical", "surgical", "medication
 type PatientDetailTab = (typeof patientDetailTabs)[number]["id"];
 
 const patientDocumentSchema = [
-  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["MRN / Patient ID", "UHID", "Patient Name", "Date of Birth", "Age", "Gender", "Blood Group", "Contact Number", "Email ID", "Address", "City", "State", "PIN Code", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Referral Notes"] },
+  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["UHID / MRN", "Patient Name", "Date of Birth", "Age", "Gender", "Blood Group", "Contact Number", "Email ID", "Address", "State", "City", "PIN Code", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact"] },
   { tabId: "clinical", tabLabel: "2. Physical & Clinical", fields: ["Blood Group (Reconfirm)", "Height", "Weight", "BMI (Auto)", "Allergies", "Comorbidities", "Smoking Status", "Alcohol Use", "Advance Directive", "Notes"] },
   { tabId: "history", tabLabel: "3. Patient History", fields: ["Past Medical History", "Known Comorbidities", "Past Surgical History", "Current Medications", "Allergy Status", "Allergen and Reaction", "Smoking Status", "Alcohol Use", "Relevant Social History"] },
   { tabId: "calculator", tabLabel: "4. Medical Calculator", fields: ["Selected Calculator", "Input Summary", "Result", "Interpretation", "Note / Order Action", "FHIR Observation Reference"] },
@@ -1410,10 +1410,7 @@ export function PatientDetailsPage() {
           <div className="mt-2" data-patient-tab="basic">
           <SectionCard icon={UserRound} title="1. Basic Demographics">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-              <Field label="MRN / Patient ID">
-                <Input />
-              </Field>
-              <Field label="UHID">
+              <Field label="UHID / MRN">
                 <Input />
               </Field>
               <Field className="xl:col-span-2" label="Patient Name">
@@ -1439,14 +1436,14 @@ export function PatientDetailsPage() {
                   <span className="text-xs text-muted-foreground">Years</span>
                 </div>
               </Field>
-              <div className="space-y-2" data-patient-field-group>
-                <span className={labelClass} data-patient-field-label>Gender</span>
-                <div className="flex flex-wrap gap-4 pt-2">
-                  <RadioOption label="Male" name="gender" />
-                  <RadioOption label="Female" name="gender" />
-                  <RadioOption label="Other" name="gender" />
-                </div>
-              </div>
+              <Field label="Gender">
+                <select className={selectClass} required>
+                  <option value="">Select</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </Field>
               <Field label="Blood Group">
                 <select className={selectClass} value={bloodGroup} onChange={(event) => setBloodGroup(event.target.value)}>
                   <option value="">Select</option>
@@ -1464,10 +1461,10 @@ export function PatientDetailsPage() {
               <Field className="md:col-span-2" label="Address">
                 <Input />
               </Field>
-              <Field label="City">
+              <Field label="State">
                 <Input />
               </Field>
-              <Field label="State">
+              <Field label="City">
                 <Input />
               </Field>
               <Field label="PIN Code">
@@ -1485,7 +1482,6 @@ export function PatientDetailsPage() {
                   <RadioOption label="Others" name="referralType" />
                 </div>
               </div>
-              <Field className="md:col-span-2 xl:col-span-4" label="Referral Notes"><Input placeholder="Enter referral notes (if any)" /></Field>
             </div>
           </SectionCard>
           </div>

@@ -17,7 +17,7 @@ export const roleRoutes: Record<Role, string> = {
   "Doctor IPD": "/doctor-ipd",
   Nurse: "/icu-nursing",
   "Unit Nurse": "/icu-command-center/nursing/assigned-patients",
-  "Head Nurse": "/nursing-icu/head-nurse?view=patients",
+  "Head Nurse": "/nursing-icu/head-nurse?view=icu",
   "Ward Nurse": "/icu-command-center/clinical-workspace/patient-overview",
   ICU: "/icu-command-center/patients/search",
   "Nurse ICU": "/nursing-icu",

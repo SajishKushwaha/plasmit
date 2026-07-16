@@ -3,6 +3,7 @@ import {
   icuAlerts,
   icuTasks,
 } from "../nursing-icu-data";
+import { getMappedDevicesForPatient } from "../nursing-icu-device-mappings";
 import {
   headNurseAdmissionReviewOverrides,
   headNurseAssignmentDrafts,
@@ -15,7 +16,7 @@ import {
   type HeadNurseStaffReadinessStatus,
   type HeadNurseUnitReadinessStatus,
 } from "./head-nurse-data";
-import type { HeadNurseIcuDashboardRow, HeadNursePatientRow, HeadNurseStaffRow, HeadNurseTone, HeadNurseUnitRow } from "./head-nurse-types";
+import type { HeadNurseIcuDashboardRow, HeadNurseOtherDeviceInventory, HeadNursePatientRow, HeadNurseStaffRow, HeadNurseTone, HeadNurseUnitRow } from "./head-nurse-types";
 
 type HeadNurseWorkflowOptions = {
   includeStoredState?: boolean;
@@ -23,6 +24,56 @@ type HeadNurseWorkflowOptions = {
 
 const ADMISSION_REVIEW_STATUS_STORAGE_KEY = "head-nurse-admission-review-status";
 const UNIT_NURSE_ASSIGNMENT_STORAGE_KEY = "head-nurse-unit-nurse-assignment";
+
+const otherDevicesByUnit: Record<string, HeadNurseOtherDeviceInventory[]> = {
+  "Cardiothoracic ICU": [
+    { deviceType: "Syringe Pump", total: 8, inUse: 5, maintenance: 1 },
+    { deviceType: "NIV / BiPAP", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "Defibrillator", total: 1, inUse: 0, maintenance: 0 },
+  ],
+  "General ICU": [
+    { deviceType: "Syringe Pump", total: 10, inUse: 7, maintenance: 1 },
+    { deviceType: "NIV / BiPAP", total: 3, inUse: 2, maintenance: 0 },
+    { deviceType: "HFNC", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "CRRT / Dialysis", total: 1, inUse: 0, maintenance: 0 },
+    { deviceType: "Defibrillator", total: 1, inUse: 0, maintenance: 0 },
+  ],
+  "Medical ICU": [
+    { deviceType: "Syringe Pump", total: 9, inUse: 6, maintenance: 0 },
+    { deviceType: "NIV / BiPAP", total: 3, inUse: 1, maintenance: 1 },
+    { deviceType: "HFNC", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "CRRT / Dialysis", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "Defibrillator", total: 1, inUse: 0, maintenance: 0 },
+  ],
+  "Neuro ICU": [
+    { deviceType: "Syringe Pump", total: 7, inUse: 4, maintenance: 0 },
+    { deviceType: "NIV / BiPAP", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "Defibrillator", total: 1, inUse: 0, maintenance: 0 },
+  ],
+  "Pediatric ICU": [
+    { deviceType: "Syringe Pump", total: 8, inUse: 5, maintenance: 0 },
+    { deviceType: "NIV / BiPAP", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "HFNC", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "Defibrillator", total: 1, inUse: 0, maintenance: 0 },
+  ],
+  "Respiratory ICU": [
+    { deviceType: "Syringe Pump", total: 7, inUse: 5, maintenance: 0 },
+    { deviceType: "NIV / BiPAP", total: 4, inUse: 3, maintenance: 0 },
+    { deviceType: "HFNC", total: 3, inUse: 2, maintenance: 0 },
+    { deviceType: "Defibrillator", total: 1, inUse: 0, maintenance: 0 },
+  ],
+  "Surgical ICU": [
+    { deviceType: "Syringe Pump", total: 5, inUse: 3, maintenance: 0 },
+    { deviceType: "NIV / BiPAP", total: 1, inUse: 0, maintenance: 0 },
+    { deviceType: "Defibrillator", total: 1, inUse: 0, maintenance: 0 },
+  ],
+  "Transplant ICU": [
+    { deviceType: "Syringe Pump", total: 7, inUse: 5, maintenance: 0 },
+    { deviceType: "NIV / BiPAP", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "CRRT / Dialysis", total: 2, inUse: 1, maintenance: 0 },
+    { deviceType: "Defibrillator", total: 1, inUse: 0, maintenance: 0 },
+  ],
+};
 
 export const headNursePatients = headNurseIcuPatients;
 
@@ -186,8 +237,17 @@ function buildHeadNurseIcuDashboardRows(): HeadNurseIcuDashboardRow[] {
     const patients = headNursePatients.filter((patient) => patient.unit === unitRow.unit);
     const nurses = headNurseStaffRows.filter((nurse) => nurse.unit === unitRow.unit);
     const availableNurses = nurses.filter((nurse) => nurse.status === "Available" && nurse.assignedPatients < nurse.maxCapacity);
-    const ventilatedPatients = patients.filter(patientNeedsVentilator).length;
-    const availableVentilatorBeds = Math.max(0, unitRow.ventilatorBeds - ventilatedPatients);
+    const mappedDevices = patients.flatMap((patient) => getMappedDevicesForPatient(patient));
+    const mappedVentilators = mappedDevices.filter((device) => device.type === "Ventilator").length;
+    const mappedMonitors = mappedDevices.filter((device) => device.type === "Monitor").length;
+    const mappedInfusionPumps = mappedDevices.filter((device) => device.type === "Infusion Pump").length;
+    const availableVentilatorBeds = Math.max(0, unitRow.ventilatorBeds - mappedVentilators);
+    const availableMonitors = Math.max(0, unitRow.totalMonitors - mappedMonitors);
+    const availableInfusionPumps = Math.max(0, unitRow.totalInfusionPumps - mappedInfusionPumps);
+    const otherDevices = otherDevicesByUnit[unitRow.unit] ?? [];
+    const otherDevicesTotal = otherDevices.reduce((total, device) => total + device.total, 0);
+    const otherDevicesInUse = otherDevices.reduce((total, device) => total + device.inUse, 0);
+    const otherDevicesAvailable = otherDevices.reduce((total, device) => total + Math.max(0, device.total - device.inUse - device.maintenance), 0);
     const openAlerts = icuAlerts.filter((alert) => patients.some((patient) => patient.id === alert.patientId) && alert.status !== "Resolved").length;
     const status = icuStatusForRow(unitRow.availableBeds, availableVentilatorBeds, availableNurses.length);
     const tone = icuToneForStatus(status);
@@ -200,9 +260,20 @@ function buildHeadNurseIcuDashboardRows(): HeadNurseIcuDashboardRow[] {
       availableBeds: unitRow.availableBeds,
       ventilatorBeds: unitRow.ventilatorBeds,
       availableVentilatorBeds,
+      totalMonitors: unitRow.totalMonitors,
+      availableMonitors,
+      totalInfusionPumps: unitRow.totalInfusionPumps,
+      availableInfusionPumps,
       isolationBeds: unitRow.isolationBeds,
       totalIcuNurses: nurses.length,
       availableIcuNurses: availableNurses.length,
+      mappedVentilators,
+      mappedMonitors,
+      mappedInfusionPumps,
+      otherDevices,
+      otherDevicesTotal,
+      otherDevicesInUse,
+      otherDevicesAvailable,
       criticalPatients: unitRow.criticalPatients,
       openAlerts,
       status,

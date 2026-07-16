@@ -164,12 +164,12 @@ export function NewAdmissionsPage({ initialPatientId }: HeadNursePageProps) {
                   <Button variant="outline">Request missing details</Button> */}
                   {reviewComplete ? (
                     <Button asChild>
-                      <Link href={headNursePatientHref("/head-nurse/unit-availability", patient.id)}>Verify admission</Link>
+                      <Link href={headNursePatientHref("/nursing-icu/head-nurse/unit-availability", patient.id)}>Verify admission</Link>
                     </Button>
                   ) : (
                     <Button asChild>
                       <Link
-                        href={headNursePatientHref("/head-nurse/unit-availability", patient.id)}
+                        href={headNursePatientHref("/nursing-icu/head-nurse/unit-availability", patient.id)}
                         onClick={() => setAdmissionReviewStatus(patient.id, "Verified")}
                       >
                         Verify admission

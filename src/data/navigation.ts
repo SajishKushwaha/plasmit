@@ -604,18 +604,22 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   if (role === "Receptionist") {
     return [
       {
-        id: "receptionist-icu-desk",
-        label: "ICU Reception",
+        id: "receptionist-patient-dashboard",
+        label: "Patient Dashboard",
         icon: LayoutDashboard,
-        route: "/receptionist",
+        route: "/receptionist/emergency-reception",
         group: "Main",
         allowedRoles: ["Receptionist"],
         status: "ready",
-        children: [
-          { id: "receptionist-emergency-reception", label: "Patient Dashboard", route: "/receptionist/emergency-reception", status: "ready" },
-          { id: "receptionist-admission-workflow", label: "Admission Workflow", route: "/receptionist", status: "ready" },
-          { id: "receptionist-patient-details", label: "Patient Details", route: "/receptionist/patient-details", status: "ready" },
-        ],
+      },
+      {
+        id: "receptionist-patient-details",
+        label: "Patient Details",
+        icon: Users,
+        route: "/receptionist/patient-details",
+        group: "Main",
+        allowedRoles: ["Receptionist"],
+        status: "ready",
       },
     ];
   }

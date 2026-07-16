@@ -3,9 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { UserRoundSearch } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { NativeSelect } from "@/features/operations/admin/admin-shared";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Select } from "@/components/ui/select";
+import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 import { headNursePatients } from "./head-nurse-mock-data";
 import type { HeadNurseModuleId, HeadNursePatientContextValue, HeadNurseTone } from "./head-nurse-types";
@@ -30,7 +33,7 @@ export function HeadNursePatientContext({
   const patientOptions = [patientPlaceholder, ...headNursePatients.map((item) => `${item.id}|${item.bedNo} - ${item.patientName}`)];
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="min-w-0 space-y-3">
       {patient ? <HeadNursePatientHeader patient={patient} /> : null}
 
       {shouldShowPatientSelector ? (
@@ -38,10 +41,10 @@ export function HeadNursePatientContext({
           <CardContent className="p-3">
             <div className="w-full max-w-xl space-y-2">
               <p className="text-sm font-semibold text-slate-950">Patient</p>
-              <NativeSelect
-                label="Patient"
+              <Select
+                ariaLabel="Patient"
                 value={patientId ? `${patientId}|${patient?.bedNo ?? ""} - ${patient?.patientName ?? ""}` : patientPlaceholder}
-                onChange={(value) => setPatientId(value === patientPlaceholder ? "" : value.split("|")[0] ?? "")}
+                onValueChange={(value) => setPatientId(value === patientPlaceholder ? "" : value.split("|")[0] ?? "")}
                 options={patientOptions}
               />
             </div>
@@ -58,8 +61,8 @@ function HeadNursePatientHeader({ patient }: { patient: (typeof headNursePatient
   const nurseName = patient.assignedUnitNurse || "Not assigned";
 
   return (
-    <div className="overflow-x-auto rounded-t-xl border border-indigo-400 bg-[#6571ea] px-4 py-4 shadow-md shadow-indigo-100">
-      <div className="flex min-w-max items-center gap-5 whitespace-nowrap text-xs font-black text-white">
+    <div className="overflow-x-auto rounded-t-xl border border-indigo-400 bg-[#6571ea] px-4 py-3 shadow-md shadow-indigo-100">
+      <div className="flex min-w-max items-center gap-4 whitespace-nowrap text-xs font-black text-white">
         <span className="text-base">{patient.patientName}</span>
         <HeadNurseHeaderChip>MR: {patient.mrn}</HeadNurseHeaderChip>
         <HeadNurseHeaderChip>Age/Sex: {patient.ageGender}</HeadNurseHeaderChip>
@@ -78,13 +81,7 @@ function HeadNurseHeaderChip({ children }: { children: React.ReactNode }) {
 }
 
 export function HeadNurseEmptyPatientState({ moduleLabel }: { moduleLabel: string }) {
-  return (
-    <Card className="border-dashed border-slate-300 bg-white">
-      <CardContent className="p-8 text-center">
-        <p className="text-sm font-semibold text-slate-500">Select patient to view {moduleLabel}.</p>
-      </CardContent>
-    </Card>
-  );
+  return <EmptyState description={`Select a patient to view ${moduleLabel}.`} icon={UserRoundSearch} title="No patient selected" />;
 }
 
 export function InfoTile({ label, value, inline = false }: { label: string; value: React.ReactNode; inline?: boolean }) {
@@ -97,7 +94,7 @@ export function InfoTile({ label, value, inline = false }: { label: string; valu
 }
 
 export function HeadNurseTonePill({ children, tone }: { children: React.ReactNode; tone: HeadNurseTone }) {
-  return <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-black text-white", headNurseToneClass(tone))}>{children}</span>;
+  return <StatusPill tone={tone}>{children}</StatusPill>;
 }
 
 export function HeadNurseModuleLink({ children, href }: { children: React.ReactNode; href: string }) {

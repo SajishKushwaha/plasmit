@@ -17,22 +17,8 @@ function navChild(id: string, label: string, route: string, children?: Navigatio
 export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermission> = {
   HEAD_NURSE: {
     role: "Head Nurse",
-    defaultRoute: "/nursing-icu/head-nurse?view=patients",
+    defaultRoute: "/nursing-icu/head-nurse?view=icu",
     routes: [
-      "/head-nurse",
-      "/head-nurse/new-admissions",
-      "/head-nurse/unit-availability",
-      "/head-nurse/staff-availability",
-      "/head-nurse/patient-assignment",
-      "/head-nurse/alerts-delays",
-      "/head-nurse/escalations",
-      "/head-nurse/shift-handover",
-      "/head-nurse/admission-queue",
-      "/head-nurse/admission-review",
-      "/head-nurse/unit-assignment",
-      "/head-nurse/audit-control",
-      "/head-nurse/escalation",
-      "/head-nurse/handover-verification",
       "/nursing-icu/head-nurse",
       "/nursing-icu/head-nurse/*",
       "/icu-command-center/nursing/station",
@@ -46,10 +32,20 @@ export const nursingRolePermissions: Record<NursingRoleKey, NursingRolePermissio
       "/icu-command-center/administration/audit-logs",
       "/icu-command-center/patients/*",
     ],
-    patientTabs: ["overview", "results", "events", "shift-summary"],
+    patientTabs: ["overview", "monitoring", "orders", "events", "shift-summary", "collaborate"],
     navigation: [
-      navChild("head-nurse-patient-dashboard", "Patient Dashboard", "/nursing-icu/head-nurse?view=patients"),
-      navChild("head-nurse-icu-dashboard", "ICU Dashboard", "/nursing-icu/head-nurse?view=icu"),
+      navChild("head-nurse-overview", "Overview", "/nursing-icu/head-nurse?view=icu", [
+        navChild("head-nurse-icu-dashboard", "ICU Dashboard", "/nursing-icu/head-nurse?view=icu"),
+        navChild("head-nurse-patient-dashboard", "Patient Dashboard", "/nursing-icu/head-nurse?view=patients"),
+        navChild("head-nurse-archived-records", "Archived Records", "/nursing-icu/head-nurse/archived-records"),
+      ]),
+      navChild("head-nurse-administration", "Administration", "/nursing-icu/head-nurse/alerts-delays", [
+        navChild("head-nurse-alerts-delays", "Escalations", "/nursing-icu/head-nurse/alerts-delays"),
+        navChild("head-nurse-shift-handover", "Handover", "/nursing-icu/head-nurse/shift-handover"),
+      ]),
+      navChild("head-nurse-audit-control", "Audit & Control", "/nursing-icu/head-nurse/audit-control", [
+        navChild("head-nurse-critical-delays", "Critical Delays", "/nursing-icu/head-nurse/audit-control/critical-delays"),
+      ]),
     ],
   },
   UNIT_NURSE: {
@@ -127,7 +123,7 @@ export function isNursingPersonaRole(role: Role): boolean {
 
 export function canAccessNursingIcuRoute(role: Role, pathname: string, tab?: string | null): boolean {
   const permission = getNursingRolePermission(role);
-  if (!permission || !pathname.startsWith("/icu-command-center")) {
+  if (!permission || (!pathname.startsWith("/icu-command-center") && !pathname.startsWith("/nursing-icu"))) {
     return true;
   }
 

@@ -1,11 +1,15 @@
 "use client";
 
 import * as React from "react";
+import { RotateCcw } from "lucide-react";
 
 import { CenterModal } from "@/components/ui/center-modal";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
+import { SearchInput } from "@/components/ui/search-input";
+import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { icuAlerts, icuTasks } from "../../nursing-icu-data";
 import { headNursePatients } from "../head-nurse-mock-data";
@@ -46,7 +50,7 @@ type ActiveActionState = {
 
 const ESCALATION_STORE_KEY = "head-nurse-escalation-history";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 export function AlertsDelaysPage({ initialPatientId }: HeadNursePageProps) {
   void initialPatientId;
@@ -95,34 +99,13 @@ function AlertsDelaysView() {
   const firstVisible = filteredRows.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
   const lastVisible = Math.min(currentPage * PAGE_SIZE, filteredRows.length);
 
-  const counts = React.useMemo(() => getEscalationCounts(rows), [rows]);
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
-        <CardHeader className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-            <SummaryChip tone="danger" label="Open escalations" value={counts.open} />
-            <SummaryChip tone="critical" label="Critical" value={counts.critical} />
-            <SummaryChip tone="warning" label="Awaiting review" value={counts.awaitingReview} />
-            <SummaryChip tone="info" label="Forwarded" value={counts.forwarded} />
-            <SummaryChip tone="success" label="Resolved" value={counts.resolved} />
-
-          </div>
-          <div className="flex justify-start ">
-            <Button
-              variant="outline"
-              className="h-8 rounded-xl border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm"
-              onClick={() => window.history.back()}
-            >
-              Back
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 p-5">
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_190px_190px_170px_auto]">
+        <CardContent className="space-y-3 p-4">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_190px_190px_170px_40px_auto]">
             <div className="relative">
-              <Input
+              <SearchInput
                 aria-label="Search escalations"
                 className="h-10 rounded-xl border-slate-200 bg-white pl-4 pr-4 text-sm font-semibold text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-50"
                 onChange={(event) => setSearch(event.target.value)}
@@ -130,142 +113,132 @@ function AlertsDelaysView() {
                 value={search}
               />
             </div>
-            <select
-              aria-label="Filter severity"
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-50"
-              onChange={(event) => setSeverityFilter(event.target.value as "All severity" | EscalationSeverity)}
-              value={severityFilter}
-            >
-              {['All severity', 'Critical', 'Medium', 'Info'].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Filter status"
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-50"
-              onChange={(event) => setStatusFilter(event.target.value as "Open work" | "All work" | EscalationStatus)}
-              value={statusFilter}
-            >
-              {['Open work', 'All work', 'Awaiting Review', 'Forwarded', 'Resolved'].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <input
-              aria-label="Filter date"
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-50"
-              onChange={(event) => setDateFilter(event.target.value)}
-              type="date"
-              value={dateFilter}
-            />
+            <Select ariaLabel="Filter severity" onValueChange={(value) => setSeverityFilter(value as "All severity" | EscalationSeverity)} options={["All severity", "Critical", "High", "Medium", "Info"]} value={severityFilter} />
+            <Select ariaLabel="Filter status" onValueChange={(value) => setStatusFilter(value as "Open work" | "All work" | EscalationStatus)} options={["Open work", "All work", "Awaiting Review", "Forwarded", "Resolved"]} value={statusFilter} />
+            <DatePicker ariaLabel="Filter date" onChange={setDateFilter} value={dateFilter} />
             <Button
-              className="h-10 rounded-xl px-4 text-sm font-black"
+              aria-label="Reset filters"
+              className="h-10 w-10 rounded-xl p-0"
               onClick={() => {
                 setSearch("");
                 setSeverityFilter("All severity");
                 setStatusFilter("Open work");
                 setDateFilter("");
+                setPage(1);
               }}
+              title="Reset filters"
               variant="outline"
             >
-              Reset
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+            <Button
+              className="h-10 rounded-xl px-4 text-sm font-semibold"
+              onClick={() => window.history.back()}
+            >
+              Back
             </Button>
           </div>
         </CardContent>
       </Card>
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-            <table className="w-full min-w-[1100px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500">
-                  <th className="sticky left-0 z-30 w-[230px] bg-slate-50 px-5 py-4 text-left shadow-[1px_0_0_0_#e2e8f0]">Patient</th>
-                  <th className="px-4 py-4 text-left">Raised By</th>
-                  <th className="px-4 py-4 ">Date & Time</th>
-                  <th className="px-4 py-4 text-left min-w-[180px]">Escalation</th>
-                  <th className="px-4 py-4 text-center">Severity</th>
-                  <th className="px-4 py-4 text-center">Unit Action</th>
-                  <th className="px-4 py-4 text-center min-w-[180px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="w-full min-w-[1460px] table-fixed border-collapse text-sm">
+              <colgroup>
+                <col className="w-[230px]" />
+                <col className="w-[150px]" />
+                <col className="w-[190px]" />
+                <col className="w-[260px]" />
+                <col className="w-[160px]" />
+                <col className="w-[160px]" />
+                <col className="w-[230px]" />
+              </colgroup>
+              <TableHeader>
+                <TableRow className="border-b border-slate-200 bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500">
+                  <TableHead className="sticky left-0 z-30 w-[230px] bg-slate-50 px-5 py-3 text-left shadow-[1px_0_0_0_#e2e8f0]">Patient</TableHead>
+                  <TableHead className="px-4 py-3 text-left">Raised By</TableHead>
+                  <TableHead className="px-4 py-3 ">Date & Time</TableHead>
+                  <TableHead className="px-4 py-3 text-left min-w-[180px]">Escalation</TableHead>
+                  <TableHead className="px-4 py-3 text-center">Severity</TableHead>
+                  <TableHead className="px-4 py-3 text-center">Unit Action</TableHead>
+                  <TableHead className="px-4 py-3 text-center min-w-[180px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {visibleRows.length ? (
                   visibleRows.map((row) => (
-                    <tr className="border-b border-slate-100 last:border-b-0" key={row.recordKey}>
-                      <td className="sticky left-0 z-20 border-r border-slate-100 bg-white p-0 align-middle shadow-[1px_0_0_0_#e2e8f0]">
-                        <div className={cn("relative min-h-[116px] px-4 py-6 before:absolute before:inset-y-0 before:left-0 before:w-1", patientAccentClass(row.severity))}>
+                    <TableRow className="border-b border-slate-100 last:border-b-0" key={row.recordKey}>
+                      <TableCell className="sticky left-0 z-20 h-px border-r border-slate-100 bg-white p-0 align-middle shadow-[1px_0_0_0_#e2e8f0]">
+                        <div className={cn("relative h-full min-h-[64px] px-4 py-2 before:absolute before:inset-y-0 before:left-0 before:w-1", patientAccentClass(row.severity))}>
                           <p className={cn("text-base font-black", patientNameClass(row.severity))}>{row.patientName}</p>
                           <p className="mt-2 text-sm font-black text-slate-950">
                             {row.bedNo} | {row.unit}
                           </p>
                         </div>
-                      </td>
-                      <td className="min-w-[180px] px-4 py-4 align-middle">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 align-middle">
                         <p className="font-medium text-slate-950 py2">{row.raisedBy}</p>
                         {/* <p className="text-xs font-semibold text-slate-500">{row.raisedByNote}</p> */}
-                      </td>
-                      <td className="px-4 py-4 text-center align-middle">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 text-center align-middle">
                         <div className="space-y-0.5">
                           <p className="font-medium text-slate-950 py2">{formatEscalationDate(row.createdAt)}</p>
                           <p className="text-xs font-semibold text-slate-500">{formatEscalationTime(row.createdAt)}</p>
                         </div>
-                      </td>
-                      <td className="px-4 py-4 align-middle">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 align-middle">
                         <p className="font-medium text-slate-950 py2">{row.escalation}</p>
                         <p className="text-xs font-semibold text-slate-500">{row.escalationDetail}</p>
-                      </td>
-                      <td className="px-4 py-4 text-center align-middle">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 text-center align-middle">
                         <HeadNurseTonePill tone={severityTone(row.severity)}>{displaySeverityLabel(row.severity)}</HeadNurseTonePill>
-                      </td>
-                      <td className="px-4 py-4 text-center align-middle">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 text-center align-middle">
                         <p className="font-medium text-slate-950 py2">{row.unitAction}</p>
                         <p className="text-xs font-semibold text-slate-500">{row.unitActionNote}</p>
-                      </td>
-                      <td className="px-4 py-4 text-right">
+                      </TableCell>
+                      <TableCell className="px-4 py-2 text-right">
                         <div className="flex flex-wrap justify-end gap-2">
                           <ActionButton label="View" onClick={() => setActiveAction({ row, action: "Review" })} tone="outline" />
                           <ActionButton label="Forward" onClick={() => applyEscalationAction(row, "Forward")} tone="outline" />
                           <ActionButton label="Resolve" onClick={() => applyEscalationAction(row, "Resolve")} tone="solid" />
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 ) : (
-                  <tr>
-                    <td className="px-4 py-10 text-center text-sm font-semibold text-slate-500" colSpan={7}>
+                  <TableRow>
+                    <TableCell className="px-4 py-10 text-center text-sm font-semibold text-slate-500" colSpan={7}>
                       No escalations match the current filters.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
-      <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-bold text-slate-500">
           Showing <span className="text-slate-950">{firstVisible}-{lastVisible}</span> of <span className="text-slate-950">{filteredRows.length}</span> escalations
         </p>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={currentPage === 1}
             onClick={() => setPage((value) => Math.max(1, value - 1))}
             type="button"
           >
             Prev
-          </button>
+          </Button>
           <span className="inline-flex h-9 min-w-24 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-700 shadow-sm">
             Page {currentPage} / {pageCount}
           </span>
-          <button
+          <Button
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={currentPage === pageCount}
             onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
             type="button"
           >
             Next
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -278,13 +251,13 @@ function AlertsDelaysView() {
           title={activeAction.action === "Review" ? "View escalation details" : `${activeAction.action} escalation`}
           description={`${activeAction.row.patientName} | ${activeAction.row.bedNo} | ${activeAction.row.unit}`}
         >
-          <div className="space-y-4">
+          <div className="space-y-3">
             {activeAction.action === "Review" ? (
               <>
                 {/* <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm"> */}
                   
 
-                  <div className="max-h-[70vh] overflow-y-auto px-5">
+                  <div className="max-h-[60vh] overflow-y-auto px-5">
                     
                     <div className="flex justify-end">
                       <div className="flex items-center gap-2 py-2">
@@ -305,7 +278,7 @@ function AlertsDelaysView() {
                       </div>
                     </div>
                     <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.9fr)]">
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <div className="grid gap-3 sm:grid-cols-2">
                           <InfoTile label="Patient" value={activeAction.row.patientName} />
                           <InfoTile label="Bed / Unit" value={`${activeAction.row.bedNo} | ${activeAction.row.unit}`} />
@@ -322,11 +295,11 @@ function AlertsDelaysView() {
                         </div>
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Escalation decision</p>
+                          <p className="text-sm font-bold uppercase tracking-[0.18em] text-slate-500">Escalation decision</p>
                           <div className="mt-4 space-y-3">
-                            <InfoTile label="Source" value={activeAction.row.sourceLabel} />
+                            <InfoTile inline label="Source" value={activeAction.row.sourceLabel} />
                             <InfoTile inline label="Date & Time" value={`${formatEscalationDate(activeAction.row.createdAt)} | ${formatEscalationTime(activeAction.row.createdAt)}`} />
                           </div>
                         </div>
@@ -338,13 +311,13 @@ function AlertsDelaysView() {
                     </div>
                   </div>
 
-                  <div className="border-t border-slate-200 bg-white px-5 py-4">
+                  {/* <div className="border-t border-slate-200 bg-white px-5 py-4">
                     <div className="flex flex-wrap justify-end gap-2">
                       <Button variant="outline" onClick={() => setActiveAction(null)}>
                         Close
                       </Button>
                     </div>
-                  </div>
+                  </div> */}
                 {/* </div> */}
               </>
             ) : (
@@ -375,15 +348,6 @@ function AlertsDelaysView() {
           </div>
         </CenterModal>
       ) : null}
-    </div>
-  );
-}
-
-function SummaryChip({ label, value, tone }: { label: string; value: number; tone: HeadNurseTone }) {
-  return (
-    <div className={cn("flex items-center justify-between rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide shadow-sm", summaryChipClass(tone))}>
-      <span>{label}</span>
-      <span>{value}</span>
     </div>
   );
 }
@@ -426,7 +390,7 @@ function displaySeverityLabel(severity: EscalationSeverity) {
 
 function ActionButton({ label, onClick, tone }: { label: string; onClick: () => void; tone: "outline" | "solid" }) {
   return (
-    <button
+    <Button
       className={cn(
         "inline-flex h-8 items-center justify-center rounded-lg px-4 text-sm font-bold shadow-sm transition",
         tone === "outline" ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "bg-sky-600 text-white hover:bg-sky-700",
@@ -435,7 +399,7 @@ function ActionButton({ label, onClick, tone }: { label: string; onClick: () => 
       type="button"
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -472,13 +436,6 @@ function unitActionNoteForStatus(status: EscalationStatus) {
   return "Forward to duty doctor";
 }
 
-function summaryChipClass(tone: HeadNurseTone) {
-  if (tone === "critical" || tone === "danger") return "border-red-200 bg-red-50 text-red-700";
-  if (tone === "warning") return "border-orange-200 bg-orange-50 text-orange-700";
-  if (tone === "info") return "border-sky-200 bg-sky-50 text-sky-700";
-  if (tone === "success") return "border-green-200 bg-green-50 text-green-700";
-  return "border-slate-200 bg-slate-50 text-slate-700";
-}
 
 function actionMessage(action: EscalationAction, row: EscalationRow) {
   if (action === "Review") return `Review this escalation for ${row.unit}. The status will move to Awaiting Review and the unit action will update.`;
@@ -578,15 +535,6 @@ function statusRank(status: EscalationStatus) {
   return 3;
 }
 
-function getEscalationCounts(rows: EscalationRow[]) {
-  return {
-    open: rows.filter((row) => row.status !== "Resolved").length,
-    critical: rows.filter((row) => row.severity === "Critical").length,
-    awaitingReview: rows.filter((row) => row.status === "Awaiting Review").length,
-    forwarded: rows.filter((row) => row.status === "Forwarded").length,
-    resolved: rows.filter((row) => row.status === "Resolved").length,
-  };
-}
 
 function readEscalationStore(): EscalationStore {
   if (typeof window === "undefined") return {};

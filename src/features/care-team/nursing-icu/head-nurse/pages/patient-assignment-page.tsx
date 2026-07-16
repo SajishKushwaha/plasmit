@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { NativeSelect } from "@/features/operations/admin/admin-shared";
+import { Select } from "@/components/ui/select";
 import { HeadNurseEmptyPatientState, HeadNursePatientContext, HeadNurseTonePill, InfoTile } from "../head-nurse-patient-context";
 import { canAssignPatient, headNursePatientRows, headNurseStaffRows, selectedUnitNurseForPatient, staffReadinessForPatient, unitReadinessForPatient } from "../head-nurse-mock-data";
 import type { HeadNursePageProps } from "../head-nurse-types";
@@ -38,8 +38,8 @@ export function PatientAssignmentPage({ initialPatientId }: HeadNursePageProps) 
                 <InfoTile label="Current assignment" value={<HeadNurseTonePill tone={row?.tone ?? "info"}>{row?.assignmentStatus ?? "Pending"}</HeadNurseTonePill>} />
               </div>
               <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)]">
-                <NativeSelect label="ICU Nurse" value={selectedIcuNurse || "Select ICU Nurse"} onChange={() => undefined} options={["Select ICU Nurse", ...icuNurses]} />
-                <NativeSelect label="Assignment priority" value={patient.criticalityScore >= 8 ? "Critical first" : "Routine assignment"} onChange={() => undefined} options={["Critical first", "Routine assignment"]} />
+                <Select ariaLabel="ICU Nurse" value={selectedIcuNurse || "Select ICU Nurse"} onValueChange={() => undefined} options={["Select ICU Nurse", ...icuNurses]} />
+                <Select ariaLabel="Assignment priority" value={patient.criticalityScore >= 8 ? "Critical first" : "Routine assignment"} onValueChange={() => undefined} options={["Critical first", "Routine assignment"]} />
               </div>
               <div className="flex flex-wrap justify-end gap-2">
                 <Button variant="outline">Cancel</Button>

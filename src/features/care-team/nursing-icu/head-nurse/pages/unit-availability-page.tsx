@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -45,7 +43,7 @@ export function UnitAvailabilityPage({ initialPatientId }: HeadNursePageProps) {
                 <CardContent className="space-y-3">
                   {unitReadyForStaff ? (
                     <Button asChild className="w-full">
-                      <Link href={headNursePatientHref("/head-nurse/staff-availability", patient.id)}>Check staff availability</Link>
+                      <Link href={headNursePatientHref("/nursing-icu/head-nurse/staff-availability", patient.id)}>Check staff availability</Link>
                     </Button>
                   ) : (
                     <>
@@ -54,7 +52,7 @@ export function UnitAvailabilityPage({ initialPatientId }: HeadNursePageProps) {
                     </>
                   )}
                   <Button asChild className="w-full" variant="outline">
-                    <Link href={headNursePatientHref("/head-nurse/new-admissions", patient.id)}>Back to admission review</Link>
+                    <Link href={headNursePatientHref("/nursing-icu/head-nurse/new-admissions", patient.id)}>Back to admission review</Link>
                   </Button>
                 </CardContent>
               </Card>

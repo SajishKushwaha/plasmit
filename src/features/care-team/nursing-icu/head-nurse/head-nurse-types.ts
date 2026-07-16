@@ -3,12 +3,17 @@ import type { HeadNurseIcuPatient } from "./head-nurse-data";
 
 export type HeadNurseModuleId =
   | "dashboard"
+  | "archived-records"
   | "new-admissions"
   | "unit-availability"
   | "staff-availability"
   | "patient-assignment"
   | "alerts-delays"
   | "escalations"
+  | "audit-control"
+  | "audit-critical-delays"
+  | "audit-quality"
+  | "audit-reports"
   | "shift-handover";
 
 export type HeadNurseTone = "critical" | "danger" | "warning" | "success" | "info" | "muted";
@@ -42,9 +47,18 @@ export type HeadNurseUnitRow = {
   availableBeds: number;
   isolationBeds: number;
   ventilatorBeds: number;
+  totalMonitors: number;
+  totalInfusionPumps: number;
   criticalPatients: number;
   status: string;
   tone: HeadNurseTone;
+};
+
+export type HeadNurseOtherDeviceInventory = {
+  deviceType: "Syringe Pump" | "NIV / BiPAP" | "HFNC" | "CRRT / Dialysis" | "Defibrillator";
+  total: number;
+  inUse: number;
+  maintenance: number;
 };
 
 export type HeadNurseIcuDashboardRow = {
@@ -55,9 +69,20 @@ export type HeadNurseIcuDashboardRow = {
   availableBeds: number;
   ventilatorBeds: number;
   availableVentilatorBeds: number;
+  totalMonitors: number;
+  availableMonitors: number;
+  totalInfusionPumps: number;
+  availableInfusionPumps: number;
   isolationBeds: number;
   totalIcuNurses: number;
   availableIcuNurses: number;
+  mappedVentilators: number;
+  mappedMonitors: number;
+  mappedInfusionPumps: number;
+  otherDevices: HeadNurseOtherDeviceInventory[];
+  otherDevicesTotal: number;
+  otherDevicesInUse: number;
+  otherDevicesAvailable: number;
   criticalPatients: number;
   openAlerts: number;
   status: string;
@@ -66,6 +91,7 @@ export type HeadNurseIcuDashboardRow = {
 
 export type HeadNurseStaffRow = {
   nurse: string;
+  bedNurse: string;
   role: "ICU Nurse";
   unit: string;
   assignedPatients: number;

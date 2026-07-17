@@ -48,6 +48,16 @@ const tabs = [
   { id: "allergy", label: "4. Allergy History" },
   { id: "social", label: "5. Social History" },
 ] as const;
+const medicationHistoryRows = [
+  { color: "Red", dose: "500 mg", duration: "5 days", frequency: "BD", indication: "Fever / infection", medicationName: "Paracetamol", reason: "Course completed", route: "Oral", stoppedOn: "12 / 07 / 2026" },
+  { color: "Green", dose: "40 mg", duration: "Ongoing", frequency: "OD", indication: "Gastric protection", medicationName: "Pantoprazole", reason: "Active medicine", route: "Oral", stoppedOn: "-" },
+  { color: "Blue", dose: "1 g", duration: "3 days", frequency: "BD", indication: "Antibiotic cover", medicationName: "Ceftriaxone", reason: "Changed after review", route: "IV", stoppedOn: "15 / 07 / 2026" },
+];
+const medicationColorClasses: Record<string, string> = {
+  Blue: "bg-blue-500",
+  Green: "bg-green-500",
+  Red: "bg-red-500",
+};
 
 export type HistoryTab = (typeof tabs)[number]["id"];
 
@@ -609,6 +619,10 @@ export function PatientHistoryPage({
   const [diagnosisRows, setDiagnosisRows] = React.useState<number[]>([]);
   const [surgeryRows, setSurgeryRows] = React.useState<number[]>([1]);
   const [medicationRows, setMedicationRows] = React.useState<number[]>([]);
+  const [medicationStatus, setMedicationStatus] = React.useState<"ongoing" | "stopped">("ongoing");
+  const [allergyStatus, setAllergyStatus] = React.useState("");
+  const [allergyType, setAllergyType] = React.useState("");
+  const [otherAllergyType, setOtherAllergyType] = React.useState("");
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
   React.useEffect(() => {
@@ -917,31 +931,8 @@ export function PatientHistoryPage({
                       <Radio label="Complications Present" name={`surgicalComplication-${row}`} />
                     </div>
                   </div>
-                  <Field label="Type of Complication">
-                    <select className={selectClass}>
-                      <option>Select complication</option>
-                      <option>Bleeding</option>
-                      <option>Infection</option>
-                      <option>Wound Dehiscence</option>
-                      <option>Other</option>
-                    </select>
-                  </Field>
                   <Field label="Details">
                     <Input placeholder="Enter details" />
-                  </Field>
-                  <Field label="Management">
-                    <Input placeholder="Enter management" />
-                  </Field>
-                  <Field label="Outcome">
-                    <select className={selectClass}>
-                      <option>Select outcome</option>
-                      <option>Resolved</option>
-                      <option>Ongoing</option>
-                      <option>Referred</option>
-                    </select>
-                  </Field>
-                  <Field label="Date">
-                    <DateField />
                   </Field>
                 </div>
                 </div>)}
@@ -964,14 +955,23 @@ export function PatientHistoryPage({
             >
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-5">
-                  <Radio label="Ongoing Medications" name="medicationStatus" />
-                  <Radio label="Stopped Medications" name="medicationStatus" />
+                  <label className="inline-flex min-h-7 items-center gap-2 rounded-md px-1 text-xs text-foreground">
+                    <input checked={medicationStatus === "ongoing"} className={radioInputClass} name="medicationStatus" type="radio" onChange={() => setMedicationStatus("ongoing")} />
+                    <span className="leading-5">Ongoing Medications</span>
+                  </label>
+                  <label className="inline-flex min-h-7 items-center gap-2 rounded-md px-1 text-xs text-foreground">
+                    <input checked={medicationStatus === "stopped"} className={radioInputClass} name="medicationStatus" type="radio" onChange={() => setMedicationStatus("stopped")} />
+                    <span className="leading-5">Stopped Medications</span>
+                  </label>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <table className="w-full min-w-[860px] text-left text-sm">
                     <thead className="bg-surface-muted text-xs font-semibold uppercase text-muted-foreground">
                       <tr>
-                        {["S. No.", "Medication Name", "Dose", "Frequency", "Route", "Duration", "Indication", "Stopped On", "Reason"].map((heading) => (
+                        {(medicationStatus === "ongoing"
+                          ? ["S. No.", "Indicator", "Medication Name", "Dose", "Frequency", "Route", "Duration"]
+                          : ["S. No.", "Indicator", "Medication Name", "Dose", "Frequency", "Route", "Duration", "Indication", "Stopped On", "Reason"]
+                        ).map((heading) => (
                           <th className="border-b border-border px-3 py-2" key={heading}>
                             {heading}
                           </th>
@@ -980,17 +980,45 @@ export function PatientHistoryPage({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {!medicationRows.length ? <tr>
-                        <td className="px-3 py-8 text-center text-xs text-muted-foreground" colSpan={10}>
-                          No medication history added.
-                        </td>
-                      </tr> : medicationRows.map((row, index) => (
-                        <tr key={row}>
+                      {medicationHistoryRows.map((row, index) => (
+                        <tr key={row.medicationName}>
                           <td className="px-3 py-2 text-center text-xs text-muted-foreground">{index + 1}</td>
+                          <td className="px-3 py-2">
+                            <span className="inline-flex items-center gap-2 text-xs font-semibold text-foreground">
+                              <span className={`h-2.5 w-2.5 rounded-full ${medicationColorClasses[row.color]}`} />
+                              {row.color}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 font-medium text-foreground">{row.medicationName}</td>
+                          <td className="px-3 py-2">{row.dose}</td>
+                          <td className="px-3 py-2">{row.frequency}</td>
+                          <td className="px-3 py-2">{row.route}</td>
+                          <td className="px-3 py-2">{row.duration}</td>
+                          {medicationStatus === "stopped" ? (
+                            <>
+                              <td className="px-3 py-2">{row.indication}</td>
+                              <td className="px-3 py-2">{row.stoppedOn}</td>
+                              <td className="px-3 py-2">{row.reason}</td>
+                            </>
+                          ) : null}
+                          <td className="px-2 py-2" />
+                        </tr>
+                      ))}
+                      {medicationRows.map((row, index) => (
+                        <tr key={row}>
+                          <td className="px-3 py-2 text-center text-xs text-muted-foreground">{medicationHistoryRows.length + index + 1}</td>
+                          <td className="px-3 py-2">
+                            <span className="inline-flex items-center gap-2 text-xs font-semibold text-foreground">
+                              <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                              Green
+                            </span>
+                          </td>
                           {[
-                            ["Medication Name", "Enter medicine"], ["Dose", "Dose"], ["Frequency", "Frequency"], ["Route", "Route"],
-                            ["Duration", "Duration"], ["Indication", "Indication"], ["Stopped On", "Date"], ["Reason", "Reason"],
+                            ["Medication Name", "Enter medicine"], ["Dose", "Dose"], ["Frequency", "Frequency"], ["Route", "Route"], ["Duration", "Duration"],
                           ].map(([label, placeholder]) => <td className="px-2 py-2" key={label}><Input aria-label={`${label} ${index + 1}`} placeholder={placeholder} /></td>)}
+                          {medicationStatus === "stopped" ? [
+                            ["Indication", "Indication"], ["Stopped On", "Date"], ["Reason", "Reason"],
+                          ].map(([label, placeholder]) => <td className="px-2 py-2" key={label}><Input aria-label={`${label} ${index + 1}`} placeholder={placeholder} /></td>) : null}
                           <td className="px-2 py-2 text-center">
                             <Button aria-label={`Remove medication ${index + 1}`} onClick={() => setMedicationRows((rows) => rows.filter((item) => item !== row))} size="icon" type="button" variant="ghost">
                               <X className="h-4 w-4" />
@@ -1010,57 +1038,59 @@ export function PatientHistoryPage({
           <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="allergy">
             <Section icon={ShieldAlert} title="4. Allergy History">
               <div className="space-y-5">
-                <div className="flex flex-wrap gap-5">
-                  <Checkbox label="No Allergy" />
-                  <Checkbox label="Latex Allergy" />
-                  <Checkbox label="Drug Allergy" />
-                  <Checkbox label="Food Allergy" />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-8">
                   <Field label="Allergy">
-                    <select className={selectClass}>
-                      <option>Select Allergy</option>
+                    <select
+                      className={selectClass}
+                      value={allergyStatus}
+                      onChange={(event) => {
+                        setAllergyStatus(event.target.value);
+                        if (event.target.value !== "Yes") {
+                          setAllergyType("");
+                          setOtherAllergyType("");
+                        }
+                      }}
+                    >
+                      <option value="">Select Allergy</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
                     </select>
                   </Field>
-                  <Field label="Allergy Type">
-                    <select className={selectClass}>
-                      <option>Select Type</option>
-                      <option>Drug</option>
-                      <option>Food</option>
-                      <option>Latex</option>
-                      <option>Environmental</option>
-                    </select>
-                  </Field>
-                  <Field label="Reaction / Symptoms">
-                    <Input placeholder="Enter symptoms" />
-                  </Field>
-                  <div className="space-y-2 xl:col-span-2">
-                    <span className={labelClass}>Severity</span>
-                    <div className="grid gap-2 pt-1">
-                      <Radio label="Urticaria" name="severity" />
-                      <Radio label="Angioedema" name="severity" />
-                      <Radio label="Anaphylaxis / Shock" name="severity" />
-                    </div>
-                  </div>
-                  <Field label="Date Noted">
-                    <DateField required />
-                  </Field>
-                  <Field label="Notes">
-                    <Input placeholder="Enter notes" />
-                  </Field>
+                  {allergyStatus === "Yes" ? (
+                    <>
+                      <Field label="Type">
+                        <select className={selectClass} value={allergyType} onChange={(event) => setAllergyType(event.target.value)}>
+                          <option value="">Select Type</option>
+                          <option value="Food">Food</option>
+                          <option value="Drug">Drug</option>
+                          <option value="Chemical">Chemical</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </Field>
+                      {allergyType === "Other" ? (
+                        <Field label="Other Allergy Type">
+                          <Input placeholder="Enter other allergy type" value={otherAllergyType} onChange={(event) => setOtherAllergyType(event.target.value)} />
+                        </Field>
+                      ) : null}
+                      <Field label="Date">
+                        <DateField required />
+                      </Field>
+                      <Field label="Remark">
+                        <Input placeholder="Enter remark" />
+                      </Field>
+                    </>
+                  ) : null}
+                  {allergyStatus === "No" ? (
+                    <Field label="Remark">
+                      <Input placeholder="Enter remark" />
+                    </Field>
+                  ) : null}
                 </div>
                 <div className="rounded-lg border border-border bg-surface p-4">
                   <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
                     Allergy Override
                   </div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <Checkbox label="Override this allergy" />
-                    <Field className="md:col-span-2" label="Reason for Override">
-                      <Input placeholder="Enter reason" />
-                    </Field>
-                    <Field label="Override Date & Time">
-                      <DateField />
-                    </Field>
                     <Field label="Countersigned By (Doctor)">
                       <select className={selectClass}>
                         <option>Select Doctor</option>

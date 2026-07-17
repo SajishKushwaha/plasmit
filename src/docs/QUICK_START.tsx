@@ -1,9 +1,11 @@
 /**
  * QUICK START GUIDE - Role-Based Access Control
  * ===============================================
- * 
+ *
  * This guide shows the most common patterns to implement role-based access in your components.
  */
+
+import Link from "next/link";
 
 // Mock components to satisfy TypeScript compilation in documentation examples
 const DoctorView = () => null;
@@ -46,7 +48,7 @@ function PrescritionButton() {
 
 // 3. SHOW/HIDE BASED ON ROLE
 // ============================
-import { ShowForDoctor, HideFromDoctor } from "@/features/auth/doctor-context";
+import { ShowForDoctor, HideFromDoctor } from "@/features/platform/auth/doctor-context";
 
 function Dashboard() {
   return (
@@ -66,7 +68,7 @@ function Dashboard() {
 
 // 4. ADMIN-ONLY COMPONENT
 // =======================
-import { AdminOnly } from "@/features/auth/doctor-context";
+import { AdminOnly } from "@/features/platform/auth/doctor-context";
 
 function RevenueReport() {
   return (
@@ -78,7 +80,7 @@ function RevenueReport() {
 
 // 5. PROTECT ENTIRE PAGE
 // ======================
-import { RouteGuard } from "@/features/auth/route-guard";
+import { RouteGuard } from "@/features/platform/auth/route-guard";
 
 function AdminSettingsPage() {
   return (
@@ -95,19 +97,19 @@ function Navigation() {
 
   return (
     <nav>
-      <a href="/dashboard">Dashboard</a>
+      <Link href="/dashboard">Dashboard</Link>
 
       {isDoctor && (
         <>
-          <a href="/appointments">Appointments</a>
-          <a href="/opd">OPD Queue</a>
+          <Link href="/appointments">Appointments</Link>
+          <Link href="/opd">OPD Queue</Link>
         </>
       )}
 
       {!isDoctor && (
         <>
-          <a href="/admin">Admin</a>
-          <a href="/billing">Billing</a>
+          <Link href="/admin">Admin</Link>
+          <Link href="/billing">Billing</Link>
         </>
       )}
     </nav>
@@ -116,7 +118,7 @@ function Navigation() {
 
 // 7. CHECK MODULE ACCESS FOR DOCTOR
 // ==================================
-import { useDoctorContext } from "@/features/auth/doctor-context";
+import { useDoctorContext } from "@/features/platform/auth/doctor-context";
 
 function AppointmentModule() {
   const { canAccessModule } = useDoctorContext();
@@ -135,13 +137,9 @@ function PatientActions() {
 
   return (
     <div>
-      {canPerformAction("WRITE_PRESCRIPTION") && (
-        <button>Write Prescription</button>
-      )}
+      {canPerformAction("WRITE_PRESCRIPTION") && <button>Write Prescription</button>}
 
-      {canPerformAction("REQUEST_LAB_TEST") && (
-        <button>Request Lab</button>
-      )}
+      {canPerformAction("REQUEST_LAB_TEST") && <button>Request Lab</button>}
     </div>
   );
 }
@@ -151,11 +149,7 @@ function PatientActions() {
 function Card() {
   const isDoctor = useIsDoctor();
 
-  return (
-    <div className={isDoctor ? "bg-blue-50" : "bg-gray-50"}>
-      Content
-    </div>
-  );
+  return <div className={isDoctor ? "bg-blue-50" : "bg-gray-50"}>Content</div>;
 }
 
 // 10. MULTIPLE CONDITION CHECK
@@ -168,14 +162,10 @@ function PatientForm() {
   return (
     <form>
       {/* Show prescription field for doctors who can write */}
-      {isDoctor && canPrescribe && (
-        <textarea placeholder="Prescription" />
-      )}
+      {isDoctor && canPrescribe && <textarea placeholder="Prescription" />}
 
       {/* Show billing codes for admins who can bill */}
-      {!isDoctor && canBill && (
-        <input placeholder="Billing Code" />
-      )}
+      {!isDoctor && canBill && <input placeholder="Billing Code" />}
     </form>
   );
 }
@@ -192,19 +182,13 @@ export function AppSidebar() {
   const { role } = useRole();
 
   // Filter items based on role
-  const visibleItems = navigationItems.filter((item) =>
-    item.allowedRoles.includes(role)
-  );
+  const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
 
   return (
     <aside className="w-64 bg-gray-50 p-4">
       <nav className="space-y-2">
         {visibleItems.map((item) => (
-          <a
-            key={item.id}
-            href={item.route}
-            className="block px-4 py-2 hover:bg-gray-100"
-          >
+          <a key={item.id} href={item.route} className="block px-4 py-2 hover:bg-gray-100">
             {item.label}
           </a>
         ))}
@@ -230,20 +214,14 @@ export function DoctorToolbar() {
   return (
     <div className="flex gap-3 border-b p-4">
       {canConsult && (
-        <button className="rounded bg-green-500 px-4 py-2 text-white">
-          Start Consultation
-        </button>
+        <button className="rounded bg-green-500 px-4 py-2 text-white">Start Consultation</button>
       )}
 
       {canManageSlots && (
-        <button className="rounded bg-blue-500 px-4 py-2 text-white">
-          Manage Availability
-        </button>
+        <button className="rounded bg-blue-500 px-4 py-2 text-white">Manage Availability</button>
       )}
 
-      <button className="rounded border px-4 py-2">
-        View Messages
-      </button>
+      <button className="rounded border px-4 py-2">View Messages</button>
     </div>
   );
 }
@@ -261,16 +239,12 @@ export function DashboardActions() {
 
       {/* Admin-only */}
       <AdminOnly>
-        <button className="rounded bg-red-100 px-4 py-2">
-          System Settings
-        </button>
+        <button className="rounded bg-red-100 px-4 py-2">System Settings</button>
       </AdminOnly>
 
       {/* Doctor-only */}
       <ShowForDoctor>
-        <button className="rounded bg-blue-100 px-4 py-2">
-          Availability
-        </button>
+        <button className="rounded bg-blue-100 px-4 py-2">Availability</button>
       </ShowForDoctor>
     </div>
   );

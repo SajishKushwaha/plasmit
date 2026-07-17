@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CenterModal } from "@/components/ui/center-modal";
@@ -48,7 +49,7 @@ const tabs = [
   { id: "social", label: "5. Social History" },
 ] as const;
 
-type HistoryTab = (typeof tabs)[number]["id"];
+export type HistoryTab = (typeof tabs)[number]["id"];
 
 function getInitialEditingHistoryRecord() {
   if (typeof window === "undefined") return null;
@@ -125,28 +126,57 @@ function YearRangePicker({
   const currentPageStart = yearRangePageStart(currentYear);
   const [pageStart, setPageStart] = React.useState(currentPageStart);
   const [selectedRangeStart, setSelectedRangeStart] = React.useState<number | null>(null);
-  const ranges = React.useMemo(() => Array.from({ length: 25 }, (_, index) => pageStart + index * 5), [pageStart]);
-  const exactYears = selectedRangeStart ? Array.from({ length: 6 }, (_, index) => selectedRangeStart + index) : [];
+  const ranges = React.useMemo(
+    () => Array.from({ length: 25 }, (_, index) => pageStart + index * 5),
+    [pageStart],
+  );
+  const exactYears = selectedRangeStart
+    ? Array.from({ length: 6 }, (_, index) => selectedRangeStart + index)
+    : [];
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col overflow-hidden rounded-lg bg-surface">
       <div className="flex h-full w-full flex-col overflow-hidden">
         <div className="border-b border-border p-3">
           <div className="flex items-center justify-between gap-2">
-            <Button aria-label="Previous year ranges" disabled={Boolean(selectedRangeStart) || pageStart <= firstYear} onClick={() => setPageStart((year) => Math.max(firstYear, year - 125))} size="icon" type="button" variant="ghost">
+            <Button
+              aria-label="Previous year ranges"
+              disabled={Boolean(selectedRangeStart) || pageStart <= firstYear}
+              onClick={() => setPageStart((year) => Math.max(firstYear, year - 125))}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <CalendarDays className="h-4 w-4 text-primary" />
-              {selectedRangeStart ? yearRangeLabel(selectedRangeStart) : `${pageStart}-${String(pageStart + 125).slice(-2)}`}
+              {selectedRangeStart
+                ? yearRangeLabel(selectedRangeStart)
+                : `${pageStart}-${String(pageStart + 125).slice(-2)}`}
             </div>
-            <Button aria-label="Next year ranges" disabled={Boolean(selectedRangeStart) || pageStart >= currentPageStart} onClick={() => setPageStart((year) => Math.min(currentPageStart, year + 125))} size="icon" type="button" variant="ghost">
+            <Button
+              aria-label="Next year ranges"
+              disabled={Boolean(selectedRangeStart) || pageStart >= currentPageStart}
+              onClick={() => setPageStart((year) => Math.min(currentPageStart, year + 125))}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <p className="mt-1 text-center text-xs text-muted-foreground">{selectedRangeStart ? "Choose exact year" : "Choose a 5-year range"}</p>
+          <p className="mt-1 text-center text-xs text-muted-foreground">
+            {selectedRangeStart ? "Choose exact year" : "Choose a 5-year range"}
+          </p>
         </div>
-        <div className={selectedRangeStart ? "grid flex-1 grid-cols-3 gap-2 p-3" : "grid flex-1 grid-cols-5 grid-rows-5 gap-1.5 p-3"}>
+        <div
+          className={
+            selectedRangeStart
+              ? "grid flex-1 grid-cols-3 gap-2 p-3"
+              : "grid flex-1 grid-cols-5 grid-rows-5 gap-1.5 p-3"
+          }
+        >
           {(selectedRangeStart ? exactYears : ranges).map((value) => (
             <button
               className={`rounded-md border px-1 text-xs font-medium transition ${
@@ -178,8 +208,14 @@ function YearRangePicker({
             Today
           </Button>
           <div className="flex gap-2">
-            {selectedRangeStart ? <Button onClick={() => setSelectedRangeStart(null)} type="button" variant="outline">Back</Button> : null}
-            <Button onClick={onClose} type="button" variant="outline">Close</Button>
+            {selectedRangeStart ? (
+              <Button onClick={() => setSelectedRangeStart(null)} type="button" variant="outline">
+                Back
+              </Button>
+            ) : null}
+            <Button onClick={onClose} type="button" variant="outline">
+              Close
+            </Button>
           </div>
         </div>
       </div>
@@ -187,14 +223,23 @@ function YearRangePicker({
   );
 }
 
-function validateNumericInput(event: React.FormEvent<HTMLInputElement>, label: string, allowDecimal = false) {
+function validateNumericInput(
+  event: React.FormEvent<HTMLInputElement>,
+  label: string,
+  allowDecimal = false,
+) {
   const input = event.currentTarget;
   const value = input.value.trim();
   const numberPattern = allowDecimal ? /^\d*(\.\d*)?$/ : /^\d*$/;
-  input.setCustomValidity(value && !numberPattern.test(value) ? `${label} must contain numbers only.` : "");
+  input.setCustomValidity(
+    value && !numberPattern.test(value) ? `${label} must contain numbers only.` : "",
+  );
 }
 
-function preventInvalidNumericInput(event: React.FormEvent<HTMLInputElement>, allowDecimal = false) {
+function preventInvalidNumericInput(
+  event: React.FormEvent<HTMLInputElement>,
+  allowDecimal = false,
+) {
   const nativeEvent = event.nativeEvent as InputEvent;
   const input = event.currentTarget;
   const data = nativeEvent.data ?? "";
@@ -208,7 +253,10 @@ function preventInvalidNumericInput(event: React.FormEvent<HTMLInputElement>, al
   }
 }
 
-function preventInvalidNumericPaste(event: React.ClipboardEvent<HTMLInputElement>, allowDecimal = false) {
+function preventInvalidNumericPaste(
+  event: React.ClipboardEvent<HTMLInputElement>,
+  allowDecimal = false,
+) {
   const input = event.currentTarget;
   const paste = event.clipboardData.getData("text");
   const start = input.selectionStart ?? input.value.length;
@@ -229,7 +277,10 @@ function DateField({ required }: { required?: boolean }) {
   const [popoverStyle, setPopoverStyle] = React.useState<React.CSSProperties>({});
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const selected = parseDateValue(value);
-  const monthNames = React.useMemo(() => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], []);
+  const monthNames = React.useMemo(
+    () => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    [],
+  );
   const totalDays = daysInMonth(visibleMonth, visibleYear);
 
   function updatePopoverPosition() {
@@ -281,7 +332,9 @@ function DateField({ required }: { required?: boolean }) {
   }
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    event.currentTarget.setCustomValidity(/[^\d/]/.test(event.target.value) ? "Year must contain numbers only." : "");
+    event.currentTarget.setCustomValidity(
+      /[^\d/]/.test(event.target.value) ? "Year must contain numbers only." : "",
+    );
     const nextValue = formatDateInput(event.target.value);
     setValue(nextValue);
     const nextDate = parseDateValue(nextValue);
@@ -342,9 +395,18 @@ function DateField({ required }: { required?: boolean }) {
       </div>
 
       {open ? (
-        <div className="fixed z-[100] h-[356px] rounded-lg border border-border bg-surface p-3 shadow-soft" style={popoverStyle}>
+        <div
+          className="fixed z-[100] h-[356px] rounded-lg border border-border bg-surface p-3 shadow-soft"
+          style={popoverStyle}
+        >
           <div className="mb-3 flex items-center justify-between gap-2">
-            <Button aria-label="Previous month" onClick={() => moveMonth(-1)} size="icon" type="button" variant="ghost">
+            <Button
+              aria-label="Previous month"
+              onClick={() => moveMonth(-1)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="grid flex-1 grid-cols-[1fr_6rem] gap-2">
@@ -360,12 +422,23 @@ function DateField({ required }: { required?: boolean }) {
                   </option>
                 ))}
               </select>
-              <button aria-label="Select year" className={selectClass} onClick={() => setYearPickerOpen(true)} type="button">
+              <button
+                aria-label="Select year"
+                className={selectClass}
+                onClick={() => setYearPickerOpen(true)}
+                type="button"
+              >
                 <span className="flex-1 text-left">{visibleYear}</span>
                 <ChevronRight className="h-4 w-4 rotate-90 text-muted-foreground" />
               </button>
             </div>
-            <Button aria-label="Next month" onClick={() => moveMonth(1)} size="icon" type="button" variant="ghost">
+            <Button
+              aria-label="Next month"
+              onClick={() => moveMonth(1)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -376,9 +449,11 @@ function DateField({ required }: { required?: boolean }) {
             ))}
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
-            {Array.from({ length: new Date(visibleYear, visibleMonth, 1).getDay() }).map((_, index) => (
-              <span key={`blank-${index}`} />
-            ))}
+            {Array.from({ length: new Date(visibleYear, visibleMonth, 1).getDay() }).map(
+              (_, index) => (
+                <span key={`blank-${index}`} />
+              ),
+            )}
             {Array.from({ length: totalDays }).map((_, index) => {
               const day = index + 1;
               const active =
@@ -400,14 +475,29 @@ function DateField({ required }: { required?: boolean }) {
             })}
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-            <Button onClick={() => { setValue(""); setOpen(false); }} size="sm" type="button" variant="ghost">
+            <Button
+              onClick={() => {
+                setValue("");
+                setOpen(false);
+              }}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
               Clear
             </Button>
             <Button onClick={selectToday} size="sm" type="button" variant="outline">
               Today
             </Button>
           </div>
-          {yearPickerOpen ? <YearRangePicker onClose={() => setYearPickerOpen(false)} onSelectYear={setVisibleYear} onToday={selectTodayYear} visibleYear={visibleYear} /> : null}
+          {yearPickerOpen ? (
+            <YearRangePicker
+              onClose={() => setYearPickerOpen(false)}
+              onSelectYear={setVisibleYear}
+              onToday={selectTodayYear}
+              visibleYear={visibleYear}
+            />
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -455,7 +545,10 @@ function Field({
 function Checkbox({ label }: { label: string }) {
   return (
     <label className="inline-flex items-center gap-2 text-xs text-foreground">
-      <input className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring" type="checkbox" />
+      <input
+        className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring"
+        type="checkbox"
+      />
       {label}
     </label>
   );
@@ -525,9 +618,7 @@ function PatientHistoryPreview({
           <div className="border-b-2 border-black pb-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Plasmit Hospital HMS</div>
                 <h2 className="mt-1 text-2xl font-bold text-black">Patient History Preview</h2>
-                <p className="mt-1 text-sm text-neutral-600">Review and edit history before final submit.</p>
               </div>
               <div className="rounded border border-neutral-300 px-3 py-2 text-right text-xs text-neutral-600">
                 <div className="font-semibold text-black">Draft</div>
@@ -541,18 +632,27 @@ function PatientHistoryPreview({
               <section className="break-inside-avoid" key={`history-preview-${section.tabId}`}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="h-px flex-1 bg-neutral-300" />
-                  <h3 className="shrink-0 text-sm font-bold uppercase tracking-wide text-black">{section.tabLabel}</h3>
+                  <h3 className="shrink-0 text-sm font-bold uppercase tracking-wide text-black">
+                    {section.tabLabel}
+                  </h3>
                   <div className="h-px flex-1 bg-neutral-300" />
                 </div>
 
                 {section.fields.length ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {section.fields.map((field, index) => (
-                      <label className="block rounded border border-neutral-300 p-2" key={`${section.tabId}-${field.label}-${index}`}>
-                        <span className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-500">{field.label}</span>
+                      <label
+                        className="block rounded border border-neutral-300 p-2"
+                        key={`${section.tabId}-${field.label}-${index}`}
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                          {field.label}
+                        </span>
                         <textarea
                           className="mt-1 min-h-9 w-full resize-y rounded border border-transparent bg-white p-1 text-sm font-medium text-black outline-none transition focus:border-neutral-400"
-                          onChange={(event) => onFieldChange(section.tabId, index, event.target.value)}
+                          onChange={(event) =>
+                            onFieldChange(section.tabId, index, event.target.value)
+                          }
                           value={field.value}
                         />
                       </label>
@@ -565,11 +665,6 @@ function PatientHistoryPreview({
                 )}
               </section>
             ))}
-          </div>
-
-          <div className="mt-8 flex items-center justify-between border-t border-neutral-300 pt-4 text-xs text-neutral-500">
-            <span>Editable preview before final submit</span>
-            <span>Generated from Patient History draft</span>
           </div>
         </div>
       </div>
@@ -590,14 +685,34 @@ function PatientHistoryPreview({
   );
 }
 
-export function PatientHistoryPage() {
-  const formRef = React.useRef<HTMLFormElement | null>(null);
+export function PatientHistoryPage({
+  embedded = false,
+  activeTab: controlledActiveTab,
+  onTabChange,
+}: {
+  embedded?: boolean;
+  activeTab?: HistoryTab;
+  onTabChange?: (tab: HistoryTab) => void;
+}) {
+  const formRef = React.useRef<HTMLDivElement | null>(null);
   const initialEditingRecord = React.useMemo(() => getInitialEditingHistoryRecord(), []);
-  const [activeTab, setActiveTab] = React.useState<HistoryTab>("medical");
+  const [internalActiveTab, setInternalActiveTab] = React.useState<HistoryTab>("medical");
+  const activeTab = controlledActiveTab ?? internalActiveTab;
+  function setActiveTab(tab: HistoryTab) {
+    setInternalActiveTab(tab);
+    onTabChange?.(tab);
+  }
   const [formKey, setFormKey] = React.useState(0);
-  const [editingRecordId, setEditingRecordId] = React.useState<string | null>(initialEditingRecord?.id ?? null);
-  const [editingRecord, setEditingRecord] = React.useState<PatientHistoryRecord | null>(initialEditingRecord);
+  const [editingRecordId, setEditingRecordId] = React.useState<string | null>(
+    initialEditingRecord?.id ?? null,
+  );
+  const [editingRecord, setEditingRecord] = React.useState<PatientHistoryRecord | null>(
+    initialEditingRecord,
+  );
   const [previewRecord, setPreviewRecord] = React.useState<PatientHistoryRecord | null>(null);
+  const [diagnosisRows, setDiagnosisRows] = React.useState<number[]>([]);
+  const [surgeryRows, setSurgeryRows] = React.useState<number[]>([1]);
+  const [medicationRows, setMedicationRows] = React.useState<number[]>([]);
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
   React.useEffect(() => {
@@ -619,7 +734,13 @@ export function PatientHistoryPage() {
   }
 
   function nextTab() {
-    if (!formRef.current?.reportValidity()) return;
+    const invalidField = formRef.current?.querySelector<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >(":invalid");
+    if (invalidField) {
+      invalidField.reportValidity();
+      return;
+    }
     saveCurrentHistorySection();
     const next = tabs[activeTabIndex + 1];
     if (next) {
@@ -645,6 +766,9 @@ export function PatientHistoryPage() {
     setEditingRecordId(null);
     setEditingRecord(null);
     setPreviewRecord(null);
+    setDiagnosisRows([]);
+    setSurgeryRows([1]);
+    setMedicationRows([]);
     setFormKey((key) => key + 1);
     toast.info("Patient history form cleared.");
   }
@@ -677,20 +801,27 @@ export function PatientHistoryPage() {
           section.tabId === tabId
             ? {
                 ...section,
-                fields: section.fields.map((field, index) => (index === fieldIndex ? { ...field, value } : field)),
+                fields: section.fields.map((field, index) =>
+                  index === fieldIndex ? { ...field, value } : field,
+                ),
               }
             : section,
         ),
       };
       setEditingRecord(nextRecord);
-      writePatientHistoryRecords(readPatientHistoryRecords().map((record) => (record.id === nextRecord.id ? nextRecord : record)));
+      writePatientHistoryRecords(
+        readPatientHistoryRecords().map((record) =>
+          record.id === nextRecord.id ? nextRecord : record,
+        ),
+      );
       return nextRecord;
     });
   }
 
-  function handleFormKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
+  function handleFormKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
-    if (event.key !== "Enter" || target.tagName === "BUTTON" || target.tagName === "TEXTAREA") return;
+    if (event.key !== "Enter" || target.tagName === "BUTTON" || target.tagName === "TEXTAREA")
+      return;
     event.preventDefault();
     if (activeTabIndex === tabs.length - 1) {
       handlePreview();
@@ -700,23 +831,45 @@ export function PatientHistoryPage() {
   }
 
   return (
-    <form className="space-y-5" key={formKey} onKeyDown={handleFormKeyDown} ref={formRef}>
+    <div
+      className={embedded ? "space-y-2" : "space-y-5"}
+      key={formKey}
+      onKeyDown={handleFormKeyDown}
+      ref={formRef}
+    >
+      {!embedded ? <PageHeader title="Patient History" /> : null}
+
       <CenterModal
-        description={previewRecord?.id}
         onOpenChange={(open) => !open && setPreviewRecord(null)}
         open={Boolean(previewRecord)}
         title="Patient History Preview"
       >
-        {previewRecord ? <PatientHistoryPreview record={previewRecord} onFieldChange={handlePreviewFieldChange} /> : null}
+        {previewRecord ? (
+          <PatientHistoryPreview record={previewRecord} onFieldChange={handlePreviewFieldChange} />
+        ) : null}
       </CenterModal>
 
-      <div className="pt-4">
-        <div className="flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1" role="tablist" aria-label="Patient history sections">
+      <div className={embedded ? "pt-0" : "pt-4"}>
+        <div
+          className={
+            embedded
+              ? "flex gap-1 overflow-x-auto border-b border-border px-1"
+              : "flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1"
+          }
+          role="tablist"
+          aria-label="Patient history sections"
+        >
           {tabs.map((tab) => (
             <button
               aria-selected={activeTab === tab.id}
-              className={`h-8 shrink-0 rounded px-3 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${
-                activeTab === tab.id ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              className={`${embedded ? "h-9 rounded-none border-b-2 px-3" : "h-8 rounded px-3"} shrink-0 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${
+                activeTab === tab.id
+                  ? embedded
+                    ? "border-primary bg-primary/5 font-semibold text-primary"
+                    : "bg-surface text-foreground shadow-sm"
+                  : embedded
+                    ? "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
               }`}
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -729,10 +882,15 @@ export function PatientHistoryPage() {
         </div>
 
         {activeTab === "medical" ? (
-          <div className="mt-4" data-history-tab="medical">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="medical">
             <Section
               action={
-                <Button size="sm" type="button" variant="outline">
+                <Button
+                  onClick={() => setDiagnosisRows((rows) => [...rows, Date.now()])}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
                   <Plus className="h-4 w-4" />
                   Add Diagnosis
                 </Button>
@@ -745,9 +903,20 @@ export function PatientHistoryPage() {
                   <TextArea placeholder="Enter past medical history" />
                 </Field>
                 <div className="space-y-2" data-history-field-group>
-                  <span className={labelClass} data-history-field-label>Known Comorbidities</span>
+                  <span className={labelClass} data-history-field-label>
+                    Known Comorbidities
+                  </span>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    {["Hypertension", "Diabetes Mellitus", "Ischemic Heart Disease", "COPD / Asthma", "CKD", "Hypothyroidism", "Malignancy", "Others"].map((item) => (
+                    {[
+                      "Hypertension",
+                      "Diabetes Mellitus",
+                      "Ischemic Heart Disease",
+                      "COPD / Asthma",
+                      "CKD",
+                      "Hypothyroidism",
+                      "Malignancy",
+                      "Others",
+                    ].map((item) => (
                       <Checkbox key={item} label={item} />
                     ))}
                   </div>
@@ -755,16 +924,66 @@ export function PatientHistoryPage() {
                 <Field label="Other Comorbidities">
                   <Input placeholder="Specify other comorbidities" />
                 </Field>
+                {diagnosisRows.map((row, index) => (
+                  <div
+                    className="space-y-4 rounded-lg border border-border bg-surface-muted/30 p-4"
+                    key={row}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold text-foreground">
+                        Additional Diagnosis {index + 1}
+                      </div>
+                      <Button
+                        aria-label={`Remove additional diagnosis ${index + 1}`}
+                        onClick={() =>
+                          setDiagnosisRows((rows) => rows.filter((item) => item !== row))
+                        }
+                        size="icon"
+                        type="button"
+                        variant="ghost"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="space-y-2" data-history-field-group>
+                      <span className={labelClass} data-history-field-label>
+                        Known Comorbidities
+                      </span>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        {[
+                          "Hypertension",
+                          "Diabetes Mellitus",
+                          "Ischemic Heart Disease",
+                          "COPD / Asthma",
+                          "CKD",
+                          "Hypothyroidism",
+                          "Malignancy",
+                          "Others",
+                        ].map((item) => (
+                          <Checkbox key={item} label={item} />
+                        ))}
+                      </div>
+                    </div>
+                    <Field label="Other Comorbidities">
+                      <Input placeholder="Specify other comorbidities" />
+                    </Field>
+                  </div>
+                ))}
               </div>
             </Section>
           </div>
         ) : null}
 
         {activeTab === "surgical" ? (
-          <div className="mt-4" data-history-tab="surgical">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="surgical">
             <Section
               action={
-                <Button size="sm" type="button" variant="outline">
+                <Button
+                  onClick={() => setSurgeryRows((rows) => [...rows, Date.now()])}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
                   <Plus className="h-4 w-4" />
                   Add Surgery
                 </Button>
@@ -773,140 +992,170 @@ export function PatientHistoryPage() {
               title="2. Past Surgical History"
             >
               <div className="space-y-5">
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-                  <Field label="Surgery / Procedure">
-                    <Input placeholder="Enter surgery / procedure" required />
-                  </Field>
-                  <Field label="Year">
-                    <DateField required />
-                  </Field>
-                  <Field label="Hospital / Center">
-                    <Input placeholder="Enter hospital / center" />
-                  </Field>
-                  <Field label="Surgeon">
-                    <Input placeholder="Enter surgeon" />
-                  </Field>
-                  <Field label="Type of Surgery">
-                    <select className={selectClass} required>
-                      <option value="">Select</option>
-                      <option>Elective</option>
-                      <option>Emergency</option>
-                      <option>Day Care</option>
-                    </select>
-                  </Field>
-                  <Field label="Notes">
-                    <Input placeholder="Enter notes" />
-                  </Field>
-                </div>
+                {surgeryRows.map((row, index) => (
+                  <div className="space-y-5 rounded-lg border border-border p-4" key={row}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold text-foreground">
+                        Surgery {index + 1}
+                      </div>
+                      {index > 0 ? (
+                        <Button
+                          aria-label={`Remove surgery ${index + 1}`}
+                          onClick={() =>
+                            setSurgeryRows((rows) => rows.filter((item) => item !== row))
+                          }
+                          size="icon"
+                          type="button"
+                          variant="ghost"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                      <Field label="Surgery / Procedure">
+                        <Input placeholder="Enter surgery / procedure" required={index === 0} />
+                      </Field>
+                      <Field label="Year">
+                        <DateField required={index === 0} />
+                      </Field>
+                      <Field label="Hospital / Center">
+                        <Input placeholder="Enter hospital / center" />
+                      </Field>
+                      <Field label="Surgeon">
+                        <Input placeholder="Enter surgeon" />
+                      </Field>
+                      <Field label="Type of Surgery">
+                        <select className={selectClass} required={index === 0}>
+                          <option value="">Select</option>
+                          <option>Elective</option>
+                          <option>Emergency</option>
+                          <option>Day Care</option>
+                        </select>
+                      </Field>
+                      <Field label="Notes">
+                        <Input placeholder="Enter notes" />
+                      </Field>
+                    </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                  <div className="space-y-2">
-                    <span className={labelClass}>Biopsy (If Any)</span>
-                    <div className="flex flex-wrap gap-4 pt-2">
-                      <Radio label="No Biopsy" name="biopsy" />
-                      <Radio label="Biopsy Done" name="biopsy" />
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                      <div className="space-y-2">
+                        <span className={labelClass}>Biopsy (If Any)</span>
+                        <div className="flex flex-wrap gap-4 pt-2">
+                          <Radio label="No Biopsy" name={`biopsy-${row}`} />
+                          <Radio label="Biopsy Done" name={`biopsy-${row}`} />
+                        </div>
+                      </div>
+                      <Field label="Site / Organ">
+                        <Input placeholder="Enter site / organ" />
+                      </Field>
+                      <Field label="Date">
+                        <DateField required={index === 0} />
+                      </Field>
+                      <Field label="Result / Findings">
+                        <Input placeholder="Enter result / findings" />
+                      </Field>
+                      <div className="space-y-2">
+                        <span className={labelClass}>Biopsy Result</span>
+                        <div className="grid gap-2 pt-1">
+                          <Radio label="Malignant" name={`biopsyResult-${row}`} />
+                          <Radio label="Non-Malignant" name={`biopsyResult-${row}`} />
+                        </div>
+                      </div>
+                      <Field label="Remarks">
+                        <Input placeholder="Enter remarks" />
+                      </Field>
                     </div>
-                  </div>
-                  <Field label="Site / Organ">
-                    <Input placeholder="Enter site / organ" />
-                  </Field>
-                  <Field label="Date">
-                    <DateField required />
-                  </Field>
-                  <Field label="Result / Findings">
-                    <Input placeholder="Enter result / findings" />
-                  </Field>
-                  <div className="space-y-2">
-                    <span className={labelClass}>Biopsy Result</span>
-                    <div className="grid gap-2 pt-1">
-                      <Radio label="Malignant" name="biopsyResult" />
-                      <Radio label="Non-Malignant" name="biopsyResult" />
-                    </div>
-                  </div>
-                  <Field label="Remarks">
-                    <Input placeholder="Enter remarks" />
-                  </Field>
-                </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-                  <div className="space-y-2">
-                    <span className={labelClass}>Implant Placed (If Any)</span>
-                    <div className="flex flex-wrap gap-4 pt-2">
-                      <Radio label="No Implant" name="implantPlaced" />
-                      <Radio label="Implant Placed" name="implantPlaced" />
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                      <div className="space-y-2">
+                        <span className={labelClass}>Implant Placed (If Any)</span>
+                        <div className="flex flex-wrap gap-4 pt-2">
+                          <Radio label="No Implant" name={`implantPlaced-${row}`} />
+                          <Radio label="Implant Placed" name={`implantPlaced-${row}`} />
+                        </div>
+                      </div>
+                      <Field label="Implant Name / Type">
+                        <Input placeholder="Enter implant name / type" />
+                      </Field>
+                      <Field label="Material">
+                        <Input placeholder="Enter material" />
+                      </Field>
+                      <Field label="Site / Location">
+                        <Input placeholder="Enter site / location" />
+                      </Field>
+                      <Field label="Date Placed">
+                        <DateField />
+                      </Field>
+                      <Field label="Manufacturer / Brand">
+                        <Input placeholder="Enter manufacturer / brand" />
+                      </Field>
+                      <Field label="Implant Identification / Serial No.">
+                        <Input placeholder="Enter implant ID / serial no." />
+                      </Field>
+                      <Field label="Purpose / Indication">
+                        <Input placeholder="Enter purpose / indication" />
+                      </Field>
+                      <Field className="md:col-span-2 xl:col-span-4" label="Notes">
+                        <Input placeholder="Enter notes" />
+                      </Field>
                     </div>
-                  </div>
-                  <Field label="Implant Name / Type">
-                    <Input placeholder="Enter implant name / type" />
-                  </Field>
-                  <Field label="Material">
-                    <Input placeholder="Enter material" />
-                  </Field>
-                  <Field label="Site / Location">
-                    <Input placeholder="Enter site / location" />
-                  </Field>
-                  <Field label="Date Placed">
-                    <DateField />
-                  </Field>
-                  <Field label="Manufacturer / Brand">
-                    <Input placeholder="Enter manufacturer / brand" />
-                  </Field>
-                  <Field label="Implant Identification / Serial No.">
-                    <Input placeholder="Enter implant ID / serial no." />
-                  </Field>
-                  <Field label="Purpose / Indication">
-                    <Input placeholder="Enter purpose / indication" />
-                  </Field>
-                  <Field className="md:col-span-2 xl:col-span-4" label="Notes">
-                    <Input placeholder="Enter notes" />
-                  </Field>
-                </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-                  <div className="space-y-2">
-                    <span className={labelClass}>Past Surgical Complications</span>
-                    <div className="grid gap-2 pt-1">
-                      <Radio label="No Complications" name="surgicalComplication" />
-                      <Radio label="Complications Present" name="surgicalComplication" />
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                      <div className="space-y-2">
+                        <span className={labelClass}>Past Surgical Complications</span>
+                        <div className="grid gap-2 pt-1">
+                          <Radio label="No Complications" name={`surgicalComplication-${row}`} />
+                          <Radio
+                            label="Complications Present"
+                            name={`surgicalComplication-${row}`}
+                          />
+                        </div>
+                      </div>
+                      <Field label="Type of Complication">
+                        <select className={selectClass}>
+                          <option>Select complication</option>
+                          <option>Bleeding</option>
+                          <option>Infection</option>
+                          <option>Wound Dehiscence</option>
+                          <option>Other</option>
+                        </select>
+                      </Field>
+                      <Field label="Details">
+                        <Input placeholder="Enter details" />
+                      </Field>
+                      <Field label="Management">
+                        <Input placeholder="Enter management" />
+                      </Field>
+                      <Field label="Outcome">
+                        <select className={selectClass}>
+                          <option>Select outcome</option>
+                          <option>Resolved</option>
+                          <option>Ongoing</option>
+                          <option>Referred</option>
+                        </select>
+                      </Field>
+                      <Field label="Date">
+                        <DateField />
+                      </Field>
                     </div>
                   </div>
-                  <Field label="Type of Complication">
-                    <select className={selectClass}>
-                      <option>Select complication</option>
-                      <option>Bleeding</option>
-                      <option>Infection</option>
-                      <option>Wound Dehiscence</option>
-                      <option>Other</option>
-                    </select>
-                  </Field>
-                  <Field label="Details">
-                    <Input placeholder="Enter details" />
-                  </Field>
-                  <Field label="Management">
-                    <Input placeholder="Enter management" />
-                  </Field>
-                  <Field label="Outcome">
-                    <select className={selectClass}>
-                      <option>Select outcome</option>
-                      <option>Resolved</option>
-                      <option>Ongoing</option>
-                      <option>Referred</option>
-                    </select>
-                  </Field>
-                  <Field label="Date">
-                    <DateField />
-                  </Field>
-                </div>
+                ))}
               </div>
             </Section>
           </div>
         ) : null}
 
         {activeTab === "medication" ? (
-          <div className="mt-4" data-history-tab="medication">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="medication">
             <Section
               action={
-                <Button size="sm" type="button" variant="outline">
+                <Button
+                  onClick={() => setMedicationRows((rows) => [...rows, Date.now()])}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
                   <Plus className="h-4 w-4" />
                   Add Medication
                 </Button>
@@ -923,19 +1172,73 @@ export function PatientHistoryPage() {
                   <table className="w-full min-w-[860px] text-left text-sm">
                     <thead className="bg-surface-muted text-xs font-semibold uppercase text-muted-foreground">
                       <tr>
-                        {["S. No.", "Medication Name", "Dose", "Frequency", "Route", "Duration", "Indication", "Stopped On", "Reason"].map((heading) => (
+                        {[
+                          "S. No.",
+                          "Medication Name",
+                          "Dose",
+                          "Frequency",
+                          "Route",
+                          "Duration",
+                          "Indication",
+                          "Stopped On",
+                          "Reason",
+                        ].map((heading) => (
                           <th className="border-b border-border px-3 py-2" key={heading}>
                             {heading}
                           </th>
                         ))}
+                        <th aria-label="Actions" className="border-b border-border px-2 py-2" />
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td className="px-3 py-8 text-center text-xs text-muted-foreground" colSpan={9}>
-                          No medication history added.
-                        </td>
-                      </tr>
+                    <tbody className="divide-y divide-border">
+                      {!medicationRows.length ? (
+                        <tr>
+                          <td
+                            className="px-3 py-8 text-center text-xs text-muted-foreground"
+                            colSpan={10}
+                          >
+                            No medication history added.
+                          </td>
+                        </tr>
+                      ) : (
+                        medicationRows.map((row, index) => (
+                          <tr key={row}>
+                            <td className="px-3 py-2 text-center text-xs text-muted-foreground">
+                              {index + 1}
+                            </td>
+                            {[
+                              ["Medication Name", "Enter medicine"],
+                              ["Dose", "Dose"],
+                              ["Frequency", "Frequency"],
+                              ["Route", "Route"],
+                              ["Duration", "Duration"],
+                              ["Indication", "Indication"],
+                              ["Stopped On", "Date"],
+                              ["Reason", "Reason"],
+                            ].map(([label, placeholder]) => (
+                              <td className="px-2 py-2" key={label}>
+                                <Input
+                                  aria-label={`${label} ${index + 1}`}
+                                  placeholder={placeholder}
+                                />
+                              </td>
+                            ))}
+                            <td className="px-2 py-2 text-center">
+                              <Button
+                                aria-label={`Remove medication ${index + 1}`}
+                                onClick={() =>
+                                  setMedicationRows((rows) => rows.filter((item) => item !== row))
+                                }
+                                size="icon"
+                                type="button"
+                                variant="ghost"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -945,7 +1248,7 @@ export function PatientHistoryPage() {
         ) : null}
 
         {activeTab === "allergy" ? (
-          <div className="mt-4" data-history-tab="allergy">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="allergy">
             <Section icon={ShieldAlert} title="4. Allergy History">
               <div className="space-y-5">
                 <div className="flex flex-wrap gap-5">
@@ -1019,7 +1322,7 @@ export function PatientHistoryPage() {
         ) : null}
 
         {activeTab === "social" ? (
-          <div className="mt-4" data-history-tab="social">
+          <div className={embedded ? "mt-2" : "mt-4"} data-history-tab="social">
             <Section icon={Users} title="5. Social History">
               <div className="space-y-5">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -1059,7 +1362,9 @@ export function PatientHistoryPage() {
                 </div>
 
                 <div className="rounded-lg border border-border p-4">
-                  <div className="mb-4 text-sm font-semibold text-foreground">5A. Smoking History</div>
+                  <div className="mb-4 text-sm font-semibold text-foreground">
+                    5A. Smoking History
+                  </div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                     <div className="space-y-2">
                       <span className={labelClass}>Smoking Status</span>
@@ -1108,7 +1413,9 @@ export function PatientHistoryPage() {
                         inputMode="decimal"
                         min="0"
                         onBeforeInput={(event) => preventInvalidNumericInput(event, true)}
-                        onInput={(event) => validateNumericInput(event, "Years back quit since", true)}
+                        onInput={(event) =>
+                          validateNumericInput(event, "Years back quit since", true)
+                        }
                         onPaste={(event) => preventInvalidNumericPaste(event, true)}
                         pattern="[0-9]*\\.?[0-9]*"
                         placeholder="Enter years"
@@ -1127,7 +1434,9 @@ export function PatientHistoryPage() {
                 </div>
 
                 <div className="rounded-lg border border-border p-4">
-                  <div className="mb-4 text-sm font-semibold text-foreground">5B. Alcohol History</div>
+                  <div className="mb-4 text-sm font-semibold text-foreground">
+                    5B. Alcohol History
+                  </div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                     <div className="space-y-2">
                       <span className={labelClass}>Alcohol Use</span>
@@ -1186,41 +1495,43 @@ export function PatientHistoryPage() {
         ) : null}
       </div>
 
-      <div className="sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <Button onClick={handleCancel} size="sm" type="button" variant="outline">
-            <X className="h-4 w-4" />
-            Cancel
-          </Button>
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button onClick={handleSaveDraft} size="sm" type="button" variant="outline">
-              <Save className="h-4 w-4" />
-              Save Draft
+      {!embedded ? (
+        <div className="sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <Button onClick={handleCancel} size="sm" type="button" variant="outline">
+              <X className="h-4 w-4" />
+              Cancel
             </Button>
-            <Button onClick={handleClear} size="sm" type="button" variant="outline">
-              <RotateCcw className="h-4 w-4" />
-              Clear
-            </Button>
-            {activeTabIndex === tabs.length - 1 ? (
-              <>
-                <Button onClick={handlePreview} size="sm" type="button" variant="outline">
-                  <Eye className="h-4 w-4" />
-                  Preview
-                </Button>
-                <Button onClick={handleSubmit} size="sm" type="button">
-                  Submit
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button onClick={handleSaveDraft} size="sm" type="button" variant="outline">
+                <Save className="h-4 w-4" />
+                Save Draft
+              </Button>
+              <Button onClick={handleClear} size="sm" type="button" variant="outline">
+                <RotateCcw className="h-4 w-4" />
+                Clear
+              </Button>
+              {activeTabIndex === tabs.length - 1 ? (
+                <>
+                  <Button onClick={handlePreview} size="sm" type="button" variant="outline">
+                    <Eye className="h-4 w-4" />
+                    Preview
+                  </Button>
+                  <Button onClick={handleSubmit} size="sm" type="button">
+                    Submit
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={nextTab} size="sm" type="button">
+                  Save & Continue
                   <Send className="h-4 w-4" />
                 </Button>
-              </>
-            ) : (
-              <Button onClick={nextTab} size="sm" type="button">
-                Save & Continue
-                <Send className="h-4 w-4" />
-              </Button>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </form>
+      ) : null}
+    </div>
   );
 }

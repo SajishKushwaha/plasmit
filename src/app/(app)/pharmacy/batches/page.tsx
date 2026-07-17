@@ -1,5 +1,0 @@
-import { BatchManagementPage } from "@/features/operations/operations-pages";
-
-export default function Page() {
-  return <BatchManagementPage />;
-}

@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-} from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,19 +41,35 @@ export function DataTable<TData>({
   }
 
   if (!data.length) {
-    return <EmptyState icon={SearchX} title="No records found" description="Adjust filters or search another term to continue." />;
+    return (
+      <EmptyState
+        icon={SearchX}
+        title="No records found"
+        description="Adjust filters or search another term to continue."
+      />
+    );
   }
 
   return (
-    <div className={cn("overflow-hidden rounded-xl border border-border bg-white shadow-soft", className)}>
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-border bg-white shadow-soft",
+        className,
+      )}
+    >
       <div className="max-w-full overflow-x-auto">
         <table className="w-full min-w-[720px] border-collapse text-left text-sm">
           <thead className="sticky top-0 z-10 bg-[#f7f7fb] text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th className="border-b border-border/80 px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]" key={header.id}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  <th
+                    className="border-b border-border/80 px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]"
+                    key={header.id}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
               </tr>
@@ -66,9 +77,15 @@ export function DataTable<TData>({
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr className="border-b border-border/70 last:border-0 hover:bg-surface-muted/80" key={row.id}>
+              <tr
+                className="border-b border-border/70 last:border-0 hover:bg-surface-muted/80"
+                key={row.id}
+              >
                 {row.getVisibleCells().map((cell) => (
-                    <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] align-middle text-foreground" key={cell.id}>
+                  <td
+                    className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] align-middle text-foreground"
+                    key={cell.id}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

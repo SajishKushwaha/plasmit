@@ -8,12 +8,7 @@
 "use client";
 
 import React from "react";
-import {
-  useIsAdmin,
-  useIsDoctor,
-  useHasPermission,
-  useCanAccessRoute,
-} from "@/lib/permissions";
+import { useIsAdmin, useIsDoctor, useHasPermission, useCanAccessRoute } from "@/lib/permissions";
 import {
   useDoctorContext,
   useDoctorModuleAccess,
@@ -21,8 +16,8 @@ import {
   DoctorOnly,
   ShowForDoctor,
   HideFromDoctor,
-} from "@/features/auth/doctor-context";
-import { RouteGuard } from "@/features/auth/route-guard";
+} from "@/features/platform/auth/doctor-context";
+import { RouteGuard } from "@/features/platform/auth/route-guard";
 
 /**
  * PATTERN 1: Conditional Button - Show Action Only for Doctors
@@ -34,11 +29,7 @@ export function WritePrescriptionButton() {
     return null; // Hidden from non-doctors
   }
 
-  return (
-    <button className="rounded bg-blue-500 px-4 py-2 text-white">
-      Write Prescription
-    </button>
-  );
+  return <button className="rounded bg-blue-500 px-4 py-2 text-white">Write Prescription</button>;
 }
 
 /**
@@ -55,9 +46,7 @@ export function RevenueAnalyticsWidget() {
     >
       <div className="rounded border p-4">
         <h3 className="font-bold">Revenue Analytics</h3>
-        <p className="text-sm text-muted-foreground">
-          Total revenue this month: $50,000
-        </p>
+        <p className="text-sm text-muted-foreground">Total revenue this month: $50,000</p>
       </div>
     </AdminOnly>
   );
@@ -70,14 +59,10 @@ export function ConsultationStartButton() {
   return (
     <DoctorOnly
       fallback={
-        <div className="text-sm text-muted-foreground">
-          Only doctors can start consultations.
-        </div>
+        <div className="text-sm text-muted-foreground">Only doctors can start consultations.</div>
       }
     >
-      <button className="rounded bg-green-500 px-4 py-2 text-white">
-        Start Consultation
-      </button>
+      <button className="rounded bg-green-500 px-4 py-2 text-white">Start Consultation</button>
     </DoctorOnly>
   );
 }
@@ -160,17 +145,10 @@ export function PatientForm() {
 
   return (
     <form className="space-y-4">
-      <input
-        type="text"
-        placeholder="Patient Name"
-        className="w-full rounded border px-3 py-2"
-      />
+      <input type="text" placeholder="Patient Name" className="w-full rounded border px-3 py-2" />
 
       {/* Visible to all */}
-      <textarea
-        placeholder="Clinical Notes"
-        className="w-full rounded border px-3 py-2"
-      />
+      <textarea placeholder="Clinical Notes" className="w-full rounded border px-3 py-2" />
 
       {/* Only for doctors with permission */}
       {canWrite && (
@@ -182,17 +160,10 @@ export function PatientForm() {
 
       {/* Only for admins */}
       {isAdmin && (
-        <input
-          type="text"
-          placeholder="Billing Code"
-          className="w-full rounded border px-3 py-2"
-        />
+        <input type="text" placeholder="Billing Code" className="w-full rounded border px-3 py-2" />
       )}
 
-      <button
-        type="submit"
-        className="rounded bg-blue-500 px-4 py-2 text-white"
-      >
+      <button type="submit" className="rounded bg-blue-500 px-4 py-2 text-white">
         Save
       </button>
     </form>
@@ -261,9 +232,7 @@ export function ModuleGatedComponent({ moduleRoute }: { moduleRoute: string }) {
     return (
       <div className="rounded border-l-4 border-red-500 bg-red-50 p-4">
         <p className="font-medium text-red-900">Access Denied</p>
-        <p className="text-sm text-red-700">
-          You don't have access to this module.
-        </p>
+        <p className="text-sm text-red-700">{"You don't have access to this module."}</p>
       </div>
     );
   }
@@ -350,10 +319,7 @@ interface NavItemProps {
 
 function NavItem({ href, label }: NavItemProps) {
   return (
-    <a
-      href={href}
-      className="block rounded px-3 py-2 text-sm hover:bg-gray-100"
-    >
+    <a href={href} className="block rounded px-3 py-2 text-sm hover:bg-gray-100">
       {label}
     </a>
   );
@@ -393,11 +359,7 @@ function DoctorPageContent() {
 }
 
 function VideoConsultationButton() {
-  return (
-    <button className="rounded bg-blue-500 px-4 py-2 text-white">
-      Start Video Call
-    </button>
-  );
+  return <button className="rounded bg-blue-500 px-4 py-2 text-white">Start Video Call</button>;
 }
 
 function AppointmentComponent() {

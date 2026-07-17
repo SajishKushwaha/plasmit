@@ -4,9 +4,16 @@ import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
+import { getRoleDisplayName } from "@/lib/role-display";
 import { cn } from "@/lib/utils";
 
-export function RoleSwitcher({ className, portal = true }: { className?: string; portal?: boolean }) {
+export function RoleSwitcher({
+  className,
+  portal = true,
+}: {
+  className?: string;
+  portal?: boolean;
+}) {
   const { role, setRole, roles } = useRole();
   const selectableRoles = roles;
 
@@ -23,7 +30,7 @@ export function RoleSwitcher({ className, portal = true }: { className?: string;
             key={item}
             value={item}
           >
-            <Select.ItemText>{item}</Select.ItemText>
+            <Select.ItemText>{getRoleDisplayName(item)}</Select.ItemText>
           </Select.Item>
         ))}
       </Select.Viewport>

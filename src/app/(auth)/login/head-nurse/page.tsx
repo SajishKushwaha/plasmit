@@ -1,4 +1,4 @@
-import { NurseRoleLoginPage } from "@/features/auth/auth-pages";
+import { NurseRoleLoginPage } from "@/features/platform/auth/auth-pages";
 
 export default function HeadNurseLoginRoute() {
   return <NurseRoleLoginPage role="Head Nurse" />;

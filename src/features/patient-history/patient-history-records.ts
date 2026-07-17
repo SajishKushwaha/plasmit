@@ -25,31 +25,44 @@ function isBrowser() {
 
 function getFieldLabel(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {
   const fieldGroup = field.closest("[data-history-field-group]");
-  const fieldGroupLabel = fieldGroup?.querySelector("[data-history-field-label]")?.textContent?.trim();
+  const fieldGroupLabel = fieldGroup
+    ?.querySelector("[data-history-field-label]")
+    ?.textContent?.trim();
   if (fieldGroupLabel) return fieldGroupLabel;
 
   const wrappingLabel = field.closest("label");
   const directLabel = wrappingLabel?.querySelector("span")?.textContent?.trim();
-  return directLabel || wrappingLabel?.textContent?.trim() || field.getAttribute("aria-label") || field.name || "Field";
+  return (
+    directLabel ||
+    wrappingLabel?.textContent?.trim() ||
+    field.getAttribute("aria-label") ||
+    field.name ||
+    "Field"
+  );
 }
 
 function getFieldValue(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {
   if (field instanceof HTMLInputElement) {
     if (field.type === "radio" || field.type === "checkbox") {
-      return field.checked ? field.closest("label")?.textContent?.trim() ?? field.value : "";
+      return field.checked ? (field.closest("label")?.textContent?.trim() ?? field.value) : "";
     }
     if (field.type === "file") return field.files?.[0]?.name ?? "";
   }
   return field.value.trim();
 }
 
-function setFieldValue(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, value: string) {
+function setFieldValue(
+  field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+  value: string,
+) {
   if (field instanceof HTMLInputElement && field.type === "radio") {
     field.checked = (field.closest("label")?.textContent?.trim() ?? field.value) === value;
     return;
   }
   if (field instanceof HTMLInputElement && field.type === "checkbox") {
-    field.checked = value.split(", ").includes(field.closest("label")?.textContent?.trim() ?? field.value);
+    field.checked = value
+      .split(", ")
+      .includes(field.closest("label")?.textContent?.trim() ?? field.value);
     return;
   }
   if (field instanceof HTMLInputElement && field.type === "file") return;
@@ -77,7 +90,10 @@ export function findPatientHistoryRecord(id: string) {
   return readPatientHistoryRecords().find((record) => record.id === id) ?? null;
 }
 
-export function upsertPatientHistoryRecordSection(recordId: string | null, section: PatientHistoryRecordSection) {
+export function upsertPatientHistoryRecordSection(
+  recordId: string | null,
+  section: PatientHistoryRecordSection,
+) {
   const records = readPatientHistoryRecords();
   const id = recordId || `history-${Date.now()}`;
   const existingRecord = records.find((record) => record.id === id);
@@ -98,11 +114,19 @@ export function upsertPatientHistoryRecordSection(recordId: string | null, secti
   return nextRecord;
 }
 
-export function collectPatientHistorySection(form: HTMLFormElement, tabId: string, tabLabel: string): PatientHistoryRecordSection {
+export function collectPatientHistorySection(
+  form: HTMLElement,
+  tabId: string,
+  tabLabel: string,
+): PatientHistoryRecordSection {
   const tabPanel = form.querySelector<HTMLElement>(`[data-history-tab="${tabId}"]`);
   if (!tabPanel) return { tabId, tabLabel, fields: [] };
 
-  const fields = Array.from(tabPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea"));
+  const fields = Array.from(
+    tabPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+      "input, select, textarea",
+    ),
+  );
   const entries: PatientHistoryRecordField[] = [];
   const seenRadioGroups = new Set<string>();
   const checkboxGroups = new Map<string, string[]>();
@@ -112,7 +136,13 @@ export function collectPatientHistorySection(form: HTMLFormElement, tabId: strin
     if (field instanceof HTMLInputElement && field.type === "radio") {
       if (seenRadioGroups.has(field.name)) return;
       seenRadioGroups.add(field.name);
-      const checked = fields.find((item) => item instanceof HTMLInputElement && item.type === "radio" && item.name === field.name && item.checked);
+      const checked = fields.find(
+        (item) =>
+          item instanceof HTMLInputElement &&
+          item.type === "radio" &&
+          item.name === field.name &&
+          item.checked,
+      );
       if (!checked) return;
       entries.push({ label: getFieldLabel(field), value: getFieldValue(checked) });
       return;
@@ -135,22 +165,35 @@ export function collectPatientHistorySection(form: HTMLFormElement, tabId: strin
   return { tabId, tabLabel, fields: entries };
 }
 
-export function applyPatientHistorySection(form: HTMLFormElement, section: PatientHistoryRecordSection) {
+export function applyPatientHistorySection(
+  form: HTMLElement,
+  section: PatientHistoryRecordSection,
+) {
   const tabPanel = form.querySelector<HTMLElement>(`[data-history-tab="${section.tabId}"]`);
   if (!tabPanel) return;
 
-  const fields = Array.from(tabPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea"));
+  const fields = Array.from(
+    tabPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+      "input, select, textarea",
+    ),
+  );
   const usedLabels = new Map<string, number>();
 
   fields.forEach((field) => {
     if (field.type === "hidden" || field.disabled) return;
     const label = getFieldLabel(field);
-    const labelIndex = field instanceof HTMLInputElement && (field.type === "radio" || field.type === "checkbox") ? 0 : usedLabels.get(label) ?? 0;
+    const labelIndex =
+      field instanceof HTMLInputElement && (field.type === "radio" || field.type === "checkbox")
+        ? 0
+        : (usedLabels.get(label) ?? 0);
     const matchingFields = section.fields.filter((item) => item.label === label);
     const recordField = matchingFields[labelIndex];
     if (!recordField) return;
 
-    if (!(field instanceof HTMLInputElement) || (field.type !== "radio" && field.type !== "checkbox")) {
+    if (
+      !(field instanceof HTMLInputElement) ||
+      (field.type !== "radio" && field.type !== "checkbox")
+    ) {
       usedLabels.set(label, labelIndex + 1);
     }
     setFieldValue(field, recordField.value);

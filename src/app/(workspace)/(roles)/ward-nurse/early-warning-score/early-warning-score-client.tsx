@@ -5,7 +5,11 @@ import { icuPatients } from "@/features/care-team/nursing-icu/nursing-icu-data";
 
 type SelectedIcuPatient = (typeof icuPatients)[number];
 
-export default function EarlyWarningScoreClient({ initialPatientId }: { initialPatientId: string }) {
+export default function EarlyWarningScoreClient({
+  initialPatientId,
+}: {
+  initialPatientId: string;
+}) {
   const [patientId, setPatientId] = React.useState(initialPatientId);
   const patient = icuPatients.find((item) => item.id === patientId) ?? null;
 

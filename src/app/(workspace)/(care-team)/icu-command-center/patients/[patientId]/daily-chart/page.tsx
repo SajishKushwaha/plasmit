@@ -1,10 +1,6 @@
 import { IcuDailyChartPage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ patientId: string }>;
-}) {
+export default async function Page({ params }: { params: Promise<{ patientId: string }> }) {
   const { patientId } = await params;
   return <IcuDailyChartPage patientId={patientId} />;
 }

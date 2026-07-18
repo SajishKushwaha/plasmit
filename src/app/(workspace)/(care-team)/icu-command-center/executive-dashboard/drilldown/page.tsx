@@ -6,5 +6,11 @@ export default async function IcuCommandCenterExecutiveDrilldownRoute({
   searchParams: Promise<{ focus?: string; unit?: string }>;
 }) {
   const { focus, unit } = await searchParams;
-  return <NursingIcuModulePage initialExecutiveFocus={focus} initialExecutiveUnitId={unit} page="executive-drilldown" />;
+  return (
+    <NursingIcuModulePage
+      initialExecutiveFocus={focus}
+      initialExecutiveUnitId={unit}
+      page="executive-drilldown"
+    />
+  );
 }

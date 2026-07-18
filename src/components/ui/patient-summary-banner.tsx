@@ -29,9 +29,16 @@ export function PatientSummaryBanner({
   const [primaryField, ...rest] = fields;
 
   return (
-    <Card className={cn("border-primary/15 bg-gradient-to-r from-primary/10 via-primary/5 to-white shadow-sm", className)}>
+    <Card
+      className={cn(
+        "border-primary/15 bg-gradient-to-r from-primary/10 via-primary/5 to-white shadow-sm",
+        className,
+      )}
+    >
       <CardContent className="space-y-2 p-3 sm:p-4">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/70 sm:text-xs">{title}</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/70 sm:text-xs">
+          {title}
+        </div>
         {primaryField ? <PatientPrimaryField field={primaryField} /> : null}
         {rest.length ? (
           <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:flex-wrap">
@@ -47,7 +54,11 @@ export function PatientSummaryBanner({
 }
 
 function PatientPrimaryField({ field }: { field: PatientSummaryField }) {
-  return <div className="break-words text-base font-bold leading-5 text-primary sm:text-lg lg:text-xl">{field.value}</div>;
+  return (
+    <div className="break-words text-base font-bold leading-5 text-primary sm:text-lg lg:text-xl">
+      {field.value}
+    </div>
+  );
 }
 
 function PatientMetaField({ field }: { field: PatientSummaryField }) {

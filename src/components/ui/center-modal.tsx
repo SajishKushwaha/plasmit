@@ -18,7 +18,7 @@ export function CenterModal({
   scrollToTopOnOpen = false,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   title: string;
   description?: string;
   children: React.ReactNode;
@@ -47,7 +47,11 @@ export function CenterModal({
           <div className="flex items-start justify-between gap-4 border-b border-border bg-surface px-4 py-3">
             <div className="min-w-0">
               <Dialog.Title className="text-sm font-semibold text-foreground">{title}</Dialog.Title>
-              {description ? <Dialog.Description className="mt-1 text-xs text-muted-foreground">{description}</Dialog.Description> : null}
+              {description ? (
+                <Dialog.Description className="mt-1 text-xs text-muted-foreground">
+                  {description}
+                </Dialog.Description>
+              ) : null}
             </div>
             <Dialog.Close asChild>
               <Button aria-label="Close preview" size="icon" type="button" variant="ghost">
@@ -55,7 +59,12 @@ export function CenterModal({
               </Button>
             </Dialog.Close>
           </div>
-          <div className={cn("min-h-0 flex-1 overflow-auto p-3 sm:p-5", bodyClassName)} ref={bodyRef}>{children}</div>
+          <div
+            className={cn("min-h-0 flex-1 overflow-auto p-3 sm:p-5", bodyClassName)}
+            ref={bodyRef}
+          >
+            {children}
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

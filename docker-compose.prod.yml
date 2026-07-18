@@ -1,0 +1,20 @@
+# Pull-only. Do not add build:.
+# Image: ghcr.io/plasmit-vector/plasmit-hospital-hms
+# Bound to loopback — host nginx (deploy/nginx/hms.conf) is the public edge.
+#
+# Private package login:
+#   echo "$GHCR_TOKEN" | docker login ghcr.io -u GITHUB_USERNAME --password-stdin
+#
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+
+services:
+  web:
+    image: ghcr.io/plasmit-vector/plasmit-hospital-hms:${IMAGE_TAG:-latest}
+    pull_policy: always
+    ports:
+      - "127.0.0.1:49153:49153"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    restart: unless-stopped

@@ -28,11 +28,14 @@ export function NotificationCenter() {
   const [priorityFilter, setPriorityFilter] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("");
   const filteredItems = items.filter((item) => {
-    const haystack = `${item.title} ${item.message} ${item.module} ${item.patient ?? ""}`.toLowerCase();
+    const haystack =
+      `${item.title} ${item.message} ${item.module} ${item.patient ?? ""}`.toLowerCase();
     const matchesQuery = !query || haystack.includes(query.toLowerCase());
     const matchesType = !typeFilter || item.type.toLowerCase().includes(typeFilter.toLowerCase());
-    const matchesPriority = !priorityFilter || item.priority.toLowerCase().includes(priorityFilter.toLowerCase());
-    const matchesStatus = !statusFilter || item.status.toLowerCase().includes(statusFilter.toLowerCase());
+    const matchesPriority =
+      !priorityFilter || item.priority.toLowerCase().includes(priorityFilter.toLowerCase());
+    const matchesStatus =
+      !statusFilter || item.status.toLowerCase().includes(statusFilter.toLowerCase());
     return matchesQuery && matchesType && matchesPriority && matchesStatus;
   });
 
@@ -47,9 +50,17 @@ export function NotificationCenter() {
         accessorKey: "title",
         header: "Notification",
         cell: ({ row }) => (
-          <button className="text-left outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring/20" onClick={() => setSelected(row.original)} type="button">
-            <span className="block text-sm font-semibold text-foreground">{row.original.title}</span>
-            <span className="mt-1 block max-w-2xl text-xs font-medium leading-5 text-muted-foreground">{row.original.message}</span>
+          <button
+            className="text-left outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring/20"
+            onClick={() => setSelected(row.original)}
+            type="button"
+          >
+            <span className="block text-sm font-semibold text-foreground">
+              {row.original.title}
+            </span>
+            <span className="mt-1 block max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
+              {row.original.message}
+            </span>
           </button>
         ),
       },
@@ -58,18 +69,39 @@ export function NotificationCenter() {
       {
         accessorKey: "priority",
         header: "Priority",
-        cell: ({ row }) => <StatusPill tone={priorityTone[row.original.priority]}>{row.original.priority}</StatusPill>,
+        cell: ({ row }) => (
+          <StatusPill tone={priorityTone[row.original.priority]}>
+            {row.original.priority}
+          </StatusPill>
+        ),
       },
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => <StatusPill tone={row.original.status === "unread" ? "warning" : row.original.status === "acknowledged" ? "success" : "muted"}>{row.original.status}</StatusPill>,
+        cell: ({ row }) => (
+          <StatusPill
+            tone={
+              row.original.status === "unread"
+                ? "warning"
+                : row.original.status === "acknowledged"
+                  ? "success"
+                  : "muted"
+            }
+          >
+            {row.original.status}
+          </StatusPill>
+        ),
       },
       {
         id: "actions",
         header: "",
         cell: ({ row }) => (
-          <Button variant="ghost" size="icon" aria-label={`Open ${row.original.title}`} onClick={() => setSelected(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Open ${row.original.title}`}
+            onClick={() => setSelected(row.original)}
+          >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         ),
@@ -90,7 +122,16 @@ export function NotificationCenter() {
               <Filter className="h-4 w-4" />
               Filters
             </Button>
-            <Button onClick={() => setItems((current) => current.map((item) => ({ ...item, status: item.status === "acknowledged" ? item.status : "read" })))}>
+            <Button
+              onClick={() =>
+                setItems((current) =>
+                  current.map((item) => ({
+                    ...item,
+                    status: item.status === "acknowledged" ? item.status : "read",
+                  })),
+                )
+              }
+            >
               <CheckCheck className="h-4 w-4" />
               Mark read
             </Button>
@@ -101,10 +142,26 @@ export function NotificationCenter() {
       <Card className="mt-4">
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-[1fr_160px_160px_160px]">
-            <Input placeholder="Search title, patient, module..." value={query} onChange={(event) => setQuery(event.target.value)} />
-            <Input placeholder="Type" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} />
-            <Input placeholder="Priority" value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)} />
-            <Input placeholder="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} />
+            <Input
+              placeholder="Search title, patient, module..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <Input
+              placeholder="Type"
+              value={typeFilter}
+              onChange={(event) => setTypeFilter(event.target.value)}
+            />
+            <Input
+              placeholder="Priority"
+              value={priorityFilter}
+              onChange={(event) => setPriorityFilter(event.target.value)}
+            />
+            <Input
+              placeholder="Status"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            />
           </div>
           <DataTable data={filteredItems} columns={columns} />
         </CardContent>
@@ -120,7 +177,9 @@ export function NotificationCenter() {
             <Button variant="outline" onClick={() => selected && updateStatus(selected.id, "read")}>
               Mark read
             </Button>
-            <Button onClick={() => selected && updateStatus(selected.id, "acknowledged")}>Acknowledge</Button>
+            <Button onClick={() => selected && updateStatus(selected.id, "acknowledged")}>
+              Acknowledge
+            </Button>
           </div>
         }
       >
@@ -131,10 +190,22 @@ export function NotificationCenter() {
               <p className="text-sm font-medium leading-6 text-foreground">{selected.message}</p>
             </div>
             <div className="grid gap-3 text-sm font-medium">
-              <div className="flex justify-between"><span className="text-muted-foreground">Priority</span><StatusPill tone={priorityTone[selected.priority]}>{selected.priority}</StatusPill></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span>{selected.status}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Related module</span><span>{selected.module}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Patient</span><span>{selected.patient ?? "Not linked"}</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Priority</span>
+                <StatusPill tone={priorityTone[selected.priority]}>{selected.priority}</StatusPill>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status</span>
+                <span>{selected.status}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Related module</span>
+                <span>{selected.module}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Patient</span>
+                <span>{selected.patient ?? "Not linked"}</span>
+              </div>
             </div>
           </div>
         ) : null}

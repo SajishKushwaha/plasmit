@@ -28,9 +28,17 @@ export function AlertStatusBundle() {
 }`,
   renderPreview: () => (
     <div className="space-y-3">
-      <AlertBanner icon={CheckCircle2} title="System ready" tone="success">The workflow is ready for action.</AlertBanner>
-      <AlertBanner icon={AlertTriangle} title="Critical alert" tone="critical">Review this item before continuing.</AlertBanner>
-      <div className="flex flex-wrap gap-2"><Badge>Default</Badge><Badge tone="info">Info</Badge><StatusPill tone="success">Approved</StatusPill></div>
+      <AlertBanner icon={CheckCircle2} title="System ready" tone="success">
+        The workflow is ready for action.
+      </AlertBanner>
+      <AlertBanner icon={AlertTriangle} title="Critical alert" tone="critical">
+        Review this item before continuing.
+      </AlertBanner>
+      <div className="flex flex-wrap gap-2">
+        <Badge>Default</Badge>
+        <Badge tone="info">Info</Badge>
+        <StatusPill tone="success">Approved</StatusPill>
+      </div>
     </div>
   ),
 };

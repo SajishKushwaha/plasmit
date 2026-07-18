@@ -34,7 +34,12 @@ export function EmptyLoadingBundle() {
         <Skeleton className="h-20" />
         <Skeleton className="h-8 w-2/3" />
       </div>
-      <EmptyState icon={FileText} title="No records found" description="Adjust filters or search another term." action="Reset filters" />
+      <EmptyState
+        icon={FileText}
+        title="No records found"
+        description="Adjust filters or search another term."
+        action="Reset filters"
+      />
     </div>
   ),
 };

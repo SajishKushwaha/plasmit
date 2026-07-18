@@ -1,15 +1,11 @@
 "use client";
 
-import { ClipboardList, Clock3, FileCheck2, Stethoscope } from "lucide-react";
-
-import { StatCard } from "@/components/ui/stat-card";
-
 import type { LdtOrder } from "./types";
 
 export function LdtSummaryCards({ orders }: { orders: LdtOrder[] }) {
-  const activeOrders = orders.filter((order) => order.status === "Active").length;
-  const pendingOrders = orders.filter((order) => order.status === "Pending").length;
-  const completedOrders = orders.filter((order) => order.status === "Completed").length;
+  const _activeOrders = orders.filter((order) => order.status === "Active").length;
+  const _pendingOrders = orders.filter((order) => order.status === "Pending").length;
+  const _completedOrders = orders.filter((order) => order.status === "Completed").length;
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

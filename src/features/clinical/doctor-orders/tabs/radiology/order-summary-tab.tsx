@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Save, Trash2 } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,28 +10,37 @@ import { DataTable } from "@/components/ui/data-table";
 
 import type { RadiologySummaryRow } from "./types";
 
-type SummarySortKey = keyof Pick<RadiologySummaryRow, "selectedTests" | "loincCode" | "category" | "specification" | "priority" | "status" | "orderDateTime">;
+type SummarySortKey = keyof Pick<
+  RadiologySummaryRow,
+  | "selectedTests"
+  | "loincCode"
+  | "category"
+  | "specification"
+  | "priority"
+  | "status"
+  | "orderDateTime"
+>;
 
 export function RadiologyOrderSummaryTab({
   rows,
   billingNote: _billingNote = "",
-  sort,
-  onSort,
+  sort: _sort,
+  onSort: _onSort,
   onSave,
   onAddToBill,
-  onSaveAndBill,
-  onEdit,
+  onSaveAndBill: _onSaveAndBill,
+  onEdit: _onEdit,
   onDelete,
 }: {
   rows: RadiologySummaryRow[];
   billingNote?: string;
   sort: { key: SummarySortKey; direction: "asc" | "desc" };
-  onSort: (key: SummarySortKey) => void;
+  onSort: (_key: SummarySortKey) => void;
   onSave: () => void;
   onAddToBill: () => void;
   onSaveAndBill: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit: (_id: string) => void;
+  onDelete: (_id: string) => void;
 }) {
   const columns = React.useMemo<ColumnDef<RadiologySummaryRow>[]>(
     () => [
@@ -47,7 +56,17 @@ export function RadiologyOrderSummaryTab({
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => <Badge tone={row.original.status === "Completed" || row.original.status === "Reviewed" ? "success" : "info"}>{row.original.status}</Badge>,
+        cell: ({ row }) => (
+          <Badge
+            tone={
+              row.original.status === "Completed" || row.original.status === "Reviewed"
+                ? "success"
+                : "info"
+            }
+          >
+            {row.original.status}
+          </Badge>
+        ),
       },
       { accessorKey: "orderDateTime", header: "Order Date Time" },
       {
@@ -58,14 +77,20 @@ export function RadiologyOrderSummaryTab({
             {/* <Button type="button" size="sm" variant="outline" onClick={() => onEdit(row.original.id)}>
               <Pencil className="h-4 w-4" />
             </Button> */}
-            <Button type="button" size="sm" variant="outline" className="text-danger" onClick={() => onDelete(row.original.id)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="text-danger"
+              onClick={() => onDelete(row.original.id)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         ),
       },
     ],
-    [onDelete, onEdit],
+    [onDelete],
   );
 
   return (

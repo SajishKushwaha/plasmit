@@ -26,11 +26,41 @@ type IntakeOutputRow = {
 };
 
 const historyRows: AssessmentHistoryRow[] = [
-  { id: "hist-1", dateTime: "24-Jun-2026 10:00", assessment: "Site Assessment", value: "Clean", documentedBy: "Nurse Mary" },
-  { id: "hist-2", dateTime: "24-Jun-2026 14:00", assessment: "Dressing Status", value: "Intact", documentedBy: "Nurse Mary" },
-  { id: "hist-3", dateTime: "24-Jun-2026 18:00", assessment: "LDT Status", value: "Functioning", documentedBy: "Nurse Mary" },
-  { id: "hist-4", dateTime: "25-Jun-2026 08:30", assessment: "Signs of Infection", value: "Absent", documentedBy: "Nurse John" },
-  { id: "hist-5", dateTime: "25-Jun-2026 12:00", assessment: "Complications", value: "None", documentedBy: "Nurse John" },
+  {
+    id: "hist-1",
+    dateTime: "24-Jun-2026 10:00",
+    assessment: "Site Assessment",
+    value: "Clean",
+    documentedBy: "Nurse Mary",
+  },
+  {
+    id: "hist-2",
+    dateTime: "24-Jun-2026 14:00",
+    assessment: "Dressing Status",
+    value: "Intact",
+    documentedBy: "Nurse Mary",
+  },
+  {
+    id: "hist-3",
+    dateTime: "24-Jun-2026 18:00",
+    assessment: "LDT Status",
+    value: "Functioning",
+    documentedBy: "Nurse Mary",
+  },
+  {
+    id: "hist-4",
+    dateTime: "25-Jun-2026 08:30",
+    assessment: "Signs of Infection",
+    value: "Absent",
+    documentedBy: "Nurse John",
+  },
+  {
+    id: "hist-5",
+    dateTime: "25-Jun-2026 12:00",
+    assessment: "Complications",
+    value: "None",
+    documentedBy: "Nurse John",
+  },
 ];
 
 const intakeOutputRows: IntakeOutputRow[] = [
@@ -98,7 +128,11 @@ export function LdtResultReviewTab() {
 
   const filteredHistory = React.useMemo(() => {
     const query = search.trim().toLowerCase();
-    return historyRows.filter((row) => `${row.dateTime} ${row.assessment} ${row.value} ${row.documentedBy}`.toLowerCase().includes(query));
+    return historyRows.filter((row) =>
+      `${row.dateTime} ${row.assessment} ${row.value} ${row.documentedBy}`
+        .toLowerCase()
+        .includes(query),
+    );
   }, [search]);
 
   const historyColumns = React.useMemo<ColumnDef<AssessmentHistoryRow>[]>(
@@ -130,7 +164,10 @@ export function LdtResultReviewTab() {
             <HeaderStat label="Status" value={<StatusBadge status={reviewData.status} />} />
             <HeaderStat label="Priority" value={reviewData.priority} />
             <HeaderStat label="Ordered By" value={reviewData.orderedBy} />
-            <HeaderStat label="Order Date" value={`${reviewData.orderDate} ${reviewData.orderTime}`} />
+            <HeaderStat
+              label="Order Date"
+              value={`${reviewData.orderDate} ${reviewData.orderTime}`}
+            />
           </div>
         </CardContent>
       </Card>
@@ -146,7 +183,10 @@ export function LdtResultReviewTab() {
                 { label: "Indication / Reason", value: reviewData.indication },
                 { label: "Clinical Notes", value: reviewData.clinicalNotes },
                 { label: "Ordered By", value: reviewData.orderedBy },
-                { label: "Order Date & Time", value: `${reviewData.orderDate} ${reviewData.orderTime}` },
+                {
+                  label: "Order Date & Time",
+                  value: `${reviewData.orderDate} ${reviewData.orderTime}`,
+                },
               ]}
             />
           </CardContent>
@@ -197,7 +237,13 @@ export function LdtResultReviewTab() {
         <CardContent className="space-y-4 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <SectionTitle title="Assessment History" />
-            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search assessment history..." aria-label="Search assessment history" className="sm:max-w-xs" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search assessment history..."
+              aria-label="Search assessment history"
+              className="sm:max-w-xs"
+            />
           </div>
           <DataTable data={filteredHistory} columns={historyColumns} />
         </CardContent>
@@ -246,7 +292,9 @@ function StatusBadge({ status }: { status: string }) {
 function HeaderStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-border bg-surface-muted/30 p-3">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
@@ -257,7 +305,9 @@ function DetailGrid({ items }: { items: Array<{ label: string; value: React.Reac
     <div className="grid gap-3 sm:grid-cols-2">
       {items.map((item) => (
         <div key={item.label} className="rounded-lg border border-border bg-surface-muted/30 p-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{item.label}</div>
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {item.label}
+          </div>
           <div className="mt-1 text-sm font-medium text-foreground">{item.value}</div>
         </div>
       ))}

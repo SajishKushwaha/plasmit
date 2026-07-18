@@ -2,13 +2,29 @@
 
 import type { ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { ClipboardCheck, Droplet, FileSearch, FlaskConical, Layers, Microscope, Pill, Stethoscope, UserPlus, X } from "lucide-react";
+import {
+  ClipboardCheck,
+  Droplet,
+  FileSearch,
+  FlaskConical,
+  Layers,
+  Microscope,
+  Pill,
+  Stethoscope,
+  UserPlus,
+  X,
+} from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientSummaryBanner } from "@/components/ui/patient-summary-banner";
-import { doctorInstructions, icuPatients, medicationRows, type IcuPatient } from "@/features/care-team/nursing-icu/nursing-icu-data";
+import {
+  doctorInstructions,
+  icuPatients,
+  medicationRows,
+  type IcuPatient,
+} from "@/features/care-team/nursing-icu/nursing-icu-data";
 
 import { BloodRequestTab } from "./tabs/blood-request-tab";
 import { DrugsTab } from "./tabs/drugs-tab";
@@ -18,7 +34,6 @@ import { PathologyTab } from "./tabs/pathology-tab";
 import { ProceduresTab } from "./tabs/procedures-tab";
 import { RadiologyTab } from "./tabs/radiology-tab";
 import { ReferConsultationTab } from "./tabs/refer-consultation-tab";
-import { RequestsTab } from "./tabs/requests-tab";
 import { LdtTab } from "./tabs/ldt-tab";
 import { AddPoctPage } from "@/features/clinical/poct/poct-pages";
 
@@ -41,16 +56,76 @@ export type DoctorOrdersPatientContext = {
 };
 
 const tabs: OrderTab[] = [
-  { id: "blood", label: "Blood", description: "Blood component request details for blood bank approval.", icon: Droplet, component: <BloodRequestTab /> },
-  { id: "drugs", label: "Drug", description: "Medication orders, dosing, route, frequency, and review context.", icon: Pill, component: <DrugsTab /> },
-  { id: "pathology", label: "Pathology", description: "Pathology test order, summary, and result review workflow.", icon: Microscope, component: <PathologyTab /> },
-  { id: "lab", label: "Laboratory", description: "Laboratory investigations and sample request workflow.", icon: FlaskConical, component: <LaboratoryTab /> },
-  { id: "radiology", label: "Radiology", description: "Imaging orders for radiology scheduling and reporting.", icon: FileSearch, component: <RadiologyTab /> },
-  { id: "poct", label: " POCT", description: "Bedside POCT ordering and capture workflow.", icon: FlaskConical, component: <AddPoctPage embedded mode="add" showModeActions={false} /> },
-  { id: "procedures", label: "Procedure", description: "Procedure orders, clinical notes, and operational instructions.", icon: Stethoscope, component: <ProceduresTab /> },
-  { id: "referral", label: "Referral", description: "Specialist referral and consultation request workflow.", icon: UserPlus, component: <ReferConsultationTab /> },
-  { id: "ordersets", label: "Master Order Sets", description: "Reusable clinical order bundles for common workflows.", icon: Layers, component: <OrderSetsTab /> },
-  { id: "ldt", label: "LDT", description: "Line, drain, and tube order request workflow.", icon: ClipboardCheck, component: <LdtTab /> },
+  {
+    id: "blood",
+    label: "Blood",
+    description: "Blood component request details for blood bank approval.",
+    icon: Droplet,
+    component: <BloodRequestTab />,
+  },
+  {
+    id: "drugs",
+    label: "Drug",
+    description: "Medication orders, dosing, route, frequency, and review context.",
+    icon: Pill,
+    component: <DrugsTab />,
+  },
+  {
+    id: "pathology",
+    label: "Pathology",
+    description: "Pathology test order, summary, and result review workflow.",
+    icon: Microscope,
+    component: <PathologyTab />,
+  },
+  {
+    id: "lab",
+    label: "Laboratory",
+    description: "Laboratory investigations and sample request workflow.",
+    icon: FlaskConical,
+    component: <LaboratoryTab />,
+  },
+  {
+    id: "radiology",
+    label: "Radiology",
+    description: "Imaging orders for radiology scheduling and reporting.",
+    icon: FileSearch,
+    component: <RadiologyTab />,
+  },
+  {
+    id: "poct",
+    label: " POCT",
+    description: "Bedside POCT ordering and capture workflow.",
+    icon: FlaskConical,
+    component: <AddPoctPage embedded mode="add" showModeActions={false} />,
+  },
+  {
+    id: "procedures",
+    label: "Procedure",
+    description: "Procedure orders, clinical notes, and operational instructions.",
+    icon: Stethoscope,
+    component: <ProceduresTab />,
+  },
+  {
+    id: "referral",
+    label: "Referral",
+    description: "Specialist referral and consultation request workflow.",
+    icon: UserPlus,
+    component: <ReferConsultationTab />,
+  },
+  {
+    id: "ordersets",
+    label: "Master Order Sets",
+    description: "Reusable clinical order bundles for common workflows.",
+    icon: Layers,
+    component: <OrderSetsTab />,
+  },
+  {
+    id: "ldt",
+    label: "LDT",
+    description: "Line, drain, and tube order request workflow.",
+    icon: ClipboardCheck,
+    component: <LdtTab />,
+  },
 ];
 
 type WardNurseOrder = {
@@ -94,12 +169,24 @@ function OrderPatientStrip({ patient }: { patient: IcuPatient }) {
     >
       <div className="flex min-w-max items-center gap-3">
         <span className="text-base font-bold">{patient.patientName}</span>
-        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">MR: {patient.mrn}</span>
-        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">Age/Sex: {patient.ageGender}</span>
-        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">Bed: {patient.bedNo}</span>
-        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">Unit: {patient.unit}</span>
-        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">Doctor: {patient.dutyDoctor}</span>
-        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">Nurse: {patient.assignedWardNurse}</span>
+        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">
+          MR: {patient.mrn}
+        </span>
+        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">
+          Age/Sex: {patient.ageGender}
+        </span>
+        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">
+          Bed: {patient.bedNo}
+        </span>
+        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">
+          Unit: {patient.unit}
+        </span>
+        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">
+          Doctor: {patient.dutyDoctor}
+        </span>
+        <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-bold">
+          Nurse: {patient.assignedWardNurse}
+        </span>
         <button
           className="ml-auto inline-flex h-9 items-center justify-center rounded-xl border border-white/30 bg-white px-4 text-xs font-semibold text-[#7367f0] shadow-sm transition hover:bg-white/90"
           onClick={() => window.history.back()}
@@ -114,7 +201,12 @@ function OrderPatientStrip({ patient }: { patient: IcuPatient }) {
 
 function instructionDepartment(instruction: string) {
   const normalized = instruction.toLowerCase();
-  return departmentByInstruction.find((item) => normalized.includes(item.match)) ?? { tab: "ordersets", label: "Nursing Care" };
+  return (
+    departmentByInstruction.find((item) => normalized.includes(item.match)) ?? {
+      tab: "ordersets",
+      label: "Nursing Care",
+    }
+  );
 }
 
 function patientOrders(patient: IcuPatient): WardNurseOrder[] {
@@ -136,7 +228,9 @@ function patientOrders(patient: IcuPatient): WardNurseOrder[] {
   const doctorOrders = doctorInstructions
     .filter((instruction) => instruction.patientId === patient.id)
     .map((instruction) => {
-      const department = instructionDepartment(`${instruction.instructionType} ${instruction.instruction}`);
+      const department = instructionDepartment(
+        `${instruction.instructionType} ${instruction.instruction}`,
+      );
 
       return {
         id: `doc-${instruction.id}`,
@@ -166,7 +260,9 @@ function patientOrders(patient: IcuPatient): WardNurseOrder[] {
     {
       id: `rad-${patient.id}`,
       patientId: patient.id,
-      order: patient.ventilatorStatus.includes("ventilation") ? "Portable chest X-ray" : "Radiology review if condition changes",
+      order: patient.ventilatorStatus.includes("ventilation")
+        ? "Portable chest X-ray"
+        : "Radiology review if condition changes",
       department: "radiology",
       departmentLabel: "Radiology",
       orderedBy: patient.admittingDoctor,
@@ -209,7 +305,15 @@ export function DoctorOrdersPage({
   department,
 }: DoctorOrdersPageProps = {}) {
   if (wardNurseMode) {
-    return <WardNurseDoctorOrdersPage patientId={patientId} locked={locked} mode={mode} orderId={orderId} department={department} />;
+    return (
+      <WardNurseDoctorOrdersPage
+        patientId={patientId}
+        locked={locked}
+        mode={mode}
+        orderId={orderId}
+        department={department}
+      />
+    );
   }
 
   const visibleTabs = drugsOnly
@@ -218,7 +322,10 @@ export function DoctorOrdersPage({
       ? tabs.filter((tab) => tab.id === onlyTab)
       : tabs;
   const preferredDefaultTab = defaultTabProp ?? department;
-  const defaultTab = preferredDefaultTab && visibleTabs.some((tab) => tab.id === preferredDefaultTab) ? preferredDefaultTab : visibleTabs[0]?.id ?? "drugs";
+  const defaultTab =
+    preferredDefaultTab && visibleTabs.some((tab) => tab.id === preferredDefaultTab)
+      ? preferredDefaultTab
+      : (visibleTabs[0]?.id ?? "drugs");
 
   return (
     <div className="space-y-4 px-2 py-2 sm:space-y-5 sm:px-0 sm:py-3">
@@ -241,7 +348,11 @@ export function DoctorOrdersPage({
               <div className="overflow-x-auto rounded-xl border border-border bg-white/95 p-1 shadow-sm">
                 <TabsList className="inline-flex h-auto w-max min-w-max rounded-lg bg-surface-muted/70 p-1">
                   {visibleTabs.map((tab) => (
-                    <TabsTrigger key={tab.id} value={tab.id} className="flex h-10 min-w-[132px] shrink-0 flex-row items-center justify-center gap-2 rounded-lg border border-transparent bg-transparent px-3 text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+                    <TabsTrigger
+                      key={tab.id}
+                      value={tab.id}
+                      className="flex h-10 min-w-[132px] shrink-0 flex-row items-center justify-center gap-2 rounded-lg border border-transparent bg-transparent px-3 text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                    >
                       <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                       <span className="min-w-0 truncate leading-none">{tab.label}</span>
                     </TabsTrigger>
@@ -252,7 +363,11 @@ export function DoctorOrdersPage({
           ) : null}
           {visibleTabs.map((tab) => (
             <TabsContent key={tab.id} value={tab.id} className="mt-2 sm:mt-3">
-              {tab.id === "radiology" ? <RadiologyTab defaultTab={radiologyDefaultTab} /> : tab.component}
+              {tab.id === "radiology" ? (
+                <RadiologyTab defaultTab={radiologyDefaultTab} />
+              ) : (
+                tab.component
+              )}
             </TabsContent>
           ))}
         </div>
@@ -270,7 +385,8 @@ function WardNurseDoctorOrdersPage({
 }: Pick<DoctorOrdersPageProps, "patientId" | "locked" | "mode" | "orderId" | "department">) {
   const assignedPatients = React.useMemo(() => assignedWardPatients(), []);
   const locked = lockedFromRoute && Boolean(patientId);
-  const initialPatientId = patientId && assignedPatients.some((patient) => patient.id === patientId) ? patientId : "";
+  const initialPatientId =
+    patientId && assignedPatients.some((patient) => patient.id === patientId) ? patientId : "";
   const [selectedPatientId, setSelectedPatientId] = React.useState(initialPatientId);
   const [activeTab, setActiveTab] = React.useState("blood");
   const [selectedOrderId, setSelectedOrderId] = React.useState<string | null>(orderId ?? null);
@@ -288,10 +404,13 @@ function WardNurseDoctorOrdersPage({
     }
   }, [orderId]);
 
-  const selectedPatient = assignedPatients.find((patient) => patient.id === selectedPatientId) ?? null;
+  const selectedPatient =
+    assignedPatients.find((patient) => patient.id === selectedPatientId) ?? null;
   const orders = selectedPatient ? patientOrders(selectedPatient) : [];
   const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
-  const selectedOrderTab = selectedOrder ? tabs.find((tab) => tab.id === selectedOrder.department) ?? null : null;
+  const selectedOrderTab = selectedOrder
+    ? (tabs.find((tab) => tab.id === selectedOrder.department) ?? null)
+    : null;
   const isDetailMode = mode === "detail" && Boolean(selectedPatient);
 
   React.useEffect(() => {
@@ -317,7 +436,9 @@ function WardNurseDoctorOrdersPage({
           <div>
             <h2 className="text-base font-bold text-foreground">Doctor Orders</h2>
             <p className="mt-1 text-xs font-medium text-muted-foreground">
-              {selectedPatient ? `${selectedPatient.bedNo} | ${selectedPatient.unit}` : "Select an assigned patient"}
+              {selectedPatient
+                ? `${selectedPatient.bedNo} | ${selectedPatient.unit}`
+                : "Select an assigned patient"}
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -337,7 +458,11 @@ function WardNurseDoctorOrdersPage({
                 </option>
               ))}
             </select>
-            {locked ? <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">Locked</span> : null}
+            {locked ? (
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
+                Locked
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -355,19 +480,33 @@ function WardNurseDoctorOrdersPage({
             </thead>
             <tbody>
               {orders.map((order) => (
-                <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/55" key={order.id}>
+                <tr
+                  className="border-b border-border last:border-b-0 hover:bg-surface-muted/55"
+                  key={order.id}
+                >
                   <td className="px-4 py-3">
                     <div className="font-bold text-foreground">{order.order}</div>
-                    <div className="mt-1 text-xs font-medium text-muted-foreground">{order.instruction}</div>
+                    <div className="mt-1 text-xs font-medium text-muted-foreground">
+                      {order.instruction}
+                    </div>
                   </td>
-                  <td className="px-4 py-3 font-semibold text-foreground">{order.departmentLabel}</td>
+                  <td className="px-4 py-3 font-semibold text-foreground">
+                    {order.departmentLabel}
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{order.orderedBy}</td>
                   <td className="px-4 py-3 text-muted-foreground">{order.time}</td>
                   <td className="px-4 py-3">
-                    <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-foreground">{order.status}</span>
+                    <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-bold text-foreground">
+                      {order.status}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button size="sm" type="button" variant="outline" onClick={() => openOrder(order)}>
+                    <Button
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                      onClick={() => openOrder(order)}
+                    >
                       Open
                     </Button>
                   </td>
@@ -375,8 +514,13 @@ function WardNurseDoctorOrdersPage({
               ))}
               {!selectedPatient || orders.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-8 text-center text-sm font-semibold text-muted-foreground" colSpan={6}>
-                    {selectedPatient ? "No open orders for this patient." : "Select patient to view orders."}
+                  <td
+                    className="px-4 py-8 text-center text-sm font-semibold text-muted-foreground"
+                    colSpan={6}
+                  >
+                    {selectedPatient
+                      ? "No open orders for this patient."
+                      : "Select patient to view orders."}
                   </td>
                 </tr>
               ) : null}
@@ -390,9 +534,13 @@ function WardNurseDoctorOrdersPage({
           <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
             <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-bold text-foreground">{selectedOrder?.departmentLabel ?? "Order"} workspace</h3>
+                <h3 className="text-sm font-bold text-foreground">
+                  {selectedOrder?.departmentLabel ?? "Order"} workspace
+                </h3>
                 <p className="mt-1 text-xs font-medium text-muted-foreground">
-                  {selectedOrder ? `${selectedOrder.order} | ${selectedOrder.orderedBy} | ${selectedOrder.time}` : "Open an order from the patient order list."}
+                  {selectedOrder
+                    ? `${selectedOrder.order} | ${selectedOrder.orderedBy} | ${selectedOrder.time}`
+                    : "Open an order from the patient order list."}
                 </p>
               </div>
               <Button
@@ -400,7 +548,10 @@ function WardNurseDoctorOrdersPage({
                 variant="outline"
                 onClick={() => {
                   if (!selectedPatient) return;
-                  const params = new URLSearchParams({ patientId: selectedPatient.id, locked: locked ? "1" : "0" });
+                  const params = new URLSearchParams({
+                    patientId: selectedPatient.id,
+                    locked: locked ? "1" : "0",
+                  });
                   window.location.href = `/icu-command-center/nursing/order?${params.toString()}`;
                 }}
               >
@@ -423,12 +574,19 @@ function WardNurseDoctorOrdersPage({
                   {selectedOrder?.departmentLabel ?? "Order"} order
                 </Dialog.Title>
                 <Dialog.Description className="mt-1 truncate text-xs font-medium text-muted-foreground">
-                  {selectedPatient ? `${selectedPatient.patientName} | ${selectedPatient.bedNo} | ${selectedPatient.unit}` : "Selected patient"}
+                  {selectedPatient
+                    ? `${selectedPatient.patientName} | ${selectedPatient.bedNo} | ${selectedPatient.unit}`
+                    : "Selected patient"}
                   {selectedOrder ? ` | ${selectedOrder.order}` : ""}
                 </Dialog.Description>
               </div>
               <Dialog.Close asChild>
-                <Button aria-label="Close order popup" className="h-9 w-9 shrink-0 p-0" type="button" variant="outline">
+                <Button
+                  aria-label="Close order popup"
+                  className="h-9 w-9 shrink-0 p-0"
+                  type="button"
+                  variant="outline"
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </Dialog.Close>
@@ -442,15 +600,23 @@ function WardNurseDoctorOrdersPage({
                         <selectedOrderTab.icon className="h-4 w-4" />
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-foreground">{selectedOrderTab.label}</p>
-                        <p className="truncate text-xs font-medium text-muted-foreground">{selectedOrder?.instruction}</p>
+                        <p className="truncate text-sm font-bold text-foreground">
+                          {selectedOrderTab.label}
+                        </p>
+                        <p className="truncate text-xs font-medium text-muted-foreground">
+                          {selectedOrder?.instruction}
+                        </p>
                       </div>
                     </div>
                     <span className="w-fit rounded-full border border-border bg-background px-3 py-1 text-xs font-bold text-foreground">
                       {selectedOrder?.status}
                     </span>
                   </div>
-                  {selectedOrderTab.id === "radiology" ? <RadiologyTab /> : selectedOrderTab.component}
+                  {selectedOrderTab.id === "radiology" ? (
+                    <RadiologyTab />
+                  ) : (
+                    selectedOrderTab.component
+                  )}
                 </div>
               ) : null}
             </div>
@@ -466,7 +632,7 @@ function OrderWorkspaceTabs({
   onActiveTabChange,
 }: {
   activeTab: string;
-  onActiveTabChange: (tab: string) => void;
+  onActiveTabChange: (_tab: string) => void;
 }) {
   return (
     <Tabs value={activeTab} onValueChange={onActiveTabChange} className="w-full">
@@ -475,7 +641,11 @@ function OrderWorkspaceTabs({
           <div className="overflow-x-auto rounded-xl border border-border bg-white/95 p-1 shadow-sm">
             <TabsList className="inline-flex h-auto w-max min-w-max rounded-lg bg-surface-muted/70 p-1">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="flex h-10 min-w-[132px] shrink-0 flex-row items-center justify-center gap-2 rounded-lg border border-transparent bg-transparent px-3 text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="flex h-10 min-w-[132px] shrink-0 flex-row items-center justify-center gap-2 rounded-lg border border-transparent bg-transparent px-3 text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                >
                   <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                   <span className="min-w-0 truncate leading-none">{tab.label}</span>
                 </TabsTrigger>

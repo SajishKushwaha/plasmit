@@ -30,7 +30,7 @@ export type LaboratoryResultRow = {
 export type LaboratoryResultBlock = {
   id: string;
   name: string;
-  specimen:string;
+  specimen: string;
   specialty: string;
   rows: LaboratoryResultRow[];
 };
@@ -43,7 +43,14 @@ export type LaboratorySummaryRow = {
   department: string;
   specimen: string;
   priority: LaboratoryPriority;
-  status: "Ordered" | "Sample Collected" | "Received" | "Processing" | "Verified" | "Released" | "Cancelled";
+  status:
+    | "Ordered"
+    | "Sample Collected"
+    | "Received"
+    | "Processing"
+    | "Verified"
+    | "Released"
+    | "Cancelled";
   orderedBy: string;
   orderDateTime: string;
 };

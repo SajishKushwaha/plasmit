@@ -11,8 +11,17 @@ import { OrderDetailsCard } from "./drugs/order-details-card";
 import { SelectDrugsCard } from "./drugs/select-drugs-card";
 import { SummaryCard } from "./drugs/summary-card";
 import type { DrugOrder, DrugScope, OrderDraft } from "./drugs/types";
-import { calculateAutoQty, deriveCategory, isAutoQtyForm, isContinuousFluid, isFormADrug, isInjectionForm, isIvRoute, makeDraft, routeOptionsForForm } from "./drugs/utils";
-import { PatientSummaryBanner } from "./shared/patient-summary-banner";
+import {
+  calculateAutoQty,
+  deriveCategory,
+  isAutoQtyForm,
+  isContinuousFluid,
+  isFormADrug,
+  isInjectionForm,
+  isIvRoute,
+  makeDraft,
+  routeOptionsForForm,
+} from "./drugs/utils";
 
 function SubmitOrderCard({ count, onSubmit }: { count: number; onSubmit: () => void }) {
   return (
@@ -20,7 +29,11 @@ function SubmitOrderCard({ count, onSubmit }: { count: number; onSubmit: () => v
       <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold text-foreground">Ready to submit</div>
-          <div className="mt-1 text-xs text-muted-foreground">{count ? `${count} selected drug order${count > 1 ? "s" : ""} will be submitted.` : "Select drugs before submitting."}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {count
+              ? `${count} selected drug order${count > 1 ? "s" : ""} will be submitted.`
+              : "Select drugs before submitting."}
+          </div>
         </div>
         <Button type="button" disabled={!count} onClick={onSubmit}>
           Submit
@@ -46,11 +59,15 @@ export function DrugsTab() {
       : orders.filter((order) => order.availableQty > 0).slice(0, 5);
 
   const filteredOrders = scopedOrders.filter((order) => {
-    const matchesSearch = `${order.genericName} ${order.name} ${order.form} ${order.availableQty}`.toLowerCase().includes(search.trim().toLowerCase());
+    const matchesSearch = `${order.genericName} ${order.name} ${order.form} ${order.availableQty}`
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
     return matchesSearch;
   });
   const selectableOrders = filteredOrders;
-  const selectedOrders = selectedDrugIds.map((id) => orders.find((order) => order.id === id)).filter(Boolean) as DrugOrder[];
+  const selectedOrders = selectedDrugIds
+    .map((id) => orders.find((order) => order.id === id))
+    .filter(Boolean) as DrugOrder[];
 
   const flashTotalQty = (id: string) => {
     setFlashIds((current) => ({ ...current, [id]: true }));
@@ -127,8 +144,14 @@ export function DrugsTab() {
       if (values.startDate && nextDraft.endDate && nextDraft.endDate < values.startDate) {
         nextDraft.endDate = "";
       }
-      if (!routeOptionsForForm(nextDraft.form, nextDraft.continuous, nextDraft.intermittent).includes(nextDraft.route)) {
-        nextDraft.route = routeOptionsForForm(nextDraft.form, nextDraft.continuous, nextDraft.intermittent)[0] ?? "";
+      if (
+        !routeOptionsForForm(nextDraft.form, nextDraft.continuous, nextDraft.intermittent).includes(
+          nextDraft.route,
+        )
+      ) {
+        nextDraft.route =
+          routeOptionsForForm(nextDraft.form, nextDraft.continuous, nextDraft.intermittent)[0] ??
+          "";
       }
       if (!categoryChanged) {
         nextDraft.category = deriveCategory(nextDraft);
@@ -137,7 +160,24 @@ export function DrugsTab() {
       if (formChanged && !isAutoQtyForm(nextDraft.form)) {
         nextDraft.orderedQty = "1";
       }
-      const shouldAutoFill = isAutoQtyForm(nextDraft.form) && !("orderedQty" in values) && ("frequency" in values || "days" in values || "category" in values || "dosage" in values || "totalDose" in values || "bolusDose" in values || "rateDose" in values || "rateTimeUnit" in values || "totalDuration" in values || "totalDurationUnit" in values || "continuous" in values || "intermittent" in values || "sos" in values || "stat" in values || "bolus" in values);
+      const shouldAutoFill =
+        isAutoQtyForm(nextDraft.form) &&
+        !("orderedQty" in values) &&
+        ("frequency" in values ||
+          "days" in values ||
+          "category" in values ||
+          "dosage" in values ||
+          "totalDose" in values ||
+          "bolusDose" in values ||
+          "rateDose" in values ||
+          "rateTimeUnit" in values ||
+          "totalDuration" in values ||
+          "totalDurationUnit" in values ||
+          "continuous" in values ||
+          "intermittent" in values ||
+          "sos" in values ||
+          "stat" in values ||
+          "bolus" in values);
       if (shouldAutoFill) {
         const nextQty = calculateAutoQty({
           form: nextDraft.form,
@@ -168,7 +208,9 @@ export function DrugsTab() {
 
   const toggleDrug = (order: DrugOrder, checked: boolean) => {
     if (checked) {
-      setSelectedDrugIds((current) => (current.includes(order.id) ? current : [...current, order.id]));
+      setSelectedDrugIds((current) =>
+        current.includes(order.id) ? current : [...current, order.id],
+      );
       setDrafts((current) => ({ ...current, [order.id]: current[order.id] ?? makeDraft(order) }));
       setActiveEditorId(order.id);
       return;
@@ -194,7 +236,13 @@ export function DrugsTab() {
   const submitOrders = () => {
     const invalidTimeOrder = selectedOrders.find((order) => {
       const draft = drafts[order.id];
-      return draft?.startDate && draft.endDate && draft.startTime && draft.endTime && `${draft.endDate}T${draft.endTime}` <= `${draft.startDate}T${draft.startTime}`;
+      return (
+        draft?.startDate &&
+        draft.endDate &&
+        draft.startTime &&
+        draft.endTime &&
+        `${draft.endDate}T${draft.endTime}` <= `${draft.startDate}T${draft.startTime}`
+      );
     });
     const missingDiluentOrder = selectedOrders.find((order) => {
       const draft = drafts[order.id];
@@ -210,7 +258,9 @@ export function DrugsTab() {
       return;
     }
 
-    toast.success(`${selectedOrders.length} drug order${selectedOrders.length > 1 ? "s" : ""} submitted`);
+    toast.success(
+      `${selectedOrders.length} drug order${selectedOrders.length > 1 ? "s" : ""} submitted`,
+    );
   };
 
   return (
@@ -240,7 +290,12 @@ export function DrugsTab() {
           onDraftChange={updateDraft}
         />
         <SubmitOrderCard count={selectedOrders.length} onSubmit={submitOrders} />
-        <SummaryCard orders={selectedOrders} drafts={drafts} onEdit={openSummaryEditor} onDelete={deleteSummaryOrder} />
+        <SummaryCard
+          orders={selectedOrders}
+          drafts={drafts}
+          onEdit={openSummaryEditor}
+          onDelete={deleteSummaryOrder}
+        />
       </div>
     </div>
   );

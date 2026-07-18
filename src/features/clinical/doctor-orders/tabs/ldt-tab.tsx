@@ -32,9 +32,54 @@ const nowIso = () => new Date().toISOString();
 const currentUser = "Dr. Admin";
 
 const initialRows: TestOrderRow[] = [
-  { id: "ldt-001", orderNo: "LDT-001", ldtType: "PICC Single Lumen", ldtTypeId: "line", ldtName: "PICC Single Lumen", clinicalNotes: "Initial placement request", createdAt: nowIso(), createdBy: currentUser, priority: "Routine", indication: "Blood", status: "Pending", orderDate: today, nurseLocked: false, dynamicValues: {} },
-  { id: "ldt-002", orderNo: "LDT-002", ldtType: "Intercoastal Drain", ldtTypeId: "drain", ldtName: "Intercoastal Drain", clinicalNotes: "Nurse inserted", createdAt: nowIso(), createdBy: currentUser, priority: "Urgent", indication: "Urine", status: "Active", orderDate: today, nurseLocked: true, dynamicValues: {} },
-  { id: "ldt-003", orderNo: "LDT-003", ldtType: "Nasogastric Tube", ldtTypeId: "tube", ldtName: "Nasogastric Tube", clinicalNotes: "Reviewed", createdAt: nowIso(), createdBy: currentUser, priority: "STAT", indication: "Saline", status: "Completed", orderDate: today, nurseLocked: false, dynamicValues: {} },
+  {
+    id: "ldt-001",
+    orderNo: "LDT-001",
+    ldtType: "PICC Single Lumen",
+    ldtTypeId: "line",
+    ldtName: "PICC Single Lumen",
+    clinicalNotes: "Initial placement request",
+    createdAt: nowIso(),
+    createdBy: currentUser,
+    priority: "Routine",
+    indication: "Blood",
+    status: "Pending",
+    orderDate: today,
+    nurseLocked: false,
+    dynamicValues: {},
+  },
+  {
+    id: "ldt-002",
+    orderNo: "LDT-002",
+    ldtType: "Intercoastal Drain",
+    ldtTypeId: "drain",
+    ldtName: "Intercoastal Drain",
+    clinicalNotes: "Nurse inserted",
+    createdAt: nowIso(),
+    createdBy: currentUser,
+    priority: "Urgent",
+    indication: "Urine",
+    status: "Active",
+    orderDate: today,
+    nurseLocked: true,
+    dynamicValues: {},
+  },
+  {
+    id: "ldt-003",
+    orderNo: "LDT-003",
+    ldtType: "Nasogastric Tube",
+    ldtTypeId: "tube",
+    ldtName: "Nasogastric Tube",
+    clinicalNotes: "Reviewed",
+    createdAt: nowIso(),
+    createdBy: currentUser,
+    priority: "STAT",
+    indication: "Saline",
+    status: "Completed",
+    orderDate: today,
+    nurseLocked: false,
+    dynamicValues: {},
+  },
 ];
 
 function statusTone(status: LdtOrderStatus) {
@@ -57,7 +102,12 @@ function buildAssessmentRows(row: TestOrderRow) {
   const assessmentFields = config?.fields.filter((field) => field.group === "assessment") ?? [];
 
   return assessmentFields
-    .filter((field) => row.dynamicValues[field.id] !== undefined && row.dynamicValues[field.id] !== "" && !(Array.isArray(row.dynamicValues[field.id]) && row.dynamicValues[field.id].length === 0))
+    .filter(
+      (field) =>
+        row.dynamicValues[field.id] !== undefined &&
+        row.dynamicValues[field.id] !== "" &&
+        !(Array.isArray(row.dynamicValues[field.id]) && row.dynamicValues[field.id].length === 0),
+    )
     .map((field) => ({
       dateTime: row.createdAt,
       assessment: field.label,
@@ -77,13 +127,18 @@ function buildRemovalInfo(row: TestOrderRow) {
     { field: "Order Date", value: row.orderDate },
     { field: "Status", value: row.status },
     ...propertyFields
-      .filter((field) => row.dynamicValues[field.id] !== undefined && row.dynamicValues[field.id] !== "" && !(Array.isArray(row.dynamicValues[field.id]) && row.dynamicValues[field.id].length === 0))
+      .filter(
+        (field) =>
+          row.dynamicValues[field.id] !== undefined &&
+          row.dynamicValues[field.id] !== "" &&
+          !(Array.isArray(row.dynamicValues[field.id]) && row.dynamicValues[field.id].length === 0),
+      )
       .map((field) => ({ field: field.label, value: formatValue(row.dynamicValues[field.id]) })),
   ];
 }
 
 export function LdtTab() {
-  const [activeTab] = React.useState<MainTab>("test-order");
+  const [_activeTab] = React.useState<MainTab>("test-order");
   const [summaryRows, setSummaryRows] = React.useState<TestOrderRow[]>(initialRows);
   const [draft, setDraft] = React.useState<LdtDraft>({
     ldtTypeId: DEFAULT_LDT_TYPE_ID,
@@ -96,8 +151,12 @@ export function LdtTab() {
     dynamicValues: {},
   });
   const [search, setSearch] = React.useState("");
-  const [priorityFilter, setPriorityFilter] = React.useState<LdtOrderPriority | "All Priority">("All Priority");
-  const [statusFilter, setStatusFilter] = React.useState<LdtOrderStatus | "All Status">("All Status");
+  const [priorityFilter, setPriorityFilter] = React.useState<LdtOrderPriority | "All Priority">(
+    "All Priority",
+  );
+  const [statusFilter, setStatusFilter] = React.useState<LdtOrderStatus | "All Status">(
+    "All Status",
+  );
   const [dateRange, setDateRange] = React.useState("");
   const [editingRow, setEditingRow] = React.useState<TestOrderRow | null>(null);
   const [viewingRow, setViewingRow] = React.useState<TestOrderRow | null>(null);
@@ -110,7 +169,10 @@ export function LdtTab() {
   const filteredRows = React.useMemo(() => {
     const query = search.trim().toLowerCase();
     return summaryRows.filter((row) => {
-      const matchesSearch = `${row.orderNo} ${row.ldtType} ${row.indication} ${row.priority} ${row.status}`.toLowerCase().includes(query);
+      const matchesSearch =
+        `${row.orderNo} ${row.ldtType} ${row.indication} ${row.priority} ${row.status}`
+          .toLowerCase()
+          .includes(query);
       const matchesPriority = priorityFilter === "All Priority" || row.priority === priorityFilter;
       const matchesStatus = statusFilter === "All Status" || row.status === statusFilter;
       const matchesDate = !dateRange || row.orderDate === dateRange;
@@ -168,13 +230,45 @@ export function LdtTab() {
     const orderDate = draft.orderDate || today;
 
     if (editingRow) {
-      setSummaryRows((current) => current.map((row) => (row.id === editingRow.id ? { ...row, ldtType, ldtTypeId: draft.ldtTypeId, ldtName: draft.ldtName, clinicalNotes: draft.clinicalNotes, priority, indication, status: draft.status, orderDate, dynamicValues: draft.dynamicValues } : row)));
+      setSummaryRows((current) =>
+        current.map((row) =>
+          row.id === editingRow.id
+            ? {
+                ...row,
+                ldtType,
+                ldtTypeId: draft.ldtTypeId,
+                ldtName: draft.ldtName,
+                clinicalNotes: draft.clinicalNotes,
+                priority,
+                indication,
+                status: draft.status,
+                orderDate,
+                dynamicValues: draft.dynamicValues,
+              }
+            : row,
+        ),
+      );
       setSubmitMessage(`LDT order ${editingRow.orderNo} updated successfully.`);
       setEditingRow(null);
     } else {
       const nextOrderNo = `LDT-${String(summaryRows.length + 1).padStart(3, "0")}`;
       setSummaryRows((current) => [
-        { id: `ldt-${String(current.length + 1).padStart(3, "0")}`, orderNo: nextOrderNo, ldtType, ldtTypeId: draft.ldtTypeId, ldtName: draft.ldtName, clinicalNotes: draft.clinicalNotes, createdAt: nowIso(), createdBy: currentUser, indication, priority, status: draft.status, orderDate, nurseLocked: false, dynamicValues: draft.dynamicValues },
+        {
+          id: `ldt-${String(current.length + 1).padStart(3, "0")}`,
+          orderNo: nextOrderNo,
+          ldtType,
+          ldtTypeId: draft.ldtTypeId,
+          ldtName: draft.ldtName,
+          clinicalNotes: draft.clinicalNotes,
+          createdAt: nowIso(),
+          createdBy: currentUser,
+          indication,
+          priority,
+          status: draft.status,
+          orderDate,
+          nurseLocked: false,
+          dynamicValues: draft.dynamicValues,
+        },
         ...current,
       ]);
       setSubmitMessage(`LDT order ${nextOrderNo} saved successfully.`);
@@ -198,14 +292,17 @@ export function LdtTab() {
     setViewDrawerOpen(true);
   }, []);
 
-  const handleEdit = (row: TestOrderRow) => {
-    if (!isEditableStatus(row.status)) return;
-    setEditingRow(row);
-    resetForm(row);
-    setDraftErrors({});
-    setSubmitMessage(null);
-    setOrderDrawerOpen(true);
-  };
+  const handleEdit = React.useCallback(
+    (row: TestOrderRow) => {
+      if (!isEditableStatus(row.status)) return;
+      setEditingRow(row);
+      resetForm(row);
+      setDraftErrors({});
+      setSubmitMessage(null);
+      setOrderDrawerOpen(true);
+    },
+    [resetForm],
+  );
 
   const handleDelete = (row: TestOrderRow) => {
     if (row.status !== "Pending") return;
@@ -222,36 +319,61 @@ export function LdtTab() {
   const columns = React.useMemo<ColumnDef<TestOrderRow>[]>(
     () => [
       { header: "Order No", accessorKey: "orderNo" },
-      { header: "LDT Type", cell: ({ row }) => getLdtTypeConfig(row.original.ldtTypeId)?.label ?? row.original.ldtType },
+      {
+        header: "LDT Type",
+        cell: ({ row }) => getLdtTypeConfig(row.original.ldtTypeId)?.label ?? row.original.ldtType,
+      },
       { header: "LDT Name", accessorKey: "ldtName" },
       { header: "Priority", accessorKey: "priority" },
       { header: "Order Date", accessorKey: "orderDate" },
-      { header: "Status", cell: ({ row }) => <Badge tone={statusTone(row.original.status)}>{row.original.status}</Badge> },
+      {
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge tone={statusTone(row.original.status)}>{row.original.status}</Badge>
+        ),
+      },
       {
         header: "Actions",
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={() => openViewDrawer(row.original)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => openViewDrawer(row.original)}
+            >
               <Eye className="h-4 w-4" />
             </Button>
-            <Button type="button" size="sm" variant="outline" disabled={!isEditableStatus(row.original.status)} onClick={() => handleEdit(row.original)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!isEditableStatus(row.original.status)}
+              onClick={() => handleEdit(row.original)}
+            >
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button type="button" size="sm" variant="outline" className="text-danger" disabled={row.original.status !== "Pending"} onClick={() => handleDelete(row.original)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="text-danger"
+              disabled={row.original.status !== "Pending"}
+              onClick={() => handleDelete(row.original)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         ),
       },
     ],
-    [openViewDrawer],
+    [handleEdit, openViewDrawer],
   );
 
   return (
     <div className="space-y-4">
       <Card>
         <CardContent className="space-y-4">
-          
           {submitMessage ? (
             <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
               <CircleCheckBig className="h-4 w-4" />
@@ -261,20 +383,40 @@ export function LdtTab() {
 
           <div className="grid gap-3 lg:grid-cols-5">
             <label className="mt-1 space-y-1 text-xs font-medium text-muted-foreground">
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search LDT orders..." aria-label="Search LDT orders" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search LDT orders..."
+                aria-label="Search LDT orders"
+              />
             </label>
-            <SelectFilter label="" value={priorityFilter} onChange={setPriorityFilter} options={["All Priority", "Routine", "Urgent", "STAT"]} />
-            <SelectFilter label="" value={statusFilter} onChange={setStatusFilter} options={["All Status", "Pending", "Active", "Completed", "Cancelled"]} />
+            <SelectFilter
+              label=""
+              value={priorityFilter}
+              onChange={setPriorityFilter}
+              options={["All Priority", "Routine", "Urgent", "STAT"]}
+            />
+            <SelectFilter
+              label=""
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={["All Status", "Pending", "Active", "Completed", "Cancelled"]}
+            />
             <label className="mt-1 space-y-1 text-xs font-medium text-muted-foreground">
-              <Input type="date" value={dateRange} onChange={(event) => setDateRange(event.target.value)} aria-label="Filter order date" className="pr-10" />
+              <Input
+                type="date"
+                value={dateRange}
+                onChange={(event) => setDateRange(event.target.value)}
+                aria-label="Filter order date"
+                className="pr-10"
+              />
             </label>
             <div className="flex items-center justify-end gap-3">
-           
-            <Button type="button" onClick={openAddOrder}>
-              <ClipboardCheck className="h-4 w-4" />
-              Add Order
-            </Button>
-          </div>
+              <Button type="button" onClick={openAddOrder}>
+                <ClipboardCheck className="h-4 w-4" />
+                Add Order
+              </Button>
+            </div>
           </div>
 
           <DataTable data={filteredRows} columns={columns} />
@@ -300,13 +442,23 @@ export function LdtTab() {
           </div>
         }
       >
-        <LdtTestOrderTab draft={draft} onDraftChange={setDraft} onSave={saveLdtOrder} readOnly={false} errors={draftErrors} />
+        <LdtTestOrderTab
+          draft={draft}
+          onDraftChange={setDraft}
+          onSave={saveLdtOrder}
+          readOnly={false}
+          errors={draftErrors}
+        />
       </Drawer>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete LDT order"
-        description={deleteTarget?.nurseLocked ? "This order was inserted from Nurse side, so it cannot be deleted." : `Are you sure you want to delete ${deleteTarget?.orderNo ?? "this LDT order"}?`}
+        description={
+          deleteTarget?.nurseLocked
+            ? "This order was inserted from Nurse side, so it cannot be deleted."
+            : `Are you sure you want to delete ${deleteTarget?.orderNo ?? "this LDT order"}?`
+        }
         confirmLabel="Delete"
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
@@ -368,7 +520,12 @@ function ViewContent({ row }: { row: TestOrderRow }) {
               {dynamicFields.length ? (
                 dynamicFields.map((field) => {
                   const value = row.dynamicValues[field.id];
-                  if (value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) return null;
+                  if (
+                    value === undefined ||
+                    value === "" ||
+                    (Array.isArray(value) && value.length === 0)
+                  )
+                    return null;
                   return (
                     <tr key={field.id} className="border-b border-border last:border-b-0">
                       <td className="px-3 py-2 font-medium text-foreground">{field.label}</td>
@@ -403,7 +560,10 @@ function ViewContent({ row }: { row: TestOrderRow }) {
             <tbody>
               {assessmentRows.length ? (
                 assessmentRows.map((item, index) => (
-                  <tr key={`${item.assessment}-${index}`} className="border-b border-border last:border-b-0">
+                  <tr
+                    key={`${item.assessment}-${index}`}
+                    className="border-b border-border last:border-b-0"
+                  >
                     <td className="px-3 py-2 text-muted-foreground">{item.dateTime}</td>
                     <td className="px-3 py-2 font-medium text-foreground">{item.assessment}</td>
                     <td className="px-3 py-2 text-muted-foreground">{item.value}</td>
@@ -458,11 +618,25 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SelectFilter<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (value: T) => void; options: readonly T[] }) {
+function SelectFilter<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: T;
+  onChange: (_value: T) => void;
+  options: readonly T[];
+}) {
   return (
     <label className="space-y-1 text-xs font-medium text-muted-foreground">
       <span>{label}</span>
-      <select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value as T)}>
+      <select
+        className="h-10 w-full rounded-md border border-input px-3 text-sm"
+        value={value}
+        onChange={(event) => onChange(event.target.value as T)}
+      >
         {options.map((option) => (
           <option key={option} value={option}>
             {option}
@@ -472,4 +646,3 @@ function SelectFilter<T extends string>({ label, value, onChange, options }: { l
     </label>
   );
 }
-

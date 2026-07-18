@@ -169,17 +169,20 @@ export const doctorBlockedModules = [
   "/compliance",
   "/settings",
   "/insurance",
-  "/live-monitoring"
+  "/live-monitoring",
 ] as const;
 
 /**
  * Role-Based Module Access
  */
-export const roleModuleAccess: Record<Role, {
-  allowed: string[];
-  blocked?: string[];
-  features?: string[];
-}> = {
+export const roleModuleAccess: Record<
+  Role,
+  {
+    allowed: string[];
+    blocked?: string[];
+    features?: string[];
+  }
+> = {
   "Super Admin": {
     allowed: ["*"], // Access to all modules
   },
@@ -200,7 +203,15 @@ export const roleModuleAccess: Record<Role, {
     ],
   },
   "Doctor ICU": {
-    allowed: ["/icu-command-center", "/nursing-icu", "/doctor-ipd", "/patients", "/results", "/radiology", "/laboratory"],
+    allowed: [
+      "/icu-command-center",
+      "/nursing-icu",
+      "/doctor-ipd",
+      "/patients",
+      "/results",
+      "/radiology",
+      "/laboratory",
+    ],
     blocked: [...doctorBlockedModules],
     features: [
       "VIEW_DOCTOR_DASHBOARD",
@@ -235,7 +246,20 @@ export const roleModuleAccess: Record<Role, {
     ],
   },
   Nurse: {
-    allowed: ["/icu-nursing", "/dashboard", "/admission", "/ipd", "/intake-output", "/nurse", "/poct", "/opd", "/emergency", "/radiology", "/results", "/surgery"],
+    allowed: [
+      "/icu-nursing",
+      "/dashboard",
+      "/admission",
+      "/ipd",
+      "/intake-output",
+      "/nurse",
+      "/poct",
+      "/opd",
+      "/emergency",
+      "/radiology",
+      "/results",
+      "/surgery",
+    ],
   },
   "Unit Nurse": {
     allowed: [
@@ -311,7 +335,15 @@ export const roleModuleAccess: Record<Role, {
     allowed: ["/nursing-icu"],
   },
   "Nurse ICU 2": {
-    allowed: ["/icu-command-center", "/nursing-icu", "/worklist", "/nurse", "/radiology", "/results", "/surgery"],
+    allowed: [
+      "/icu-command-center",
+      "/nursing-icu",
+      "/worklist",
+      "/nurse",
+      "/radiology",
+      "/results",
+      "/surgery",
+    ],
   },
   "ICU Bed Coordinator": {
     allowed: ["/icu-command-center", "/nursing-icu"],
@@ -341,7 +373,15 @@ export const roleModuleAccess: Record<Role, {
     allowed: ["/blood-bank"],
   },
   Receptionist: {
-    allowed: ["/receptionist", "/patients"],
+    allowed: [
+      "/receptionist",
+      "/appointments",
+      "/front-office",
+      "/billing-desk",
+      "/radiology",
+      "/results",
+      "/surgery",
+    ],
   },
   "Lab Technician": {
     allowed: ["/dashboard", "/laboratory", "/poct", "/results"],
@@ -375,11 +415,11 @@ export function isAdminOnlyRoute(pathname: string): boolean {
  */
 export function getAllowedRoutesForRole(role: Role): string[] {
   const moduleAccess = roleModuleAccess[role];
-  
+
   if (moduleAccess.allowed.includes("*")) {
     return ["*"]; // Super Admin, Hospital Admin, Management
   }
-  
+
   return moduleAccess.allowed || [];
 }
 
@@ -388,19 +428,19 @@ export function getAllowedRoutesForRole(role: Role): string[] {
  */
 export function isRouteAccessibleByRole(role: Role, route: string): boolean {
   const moduleAccess = roleModuleAccess[role];
-  
+
   // Super Admin/Admin/Management can access everything
   if (moduleAccess.allowed.includes("*")) {
     return true;
   }
-  
+
   // Check if blocked for this role
-  if (moduleAccess.blocked?.some(blocked => route.startsWith(blocked))) {
+  if (moduleAccess.blocked?.some((blocked) => route.startsWith(blocked))) {
     return false;
   }
-  
+
   // Check if explicitly allowed
-  return moduleAccess.allowed.some(allowed => route.startsWith(allowed));
+  return moduleAccess.allowed.some((allowed) => route.startsWith(allowed));
 }
 
 /**
@@ -417,11 +457,11 @@ export function hasPermission(role: Role, permission: string): boolean {
   if (role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD") {
     return doctorPermissions.includes(permission);
   }
-  
+
   if (role === "Super Admin" || role === "Hospital Admin" || role === "Management") {
     return true; // Admins have all permissions
   }
-  
+
   return false;
 }
 
@@ -432,10 +472,10 @@ export function getPermissionsForRole(role: Role): string[] {
   if (role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD") {
     return doctorPermissions;
   }
-  
+
   if (role === "Super Admin" || role === "Hospital Admin" || role === "Management") {
     return [...doctorPermissions, ...adminPermissions]; // All permissions
   }
-  
+
   return [];
 }

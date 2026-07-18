@@ -19,7 +19,7 @@ export function NurseMedicationPatientSummary({
   onPatientChange,
 }: {
   patientId: string;
-  onPatientChange: (patientId: string) => void;
+  onPatientChange: (_patientId: string) => void;
 }) {
   const patient = mockPatients.find((item) => item.id === patientId) ?? mockPatients[0];
 
@@ -30,7 +30,12 @@ export function NurseMedicationPatientSummary({
         <DetailItem label="Age/Gender" value={`${patient.age} / ${patient.gender}`} />
         {/* <DetailItem label="UHID" value={patient.uhid} /> */}
         {/* <DetailItem label="Ward/Bed" value="ICU-2" /> */}
-        <DetailItem label="Allergy" value={patient.alertFlags.length ? <Badge tone="warning">{patient.alertFlags[0]}</Badge> : "-"} />
+        <DetailItem
+          label="Allergy"
+          value={
+            patient.alertFlags.length ? <Badge tone="warning">{patient.alertFlags[0]}</Badge> : "-"
+          }
+        />
         {/* <DetailItem label="Shift" value="Morning" /> */}
       </CardContent>
     </Card>

@@ -3,8 +3,17 @@
 import { useRouter } from "next/navigation";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { HeadNurseEmptyPatientState, HeadNursePatientContext, HeadNurseTonePill } from "../head-nurse-patient-context";
-import { headNurseStaffRows, isUnitReadyForStaffCheck, setSelectedUnitNurseForPatient, staffReadinessForPatient } from "../head-nurse-mock-data";
+import {
+  HeadNurseEmptyPatientState,
+  HeadNursePatientContext,
+  HeadNurseTonePill,
+} from "../head-nurse-patient-context";
+import {
+  headNurseStaffRows,
+  isUnitReadyForStaffCheck,
+  setSelectedUnitNurseForPatient,
+  staffReadinessForPatient,
+} from "../head-nurse-mock-data";
 import type { HeadNursePageProps } from "../head-nurse-types";
 
 export function StaffAvailabilityPage({ initialPatientId }: HeadNursePageProps) {
@@ -38,7 +47,9 @@ export function StaffAvailabilityPage({ initialPatientId }: HeadNursePageProps) 
                       return (
                         <tr className="border-t border-slate-100" key={`${row.role}-${row.nurse}`}>
                           <td className="px-4 py-3 font-black text-slate-950">{row.nurse}</td>
-                          <td className="px-4 py-3 text-center">{row.assignedPatients}/{row.maxCapacity}</td>
+                          <td className="px-4 py-3 text-center">
+                            {row.assignedPatients}/{row.maxCapacity}
+                          </td>
                           <td className="px-4 py-3 text-center">{row.criticalPatients}</td>
                           <td className="px-4 py-3 text-center">
                             {canAssign ? (
@@ -53,7 +64,9 @@ export function StaffAvailabilityPage({ initialPatientId }: HeadNursePageProps) 
                                 Assign nurse
                               </button>
                             ) : (
-                              <HeadNurseTonePill tone={row.tone}>{unitReady ? row.status : staffReadiness}</HeadNurseTonePill>
+                              <HeadNurseTonePill tone={row.tone}>
+                                {unitReady ? row.status : staffReadiness}
+                              </HeadNurseTonePill>
                             )}
                           </td>
                         </tr>

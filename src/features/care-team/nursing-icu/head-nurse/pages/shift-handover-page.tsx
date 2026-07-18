@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { CenterModal } from "@/components/ui/center-modal";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { doctorInstructions, icuAlerts, icuPatients, icuTasks } from "../../nursing-icu-data";
@@ -33,7 +33,14 @@ type HandoverRow = {
 };
 
 type HandoverFilter = "Open handovers" | "All handovers" | HandoverStatus;
-type HandoverConditionFilter = "All conditions" | "Critical" | "Ventilated" | "Stable ICU care" | "Ready for transfer" | "Discharge ordered" | "Death workflow";
+type HandoverConditionFilter =
+  | "All conditions"
+  | "Critical"
+  | "Ventilated"
+  | "Stable ICU care"
+  | "Ready for transfer"
+  | "Discharge ordered"
+  | "Death workflow";
 
 type ActiveHandoverState = {
   row: HandoverRow;
@@ -61,11 +68,16 @@ export function ShiftHandoverPage({ initialPatientId }: HeadNursePageProps) {
 function ShiftHandoverView() {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<HandoverFilter>("Open handovers");
-  const [conditionFilter, setConditionFilter] = React.useState<HandoverConditionFilter>("All conditions");
+  const [conditionFilter, setConditionFilter] =
+    React.useState<HandoverConditionFilter>("All conditions");
   const [dateFilter, setDateFilter] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [version, setVersion] = React.useState(0);
-  const isHydrated = React.useSyncExternalStore(subscribeHydrationStore, getHydratedClientSnapshot, getHydratedServerSnapshot);
+  const isHydrated = React.useSyncExternalStore(
+    subscribeHydrationStore,
+    getHydratedClientSnapshot,
+    getHydratedServerSnapshot,
+  );
   const [activeHandover, setActiveHandover] = React.useState<ActiveHandoverState | null>(null);
 
   React.useEffect(() => {
@@ -78,13 +90,35 @@ function ShiftHandoverView() {
     };
   }, []);
 
-  const rows = React.useMemo(() => buildShiftHandoverRows(isHydrated), [isHydrated, version]);
+  const rows = React.useMemo(() => {
+    void version;
+    return buildShiftHandoverRows(isHydrated);
+  }, [isHydrated, version]);
   const filteredRows = React.useMemo(() => {
     const query = search.trim().toLowerCase();
     return rows.filter((row) => {
-      const matchesSearch = !query || [row.patientName, row.bedNo, row.unit, row.handoverFrom, row.handoverTo, row.condition, row.conditionDetail, row.diagnosis].join(" ").toLowerCase().includes(query);
-      const matchesStatus = statusFilter === "All handovers" || (statusFilter === "Open handovers" ? row.status !== "Verified" : row.status === statusFilter);
-      const matchesCondition = conditionFilter === "All conditions" || row.condition === conditionFilter;
+      const matchesSearch =
+        !query ||
+        [
+          row.patientName,
+          row.bedNo,
+          row.unit,
+          row.handoverFrom,
+          row.handoverTo,
+          row.condition,
+          row.conditionDetail,
+          row.diagnosis,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      const matchesStatus =
+        statusFilter === "All handovers" ||
+        (statusFilter === "Open handovers"
+          ? row.status !== "Verified"
+          : row.status === statusFilter);
+      const matchesCondition =
+        conditionFilter === "All conditions" || row.condition === conditionFilter;
       const matchesDate = !dateFilter || getHandoverDateKey(row.handoverAt) === dateFilter;
       return matchesSearch && matchesStatus && matchesCondition && matchesDate;
     });
@@ -139,7 +173,16 @@ function ShiftHandoverView() {
               onChange={(event) => setStatusFilter(event.target.value as HandoverFilter)}
               value={statusFilter}
             >
-              {(["Open handovers", "All handovers", "Pending", "Carry Forward", "Escalated", "Verified"] as const).map((option) => (
+              {(
+                [
+                  "Open handovers",
+                  "All handovers",
+                  "Pending",
+                  "Carry Forward",
+                  "Escalated",
+                  "Verified",
+                ] as const
+              ).map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -148,10 +191,22 @@ function ShiftHandoverView() {
             <select
               aria-label="Filter condition"
               className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-50"
-              onChange={(event) => setConditionFilter(event.target.value as HandoverConditionFilter)}
+              onChange={(event) =>
+                setConditionFilter(event.target.value as HandoverConditionFilter)
+              }
               value={conditionFilter}
             >
-              {(["All conditions", "Critical", "Ventilated", "Stable ICU care", "Ready for transfer", "Discharge ordered", "Death workflow"] as const).map((option) => (
+              {(
+                [
+                  "All conditions",
+                  "Critical",
+                  "Ventilated",
+                  "Stable ICU care",
+                  "Ready for transfer",
+                  "Discharge ordered",
+                  "Death workflow",
+                ] as const
+              ).map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -184,7 +239,9 @@ function ShiftHandoverView() {
         <table className="w-full min-w-[1180px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black uppercase tracking-wide text-slate-500">
-              <th className="sticky left-0 z-30 w-[230px] bg-slate-50 px-5 py-4 text-left shadow-[1px_0_0_0_#e2e8f0]">Patient</th>
+              <th className="sticky left-0 z-30 w-[230px] bg-slate-50 px-5 py-4 text-left shadow-[1px_0_0_0_#e2e8f0]">
+                Patient
+              </th>
               <th className="px-4 py-4 text-left">Handover From</th>
               <th className="px-4 py-4 text-left">Handover To</th>
               <th className="px-4 py-4 text-center">Condition</th>
@@ -198,8 +255,15 @@ function ShiftHandoverView() {
               visibleRows.map((row) => (
                 <tr className="border-b border-slate-100 last:border-b-0" key={row.recordKey}>
                   <td className="sticky left-0 z-20 border-r border-slate-100 bg-white p-0 align-middle shadow-[1px_0_0_0_#e2e8f0]">
-                    <div className={cn("relative min-h-[116px] px-4 py-6 before:absolute before:inset-y-0 before:left-0 before:w-1", patientAccentClass(row))}>
-                      <p className={cn("text-base font-black", patientNameClass(row))}>{row.patientName}</p>
+                    <div
+                      className={cn(
+                        "relative min-h-[116px] px-4 py-6 before:absolute before:inset-y-0 before:left-0 before:w-1",
+                        patientAccentClass(row),
+                      )}
+                    >
+                      <p className={cn("text-base font-black", patientNameClass(row))}>
+                        {row.patientName}
+                      </p>
                       <p className="mt-2 text-sm font-black text-slate-950">
                         {row.bedNo} | {row.unit}
                       </p>
@@ -215,7 +279,9 @@ function ShiftHandoverView() {
                   </td>
                   <td className="px-4 py-4 text-center align-middle">
                     <div className="space-y-1">
-                      <HeadNurseTonePill tone={conditionTone(row)}>{row.condition}</HeadNurseTonePill>
+                      <HeadNurseTonePill tone={conditionTone(row)}>
+                        {row.condition}
+                      </HeadNurseTonePill>
                       <p className="text-xs font-semibold text-slate-500">{row.conditionDetail}</p>
                     </div>
                   </td>
@@ -224,20 +290,31 @@ function ShiftHandoverView() {
                   </td> */}
                   <td className="px-4 py-4 text-center align-middle">
                     <div className="space-y-0.5">
-                      <p className="font-medium text-slate-950">{formatHandoverDate(row.handoverAt)}</p>
-                      <p className="text-xs font-semibold text-slate-500">{formatHandoverTime(row.handoverAt)}</p>
+                      <p className="font-medium text-slate-950">
+                        {formatHandoverDate(row.handoverAt)}
+                      </p>
+                      <p className="text-xs font-semibold text-slate-500">
+                        {formatHandoverTime(row.handoverAt)}
+                      </p>
                     </div>
                   </td>
                   <td className="px-4 py-4 text-right align-middle">
                     <div className="flex flex-wrap justify-end gap-2">
-                      <ActionButton label="View" onClick={() => setActiveHandover({ row })} tone="outline" />
+                      <ActionButton
+                        label="View"
+                        onClick={() => setActiveHandover({ row })}
+                        tone="outline"
+                      />
                     </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td className="px-4 py-10 text-center text-sm font-semibold text-slate-500" colSpan={7}>
+                <td
+                  className="px-4 py-10 text-center text-sm font-semibold text-slate-500"
+                  colSpan={7}
+                >
                   No handovers match the current filters.
                 </td>
               </tr>
@@ -248,7 +325,11 @@ function ShiftHandoverView() {
 
       <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-bold text-slate-500">
-          Showing <span className="text-slate-950">{firstVisible}-{lastVisible}</span> of <span className="text-slate-950">{filteredRows.length}</span> handovers
+          Showing{" "}
+          <span className="text-slate-950">
+            {firstVisible}-{lastVisible}
+          </span>{" "}
+          of <span className="text-slate-950">{filteredRows.length}</span> handovers
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -284,7 +365,7 @@ function ShiftHandoverView() {
         >
           <div className="space-y-4">
             {/* <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm"> */}
-              {/* <div className="border-b border-slate-200 bg-white px-5 py-4">
+            {/* <div className="border-b border-slate-200 bg-white px-5 py-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1">
                     <p className="text-lg font-black text-slate-950">Shift handover summary</p>
@@ -297,56 +378,75 @@ function ShiftHandoverView() {
                   </div>
                 </div>
               </div> */}
-                  <div className="flex justify-end">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-500">Status</span>
-                      <HeadNurseTonePill tone={handoverStatusTone(activeHandover.row.status)}>{handoverStatusLabel(activeHandover.row.status)}</HeadNurseTonePill>
+            <div className="flex justify-end">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-500">Status</span>
+                <HeadNurseTonePill tone={handoverStatusTone(activeHandover.row.status)}>
+                  {handoverStatusLabel(activeHandover.row.status)}
+                </HeadNurseTonePill>
+              </div>
+            </div>
+
+            <div className="max-h-[70vh] overflow-y-auto py-2">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.9fr)]">
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <InfoTile label="Patient" value={activeHandover.row.patientName} />
+                    <InfoTile
+                      label="Bed / Unit"
+                      value={`${activeHandover.row.bedNo} | ${activeHandover.row.unit}`}
+                    />
+                    <InfoTile label="Outgoing nurse" value={activeHandover.row.handoverFrom} />
+                    <InfoTile label="Receiving nurse" value={activeHandover.row.handoverTo} />
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {/* <InfoTile label="Patient condition" value={activeHandover.row.condition} /> */}
+                    <InfoTile label="Condition detail" value={activeHandover.row.conditionDetail} />
+                    <InfoTile label="Diagnosis" value={activeHandover.row.diagnosis} />
+                    {/* <InfoTile label="Open items" value={`${activeHandover.row.pendingTasks + activeHandover.row.pendingOrders + activeHandover.row.openAlerts} item(s)`} /> */}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">
+                      Handover tracking
+                    </p>
+                    <div className="mt-4 space-y-3">
+                      <InfoTile
+                        inline
+                        label="Date & Time"
+                        value={`${formatHandoverDate(activeHandover.row.handoverAt)} | ${formatHandoverTime(activeHandover.row.handoverAt)}`}
+                      />
+                      <InfoTile
+                        inline
+                        label="Pending tasks"
+                        value={activeHandover.row.pendingTasks}
+                      />
+                      <InfoTile
+                        inline
+                        label="Pending orders"
+                        value={activeHandover.row.pendingOrders}
+                      />
+                      <InfoTile inline label="Open alerts" value={activeHandover.row.openAlerts} />
                     </div>
                   </div>
 
-              <div className="max-h-[70vh] overflow-y-auto py-2">
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.9fr)]">
-                  <div className="space-y-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <InfoTile label="Patient" value={activeHandover.row.patientName} />
-                      <InfoTile label="Bed / Unit" value={`${activeHandover.row.bedNo} | ${activeHandover.row.unit}`} />
-                      <InfoTile label="Outgoing nurse" value={activeHandover.row.handoverFrom} />
-                      <InfoTile label="Receiving nurse" value={activeHandover.row.handoverTo} />
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {/* <InfoTile label="Patient condition" value={activeHandover.row.condition} /> */}
-                      <InfoTile label="Condition detail" value={activeHandover.row.conditionDetail} />
-                      <InfoTile label="Diagnosis" value={activeHandover.row.diagnosis} />
-                      {/* <InfoTile label="Open items" value={`${activeHandover.row.pendingTasks + activeHandover.row.pendingOrders + activeHandover.row.openAlerts} item(s)`} /> */}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Handover tracking</p>
-                      <div className="mt-4 space-y-3">
-                        <InfoTile inline label="Date & Time" value={`${formatHandoverDate(activeHandover.row.handoverAt)} | ${formatHandoverTime(activeHandover.row.handoverAt)}`} />
-                        <InfoTile inline label="Pending tasks" value={activeHandover.row.pendingTasks} />
-                        <InfoTile inline label="Pending orders" value={activeHandover.row.pendingOrders} />
-                        <InfoTile inline label="Open alerts" value={activeHandover.row.openAlerts} />
-                      </div>
-                    </div>
-
-                    {/* <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  {/* <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-sm font-semibold text-slate-600">{handoverMessage(activeHandover.row)}</p>
                     </div> */}
-                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="border-t border-slate-200 bg-white px-5 py-4">
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Button variant="outline" onClick={() => setActiveHandover(null)}>
-                    Close
-                  </Button>
-                </div>
+            <div className="border-t border-slate-200 bg-white px-5 py-4">
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" onClick={() => setActiveHandover(null)}>
+                  Close
+                </Button>
               </div>
+            </div>
             {/* </div> */}
           </div>
         </CenterModal>
@@ -357,18 +457,38 @@ function ShiftHandoverView() {
 
 function buildShiftHandoverRows(includeStoredState = false): HandoverRow[] {
   return headNursePatients.map((patient, index) => {
-    const openAlerts = icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved");
-    const pendingTasks = icuTasks.filter((task) => task.patientId === patient.id && task.status !== "Completed");
-    const pendingOrders = doctorInstructions.filter((order) => order.patientId === patient.id && order.status !== "Completed");
+    const openAlerts = icuAlerts.filter(
+      (alert) => alert.patientId === patient.id && alert.status !== "Resolved",
+    );
+    const pendingTasks = icuTasks.filter(
+      (task) => task.patientId === patient.id && task.status !== "Completed",
+    );
+    const pendingOrders = doctorInstructions.filter(
+      (order) => order.patientId === patient.id && order.status !== "Completed",
+    );
     const openItems = openAlerts.length + pendingTasks.length + pendingOrders.length;
-    const handoverTo = selectedUnitNurseForPatient(patient, { includeStoredState }) || patient.assignedUnitNurse || "Unit Nurse pending";
-    const sourcePatient = icuPatients.find((item) => item.id === patient.id);   const handoverFrom = sourcePatient?.assignedWardNurse || "Ward Nurse pending";
-    const isCritical = patient.currentStatus === "Critical" || patient.currentStatus === "Death workflow" || patient.criticalityScore >= 8;
-    const isComplex = patient.currentStatus === "Ventilated" || patient.ventilatorStatus.toLowerCase().includes("vent");
+    const handoverTo =
+      selectedUnitNurseForPatient(patient, { includeStoredState }) ||
+      patient.assignedUnitNurse ||
+      "Unit Nurse pending";
+    const sourcePatient = icuPatients.find((item) => item.id === patient.id);
+    const handoverFrom = sourcePatient?.assignedWardNurse || "Ward Nurse pending";
+    const isCritical =
+      patient.currentStatus === "Critical" ||
+      patient.currentStatus === "Death workflow" ||
+      patient.criticalityScore >= 8;
+    const isComplex =
+      patient.currentStatus === "Ventilated" ||
+      patient.ventilatorStatus.toLowerCase().includes("vent");
 
     let status: HandoverStatus = openItems ? "Pending" : "Verified";
     if (isCritical && openItems) status = "Escalated";
-    else if ((patient.currentStatus === "Ready for transfer" || patient.currentStatus === "Discharge ordered") && openItems) status = "Carry Forward";
+    else if (
+      (patient.currentStatus === "Ready for transfer" ||
+        patient.currentStatus === "Discharge ordered") &&
+      openItems
+    )
+      status = "Carry Forward";
     else if (isComplex && openItems >= 2) status = "Carry Forward";
 
     return {
@@ -393,7 +513,10 @@ function buildShiftHandoverRows(includeStoredState = false): HandoverRow[] {
 
 function getHandoverDateKey(label: string) {
   const { date } = splitDateTimeLabel(label);
-  const parts = date.trim().split("/").map((part) => Number(part));
+  const parts = date
+    .trim()
+    .split("/")
+    .map((part) => Number(part));
   if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) return "";
   const [day, month, year] = parts;
   return toDateKey(new Date(year, month - 1, day));
@@ -442,18 +565,41 @@ function summaryChipClass(tone: HeadNurseTone) {
   return "border-slate-300 bg-slate-50 text-slate-600";
 }
 
-function SummaryChip({ label, value, tone }: { label: string; value: number; tone: HeadNurseTone }) {
+function SummaryChip({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: HeadNurseTone;
+}) {
   return (
-    <div className={cn("flex items-center justify-between rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide shadow-sm", summaryChipClass(tone))}>
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide shadow-sm",
+        summaryChipClass(tone),
+      )}
+    >
       <span>{label}</span>
       <span>{value}</span>
     </div>
   );
 }
 
-function patientAccentClass(row: HandoverRow) {  if (row.status === "Escalated") return "before:bg-red-500";  if (row.status === "Carry Forward") return "before:bg-sky-500";  if (row.status === "Pending") return "before:bg-orange-500";  return "before:bg-green-600";}
+function patientAccentClass(row: HandoverRow) {
+  if (row.status === "Escalated") return "before:bg-red-500";
+  if (row.status === "Carry Forward") return "before:bg-sky-500";
+  if (row.status === "Pending") return "before:bg-orange-500";
+  return "before:bg-green-600";
+}
 
-function patientNameClass(row: HandoverRow) {  if (row.status === "Escalated") return "text-red-700";  if (row.status === "Carry Forward") return "text-sky-700";  if (row.status === "Pending") return "text-orange-700";  return "text-green-700";}
+function patientNameClass(row: HandoverRow) {
+  if (row.status === "Escalated") return "text-red-700";
+  if (row.status === "Carry Forward") return "text-sky-700";
+  if (row.status === "Pending") return "text-orange-700";
+  return "text-green-700";
+}
 
 function formatHandoverDate(label: string) {
   const parsed = parseHandoverDateTime(label);
@@ -530,19 +676,32 @@ function splitDateTimeLabel(label: string) {
   return { date: match[1] || trimmed, time: match[2] || "-" };
 }
 
-function handoverMessage(row: HandoverRow) {
-  if (row.status === "Escalated") return `Critical handover for ${row.patientName}. Please review the open items, ventilator support, and pending alerts before acceptance.`;
-  if (row.status === "Carry Forward") return `Carry forward the open nursing items for ${row.patientName} to the next shift with clear owner confirmation.`;
-  if (row.status === "Pending") return `Verify the current condition and pending work for ${row.patientName} before closing the shift handover.`;
+function _handoverMessage(row: HandoverRow) {
+  if (row.status === "Escalated")
+    return `Critical handover for ${row.patientName}. Please review the open items, ventilator support, and pending alerts before acceptance.`;
+  if (row.status === "Carry Forward")
+    return `Carry forward the open nursing items for ${row.patientName} to the next shift with clear owner confirmation.`;
+  if (row.status === "Pending")
+    return `Verify the current condition and pending work for ${row.patientName} before closing the shift handover.`;
   return `Handover verified for ${row.patientName}. Current shift is clear for the receiving nurse.`;
 }
 
-function ActionButton({ label, onClick, tone }: { label: string; onClick: () => void; tone: "outline" | "solid" }) {
+function ActionButton({
+  label,
+  onClick,
+  tone,
+}: {
+  label: string;
+  onClick: () => void;
+  tone: "outline" | "solid";
+}) {
   return (
     <button
       className={cn(
         "inline-flex h-8 items-center justify-center rounded-lg px-4 text-sm font-bold shadow-sm transition",
-        tone === "outline" ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "bg-sky-600 text-white hover:bg-sky-700",
+        tone === "outline"
+          ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          : "bg-sky-600 text-white hover:bg-sky-700",
       )}
       onClick={onClick}
       type="button"

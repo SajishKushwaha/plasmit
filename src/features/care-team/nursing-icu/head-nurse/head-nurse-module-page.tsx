@@ -8,12 +8,19 @@ import { ShiftHandoverPage } from "./pages/shift-handover-page";
 import { StaffAvailabilityPage } from "./pages/staff-availability-page";
 import { UnitAvailabilityPage } from "./pages/unit-availability-page";
 
-export function HeadNurseModulePage({ initialPatientId, moduleId }: HeadNursePageProps & { moduleId: HeadNurseModuleId }) {
+export function HeadNurseModulePage({
+  initialPatientId,
+  moduleId,
+}: HeadNursePageProps & { moduleId: HeadNurseModuleId }) {
   if (moduleId === "dashboard") return <HeadNurseDashboard />;
-  if (moduleId === "new-admissions") return <NewAdmissionsPage initialPatientId={initialPatientId} />;
-  if (moduleId === "unit-availability") return <UnitAvailabilityPage initialPatientId={initialPatientId} />;
-  if (moduleId === "staff-availability") return <StaffAvailabilityPage initialPatientId={initialPatientId} />;
-  if (moduleId === "patient-assignment") return <PatientAssignmentPage initialPatientId={initialPatientId} />;
+  if (moduleId === "new-admissions")
+    return <NewAdmissionsPage initialPatientId={initialPatientId} />;
+  if (moduleId === "unit-availability")
+    return <UnitAvailabilityPage initialPatientId={initialPatientId} />;
+  if (moduleId === "staff-availability")
+    return <StaffAvailabilityPage initialPatientId={initialPatientId} />;
+  if (moduleId === "patient-assignment")
+    return <PatientAssignmentPage initialPatientId={initialPatientId} />;
   if (moduleId === "alerts-delays") return <AlertsDelaysPage initialPatientId={initialPatientId} />;
   if (moduleId === "escalations") return <EscalationsPage initialPatientId={initialPatientId} />;
   return <ShiftHandoverPage initialPatientId={initialPatientId} />;

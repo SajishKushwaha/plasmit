@@ -1,8 +1,4 @@
-import {
-  doctorInstructions,
-  icuAlerts,
-  icuTasks,
-} from "../nursing-icu-data";
+import { doctorInstructions, icuAlerts, icuTasks } from "../nursing-icu-data";
 import {
   headNurseAdmissionReviewOverrides,
   headNurseAssignmentDrafts,
@@ -15,7 +11,13 @@ import {
   type HeadNurseStaffReadinessStatus,
   type HeadNurseUnitReadinessStatus,
 } from "./head-nurse-data";
-import type { HeadNurseIcuDashboardRow, HeadNursePatientRow, HeadNurseStaffRow, HeadNurseTone, HeadNurseUnitRow } from "./head-nurse-types";
+import type {
+  HeadNurseIcuDashboardRow,
+  HeadNursePatientRow,
+  HeadNurseStaffRow,
+  HeadNurseTone,
+  HeadNurseUnitRow,
+} from "./head-nurse-types";
 
 type HeadNurseWorkflowOptions = {
   includeStoredState?: boolean;
@@ -26,7 +28,10 @@ const UNIT_NURSE_ASSIGNMENT_STORAGE_KEY = "head-nurse-unit-nurse-assignment";
 
 export const headNursePatients = headNurseIcuPatients;
 
-export function setAdmissionReviewStatus(patientId: string, status: HeadNurseAdmissionReviewStatus) {
+export function setAdmissionReviewStatus(
+  patientId: string,
+  status: HeadNurseAdmissionReviewStatus,
+) {
   if (typeof window === "undefined") return;
 
   const overrides = readStoredAdmissionReviewOverrides();
@@ -48,39 +53,70 @@ export function headNursePatientHref(route: string, patientId: string) {
   return `${route}?patientId=${encodeURIComponent(patientId)}`;
 }
 
-export function headNursePatientTone(patient: HeadNurseIcuPatient, options: HeadNurseWorkflowOptions = {}): HeadNurseTone {
+export function headNursePatientTone(
+  patient: HeadNurseIcuPatient,
+  options: HeadNurseWorkflowOptions = {},
+): HeadNurseTone {
   const workflow = patientWorkflowStatus(patient, options);
 
-  if (workflow.unitStatus === "No bed" || workflow.unitStatus === "No ventilator" || workflow.unitStatus === "Ventilator bed needed" || workflow.staffStatus === "No nurse") return "danger";
+  if (
+    workflow.unitStatus === "No bed" ||
+    workflow.unitStatus === "No ventilator" ||
+    workflow.unitStatus === "Ventilator bed needed" ||
+    workflow.staffStatus === "No nurse"
+  )
+    return "danger";
   if (patient.criticalityScore >= 8 || patient.currentStatus === "Critical") return "critical";
-  if (workflow.unitStatus === "Limited" || workflow.staffStatus === "Select nurse") return "warning";
+  if (workflow.unitStatus === "Limited" || workflow.staffStatus === "Select nurse")
+    return "warning";
   if (patient.pendingTasks >= 5 || patient.alerts.length >= 2) return "danger";
   if (patient.pendingTasks >= 3 || patient.currentStatus === "Ventilated") return "warning";
-  if (patient.currentStatus === "Ready for transfer" || patient.currentStatus === "Discharge ordered") return "info";
+  if (
+    patient.currentStatus === "Ready for transfer" ||
+    patient.currentStatus === "Discharge ordered"
+  )
+    return "info";
   return "success";
 }
 
-export const headNurseStaffRows: HeadNurseStaffRow[] = headNurseIcuNurseRoster.map((nurse) => ({ ...nurse }));
+export const headNurseStaffRows: HeadNurseStaffRow[] = headNurseIcuNurseRoster.map((nurse) => ({
+  ...nurse,
+}));
 export const headNurseUnitRows: HeadNurseUnitRow[] = buildHeadNurseUnitRows();
-export const headNurseIcuDashboardRows: HeadNurseIcuDashboardRow[] = buildHeadNurseIcuDashboardRows();
+export const headNurseIcuDashboardRows: HeadNurseIcuDashboardRow[] =
+  buildHeadNurseIcuDashboardRows();
 
 export function getHeadNurseIcuDashboardRows() {
   return buildHeadNurseIcuDashboardRows();
 }
 
 export function getAvailableIcuNursesForPatient(patient: HeadNurseIcuPatient) {
-  return headNurseStaffRows.filter((staff) => staff.unit === patient.unit && staff.status === "Available" && staff.assignedPatients < staff.maxCapacity);
+  return headNurseStaffRows.filter(
+    (staff) =>
+      staff.unit === patient.unit &&
+      staff.status === "Available" &&
+      staff.assignedPatients < staff.maxCapacity,
+  );
 }
 
-export function reviewStatusForPatient(patient: HeadNurseIcuPatient, options: HeadNurseWorkflowOptions = {}): HeadNurseAdmissionReviewStatus {
-  return readStoredAdmissionReviewOverrides(options)[patient.id] ?? headNurseAdmissionReviewOverrides[patient.id] ?? "Verified";
+export function reviewStatusForPatient(
+  patient: HeadNurseIcuPatient,
+  options: HeadNurseWorkflowOptions = {},
+): HeadNurseAdmissionReviewStatus {
+  return (
+    readStoredAdmissionReviewOverrides(options)[patient.id] ??
+    headNurseAdmissionReviewOverrides[patient.id] ??
+    "Verified"
+  );
 }
 
 export function isAdmissionReviewComplete() {
   return true;
 }
 
-export function unitReadinessForPatient(patient: HeadNurseIcuPatient): HeadNurseUnitReadinessStatus {
+export function unitReadinessForPatient(
+  patient: HeadNurseIcuPatient,
+): HeadNurseUnitReadinessStatus {
   const unit = getIcuDashboardRowForUnit(patient.unit);
   if (!unit) return "Unit setup pending";
   if (unit.availableBeds <= 0) return "No bed";
@@ -93,43 +129,84 @@ export function isUnitReadyForStaffCheck(patient: HeadNurseIcuPatient) {
   return readiness === "Ready" || readiness === "Limited";
 }
 
-export function selectedUnitNurseForPatient(patient: HeadNurseIcuPatient, options: HeadNurseWorkflowOptions = {}) {
-  return readStoredUnitNurseAssignments(options)[patient.id]?.selectedUnitNurse ?? headNurseAssignmentDrafts[patient.id]?.selectedUnitNurse ?? "";
+export function selectedUnitNurseForPatient(
+  patient: HeadNurseIcuPatient,
+  options: HeadNurseWorkflowOptions = {},
+) {
+  return (
+    readStoredUnitNurseAssignments(options)[patient.id]?.selectedUnitNurse ??
+    headNurseAssignmentDrafts[patient.id]?.selectedUnitNurse ??
+    ""
+  );
 }
 
-export function selectedUnitNurseStaffForPatient(patient: HeadNurseIcuPatient, options: HeadNurseWorkflowOptions = {}) {
+export function selectedUnitNurseStaffForPatient(
+  patient: HeadNurseIcuPatient,
+  options: HeadNurseWorkflowOptions = {},
+) {
   const selectedUnitNurse = selectedUnitNurseForPatient(patient, options);
   if (!selectedUnitNurse) return undefined;
 
-  return headNurseStaffRows.find((row) => row.unit === patient.unit && row.role === "ICU Nurse" && row.nurse === selectedUnitNurse);
+  return headNurseStaffRows.find(
+    (row) =>
+      row.unit === patient.unit && row.role === "ICU Nurse" && row.nurse === selectedUnitNurse,
+  );
 }
 
-export function staffReadinessForPatient(patient: HeadNurseIcuPatient): HeadNurseStaffReadinessStatus {
+export function staffReadinessForPatient(
+  patient: HeadNurseIcuPatient,
+): HeadNurseStaffReadinessStatus {
   if (!isUnitReadyForStaffCheck(patient)) return "Unit pending";
   return getAvailableIcuNursesForPatient(patient).length ? "Ready" : "No nurse";
 }
 
-export function isStaffReadyForAssignment(patient: HeadNurseIcuPatient, options: HeadNurseWorkflowOptions = {}) {
+export function isStaffReadyForAssignment(
+  patient: HeadNurseIcuPatient,
+  options: HeadNurseWorkflowOptions = {},
+) {
   if (staffReadinessForPatient(patient) !== "Ready") return false;
 
   const selectedStaff = selectedUnitNurseStaffForPatient(patient, options);
-  return Boolean(selectedStaff && selectedStaff.status === "Available" && selectedStaff.assignedPatients < selectedStaff.maxCapacity);
+  return Boolean(
+    selectedStaff &&
+    selectedStaff.status === "Available" &&
+    selectedStaff.assignedPatients < selectedStaff.maxCapacity,
+  );
 }
 
-export function assignmentStatusForPatient(patient: HeadNurseIcuPatient, options: HeadNurseWorkflowOptions = {}) {
-  if (!isUnitReadyForStaffCheck(patient) || staffReadinessForPatient(patient) !== "Ready") return "Locked";
+export function assignmentStatusForPatient(
+  patient: HeadNurseIcuPatient,
+  options: HeadNurseWorkflowOptions = {},
+) {
+  if (!isUnitReadyForStaffCheck(patient) || staffReadinessForPatient(patient) !== "Ready")
+    return "Locked";
 
   const selectedUnitNurse = selectedUnitNurseForPatient(patient, options);
   const selectedStaff = selectedUnitNurseStaffForPatient(patient, options);
-  if (!selectedUnitNurse || !selectedStaff || selectedStaff.status !== "Available" || selectedStaff.assignedPatients >= selectedStaff.maxCapacity) return "Select ICU Nurse";
+  if (
+    !selectedUnitNurse ||
+    !selectedStaff ||
+    selectedStaff.status !== "Available" ||
+    selectedStaff.assignedPatients >= selectedStaff.maxCapacity
+  )
+    return "Select ICU Nurse";
   return `ICU Nurse ${selectedUnitNurse}`;
 }
 
-export function canAssignPatient(patient: HeadNurseIcuPatient, options: HeadNurseWorkflowOptions = {}) {
-  return isUnitReadyForStaffCheck(patient) && staffReadinessForPatient(patient) === "Ready" && isStaffReadyForAssignment(patient, options);
+export function canAssignPatient(
+  patient: HeadNurseIcuPatient,
+  options: HeadNurseWorkflowOptions = {},
+) {
+  return (
+    isUnitReadyForStaffCheck(patient) &&
+    staffReadinessForPatient(patient) === "Ready" &&
+    isStaffReadyForAssignment(patient, options)
+  );
 }
 
-export const headNursePatientRows: HeadNursePatientRow[] = buildHeadNursePatientRows({ includeStoredState: false });
+export const headNursePatientRows: HeadNursePatientRow[] = buildHeadNursePatientRows({
+  includeStoredState: false,
+});
 
 export function getHeadNursePatientRows(options: HeadNurseWorkflowOptions = {}) {
   return buildHeadNursePatientRows(options);
@@ -138,9 +215,15 @@ export function getHeadNursePatientRows(options: HeadNurseWorkflowOptions = {}) 
 function buildHeadNursePatientRows(options: HeadNurseWorkflowOptions = {}): HeadNursePatientRow[] {
   return headNursePatients
     .map((patient, index) => {
-      const alerts = icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved");
-      const tasks = icuTasks.filter((task) => task.patientId === patient.id && task.status !== "Completed");
-      const orders = doctorInstructions.filter((order) => order.patientId === patient.id && order.status !== "Completed");
+      const alerts = icuAlerts.filter(
+        (alert) => alert.patientId === patient.id && alert.status !== "Resolved",
+      );
+      const tasks = icuTasks.filter(
+        (task) => task.patientId === patient.id && task.status !== "Completed",
+      );
+      const orders = doctorInstructions.filter(
+        (order) => order.patientId === patient.id && order.status !== "Completed",
+      );
       const workflow = patientWorkflowStatus(patient, options);
       const tone = headNursePatientTone(patient, options);
       const row: HeadNursePatientRow = {
@@ -150,14 +233,18 @@ function buildHeadNursePatientRows(options: HeadNurseWorkflowOptions = {}): Head
         staffStatus: workflow.staffStatus,
         assignmentStatus: workflow.assignmentStatus,
         alertStatus: alerts.length ? `${alerts.length} Alert` : "Clear",
-        handoverStatus: tasks.length || orders.length ? `${tasks.length + orders.length} pending` : "Ready",
+        handoverStatus:
+          tasks.length || orders.length ? `${tasks.length + orders.length} pending` : "Ready",
         action: workflow.action,
         tone,
       };
 
       return { row, index };
     })
-    .sort((left, right) => patientSortScore(left.row) - patientSortScore(right.row) || left.index - right.index)
+    .sort(
+      (left, right) =>
+        patientSortScore(left.row) - patientSortScore(right.row) || left.index - right.index,
+    )
     .map(({ row }) => row);
 }
 
@@ -167,7 +254,12 @@ function buildHeadNurseUnitRows(): HeadNurseUnitRow[] {
     const occupiedBeds = patients.length;
     const availableBeds = Math.max(0, capacity.totalBeds - occupiedBeds);
     const criticalPatients = patients.filter((patient) => patient.criticalityScore >= 8).length;
-    const tone: HeadNurseTone = availableBeds <= 0 ? "danger" : availableBeds <= 1 || criticalPatients >= 2 ? "warning" : "success";
+    const tone: HeadNurseTone =
+      availableBeds <= 0
+        ? "danger"
+        : availableBeds <= 1 || criticalPatients >= 2
+          ? "warning"
+          : "success";
 
     return {
       unit,
@@ -185,11 +277,20 @@ function buildHeadNurseIcuDashboardRows(): HeadNurseIcuDashboardRow[] {
   return headNurseUnitRows.map((unitRow) => {
     const patients = headNursePatients.filter((patient) => patient.unit === unitRow.unit);
     const nurses = headNurseStaffRows.filter((nurse) => nurse.unit === unitRow.unit);
-    const availableNurses = nurses.filter((nurse) => nurse.status === "Available" && nurse.assignedPatients < nurse.maxCapacity);
+    const availableNurses = nurses.filter(
+      (nurse) => nurse.status === "Available" && nurse.assignedPatients < nurse.maxCapacity,
+    );
     const ventilatedPatients = patients.filter(patientNeedsVentilator).length;
     const availableVentilatorBeds = Math.max(0, unitRow.ventilatorBeds - ventilatedPatients);
-    const openAlerts = icuAlerts.filter((alert) => patients.some((patient) => patient.id === alert.patientId) && alert.status !== "Resolved").length;
-    const status = icuStatusForRow(unitRow.availableBeds, availableVentilatorBeds, availableNurses.length);
+    const openAlerts = icuAlerts.filter(
+      (alert) =>
+        patients.some((patient) => patient.id === alert.patientId) && alert.status !== "Resolved",
+    ).length;
+    const status = icuStatusForRow(
+      unitRow.availableBeds,
+      availableVentilatorBeds,
+      availableNurses.length,
+    );
     const tone = icuToneForStatus(status);
 
     return {
@@ -215,7 +316,11 @@ function getIcuDashboardRowForUnit(unitName: string) {
   return buildHeadNurseIcuDashboardRows().find((row) => row.unit === unitName);
 }
 
-function icuStatusForRow(availableBeds: number, availableVentilatorBeds: number, availableNurses: number) {
+function icuStatusForRow(
+  availableBeds: number,
+  availableVentilatorBeds: number,
+  availableNurses: number,
+) {
   if (availableBeds <= 0) return "No bed";
   if (availableNurses <= 0) return "No nurse";
   if (availableVentilatorBeds <= 0) return "No ventilator";
@@ -239,34 +344,49 @@ function patientSortScore(row: HeadNursePatientRow) {
   return 2;
 }
 
-function readStoredAdmissionReviewOverrides(options: HeadNurseWorkflowOptions = {}): Partial<Record<string, HeadNurseAdmissionReviewStatus>> {
+function readStoredAdmissionReviewOverrides(
+  options: HeadNurseWorkflowOptions = {},
+): Partial<Record<string, HeadNurseAdmissionReviewStatus>> {
   if (typeof window === "undefined" || options.includeStoredState === false) return {};
 
   try {
     const stored = window.localStorage.getItem(ADMISSION_REVIEW_STATUS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) as Partial<Record<string, HeadNurseAdmissionReviewStatus>> : {};
+    return stored
+      ? (JSON.parse(stored) as Partial<Record<string, HeadNurseAdmissionReviewStatus>>)
+      : {};
   } catch {
     return {};
   }
 }
 
-function readStoredUnitNurseAssignments(options: HeadNurseWorkflowOptions = {}): Partial<Record<string, HeadNurseAssignmentDraft>> {
+function readStoredUnitNurseAssignments(
+  options: HeadNurseWorkflowOptions = {},
+): Partial<Record<string, HeadNurseAssignmentDraft>> {
   if (typeof window === "undefined" || options.includeStoredState === false) return {};
 
   try {
     const stored = window.localStorage.getItem(UNIT_NURSE_ASSIGNMENT_STORAGE_KEY);
-    return stored ? JSON.parse(stored) as Partial<Record<string, HeadNurseAssignmentDraft>> : {};
+    return stored ? (JSON.parse(stored) as Partial<Record<string, HeadNurseAssignmentDraft>>) : {};
   } catch {
     return {};
   }
 }
 
-function patientWorkflowStatus(patient: HeadNurseIcuPatient, options: HeadNurseWorkflowOptions = {}) {
+function patientWorkflowStatus(
+  patient: HeadNurseIcuPatient,
+  options: HeadNurseWorkflowOptions = {},
+) {
   const reviewStatus = reviewStatusForPatient(patient, options);
   const unitStatus = unitReadinessForPatient(patient);
   const staffStatus = staffReadinessForPatient(patient);
   const assignmentStatus = assignmentStatusForPatient(patient, options);
-  const action = !isUnitReadyForStaffCheck(patient) ? "Check ICU" : staffStatus !== "Ready" ? "Check staff" : assignmentStatus === "Assign" ? "Assign" : "Open";
+  const action = !isUnitReadyForStaffCheck(patient)
+    ? "Check ICU"
+    : staffStatus !== "Ready"
+      ? "Check staff"
+      : assignmentStatus === "Assign"
+        ? "Assign"
+        : "Open";
 
   return {
     reviewStatus,

@@ -19,7 +19,9 @@ export function HeadNurseMenu({ activeModuleId }: { activeModuleId: HeadNurseMod
             <Link
               className={cn(
                 "flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition",
-                active ? "rounded-2xl bg-[#6878E8] text-white shadow-[0_10px_24px_rgba(104,120,232,0.22)]" : "text-slate-700 hover:bg-sky-50 hover:text-sky-700",
+                active
+                  ? "rounded-2xl bg-[#6878E8] text-white shadow-[0_10px_24px_rgba(104,120,232,0.22)]"
+                  : "text-slate-700 hover:bg-sky-50 hover:text-sky-700",
               )}
               href={item.route}
               key={item.id}

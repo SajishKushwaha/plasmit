@@ -82,5 +82,5 @@ export type HeadNursePageProps = {
 export type HeadNursePatientContextValue = {
   patient: HeadNurseIcuPatient | undefined;
   patientId: string;
-  setPatientId: (value: string) => void;
+  setPatientId: (_value: string) => void;
 };

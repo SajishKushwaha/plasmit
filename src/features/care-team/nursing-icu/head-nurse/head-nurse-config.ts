@@ -16,7 +16,8 @@ export const headNurseModules: HeadNurseModuleConfig[] = [
     label: "Dashboard",
     route: "/head-nurse",
     title: "Head Nurse Dashboard",
-    description: "Role-based control tower for new admissions, unit capacity, staffing, assignments, alerts, escalations, and handover.",
+    description:
+      "Role-based control tower for new admissions, unit capacity, staffing, assignments, alerts, escalations, and handover.",
     permission: "head_nurse.dashboard.view",
     icon: ShieldAlert,
   },
@@ -25,7 +26,8 @@ export const headNurseModules: HeadNurseModuleConfig[] = [
     label: "New Admissions",
     route: "/head-nurse/new-admissions",
     title: "New Admission Review",
-    description: "Review patient details, bed readiness, doctor ownership, and required ICU care before assignment.",
+    description:
+      "Review patient details, bed readiness, doctor ownership, and required ICU care before assignment.",
     permission: "head_nurse.admission.review",
     icon: UserCheck,
   },
@@ -34,7 +36,8 @@ export const headNurseModules: HeadNurseModuleConfig[] = [
     label: "Unit Availability",
     route: "/head-nurse/unit-availability",
     title: "Unit Availability",
-    description: "Check ICU beds, isolation capacity, ventilator beds, occupancy, and critical load.",
+    description:
+      "Check ICU beds, isolation capacity, ventilator beds, occupancy, and critical load.",
     permission: "head_nurse.unit.view",
     icon: BedDouble,
   },
@@ -43,7 +46,8 @@ export const headNurseModules: HeadNurseModuleConfig[] = [
     label: "Staff Availability",
     route: "/head-nurse/staff-availability",
     title: "Staff Availability",
-    description: "Review ICU Nurse workload, active coverage, critical assignments, and capacity warnings.",
+    description:
+      "Review ICU Nurse workload, active coverage, critical assignments, and capacity warnings.",
     permission: "head_nurse.staff.view",
     icon: Users,
   },
@@ -52,7 +56,8 @@ export const headNurseModules: HeadNurseModuleConfig[] = [
     label: "Patient Assignment",
     route: "/head-nurse/patient-assignment",
     title: "Patient Assignment",
-    description: "Assign reviewed patients to ICU Nurse with unit and staff readiness visible in one place.",
+    description:
+      "Assign reviewed patients to ICU Nurse with unit and staff readiness visible in one place.",
     permission: "head_nurse.assignment.manage",
     icon: ClipboardCheck,
   },
@@ -61,7 +66,8 @@ export const headNurseModules: HeadNurseModuleConfig[] = [
     label: "Alerts & Delays",
     route: "/head-nurse/alerts-delays",
     title: "Alerts & Delays",
-    description: "Monitor critical delays across vitals, medicines, doctor orders, tasks, and documentation.",
+    description:
+      "Monitor critical delays across vitals, medicines, doctor orders, tasks, and documentation.",
     permission: "head_nurse.alerts.view",
     icon: AlertTriangle,
   },
@@ -79,7 +85,8 @@ export const headNurseModules: HeadNurseModuleConfig[] = [
     label: "Shift Handover",
     route: "/head-nurse/shift-handover",
     title: "Shift Handover Verification",
-    description: "Verify pending work, critical notes, open alerts, and next shift readiness before handover acceptance.",
+    description:
+      "Verify pending work, critical notes, open alerts, and next shift readiness before handover acceptance.",
     permission: "head_nurse.handover.verify",
     icon: ListChecks,
   },

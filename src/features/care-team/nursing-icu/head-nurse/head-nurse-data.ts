@@ -3,8 +3,16 @@ import type { IcuPatient } from "../nursing-icu-data";
 import type { HeadNurseTone } from "./head-nurse-types";
 
 export type HeadNurseAdmissionReviewStatus = "Pending Review" | "Verification pending" | "Verified";
-export type HeadNurseUnitReadinessStatus = "Review pending" | "Ready" | "Limited" | "No bed" | "No ventilator" | "Ventilator bed needed" | "Unit setup pending";
-export type HeadNurseStaffReadinessStatus = "Not checked" | "Unit pending" | "Ready" | "Select nurse" | "No nurse";
+export type HeadNurseUnitReadinessStatus =
+  | "Review pending"
+  | "Ready"
+  | "Limited"
+  | "No bed"
+  | "No ventilator"
+  | "Ventilator bed needed"
+  | "Unit setup pending";
+export type HeadNurseStaffReadinessStatus =
+  "Not checked" | "Unit pending" | "Ready" | "Select nurse" | "No nurse";
 export type HeadNurseIcuPatient = Pick<
   IcuPatient,
   | "id"
@@ -82,13 +90,83 @@ export const headNurseAssignmentDrafts: Record<string, HeadNurseAssignmentDraft>
 };
 
 export const headNurseIcuNurseRoster: HeadNurseIcuNurse[] = [
-  { id: "icu-nurse-priya", nurse: "Priya", role: "ICU Nurse", unit: "Pediatric ICU", assignedPatients: 4, criticalPatients: 1, maxCapacity: 6, status: "Available", tone: "success" },
-  { id: "icu-nurse-meera", nurse: "Meera", role: "ICU Nurse", unit: "General ICU", assignedPatients: 5, criticalPatients: 1, maxCapacity: 6, status: "Available", tone: "success" },
-  { id: "icu-nurse-kabir", nurse: "Kabir", role: "ICU Nurse", unit: "General ICU", assignedPatients: 3, criticalPatients: 0, maxCapacity: 6, status: "Available", tone: "success" },
-  { id: "icu-nurse-farhan", nurse: "Farhan", role: "ICU Nurse", unit: "Respiratory ICU", assignedPatients: 6, criticalPatients: 2, maxCapacity: 6, status: "Overloaded", tone: "critical" },
-  { id: "icu-nurse-sana", nurse: "Sana", role: "ICU Nurse", unit: "Medical ICU", assignedPatients: 2, criticalPatients: 0, maxCapacity: 6, status: "Available", tone: "success" },
-  { id: "icu-nurse-rhea", nurse: "Rhea", role: "ICU Nurse", unit: "Neuro ICU", assignedPatients: 4, criticalPatients: 1, maxCapacity: 6, status: "Available", tone: "success" },
-  { id: "icu-nurse-aman", nurse: "Aman", role: "ICU Nurse", unit: "Transplant ICU", assignedPatients: 5, criticalPatients: 1, maxCapacity: 6, status: "Available", tone: "success" },
+  {
+    id: "icu-nurse-priya",
+    nurse: "Priya",
+    role: "ICU Nurse",
+    unit: "Pediatric ICU",
+    assignedPatients: 4,
+    criticalPatients: 1,
+    maxCapacity: 6,
+    status: "Available",
+    tone: "success",
+  },
+  {
+    id: "icu-nurse-meera",
+    nurse: "Meera",
+    role: "ICU Nurse",
+    unit: "General ICU",
+    assignedPatients: 5,
+    criticalPatients: 1,
+    maxCapacity: 6,
+    status: "Available",
+    tone: "success",
+  },
+  {
+    id: "icu-nurse-kabir",
+    nurse: "Kabir",
+    role: "ICU Nurse",
+    unit: "General ICU",
+    assignedPatients: 3,
+    criticalPatients: 0,
+    maxCapacity: 6,
+    status: "Available",
+    tone: "success",
+  },
+  {
+    id: "icu-nurse-farhan",
+    nurse: "Farhan",
+    role: "ICU Nurse",
+    unit: "Respiratory ICU",
+    assignedPatients: 6,
+    criticalPatients: 2,
+    maxCapacity: 6,
+    status: "Overloaded",
+    tone: "critical",
+  },
+  {
+    id: "icu-nurse-sana",
+    nurse: "Sana",
+    role: "ICU Nurse",
+    unit: "Medical ICU",
+    assignedPatients: 2,
+    criticalPatients: 0,
+    maxCapacity: 6,
+    status: "Available",
+    tone: "success",
+  },
+  {
+    id: "icu-nurse-rhea",
+    nurse: "Rhea",
+    role: "ICU Nurse",
+    unit: "Neuro ICU",
+    assignedPatients: 4,
+    criticalPatients: 1,
+    maxCapacity: 6,
+    status: "Available",
+    tone: "success",
+  },
+  {
+    id: "icu-nurse-aman",
+    nurse: "Aman",
+    role: "ICU Nurse",
+    unit: "Transplant ICU",
+    assignedPatients: 5,
+    criticalPatients: 1,
+    maxCapacity: 6,
+    status: "Available",
+    tone: "success",
+  },
 ];
 
 export const headNurseIcuPatients: HeadNurseIcuPatient[] = icuPatients.map(toHeadNurseIcuPatient);

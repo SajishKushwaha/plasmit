@@ -30,7 +30,10 @@ import type { Role, StatusTone } from "@/types";
 export const adminFullAccessRoles: Role[] = ["Super Admin", "Hospital Admin"];
 export const adminReadOnlyRoles: Role[] = ["Management", "HR Manager"];
 
-export function useAdminAccess(allowed: Role[] = adminFullAccessRoles, readOnly: Role[] = adminReadOnlyRoles) {
+export function useAdminAccess(
+  allowed: Role[] = adminFullAccessRoles,
+  readOnly: Role[] = adminReadOnlyRoles,
+) {
   const { role } = useRole();
   return {
     role,
@@ -58,12 +61,9 @@ export function AccessDenied({ title = "Admin permission required" }: { title?: 
 
 export function ReadOnlyBanner({ role }: { role: Role }) {
   return (
-    <AlertBanner
-      icon={AlertCircle}
-      tone="warning"
-      title="Read-only preview"
-    >
-      {role} can review this page in the static Phase 2 demo, but save and high-risk actions are disabled.
+    <AlertBanner icon={AlertCircle} tone="warning" title="Read-only preview">
+      {role} can review this page in the static Phase 2 demo, but save and high-risk actions are
+      disabled.
     </AlertBanner>
   );
 }
@@ -75,7 +75,7 @@ export function FilterBar({
   placeholder = "Search records...",
 }: {
   search: string;
-  onSearch: (value: string) => void;
+  onSearch: (_value: string) => void;
   children?: React.ReactNode;
   placeholder?: string;
 }) {
@@ -84,7 +84,12 @@ export function FilterBar({
       <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          <Input value={search} onChange={(event) => onSearch(event.target.value)} placeholder={placeholder} aria-label={placeholder} />
+          <Input
+            value={search}
+            onChange={(event) => onSearch(event.target.value)}
+            placeholder={placeholder}
+            aria-label={placeholder}
+          />
         </div>
         {children ? <div className="flex flex-wrap gap-2">{children}</div> : null}
       </CardContent>
@@ -100,7 +105,7 @@ export function NativeSelect({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   options: string[];
 }) {
   return (
@@ -136,15 +141,28 @@ export function StickyActionBar({
     <div className="sticky bottom-0 z-20 -mx-4 mt-4 border-t border-border bg-background/92 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {dirty ? <AlertTriangle className="h-4 w-4 text-warning" /> : <CheckCircle2 className="h-4 w-4 text-success" />}
-          {dirty ? "Unsaved static changes are staged for review." : "All static settings are aligned."}
+          {dirty ? (
+            <AlertTriangle className="h-4 w-4 text-warning" />
+          ) : (
+            <CheckCircle2 className="h-4 w-4 text-success" />
+          )}
+          {dirty
+            ? "Unsaved static changes are staged for review."
+            : "All static settings are aligned."}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onReset ?? (() => toast.info("Static data refreshed"))} disabled={readOnly}>
+          <Button
+            variant="outline"
+            onClick={onReset ?? (() => toast.info("Static data refreshed"))}
+            disabled={readOnly}
+          >
             <RefreshCcw className="h-4 w-4" />
             Reset
           </Button>
-          <Button onClick={onSave ?? (() => toast.success("Static UI state saved"))} disabled={readOnly}>
+          <Button
+            onClick={onSave ?? (() => toast.success("Static UI state saved"))}
+            disabled={readOnly}
+          >
             <ClipboardCheck className="h-4 w-4" />
             {saveLabel}
           </Button>
@@ -162,7 +180,7 @@ export function ConfirmDrawer({
   action,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   title: string;
   target: string;
   action: string;
@@ -203,7 +221,15 @@ export function ConfirmDrawer({
   );
 }
 
-export function DetailRow({ label, value, masked }: { label: string; value: React.ReactNode; masked?: boolean }) {
+export function DetailRow({
+  label,
+  value,
+  masked,
+}: {
+  label: string;
+  value: React.ReactNode;
+  masked?: boolean;
+}) {
   return (
     <div className="grid grid-cols-[120px_1fr] gap-3 border-b border-border py-2 text-sm last:border-0">
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
@@ -238,7 +264,14 @@ export function AdminSection({
 }
 
 export function RiskBadge({ risk }: { risk: "Low" | "Medium" | "High" | "Critical" }) {
-  const tone: StatusTone = risk === "Low" ? "success" : risk === "Medium" ? "warning" : risk === "High" ? "danger" : "critical";
+  const tone: StatusTone =
+    risk === "Low"
+      ? "success"
+      : risk === "Medium"
+        ? "warning"
+        : risk === "High"
+          ? "danger"
+          : "critical";
   return <StatusPill tone={tone}>{risk}</StatusPill>;
 }
 
@@ -246,10 +279,13 @@ export function StatusBadge({ status }: { status: string }) {
   const tone: StatusTone =
     status === "Active" || status === "Trusted" || status === "Available"
       ? "success"
-      : status === "Locked" || status === "Blocked" || status === "Critical" || status === "Unavailable"
+      : status === "Locked" ||
+          status === "Blocked" ||
+          status === "Critical" ||
+          status === "Unavailable"
         ? "danger"
-      : status === "Future Ready" || status === "Invited" || status === "Review"
-        ? "info"
+        : status === "Future Ready" || status === "Invited" || status === "Review"
+          ? "info"
           : status === "Inactive" || status === "Expired"
             ? "muted"
             : "warning";
@@ -261,7 +297,7 @@ export function ProtectedAdmin({
   allowed,
   readOnly,
 }: {
-  children: (state: { role: Role; readOnly: boolean }) => React.ReactNode;
+  children: (_state: { role: Role; readOnly: boolean }) => React.ReactNode;
   allowed?: Role[];
   readOnly?: Role[];
 }) {
@@ -275,9 +311,18 @@ export function ProtectedAdmin({
   );
 }
 
-export function DisabledReason({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
+export function DisabledReason({
+  children,
+  disabled,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+}) {
   return (
-    <span className={cn("inline-flex", disabled && "cursor-not-allowed")} title={disabled ? "Unavailable for the current role or protected system record" : undefined}>
+    <span
+      className={cn("inline-flex", disabled && "cursor-not-allowed")}
+      title={disabled ? "Unavailable for the current role or protected system record" : undefined}
+    >
       {children}
     </span>
   );
@@ -287,7 +332,10 @@ export function SecurityNote() {
   return (
     <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-      <span>Reason capture, masking, and audit trail indicators are shown for backend integration readiness.</span>
+      <span>
+        Reason capture, masking, and audit trail indicators are shown for backend integration
+        readiness.
+      </span>
     </div>
   );
 }

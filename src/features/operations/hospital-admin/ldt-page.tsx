@@ -3,15 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FlaskConical, ListChecks, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ListChecks, Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
-import { StatCard } from "@/components/ui/stat-card";
-import { AdminSection, FilterBar, ProtectedAdmin, StickyActionBar } from "@/features/operations/admin/admin-shared";
+import { AdminSection, FilterBar, ProtectedAdmin } from "@/features/operations/admin/admin-shared";
 import { MasterDialog } from "@/features/operations/pharmacy-master/components/master-dialog";
 
 type LdtRecord = {
@@ -45,7 +44,7 @@ function LdtFormDrawer({
   state: LdtDrawerState | null;
   records: LdtRecord[];
   onClose: () => void;
-  onSave: (values: LdtFormValues, editingId?: string) => void;
+  onSave: (_values: LdtFormValues, _editingId?: string) => void;
 }) {
   const editingRecord = state?.type === "edit" ? state.record : null;
   const [values, setValues] = React.useState<LdtFormValues>(emptyForm);
@@ -66,7 +65,10 @@ function LdtFormDrawer({
     const nextErrors: Partial<Record<keyof LdtFormValues, string>> = {};
     const name = values.name.trim();
     const type = values.type.trim();
-    const nameExists = records.some((record) => record.name.toLowerCase() === name.toLowerCase() && record.id !== editingRecord?.id);
+    const nameExists = records.some(
+      (record) =>
+        record.name.toLowerCase() === name.toLowerCase() && record.id !== editingRecord?.id,
+    );
 
     if (name.length < 3) nextErrors.name = "Enter at least 3 characters.";
     if (!type) nextErrors.type = "LDT type is required.";
@@ -93,8 +95,14 @@ function LdtFormDrawer({
       <form id="ldt-form" className="grid gap-4" onSubmit={handleSubmit}>
         <label className="space-y-1 text-sm">
           <span className="font-medium text-foreground">LDT Name</span>
-          <Input value={values.name} onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))} placeholder="Enter LDT Name" />
-          {errors.name ? <span className="text-xs font-medium text-danger">{errors.name}</span> : null}
+          <Input
+            value={values.name}
+            onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))}
+            placeholder="Enter LDT Name"
+          />
+          {errors.name ? (
+            <span className="text-xs font-medium text-danger">{errors.name}</span>
+          ) : null}
         </label>
         <label className="space-y-1 text-sm">
           <span className="font-medium text-foreground">LDT Type</span>
@@ -109,7 +117,9 @@ function LdtFormDrawer({
               </option>
             ))}
           </select>
-          {errors.type ? <span className="text-xs font-medium text-danger">{errors.type}</span> : null}
+          {errors.type ? (
+            <span className="text-xs font-medium text-danger">{errors.type}</span>
+          ) : null}
         </label>
       </form>
     </MasterDialog>
@@ -126,7 +136,9 @@ export function LdtPage() {
 
   const handleSave = React.useCallback((values: LdtFormValues, editingId?: string) => {
     if (editingId) {
-      setRecords((current) => current.map((record) => record.id === editingId ? { ...record, ...values } : record));
+      setRecords((current) =>
+        current.map((record) => (record.id === editingId ? { ...record, ...values } : record)),
+      );
       toast.success("LDT updated");
     } else {
       setRecords((current) => [...current, { ...values, id: `ldt-${Date.now()}` }]);
@@ -162,7 +174,11 @@ export function LdtPage() {
                   Assessment
                 </Link>
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setDrawerState({ type: "edit", record })}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDrawerState({ type: "edit", record })}
+              >
                 <Pencil className="h-3.5 w-3.5" />
                 Edit
               </Button>
@@ -195,7 +211,11 @@ export function LdtPage() {
             }
           />
 
-          <FilterBar search={search} onSearch={setSearch} placeholder="Search LDT name or type..." />
+          <FilterBar
+            search={search}
+            onSearch={setSearch}
+            placeholder="Search LDT name or type..."
+          />
 
           <AdminSection title="LDT">
             <DataTable data={filteredRecords} columns={columns} />

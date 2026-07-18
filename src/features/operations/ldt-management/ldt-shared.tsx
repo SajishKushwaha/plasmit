@@ -70,8 +70,8 @@ export function LdtTypeItemPicker({
   type: LdtType | "";
   value: string;
   options: LdtOption[];
-  onTypeChange: (type: LdtType | "") => void;
-  onItemChange: (id: string) => void;
+  onTypeChange: (_type: LdtType | "") => void;
+  onItemChange: (_id: string) => void;
 }) {
   const filteredOptions = type ? options.filter((option) => option.type === type) : [];
 
@@ -116,15 +116,19 @@ export function DynamicLdtInput({
 }: {
   field: LdtDynamicField;
   value?: LdtPropertyValue;
-  onChange?: (value: LdtPropertyValue) => void;
+  onChange?: (_value: LdtPropertyValue) => void;
 }) {
   const textValue = onChange ? (typeof value === "string" ? value : "") : undefined;
 
   if (field.type === "Date") {
-    return <Input type="date" value={textValue} onChange={(event) => onChange?.(event.target.value)} />;
+    return (
+      <Input type="date" value={textValue} onChange={(event) => onChange?.(event.target.value)} />
+    );
   }
   if (field.type === "Time") {
-    return <Input type="time" value={textValue} onChange={(event) => onChange?.(event.target.value)} />;
+    return (
+      <Input type="time" value={textValue} onChange={(event) => onChange?.(event.target.value)} />
+    );
   }
   if (field.type === "Number") {
     return (
@@ -177,7 +181,13 @@ export function DynamicLdtInput({
       </label>
     );
   }
-  return <Input placeholder={`Enter ${field.name.toLowerCase()}`} value={textValue} onChange={(event) => onChange?.(event.target.value)} />;
+  return (
+    <Input
+      placeholder={`Enter ${field.name.toLowerCase()}`}
+      value={textValue}
+      onChange={(event) => onChange?.(event.target.value)}
+    />
+  );
 }
 
 export function LdtFieldShell({
@@ -187,7 +197,7 @@ export function LdtFieldShell({
 }: {
   field: LdtDynamicField;
   value?: LdtPropertyValue;
-  onChange?: (value: LdtPropertyValue) => void;
+  onChange?: (_value: LdtPropertyValue) => void;
 }) {
   return (
     <label className="space-y-2">
@@ -207,12 +217,17 @@ export function LdtPropertiesForm({
 }: {
   fields: LdtDynamicField[];
   values: LdtPropertyValues;
-  onValueChange: (fieldId: string, value: LdtPropertyValue) => void;
+  onValueChange: (_fieldId: string, _value: LdtPropertyValue) => void;
 }) {
   return (
     <div className="grid gap-4">
       {fields.map((field) => (
-        <LdtFieldShell key={field.id} field={field} value={values[field.id]} onChange={(value) => onValueChange(field.id, value)} />
+        <LdtFieldShell
+          key={field.id}
+          field={field}
+          value={values[field.id]}
+          onChange={(value) => onValueChange(field.id, value)}
+        />
       ))}
     </div>
   );
@@ -226,7 +241,7 @@ export function LdtBarcodePropertiesEntry({
 }: {
   barcode: string;
   exampleBarcodes?: string[];
-  onBarcodeChange: (value: string) => void;
+  onBarcodeChange: (_value: string) => void;
   onSubmit: () => void;
 }) {
   return (
@@ -234,7 +249,10 @@ export function LdtBarcodePropertiesEntry({
       <CardHeader>
         <div>
           <CardTitle>Properties Entry</CardTitle>
-          <CardDescription>Scan item barcode to auto-fill properties, or open Properties and enter details manually.</CardDescription>
+          <CardDescription>
+            Scan item barcode to auto-fill properties, or open Properties and enter details
+            manually.
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -261,7 +279,9 @@ export function LdtBarcodePropertiesEntry({
           </Button>
         </form>
         {exampleBarcodes?.length ? (
-          <div className="mt-2 text-xs text-muted-foreground">Demo barcodes: {exampleBarcodes.join(", ")}</div>
+          <div className="mt-2 text-xs text-muted-foreground">
+            Demo barcodes: {exampleBarcodes.join(", ")}
+          </div>
         ) : null}
       </CardContent>
     </Card>

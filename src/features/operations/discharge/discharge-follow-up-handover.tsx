@@ -27,7 +27,10 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { StatusTone } from "@/types";
-import type { DischargeChecklistItem, DischargePatientPlan } from "@/features/operations/discharge/discharge-data";
+import type {
+  DischargeChecklistItem,
+  DischargePatientPlan,
+} from "@/features/operations/discharge/discharge-data";
 
 const inputClassName =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50";
@@ -88,11 +91,26 @@ type BlockerChip = {
 const requiredBeforeFollowUp: RequiredItem[] = [
   { id: "req-summary", label: "Bring discharge summary", status: "Pending", note: "" },
   { id: "req-labs", label: "Bring all lab reports", status: "Pending", note: "" },
-  { id: "req-cbc", label: "CBC test before visit", status: "Pending", note: "Complete within 24 hours before OPD visit." },
+  {
+    id: "req-cbc",
+    label: "CBC test before visit",
+    status: "Pending",
+    note: "Complete within 24 hours before OPD visit.",
+  },
   { id: "req-xray", label: "X-Ray before review", status: "Pending", note: "" },
-  { id: "req-fasting", label: "Fasting required", status: "Pending", note: "Only if blood sugar or lipid test is planned." },
+  {
+    id: "req-fasting",
+    label: "Fasting required",
+    status: "Pending",
+    note: "Only if blood sugar or lipid test is planned.",
+  },
   { id: "req-meds", label: "Continue medicines till follow-up", status: "Pending", note: "" },
-  { id: "req-tpa", label: "Bring insurance/TPA documents if required", status: "Pending", note: "" },
+  {
+    id: "req-tpa",
+    label: "Bring insurance/TPA documents if required",
+    status: "Pending",
+    note: "",
+  },
 ];
 
 const redFlagSymptoms = [
@@ -116,9 +134,22 @@ const instructionSuggestions = [
   "Teleconsultation allowed",
 ];
 
-const reminderChannels: ReminderChannel[] = ["SMS", "WhatsApp", "Email", "Patient App Notification"];
+const reminderChannels: ReminderChannel[] = [
+  "SMS",
+  "WhatsApp",
+  "Email",
+  "Patient App Notification",
+];
 
-const departmentOptions = ["Pediatrics", "Orthopedics", "General Medicine", "Cardiology", "Nephrology", "Surgery", "Emergency"];
+const departmentOptions = [
+  "Pediatrics",
+  "Orthopedics",
+  "General Medicine",
+  "Cardiology",
+  "Nephrology",
+  "Surgery",
+  "Emergency",
+];
 
 const physicianOptionsByDepartment: Record<string, string[]> = {
   Pediatrics: ["Dr. Neha Malik", "Dr. Kavita Rao", "Dr. Saurabh Sen"],
@@ -149,12 +180,16 @@ export function DischargeFollowUpHandoverPage({
   plan: DischargePatientPlan;
   checklist: DischargeChecklistItem[];
   readOnly: boolean;
-  onFollowUpChange: (field: keyof DischargePatientPlan["followUp"], value: string) => void;
+  onFollowUpChange: (_field: keyof DischargePatientPlan["followUp"], _value: string) => void;
 }) {
-  const initialDepartment = departmentOptions.includes(plan.followUp.department) ? plan.followUp.department : "General Medicine";
+  const initialDepartment = departmentOptions.includes(plan.followUp.department)
+    ? plan.followUp.department
+    : "General Medicine";
   const initialPhysicians = getPhysicianOptions(initialDepartment);
   const [appointment, setAppointment] = React.useState<AppointmentState>(() => ({
-    physician: initialPhysicians.includes(plan.followUp.physician) ? plan.followUp.physician : initialPhysicians[0],
+    physician: initialPhysicians.includes(plan.followUp.physician)
+      ? plan.followUp.physician
+      : initialPhysicians[0],
     department: initialDepartment,
     date: plan.followUp.date || "31 May 2026",
     time: plan.followUp.time || "11:30 AM",
@@ -167,24 +202,36 @@ export function DischargeFollowUpHandoverPage({
   }));
   const [requiredItems, setRequiredItems] = React.useState<RequiredItem[]>(requiredBeforeFollowUp);
   const [doctorNotes, setDoctorNotes] = React.useState(
-    plan.instructions.patientInstructions || "Continue medicines as prescribed. Bring discharge summary and reports during follow-up.",
+    plan.instructions.patientInstructions ||
+      "Continue medicines as prescribed. Bring discharge summary and reports during follow-up.",
   );
-  const [handoverGroups, setHandoverGroups] = React.useState<HandoverGroup[]>(() => createHandoverGroups(plan));
-  const [reminderChannelsSelected, setReminderChannelsSelected] = React.useState<Set<ReminderChannel>>(() => new Set(["SMS", "WhatsApp"]));
+  const [handoverGroups, setHandoverGroups] = React.useState<HandoverGroup[]>(() =>
+    createHandoverGroups(plan),
+  );
+  const [reminderChannelsSelected, setReminderChannelsSelected] = React.useState<
+    Set<ReminderChannel>
+  >(() => new Set(["SMS", "WhatsApp"]));
   const [reminderTime, setReminderTime] = React.useState<ReminderTime>("24 hours before");
   const [customReminder, setCustomReminder] = React.useState("");
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [validationErrors, setValidationErrors] = React.useState<string[]>([]);
   const [activeHandoverGroupId, setActiveHandoverGroupId] = React.useState("nurse");
 
-  const blockerChips = React.useMemo(() => createBlockerChips(plan, checklist, handoverGroups), [checklist, handoverGroups, plan]);
+  const blockerChips = React.useMemo(
+    () => createBlockerChips(plan, checklist, handoverGroups),
+    [checklist, handoverGroups, plan],
+  );
   const pendingBlockers = blockerChips.filter((blocker) => blocker.status === "Pending");
-  const handoverComplete = handoverGroups.every((group) => group.items.every((item) => item.status === "Completed"));
+  const handoverComplete = handoverGroups.every((group) =>
+    group.items.every((item) => item.status === "Completed"),
+  );
 
   const updateAppointment = (field: keyof AppointmentState, value: string) => {
     if (field === "department") {
       const physicians = getPhysicianOptions(value);
-      const physician = physicians.includes(appointment.physician) ? appointment.physician : physicians[0];
+      const physician = physicians.includes(appointment.physician)
+        ? appointment.physician
+        : physicians[0];
       const nextAppointment = {
         ...appointment,
         department: value,
@@ -208,7 +255,11 @@ export function DischargeFollowUpHandoverPage({
 
   const toggleRequiredItem = (itemId: string) => {
     setRequiredItems((current) =>
-      current.map((item) => (item.id === itemId ? { ...item, status: item.status === "Completed" ? "Pending" : "Completed" } : item)),
+      current.map((item) =>
+        item.id === itemId
+          ? { ...item, status: item.status === "Completed" ? "Pending" : "Completed" }
+          : item,
+      ),
     );
   };
 
@@ -223,7 +274,9 @@ export function DischargeFollowUpHandoverPage({
         ? {
             ...group,
             items: group.items.map((item) =>
-              item.id === itemId ? { ...item, status: "Completed" as HandoverStatus, updatedAt: "Now" } : item,
+              item.id === itemId
+                ? { ...item, status: "Completed" as HandoverStatus, updatedAt: "Now" }
+                : item,
             ),
           }
         : group,
@@ -249,7 +302,12 @@ export function DischargeFollowUpHandoverPage({
   };
 
   const validateFinalDischarge = () => {
-    const errors = getFollowUpValidationErrors(appointment, doctorNotes, redFlagSymptoms, handoverComplete);
+    const errors = getFollowUpValidationErrors(
+      appointment,
+      doctorNotes,
+      redFlagSymptoms,
+      handoverComplete,
+    );
     setValidationErrors(errors);
 
     if (errors.length) {
@@ -257,7 +315,9 @@ export function DischargeFollowUpHandoverPage({
       return false;
     }
     if (pendingBlockers.length) {
-      toast.warning(`${pendingBlockers.length} discharge blocker${pendingBlockers.length > 1 ? "s are" : " is"} still pending`);
+      toast.warning(
+        `${pendingBlockers.length} discharge blocker${pendingBlockers.length > 1 ? "s are" : " is"} still pending`,
+      );
       return false;
     }
 
@@ -267,7 +327,11 @@ export function DischargeFollowUpHandoverPage({
 
   return (
     <div className="space-y-4">
-      <DischargeBlockerChips blockers={blockerChips} onClick={scrollToSection} onValidate={validateFinalDischarge} />
+      <DischargeBlockerChips
+        blockers={blockerChips}
+        onClick={scrollToSection}
+        onValidate={validateFinalDischarge}
+      />
 
       {validationErrors.length ? (
         <Card className="border-danger/30 bg-danger/5">
@@ -294,7 +358,12 @@ export function DischargeFollowUpHandoverPage({
             readOnly={readOnly}
             onToggle={toggleRequiredItem}
           />
-          <DoctorInstructionsCard notes={doctorNotes} readOnly={readOnly} onChange={setDoctorNotes} onSuggestion={appendSuggestion} />
+          <DoctorInstructionsCard
+            notes={doctorNotes}
+            readOnly={readOnly}
+            onChange={setDoctorNotes}
+            onSuggestion={appendSuggestion}
+          />
           <RedFlagSymptomsCard />
           <FollowUpReminderCard
             channels={reminderChannelsSelected}
@@ -305,7 +374,11 @@ export function DischargeFollowUpHandoverPage({
             onReminderTimeChange={setReminderTime}
             onCustomReminderChange={setCustomReminder}
           />
-          <PatientCopyPreviewCard appointment={appointment} notes={doctorNotes} onPreview={() => setPreviewOpen(true)} />
+          <PatientCopyPreviewCard
+            appointment={appointment}
+            notes={doctorNotes}
+            onPreview={() => setPreviewOpen(true)}
+          />
         </div>
 
         <PatientHandoverPanel
@@ -336,7 +409,7 @@ function DischargeBlockerChips({
   onValidate,
 }: {
   blockers: BlockerChip[];
-  onClick: (sectionId: string, handoverGroupId?: string) => void;
+  onClick: (_sectionId: string, _handoverGroupId?: string) => void;
   onValidate: () => void;
 }) {
   const pendingCount = blockers.filter((blocker) => blocker.status === "Pending").length;
@@ -345,10 +418,14 @@ function DischargeBlockerChips({
       <CardHeader className="flex-col items-stretch gap-3 xl:flex-row xl:items-center">
         <div>
           <CardTitle>Discharge blockers</CardTitle>
-          <CardDescription>Click any status chip to jump to the related follow-up or handover section</CardDescription>
+          <CardDescription>
+            Click any status chip to jump to the related follow-up or handover section
+          </CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge tone={pendingCount ? "warning" : "success"}>{pendingCount ? `${pendingCount} pending` : "Ready"}</Badge>
+          <Badge tone={pendingCount ? "warning" : "success"}>
+            {pendingCount ? `${pendingCount} pending` : "Ready"}
+          </Badge>
           <Button size="sm" variant="outline" onClick={onValidate}>
             <ShieldCheck className="h-4 w-4" />
             Validate final discharge
@@ -369,7 +446,9 @@ function DischargeBlockerChips({
             key={blocker.id}
           >
             <span>{blocker.label}</span>
-            <Badge tone={blocker.status === "Completed" ? "success" : "warning"}>{blocker.status}</Badge>
+            <Badge tone={blocker.status === "Completed" ? "success" : "warning"}>
+              {blocker.status}
+            </Badge>
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
         ))}
@@ -386,7 +465,7 @@ function FollowUpAppointmentCard({
 }: {
   appointment: AppointmentState;
   readOnly: boolean;
-  onChange: (field: keyof AppointmentState, value: string) => void;
+  onChange: (_field: keyof AppointmentState, _value: string) => void;
   onPreview: () => void;
 }) {
   return (
@@ -397,18 +476,32 @@ function FollowUpAppointmentCard({
             <CalendarCheck className="h-4 w-4 text-info" />
             Follow-up Appointment
           </CardTitle>
-          <CardDescription>Appointment, visit priority, clinic location, and patient contact details</CardDescription>
+          <CardDescription>
+            Appointment, visit priority, clinic location, and patient contact details
+          </CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => toast.success("Appointment booking queued")} disabled={readOnly}>
+          <Button
+            size="sm"
+            onClick={() => toast.success("Appointment booking queued")}
+            disabled={readOnly}
+          >
             <CalendarCheck className="h-4 w-4" />
             Book Appointment
           </Button>
-          <Button size="sm" variant="outline" onClick={() => toast.info("Follow-up slip print preview opened")}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toast.info("Follow-up slip print preview opened")}
+          >
             <Printer className="h-4 w-4" />
             Print Follow-up Slip
           </Button>
-          <Button size="sm" variant="outline" onClick={() => toast.success("Reminder queued for selected channels")}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toast.success("Reminder queued for selected channels")}
+          >
             <Send className="h-4 w-4" />
             Send Reminder
           </Button>
@@ -419,16 +512,72 @@ function FollowUpAppointmentCard({
         </div>
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <FieldSelect label="Department / Specialty" value={appointment.department} options={departmentOptions} disabled={readOnly} onChange={(value) => onChange("department", value)} />
-        <FieldSelect label="Follow-up physician" value={appointment.physician} options={getPhysicianOptions(appointment.department)} disabled={readOnly} onChange={(value) => onChange("physician", value)} />
-        <FieldInput label="Follow-up date" value={appointment.date} disabled={readOnly} onChange={(value) => onChange("date", value)} />
-        <FieldInput label="Follow-up time" value={appointment.time} disabled={readOnly} onChange={(value) => onChange("time", value)} />
-        <FieldSelect label="Mode" value={appointment.mode} options={["OPD", "Teleconsultation", "Emergency", "Home Visit"]} disabled={readOnly} onChange={(value) => onChange("mode", value)} />
-        <FieldSelect label="Destination" value={appointment.destination} options={["Home", "Referral Hospital", "Rehab", "ICU Transfer"]} disabled={readOnly} onChange={(value) => onChange("destination", value)} />
-        <FieldSelect label="Visit type" value={appointment.visitType} options={["First Follow-up", "Review", "Dressing", "Suture Removal", "Report Review"]} disabled={readOnly} onChange={(value) => onChange("visitType", value)} />
-        <FieldSelect label="Priority" value={appointment.priority} options={["Routine", "Urgent", "Critical"]} disabled={readOnly} onChange={(value) => onChange("priority", value)} />
-        <FieldInput label="OPD room / Clinic location" value={appointment.location} disabled={readOnly} onChange={(value) => onChange("location", value)} />
-        <FieldInput label="Contact number" value={appointment.contact} disabled={readOnly} onChange={(value) => onChange("contact", value)} />
+        <FieldSelect
+          label="Department / Specialty"
+          value={appointment.department}
+          options={departmentOptions}
+          disabled={readOnly}
+          onChange={(value) => onChange("department", value)}
+        />
+        <FieldSelect
+          label="Follow-up physician"
+          value={appointment.physician}
+          options={getPhysicianOptions(appointment.department)}
+          disabled={readOnly}
+          onChange={(value) => onChange("physician", value)}
+        />
+        <FieldInput
+          label="Follow-up date"
+          value={appointment.date}
+          disabled={readOnly}
+          onChange={(value) => onChange("date", value)}
+        />
+        <FieldInput
+          label="Follow-up time"
+          value={appointment.time}
+          disabled={readOnly}
+          onChange={(value) => onChange("time", value)}
+        />
+        <FieldSelect
+          label="Mode"
+          value={appointment.mode}
+          options={["OPD", "Teleconsultation", "Emergency", "Home Visit"]}
+          disabled={readOnly}
+          onChange={(value) => onChange("mode", value)}
+        />
+        <FieldSelect
+          label="Destination"
+          value={appointment.destination}
+          options={["Home", "Referral Hospital", "Rehab", "ICU Transfer"]}
+          disabled={readOnly}
+          onChange={(value) => onChange("destination", value)}
+        />
+        <FieldSelect
+          label="Visit type"
+          value={appointment.visitType}
+          options={["First Follow-up", "Review", "Dressing", "Suture Removal", "Report Review"]}
+          disabled={readOnly}
+          onChange={(value) => onChange("visitType", value)}
+        />
+        <FieldSelect
+          label="Priority"
+          value={appointment.priority}
+          options={["Routine", "Urgent", "Critical"]}
+          disabled={readOnly}
+          onChange={(value) => onChange("priority", value)}
+        />
+        <FieldInput
+          label="OPD room / Clinic location"
+          value={appointment.location}
+          disabled={readOnly}
+          onChange={(value) => onChange("location", value)}
+        />
+        <FieldInput
+          label="Contact number"
+          value={appointment.contact}
+          disabled={readOnly}
+          onChange={(value) => onChange("contact", value)}
+        />
         <div className="rounded-lg border border-border bg-surface-muted p-3 sm:col-span-2">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
             <Stethoscope className="h-4 w-4" />
@@ -452,7 +601,7 @@ function RequiredBeforeFollowUpCard({
 }: {
   items: RequiredItem[];
   readOnly: boolean;
-  onToggle: (itemId: string) => void;
+  onToggle: (_itemId: string) => void;
 }) {
   const completed = items.filter((item) => item.status === "Completed").length;
   return (
@@ -461,9 +610,13 @@ function RequiredBeforeFollowUpCard({
         <summary className="flex cursor-pointer list-none items-start justify-between gap-4 border-b border-border px-[var(--density-card-header-x)] py-[var(--density-card-header-y)]">
           <div>
             <CardTitle>Required Before Follow-up</CardTitle>
-            <CardDescription>Compact patient-facing checklist for reports, tests, medicines, and documents</CardDescription>
+            <CardDescription>
+              Compact patient-facing checklist for reports, tests, medicines, and documents
+            </CardDescription>
           </div>
-          <Badge tone={completed === items.length ? "success" : "warning"}>{completed}/{items.length} completed</Badge>
+          <Badge tone={completed === items.length ? "success" : "warning"}>
+            {completed}/{items.length} completed
+          </Badge>
         </summary>
         <CardContent className="grid gap-2 lg:grid-cols-2">
           {items.map((item) => (
@@ -481,7 +634,9 @@ function RequiredBeforeFollowUpCard({
                 </label>
                 <StatusBadge status={item.status} />
               </div>
-              {item.note ? <div className="mt-2 text-xs leading-5 text-muted-foreground">{item.note}</div> : null}
+              {item.note ? (
+                <div className="mt-2 text-xs leading-5 text-muted-foreground">{item.note}</div>
+              ) : null}
             </div>
           ))}
         </CardContent>
@@ -498,19 +653,26 @@ function DoctorInstructionsCard({
 }: {
   notes: string;
   readOnly: boolean;
-  onChange: (value: string) => void;
-  onSuggestion: (value: string) => void;
+  onChange: (_value: string) => void;
+  onSuggestion: (_value: string) => void;
 }) {
   return (
     <Card id="doctor-followup-instructions">
       <CardHeader>
         <div>
           <CardTitle>Doctor Follow-up Instructions</CardTitle>
-          <CardDescription>Clear advice for patient, attendant, and OPD review team</CardDescription>
+          <CardDescription>
+            Clear advice for patient, attendant, and OPD review team
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <textarea className={textareaClassName} value={notes} disabled={readOnly} onChange={(event) => onChange(event.target.value)} />
+        <textarea
+          className={textareaClassName}
+          value={notes}
+          disabled={readOnly}
+          onChange={(event) => onChange(event.target.value)}
+        />
         <div className="flex flex-wrap gap-2">
           {instructionSuggestions.map((suggestion) => (
             <button
@@ -538,7 +700,9 @@ function RedFlagSymptomsCard() {
             <AlertTriangle className="h-4 w-4" />
             Visit Emergency Immediately If
           </CardTitle>
-          <CardDescription>Red flag symptoms explained in patient-friendly language</CardDescription>
+          <CardDescription>
+            Red flag symptoms explained in patient-friendly language
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -546,7 +710,9 @@ function RedFlagSymptomsCard() {
           <div
             className={cn(
               "rounded-lg border p-3 text-sm font-medium",
-              index < 4 ? "border-danger/30 bg-danger/10 text-danger" : "border-warning/30 bg-warning/10 text-warning",
+              index < 4
+                ? "border-danger/30 bg-danger/10 text-danger"
+                : "border-warning/30 bg-warning/10 text-warning",
             )}
             key={symptom}
           >
@@ -571,9 +737,9 @@ function FollowUpReminderCard({
   reminderTime: ReminderTime;
   customReminder: string;
   readOnly: boolean;
-  onToggleChannel: (channel: ReminderChannel) => void;
-  onReminderTimeChange: (value: ReminderTime) => void;
-  onCustomReminderChange: (value: string) => void;
+  onToggleChannel: (_channel: ReminderChannel) => void;
+  onReminderTimeChange: (_value: ReminderTime) => void;
+  onCustomReminderChange: (_value: string) => void;
 }) {
   return (
     <Card id="followup-reminder">
@@ -583,13 +749,18 @@ function FollowUpReminderCard({
             <Bell className="h-4 w-4 text-info" />
             Follow-up Reminder
           </CardTitle>
-          <CardDescription>Reminder channel and timing preference for patient communication</CardDescription>
+          <CardDescription>
+            Reminder channel and timing preference for patient communication
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="grid gap-3 lg:grid-cols-[1fr_240px]">
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {reminderChannels.map((channel) => (
-            <label className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 text-sm" key={channel}>
+            <label
+              className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 text-sm"
+              key={channel}
+            >
               <input
                 className="h-4 w-4 rounded border-border accent-primary"
                 type="checkbox"
@@ -611,7 +782,12 @@ function FollowUpReminderCard({
             onChange={(value) => onReminderTimeChange(value as ReminderTime)}
           />
           {reminderTime === "Custom" ? (
-            <Input value={customReminder} disabled={readOnly} onChange={(event) => onCustomReminderChange(event.target.value)} placeholder="Example: 4 hours before" />
+            <Input
+              value={customReminder}
+              disabled={readOnly}
+              onChange={(event) => onCustomReminderChange(event.target.value)}
+              placeholder="Example: 4 hours before"
+            />
           ) : null}
         </div>
       </CardContent>
@@ -633,18 +809,28 @@ function PatientCopyPreviewCard({
       <CardHeader className="flex-col items-stretch gap-3 xl:flex-row xl:items-start">
         <div>
           <CardTitle>Patient Copy Preview</CardTitle>
-          <CardDescription>Simple language preview for patient and attendant handover</CardDescription>
+          <CardDescription>
+            Simple language preview for patient and attendant handover
+          </CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={onPreview}>
             <Eye className="h-4 w-4" />
             Preview
           </Button>
-          <Button size="sm" variant="outline" onClick={() => toast.info("Print preview is UI only in this frontend demo")}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toast.info("Print preview is UI only in this frontend demo")}
+          >
             <Printer className="h-4 w-4" />
             Print
           </Button>
-          <Button size="sm" variant="outline" onClick={() => toast.success("Share UI action queued")}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toast.success("Share UI action queued")}
+          >
             <Send className="h-4 w-4" />
             Share
           </Button>
@@ -652,11 +838,13 @@ function PatientCopyPreviewCard({
       </CardHeader>
       <CardContent>
         <div className="rounded-lg border border-border bg-background p-4 text-sm leading-6 text-muted-foreground">
-          Your follow-up appointment is scheduled with <span className="font-semibold text-foreground">{appointment.physician}</span> in{" "}
+          Your follow-up appointment is scheduled with{" "}
+          <span className="font-semibold text-foreground">{appointment.physician}</span> in{" "}
           <span className="font-semibold text-foreground">{appointment.department}</span> on{" "}
           <span className="font-semibold text-foreground">{appointment.date}</span> at{" "}
-          <span className="font-semibold text-foreground">{appointment.time}</span>. Please bring your discharge summary and latest reports.
-          Visit emergency immediately if fever, breathing difficulty, chest pain, bleeding, or severe weakness occurs.
+          <span className="font-semibold text-foreground">{appointment.time}</span>. Please bring
+          your discharge summary and latest reports. Visit emergency immediately if fever, breathing
+          difficulty, chest pain, bleeding, or severe weakness occurs.
           <div className="mt-3 text-xs">{notes}</div>
         </div>
       </CardContent>
@@ -675,21 +863,28 @@ function PatientHandoverPanel({
   groups: HandoverGroup[];
   activeGroupId: string;
   readOnly: boolean;
-  onGroupChange: (groupId: string) => void;
-  onMarkDone: (groupId: string, itemId: string) => void;
+  onGroupChange: (_groupId: string) => void;
+  onMarkDone: (_groupId: string, _itemId: string) => void;
   onValidate: () => void;
 }) {
   const total = groups.reduce((count, group) => count + group.items.length, 0);
-  const completed = groups.reduce((count, group) => count + group.items.filter((item) => item.status === "Completed").length, 0);
+  const completed = groups.reduce(
+    (count, group) => count + group.items.filter((item) => item.status === "Completed").length,
+    0,
+  );
 
   return (
     <Card id="patient-handover-checklist" className="h-fit 2xl:sticky 2xl:top-[88px]">
       <CardHeader>
         <div>
           <CardTitle>Patient Handover Checklist</CardTitle>
-          <CardDescription>Nurse, billing, pharmacy, and summary clearance before exit</CardDescription>
+          <CardDescription>
+            Nurse, billing, pharmacy, and summary clearance before exit
+          </CardDescription>
         </div>
-        <Badge tone={completed === total ? "success" : "warning"}>{completed}/{total}</Badge>
+        <Badge tone={completed === total ? "success" : "warning"}>
+          {completed}/{total}
+        </Badge>
       </CardHeader>
       <CardContent className="space-y-3">
         <Tabs value={activeGroupId} onValueChange={onGroupChange}>
@@ -699,7 +894,8 @@ function PatientHandoverPanel({
                 <span className="flex flex-col items-start leading-tight">
                   <span>{getShortGroupTitle(group.title)}</span>
                   <span className="text-[10px] text-muted-foreground">
-                    {group.items.filter((item) => item.status === "Completed").length}/{group.items.length}
+                    {group.items.filter((item) => item.status === "Completed").length}/
+                    {group.items.length}
                   </span>
                 </span>
               </TabsTrigger>
@@ -709,8 +905,17 @@ function PatientHandoverPanel({
             <TabsContent value={group.id} key={group.id} className="space-y-2">
               <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background p-3">
                 <div className="text-sm font-semibold text-foreground">{group.title}</div>
-                <Badge tone={group.items.every((item) => item.status === "Completed") ? "success" : group.items.some((item) => item.status === "Blocked") ? "danger" : "warning"}>
-                  {group.items.filter((item) => item.status === "Completed").length}/{group.items.length}
+                <Badge
+                  tone={
+                    group.items.every((item) => item.status === "Completed")
+                      ? "success"
+                      : group.items.some((item) => item.status === "Blocked")
+                        ? "danger"
+                        : "warning"
+                  }
+                >
+                  {group.items.filter((item) => item.status === "Completed").length}/
+                  {group.items.length}
                 </Badge>
               </div>
               {group.items.map((item) => (
@@ -718,15 +923,25 @@ function PatientHandoverPanel({
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="text-sm font-medium text-foreground">{item.label}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{item.owner} | Updated {item.updatedAt}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {item.owner} | Updated {item.updatedAt}
+                      </div>
                     </div>
                     <StatusBadge status={item.status} />
                   </div>
                   <div className="mt-2 flex flex-wrap justify-end gap-2">
-                    <Button size="sm" variant="outline" onClick={() => toast.info(`${item.label} details opened`)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toast.info(`${item.label} details opened`)}
+                    >
                       View Details
                     </Button>
-                    <Button size="sm" disabled={readOnly || item.status === "Completed"} onClick={() => onMarkDone(group.id, item.id)}>
+                    <Button
+                      size="sm"
+                      disabled={readOnly || item.status === "Completed"}
+                      onClick={() => onMarkDone(group.id, item.id)}
+                    >
                       {item.status === "Blocked" ? "Resolve" : "Mark Done"}
                     </Button>
                   </div>
@@ -766,7 +981,9 @@ function PatientFollowUpPreviewModal({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(94vw,820px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <Dialog.Title className="text-sm font-semibold text-foreground">Patient Follow-up Instructions Preview</Dialog.Title>
+              <Dialog.Title className="text-sm font-semibold text-foreground">
+                Patient Follow-up Instructions Preview
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                 Patient-friendly copy for discharge handover, print, or share.
               </Dialog.Description>
@@ -781,11 +998,14 @@ function PatientFollowUpPreviewModal({
             <div className="mx-auto max-w-[720px] rounded-lg border border-border bg-white p-6 text-slate-950 shadow-sm">
               <div className="border-b border-slate-200 pb-3">
                 <div className="text-lg font-bold">Follow-up Instructions</div>
-                <div className="mt-1 text-sm text-slate-600">{plan.patientName} | {plan.uhid} | {plan.ward}</div>
+                <div className="mt-1 text-sm text-slate-600">
+                  {plan.patientName} | {plan.uhid} | {plan.ward}
+                </div>
               </div>
               <div className="mt-4 text-sm leading-6 text-slate-700">
-                Your follow-up appointment is scheduled with <b>{appointment.physician}</b> in <b>{appointment.department}</b> on{" "}
-                <b>{appointment.date}</b> at <b>{appointment.time}</b>.
+                Your follow-up appointment is scheduled with <b>{appointment.physician}</b> in{" "}
+                <b>{appointment.department}</b> on <b>{appointment.date}</b> at{" "}
+                <b>{appointment.time}</b>.
               </div>
               <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                 <PreviewLine label="Mode" value={appointment.mode} />
@@ -809,7 +1029,10 @@ function PatientFollowUpPreviewModal({
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border p-3">
-            <Button variant="outline" onClick={() => toast.info("Print preview is UI only in this frontend demo")}>
+            <Button
+              variant="outline"
+              onClick={() => toast.info("Print preview is UI only in this frontend demo")}
+            >
               <Printer className="h-4 w-4" />
               Print
             </Button>
@@ -825,7 +1048,17 @@ function PatientFollowUpPreviewModal({
   );
 }
 
-function FieldInput({ label, value, disabled, onChange }: { label: string; value: string; disabled: boolean; onChange: (value: string) => void }) {
+function FieldInput({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  disabled: boolean;
+  onChange: (_value: string) => void;
+}) {
   return (
     <label className="space-y-1 text-sm">
       <span className="font-medium text-foreground">{label}</span>
@@ -845,12 +1078,17 @@ function FieldSelect({
   value: string;
   options: string[];
   disabled: boolean;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
 }) {
   return (
     <label className="space-y-1 text-sm">
       <span className="font-medium text-foreground">{label}</span>
-      <select className={inputClassName} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)}>
+      <select
+        className={inputClassName}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+      >
         {options.map((option) => (
           <option value={option} key={option}>
             {option}
@@ -891,57 +1129,185 @@ function createHandoverGroups(plan: DischargePatientPlan): HandoverGroup[] {
       id: "nurse",
       title: "A. Nurse Clearance",
       items: [
-        { id: "nurse-vitals", label: "Vitals stable", owner: "Nurse", status: plan.nurseClearance === "Done" ? "Completed" : "Pending", updatedAt: "Today 10:10" },
-        { id: "nurse-iv", label: "IV cannula removed", owner: "Nurse", status: "Pending", updatedAt: "Today 10:12" },
-        { id: "nurse-dressing", label: "Wound dressing explained", owner: "Nurse", status: "Pending", updatedAt: "Today 10:14" },
-        { id: "nurse-education", label: "Patient education completed", owner: "Nurse", status: plan.nurseClearance === "Done" ? "Completed" : "Pending", updatedAt: "Today 10:15" },
+        {
+          id: "nurse-vitals",
+          label: "Vitals stable",
+          owner: "Nurse",
+          status: plan.nurseClearance === "Done" ? "Completed" : "Pending",
+          updatedAt: "Today 10:10",
+        },
+        {
+          id: "nurse-iv",
+          label: "IV cannula removed",
+          owner: "Nurse",
+          status: "Pending",
+          updatedAt: "Today 10:12",
+        },
+        {
+          id: "nurse-dressing",
+          label: "Wound dressing explained",
+          owner: "Nurse",
+          status: "Pending",
+          updatedAt: "Today 10:14",
+        },
+        {
+          id: "nurse-education",
+          label: "Patient education completed",
+          owner: "Nurse",
+          status: plan.nurseClearance === "Done" ? "Completed" : "Pending",
+          updatedAt: "Today 10:15",
+        },
       ],
     },
     {
       id: "billing",
       title: "B. Billing Clearance",
       items: [
-        { id: "billing-bill", label: "Final bill generated", owner: "Billing", status: plan.billingStatus === "Cleared" ? "Completed" : "Pending", updatedAt: "Today 10:18" },
-        { id: "billing-payment", label: "Payment completed", owner: "Billing", status: plan.billingStatus === "Query raised" ? "Blocked" : plan.billingStatus === "Cleared" ? "Completed" : "Pending", updatedAt: "Today 10:20" },
-        { id: "billing-tpa", label: "TPA approval received", owner: "Billing", status: plan.payer === "TPA" || plan.payer === "Insurance" ? "Pending" : "Completed", updatedAt: "Today 10:22" },
+        {
+          id: "billing-bill",
+          label: "Final bill generated",
+          owner: "Billing",
+          status: plan.billingStatus === "Cleared" ? "Completed" : "Pending",
+          updatedAt: "Today 10:18",
+        },
+        {
+          id: "billing-payment",
+          label: "Payment completed",
+          owner: "Billing",
+          status:
+            plan.billingStatus === "Query raised"
+              ? "Blocked"
+              : plan.billingStatus === "Cleared"
+                ? "Completed"
+                : "Pending",
+          updatedAt: "Today 10:20",
+        },
+        {
+          id: "billing-tpa",
+          label: "TPA approval received",
+          owner: "Billing",
+          status: plan.payer === "TPA" || plan.payer === "Insurance" ? "Pending" : "Completed",
+          updatedAt: "Today 10:22",
+        },
       ],
     },
     {
       id: "pharmacy",
       title: "C. Pharmacy Clearance",
       items: [
-        { id: "pharmacy-issued", label: "Discharge medicines issued", owner: "Pharmacy", status: plan.pharmacyStatus === "Reconciled" ? "Completed" : "Pending", updatedAt: "Today 10:24" },
-        { id: "pharmacy-counselling", label: "Medicine counselling completed", owner: "Pharmacy", status: "Pending", updatedAt: "Today 10:25" },
-        { id: "pharmacy-risk", label: "High-risk medicine explained", owner: "Pharmacy", status: plan.riskFlags.length ? "Pending" : "Completed", updatedAt: "Today 10:26" },
+        {
+          id: "pharmacy-issued",
+          label: "Discharge medicines issued",
+          owner: "Pharmacy",
+          status: plan.pharmacyStatus === "Reconciled" ? "Completed" : "Pending",
+          updatedAt: "Today 10:24",
+        },
+        {
+          id: "pharmacy-counselling",
+          label: "Medicine counselling completed",
+          owner: "Pharmacy",
+          status: "Pending",
+          updatedAt: "Today 10:25",
+        },
+        {
+          id: "pharmacy-risk",
+          label: "High-risk medicine explained",
+          owner: "Pharmacy",
+          status: plan.riskFlags.length ? "Pending" : "Completed",
+          updatedAt: "Today 10:26",
+        },
       ],
     },
     {
       id: "summary",
       title: "D. Summary Clearance",
       items: [
-        { id: "summary-generated", label: "Discharge summary generated", owner: "Doctor", status: plan.summaryStatus === "Draft" ? "Pending" : "Completed", updatedAt: "Today 10:28" },
-        { id: "summary-signed", label: "Doctor signed", owner: "Doctor", status: plan.summaryStatus === "Signed" ? "Completed" : "Pending", updatedAt: "Today 10:30" },
-        { id: "summary-ack", label: "Patient/attendant acknowledgement taken", owner: "Nurse", status: "Pending", updatedAt: "Today 10:32" },
+        {
+          id: "summary-generated",
+          label: "Discharge summary generated",
+          owner: "Doctor",
+          status: plan.summaryStatus === "Draft" ? "Pending" : "Completed",
+          updatedAt: "Today 10:28",
+        },
+        {
+          id: "summary-signed",
+          label: "Doctor signed",
+          owner: "Doctor",
+          status: plan.summaryStatus === "Signed" ? "Completed" : "Pending",
+          updatedAt: "Today 10:30",
+        },
+        {
+          id: "summary-ack",
+          label: "Patient/attendant acknowledgement taken",
+          owner: "Nurse",
+          status: "Pending",
+          updatedAt: "Today 10:32",
+        },
       ],
     },
   ];
 }
 
-function createBlockerChips(plan: DischargePatientPlan, checklist: DischargeChecklistItem[], handoverGroups: HandoverGroup[]): BlockerChip[] {
+function createBlockerChips(
+  plan: DischargePatientPlan,
+  checklist: DischargeChecklistItem[],
+  handoverGroups: HandoverGroup[],
+): BlockerChip[] {
   const nurseDone = handoverGroupDone(handoverGroups, "nurse");
-  const billingDone = handoverGroupDone(handoverGroups, "billing") || checklistCategoryDone(checklist, "Billing") || plan.billingStatus === "Cleared";
-  const pharmacyDone = handoverGroupDone(handoverGroups, "pharmacy") || plan.pharmacyStatus === "Reconciled";
-  const summaryDone = handoverGroupDone(handoverGroups, "summary") || checklistCategoryDone(checklist, "Summary") || plan.summaryStatus === "Signed";
+  const billingDone =
+    handoverGroupDone(handoverGroups, "billing") ||
+    checklistCategoryDone(checklist, "Billing") ||
+    plan.billingStatus === "Cleared";
+  const pharmacyDone =
+    handoverGroupDone(handoverGroups, "pharmacy") || plan.pharmacyStatus === "Reconciled";
+  const summaryDone =
+    handoverGroupDone(handoverGroups, "summary") ||
+    checklistCategoryDone(checklist, "Summary") ||
+    plan.summaryStatus === "Signed";
   const medicationDone = checklistCategoryDone(checklist, "Medication") || pharmacyDone;
   const educationDone =
-    nurseDone || checklist.some((item) => item.label.toLowerCase().includes("education") && item.status === "Done") || plan.nurseClearance === "Done";
+    nurseDone ||
+    checklist.some(
+      (item) => item.label.toLowerCase().includes("education") && item.status === "Done",
+    ) ||
+    plan.nurseClearance === "Done";
 
   return [
-    { id: "block-med", label: "Medication reconciliation completed", status: medicationDone ? "Completed" : "Pending", target: "patient-handover-checklist", handoverGroupId: "pharmacy" },
-    { id: "block-education", label: "Patient education and guardian counselling", status: educationDone ? "Completed" : "Pending", target: "patient-handover-checklist", handoverGroupId: "nurse" },
-    { id: "block-billing", label: "Final bill and payment clearance", status: billingDone ? "Completed" : "Pending", target: "patient-handover-checklist", handoverGroupId: "billing" },
-    { id: "block-summary", label: "Discharge summary generated and signed", status: summaryDone ? "Completed" : "Pending", target: "patient-handover-checklist", handoverGroupId: "summary" },
-    { id: "block-pharmacy", label: "Pharmacy handover completed", status: pharmacyDone ? "Completed" : "Pending", target: "patient-handover-checklist", handoverGroupId: "pharmacy" },
+    {
+      id: "block-med",
+      label: "Medication reconciliation completed",
+      status: medicationDone ? "Completed" : "Pending",
+      target: "patient-handover-checklist",
+      handoverGroupId: "pharmacy",
+    },
+    {
+      id: "block-education",
+      label: "Patient education and guardian counselling",
+      status: educationDone ? "Completed" : "Pending",
+      target: "patient-handover-checklist",
+      handoverGroupId: "nurse",
+    },
+    {
+      id: "block-billing",
+      label: "Final bill and payment clearance",
+      status: billingDone ? "Completed" : "Pending",
+      target: "patient-handover-checklist",
+      handoverGroupId: "billing",
+    },
+    {
+      id: "block-summary",
+      label: "Discharge summary generated and signed",
+      status: summaryDone ? "Completed" : "Pending",
+      target: "patient-handover-checklist",
+      handoverGroupId: "summary",
+    },
+    {
+      id: "block-pharmacy",
+      label: "Pharmacy handover completed",
+      status: pharmacyDone ? "Completed" : "Pending",
+      target: "patient-handover-checklist",
+      handoverGroupId: "pharmacy",
+    },
   ];
 }
 
@@ -950,12 +1316,22 @@ function handoverGroupDone(groups: HandoverGroup[], groupId: string) {
   return Boolean(group && group.items.every((item) => item.status === "Completed"));
 }
 
-function checklistCategoryDone(checklist: DischargeChecklistItem[], category: DischargeChecklistItem["category"]) {
-  const rows = checklist.filter((item) => item.category === category && item.status !== "Not required");
+function checklistCategoryDone(
+  checklist: DischargeChecklistItem[],
+  category: DischargeChecklistItem["category"],
+) {
+  const rows = checklist.filter(
+    (item) => item.category === category && item.status !== "Not required",
+  );
   return rows.length > 0 && rows.every((item) => item.status === "Done");
 }
 
-function getFollowUpValidationErrors(appointment: AppointmentState, doctorNotes: string, symptoms: string[], handoverComplete: boolean) {
+function getFollowUpValidationErrors(
+  appointment: AppointmentState,
+  doctorNotes: string,
+  symptoms: string[],
+  handoverComplete: boolean,
+) {
   const errors: string[] = [];
   if (!appointment.physician.trim()) errors.push("Follow-up physician required");
   if (!appointment.department.trim()) errors.push("Department required");
@@ -988,7 +1364,9 @@ function mapDestination(destination: DischargePatientPlan["destination"]): Follo
 }
 
 function getPhysicianOptions(department: string) {
-  return physicianOptionsByDepartment[department] ?? physicianOptionsByDepartment["General Medicine"];
+  return (
+    physicianOptionsByDepartment[department] ?? physicianOptionsByDepartment["General Medicine"]
+  );
 }
 
 function statusTone(status: string): StatusTone {

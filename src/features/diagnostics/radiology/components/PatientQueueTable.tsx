@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-import type { Patient, RadiologyOrder, RadiologyTest } from "@/features/diagnostics/radiology/types";
+import type {
+  Patient,
+  RadiologyOrder,
+  RadiologyTest,
+} from "@/features/diagnostics/radiology/types";
 import { ModalityBadge } from "@/features/diagnostics/radiology/components/ModalityBadge";
 import { PriorityBadge } from "@/features/diagnostics/radiology/components/PriorityBadge";
 import { RadiologyStatusBadge } from "@/features/diagnostics/radiology/components/RadiologyStatusBadge";
@@ -40,13 +44,17 @@ export function PatientQueueTable({ orders, patients, tests }: PatientQueueTable
 
             return (
               <tr className="hover:bg-slate-50" key={order.id}>
-                <td className="px-4 py-3 font-semibold text-slate-900">Q-{String(index + 1).padStart(2, "0")}</td>
+                <td className="px-4 py-3 font-semibold text-slate-900">
+                  Q-{String(index + 1).padStart(2, "0")}
+                </td>
                 <td className="px-4 py-3">
                   <p className="font-medium text-slate-950">{patient?.name ?? "Unknown patient"}</p>
                   <p className="text-xs text-slate-500">{patient?.mrn ?? order.patientId}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <p className="font-medium text-slate-900">{test?.name ?? order.testIds.join(", ")}</p>
+                  <p className="font-medium text-slate-900">
+                    {test?.name ?? order.testIds.join(", ")}
+                  </p>
                   <div className="mt-1">
                     <ModalityBadge modalityId={order.modalityId} />
                   </div>
@@ -58,7 +66,10 @@ export function PatientQueueTable({ orders, patients, tests }: PatientQueueTable
                   <RadiologyStatusBadge status={order.status} />
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link className="font-medium text-sky-700 hover:text-sky-900" href={`/radiology/orders/${order.id}`}>
+                  <Link
+                    className="font-medium text-sky-700 hover:text-sky-900"
+                    href={`/radiology/orders/${order.id}`}
+                  >
                     View
                   </Link>
                 </td>

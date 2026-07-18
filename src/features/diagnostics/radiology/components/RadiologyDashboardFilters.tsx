@@ -3,14 +3,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
-import { ArrowRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, MoreVertical, Search, UserRound, X } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  Search,
+  UserRound,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ModalityBadge } from "@/features/diagnostics/radiology/components/ModalityBadge";
 import { RadiologyStatusBadge } from "@/features/diagnostics/radiology/components/RadiologyStatusBadge";
 import type { Modality, RadiologyStatus } from "@/features/diagnostics/radiology/types";
-import { radiologyStatusLabels, radiologyStatusOrder } from "@/features/diagnostics/radiology/utils/status";
+import {
+  radiologyStatusLabels,
+  radiologyStatusOrder,
+} from "@/features/diagnostics/radiology/utils/status";
 import { cn } from "@/lib/utils";
 
 export interface RadiologyDashboardFilterValues {
@@ -38,7 +52,7 @@ export interface RadiologyDashboardSearchRecord {
 interface RadiologyDashboardFiltersProps {
   availableDates?: string[];
   modalities: Modality[];
-  onChange: (values: RadiologyDashboardFilterValues) => void;
+  onChange: (_values: RadiologyDashboardFilterValues) => void;
   searchRecords?: RadiologyDashboardSearchRecord[];
 }
 
@@ -63,7 +77,11 @@ const dateTabs = [
 
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const monthFormatter = new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric" });
-const selectedDateFormatter = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" });
+const selectedDateFormatter = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
 
 function getLocalDateKey(date: Date) {
   const year = date.getFullYear();
@@ -82,7 +100,9 @@ function isValidDateKey(value: string) {
 }
 
 function formatDateKeyLabel(value: string) {
-  return isValidDateKey(value) ? selectedDateFormatter.format(new Date(`${value}T12:00:00`)) : "Select a valid date";
+  return isValidDateKey(value)
+    ? selectedDateFormatter.format(new Date(`${value}T12:00:00`))
+    : "Select a valid date";
 }
 
 function DashboardSelect({
@@ -94,7 +114,7 @@ function DashboardSelect({
 }: {
   ariaLabel: string;
   label: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   options: FilterOption[];
   value: string;
 }) {
@@ -107,9 +127,13 @@ function DashboardSelect({
         className="flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-input bg-background px-3 text-left shadow-sm outline-none transition hover:bg-surface-muted focus:border-ring focus:ring-2 focus:ring-ring/20"
       >
         <span className="min-w-0">
-          <span className="block text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
+          <span className="block text-[10px] font-semibold uppercase text-muted-foreground">
+            {label}
+          </span>
           <Select.Value>
-            <span className="block truncate text-sm font-semibold text-foreground">{selected?.label}</span>
+            <span className="block truncate text-sm font-semibold text-foreground">
+              {selected?.label}
+            </span>
           </Select.Value>
         </span>
         <Select.Icon>
@@ -134,7 +158,11 @@ function DashboardSelect({
                   <Select.ItemText>
                     <span className="block truncate font-medium">{option.label}</span>
                   </Select.ItemText>
-                  {option.meta ? <span className="mt-0.5 block truncate text-xs text-muted-foreground">{option.meta}</span> : null}
+                  {option.meta ? (
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {option.meta}
+                    </span>
+                  ) : null}
                 </span>
                 <Select.ItemIndicator className="absolute right-3">
                   <Check className="h-4 w-4" />
@@ -158,7 +186,9 @@ export function RadiologyDashboardFilters({
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [draftDate, setDraftDate] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [visibleMonth, setVisibleMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+  );
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const modalityOptions: FilterOption[] = [
@@ -290,11 +320,16 @@ export function RadiologyDashboardFilters({
   }
 
   return (
-    <section aria-label="Radiology dashboard filters" className="overflow-visible rounded-lg border border-border bg-surface shadow-sm">
+    <section
+      aria-label="Radiology dashboard filters"
+      className="overflow-visible rounded-lg border border-border bg-surface shadow-sm"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold text-foreground">Dashboard View</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Filter the operational summary, queue, and alerts together.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Filter the operational summary, queue, and alerts together.
+          </p>
         </div>
         <span
           className={cn(
@@ -311,7 +346,9 @@ export function RadiologyDashboardFilters({
       <div className="p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(320px,1fr)_220px_220px]">
           <div className="relative sm:col-span-2 lg:col-span-1" ref={searchContainerRef}>
-            <label className="sr-only" htmlFor="radiology-dashboard-search">Search radiology dashboard</label>
+            <label className="sr-only" htmlFor="radiology-dashboard-search">
+              Search radiology dashboard
+            </label>
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               aria-autocomplete="list"
@@ -347,7 +384,9 @@ export function RadiologyDashboardFilters({
               >
                 <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-muted px-3 py-2">
                   <span className="text-xs font-semibold text-foreground">Patient matches</span>
-                  <span className="text-[11px] text-muted-foreground">{patientMatches.length} shown</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {patientMatches.length} shown
+                  </span>
                 </div>
 
                 {patientMatches.length > 0 ? (
@@ -366,7 +405,9 @@ export function RadiologyDashboardFilters({
                         </span>
                         <span className="min-w-0">
                           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <span className="truncate text-sm font-semibold text-foreground">{record.patientName}</span>
+                            <span className="truncate text-sm font-semibold text-foreground">
+                              {record.patientName}
+                            </span>
                             <span className="text-xs text-muted-foreground">
                               {record.mrn} | {record.age}Y / {record.gender.charAt(0)}
                             </span>
@@ -389,7 +430,9 @@ export function RadiologyDashboardFilters({
                 ) : (
                   <div className="px-4 py-6 text-center">
                     <p className="text-sm font-medium text-foreground">No matching patient</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Try a patient name, MRN, order number, or doctor.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Try a patient name, MRN, order number, or doctor.
+                    </p>
                   </div>
                 )}
               </div>
@@ -417,7 +460,11 @@ export function RadiologyDashboardFilters({
             <CalendarDays className="h-4 w-4" />
             Date range
           </div>
-          <div aria-label="Filter dashboard by date range" className="grid grid-cols-2 gap-1 rounded-lg bg-surface-muted p-1 sm:inline-grid sm:grid-cols-[repeat(3,auto)_auto_auto]" role="tablist">
+          <div
+            aria-label="Filter dashboard by date range"
+            className="grid grid-cols-2 gap-1 rounded-lg bg-surface-muted p-1 sm:inline-grid sm:grid-cols-[repeat(3,auto)_auto_auto]"
+            role="tablist"
+          >
             {dateTabs.map((tab) => {
               const isActive = values.dateRange === tab.value;
 
@@ -426,7 +473,9 @@ export function RadiologyDashboardFilters({
                   aria-selected={isActive}
                   className={cn(
                     "h-8 rounded-md px-3 text-xs font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring",
-                    isActive ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    isActive
+                      ? "bg-surface text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                   key={tab.value}
                   onClick={() => updateValues({ dateRange: tab.value })}
@@ -445,7 +494,11 @@ export function RadiologyDashboardFilters({
                   ? "bg-surface text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
               )}
-              onClick={() => (customDate ? updateValues({ dateRange: `CUSTOM:${customDate}` }) : openCustomDateDialog())}
+              onClick={() =>
+                customDate
+                  ? updateValues({ dateRange: `CUSTOM:${customDate}` })
+                  : openCustomDateDialog()
+              }
               role="tab"
               type="button"
             >
@@ -462,7 +515,9 @@ export function RadiologyDashboardFilters({
             </button>
           </div>
           {customDate ? (
-            <span className="text-xs font-medium text-muted-foreground">Selected: {formatDateKeyLabel(customDate)}</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Selected: {formatDateKeyLabel(customDate)}
+            </span>
           ) : null}
         </div>
       </div>
@@ -473,7 +528,9 @@ export function RadiologyDashboardFilters({
           <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] w-[min(92vw,390px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl outline-none">
             <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
               <div>
-                <Dialog.Title className="text-base font-semibold text-foreground">Select Custom Date</Dialog.Title>
+                <Dialog.Title className="text-base font-semibold text-foreground">
+                  Select Custom Date
+                </Dialog.Title>
                 <Dialog.Description className="mt-1 text-xs text-muted-foreground">
                   Choose a date from the calendar or enter it manually.
                 </Dialog.Description>
@@ -487,14 +544,21 @@ export function RadiologyDashboardFilters({
 
             <div className="space-y-3 p-3">
               <label className="block rounded-lg border border-border bg-background p-3">
-                <span className="text-[10px] font-semibold uppercase text-muted-foreground">Manual date</span>
+                <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+                  Manual date
+                </span>
                 <Input
                   className="mt-2 h-10"
                   onChange={(event) => changeDraftDate(event.target.value)}
                   type="date"
                   value={draftDate}
                 />
-                <span className={cn("mt-2 block text-xs", isValidDateKey(draftDate) ? "text-muted-foreground" : "text-critical")}>
+                <span
+                  className={cn(
+                    "mt-2 block text-xs",
+                    isValidDateKey(draftDate) ? "text-muted-foreground" : "text-critical",
+                  )}
+                >
                   {formatDateKeyLabel(draftDate)}
                 </span>
               </label>
@@ -504,7 +568,9 @@ export function RadiologyDashboardFilters({
                   <Button
                     aria-label="Previous month"
                     onClick={() =>
-                      setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))
+                      setVisibleMonth(
+                        (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1),
+                      )
                     }
                     size="icon"
                     type="button"
@@ -512,11 +578,15 @@ export function RadiologyDashboardFilters({
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <div className="text-sm font-semibold text-foreground">{monthFormatter.format(visibleMonth)}</div>
+                  <div className="text-sm font-semibold text-foreground">
+                    {monthFormatter.format(visibleMonth)}
+                  </div>
                   <Button
                     aria-label="Next month"
                     onClick={() =>
-                      setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))
+                      setVisibleMonth(
+                        (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1),
+                      )
                     }
                     size="icon"
                     type="button"
@@ -549,7 +619,8 @@ export function RadiologyDashboardFilters({
                             ? "border-border bg-surface text-foreground hover:bg-surface-muted"
                             : "border-transparent text-muted-foreground/45",
                           isToday && "border-info/50 text-info",
-                          isSelected && "border-primary bg-primary text-primary-foreground hover:bg-primary",
+                          isSelected &&
+                            "border-primary bg-primary text-primary-foreground hover:bg-primary",
                         )}
                         key={cell.dateKey}
                         onClick={() => changeDraftDate(cell.dateKey)}
@@ -569,7 +640,9 @@ export function RadiologyDashboardFilters({
                   })}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">Dates with patient records are marked with a dot.</p>
+              <p className="text-xs text-muted-foreground">
+                Dates with patient records are marked with a dot.
+              </p>
             </div>
 
             <div className="flex items-center justify-end gap-2 border-t border-border bg-surface-muted px-3 py-3">

@@ -1,6 +1,11 @@
 import { Activity, Clock, MonitorUp } from "lucide-react";
 
-import type { Modality, Patient, RadiologyOrder, RadiologyTest } from "@/features/diagnostics/radiology/types";
+import type {
+  Modality,
+  Patient,
+  RadiologyOrder,
+  RadiologyTest,
+} from "@/features/diagnostics/radiology/types";
 import { ModalityBadge } from "@/features/diagnostics/radiology/components/ModalityBadge";
 import { PriorityBadge } from "@/features/diagnostics/radiology/components/PriorityBadge";
 import { RadiologyStatusBadge } from "@/features/diagnostics/radiology/components/RadiologyStatusBadge";

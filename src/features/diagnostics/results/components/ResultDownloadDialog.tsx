@@ -40,7 +40,10 @@ const formatOptions: Array<{
 ];
 
 function cleanFilePart(value: string) {
-  return value.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
+  return value
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
 }
 
 function escapeHtml(value: string) {
@@ -90,7 +93,10 @@ function buildHtmlReport(result: ResultRecord, variant: "excel" | "word") {
     )
     .join("");
   const timeline = result.timeline
-    .map((event) => `<tr><td>${escapeHtml(event.label)}</td><td>${escapeHtml(event.at)}</td><td>${escapeHtml(event.by)}</td></tr>`)
+    .map(
+      (event) =>
+        `<tr><td>${escapeHtml(event.label)}</td><td>${escapeHtml(event.at)}</td><td>${escapeHtml(event.by)}</td></tr>`,
+    )
     .join("");
 
   const css =
@@ -117,7 +123,10 @@ function buildPdfReport(result: ResultRecord) {
     ...reportRows(result).map(([label, value]) => `${label}: ${value}`),
     "",
     "Result Values",
-    ...result.values.map((value) => `${value.name}: ${value.value} ${value.unit ?? ""} | Range: ${value.range ?? "-"} | ${value.flag ?? "-"}`),
+    ...result.values.map(
+      (value) =>
+        `${value.name}: ${value.value} ${value.unit ?? ""} | Range: ${value.range ?? "-"} | ${value.flag ?? "-"}`,
+    ),
     "",
     "Timeline",
     ...result.timeline.map((event) => `${event.at} - ${event.label} - ${event.by}`),
@@ -169,16 +178,25 @@ function downloadResult(result: ResultRecord, format: DownloadFormat) {
   const baseName = `${cleanFilePart(result.id)}-${cleanFilePart(result.patientName)}-report`;
 
   if (format === "PDF") {
-    downloadBlob(new Blob([buildPdfReport(result)], { type: "application/pdf" }), `${baseName}.pdf`);
+    downloadBlob(
+      new Blob([buildPdfReport(result)], { type: "application/pdf" }),
+      `${baseName}.pdf`,
+    );
     return;
   }
 
   if (format === "Excel") {
-    downloadBlob(new Blob([buildHtmlReport(result, "excel")], { type: "application/vnd.ms-excel" }), `${baseName}.xls`);
+    downloadBlob(
+      new Blob([buildHtmlReport(result, "excel")], { type: "application/vnd.ms-excel" }),
+      `${baseName}.xls`,
+    );
     return;
   }
 
-  downloadBlob(new Blob([buildHtmlReport(result, "word")], { type: "application/msword" }), `${baseName}.doc`);
+  downloadBlob(
+    new Blob([buildHtmlReport(result, "word")], { type: "application/msword" }),
+    `${baseName}.doc`,
+  );
 }
 
 export function ResultDownloadDialog({
@@ -186,12 +204,15 @@ export function ResultDownloadDialog({
   result,
   trigger,
 }: {
-  onDownloaded?: (format: DownloadFormat) => void;
+  onDownloaded?: (_format: DownloadFormat) => void;
   result: ResultRecord;
   trigger: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const subtext = useMemo(() => `${result.patientName} | ${result.mrn} | ${result.testName}`, [result.mrn, result.patientName, result.testName]);
+  const subtext = useMemo(
+    () => `${result.patientName} | ${result.mrn} | ${result.testName}`,
+    [result.mrn, result.patientName, result.testName],
+  );
 
   function handleDownload(format: DownloadFormat) {
     downloadResult(result, format);
@@ -207,7 +228,9 @@ export function ResultDownloadDialog({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-4 shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <Dialog.Title className="text-base font-semibold text-foreground">Download Report</Dialog.Title>
+              <Dialog.Title className="text-base font-semibold text-foreground">
+                Download Report
+              </Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted-foreground">
                 Choose the format you want to download the report in.
               </Dialog.Description>
@@ -228,9 +251,15 @@ export function ResultDownloadDialog({
                 onClick={() => handleDownload(option.format)}
                 type="button"
               >
-                <span className={`inline-flex h-9 w-9 items-center justify-center rounded-md border ${option.className}`}>{option.icon}</span>
+                <span
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-md border ${option.className}`}
+                >
+                  {option.icon}
+                </span>
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-foreground">{option.title}</span>
+                  <span className="block text-sm font-semibold text-foreground">
+                    {option.title}
+                  </span>
                   <span className="block text-xs text-muted-foreground">{option.description}</span>
                 </span>
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground">

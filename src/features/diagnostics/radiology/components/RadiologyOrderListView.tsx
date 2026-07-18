@@ -2,7 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Eye, FileCheck2, FilePlus2, MonitorUp, Play, Search, Send, Truck } from "lucide-react";
+import {
+  CheckCircle2,
+  Eye,
+  FileCheck2,
+  FilePlus2,
+  MonitorUp,
+  Play,
+  Search,
+  Send,
+  Truck,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ModalityBadge } from "@/features/diagnostics/radiology/components/ModalityBadge";
@@ -10,7 +20,13 @@ import { PriorityBadge } from "@/features/diagnostics/radiology/components/Prior
 import { RadiologyFilterBar } from "@/features/diagnostics/radiology/components/RadiologyFilterBar";
 import { RadiologyNewOrderDialog } from "@/features/diagnostics/radiology/components/RadiologyNewOrderDialog";
 import { RadiologyStatusBadge } from "@/features/diagnostics/radiology/components/RadiologyStatusBadge";
-import type { Modality, Patient, RadiologyOrder, RadiologyStatus, RadiologyTest } from "@/features/diagnostics/radiology/types";
+import type {
+  Modality,
+  Patient,
+  RadiologyOrder,
+  RadiologyStatus,
+  RadiologyTest,
+} from "@/features/diagnostics/radiology/types";
 import { useRadiologyWorkspace } from "@/features/diagnostics/radiology/hooks/useRadiologyWorkspace";
 import { formatDateTime } from "@/features/diagnostics/radiology/utils/formatters";
 
@@ -64,7 +80,12 @@ function matchesDateRange(value: string | undefined, dateRange: string) {
   return true;
 }
 
-export function RadiologyOrderListView({ modalities, orders, patients, tests }: RadiologyOrderListViewProps) {
+export function RadiologyOrderListView({
+  modalities,
+  orders,
+  patients,
+  tests,
+}: RadiologyOrderListViewProps) {
   const workspace = useRadiologyWorkspace();
   const allOrders = workspace.orders.length > 0 ? workspace.orders : orders;
   const [filters, setFilters] = useState<FilterState>({
@@ -94,7 +115,8 @@ export function RadiologyOrderListView({ modalities, orders, patients, tests }: 
         .toLowerCase();
 
       const matchesSearch = search.length === 0 || searchableText.includes(search);
-      const matchesModality = filters.modalityId === "ALL" || order.modalityId === filters.modalityId;
+      const matchesModality =
+        filters.modalityId === "ALL" || order.modalityId === filters.modalityId;
       const matchesStatus = filters.status === "ALL" || order.status === filters.status;
       const matchesDate = matchesDateRange(order.scheduledAt ?? order.createdAt, filters.dateRange);
 
@@ -105,7 +127,11 @@ export function RadiologyOrderListView({ modalities, orders, patients, tests }: 
   function renderPrimaryAction(order: RadiologyOrder) {
     if (order.status === "PAYMENT_PENDING") {
       return (
-        <Button onClick={() => workspace.actions.clearBilling(order.id)} size="sm" variant="outline">
+        <Button
+          onClick={() => workspace.actions.clearBilling(order.id)}
+          size="sm"
+          variant="outline"
+        >
           Clear Bill
         </Button>
       );
@@ -113,7 +139,11 @@ export function RadiologyOrderListView({ modalities, orders, patients, tests }: 
 
     if (order.status === "PAYMENT_DONE" || order.status === "ORDER_CREATED") {
       return (
-        <Button onClick={() => workspace.actions.scheduleOrder(order.id)} size="sm" variant="outline">
+        <Button
+          onClick={() => workspace.actions.scheduleOrder(order.id)}
+          size="sm"
+          variant="outline"
+        >
           Schedule
         </Button>
       );
@@ -129,7 +159,11 @@ export function RadiologyOrderListView({ modalities, orders, patients, tests }: 
 
     if (order.status === "PATIENT_ARRIVED" || order.status === "PREPARATION_PENDING") {
       return (
-        <Button onClick={() => workspace.actions.completePreparation(order.id)} size="sm" variant="outline">
+        <Button
+          onClick={() => workspace.actions.completePreparation(order.id)}
+          size="sm"
+          variant="outline"
+        >
           <CheckCircle2 className="h-3.5 w-3.5" />
           Prep Done
         </Button>
@@ -147,7 +181,11 @@ export function RadiologyOrderListView({ modalities, orders, patients, tests }: 
 
     if (order.status === "SCAN_IN_PROGRESS") {
       return (
-        <Button onClick={() => workspace.actions.completeScan(order.id)} size="sm" variant="outline">
+        <Button
+          onClick={() => workspace.actions.completeScan(order.id)}
+          size="sm"
+          variant="outline"
+        >
           Complete Scan
         </Button>
       );
@@ -210,7 +248,9 @@ export function RadiologyOrderListView({ modalities, orders, patients, tests }: 
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-base font-semibold text-foreground">Radiology Order List</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Search by patient, MRN, phone, order number, modality, or status.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Search by patient, MRN, phone, order number, modality, or status.
+          </p>
         </div>
         <RadiologyNewOrderDialog
           trigger={
@@ -257,14 +297,22 @@ export function RadiologyOrderListView({ modalities, orders, patients, tests }: 
                   <tr className="hover:bg-surface-muted" key={order.id}>
                     <td className="px-4 py-3">
                       <p className="font-semibold text-foreground">{order.orderNo}</p>
-                      <p className="text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDateTime(order.createdAt)}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{patient?.name ?? order.patientId}</p>
-                      <p className="text-xs text-muted-foreground">{patient?.mrn ?? "MRN pending"} · {patient?.location ?? "Location pending"}</p>
+                      <p className="font-medium text-foreground">
+                        {patient?.name ?? order.patientId}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {patient?.mrn ?? "MRN pending"} · {patient?.location ?? "Location pending"}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{orderTests.map((test) => test.name).join(", ")}</p>
+                      <p className="font-medium text-foreground">
+                        {orderTests.map((test) => test.name).join(", ")}
+                      </p>
                       <div className="mt-1">
                         <ModalityBadge modalityId={order.modalityId} />
                       </div>

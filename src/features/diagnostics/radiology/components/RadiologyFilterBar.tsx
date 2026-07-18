@@ -5,7 +5,10 @@ import { RotateCcw, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { Modality, RadiologyStatus } from "@/features/diagnostics/radiology/types";
-import { radiologyStatusLabels, radiologyStatusOrder } from "@/features/diagnostics/radiology/utils/status";
+import {
+  radiologyStatusLabels,
+  radiologyStatusOrder,
+} from "@/features/diagnostics/radiology/utils/status";
 
 interface FilterValues {
   search: string;
@@ -16,7 +19,7 @@ interface FilterValues {
 
 interface RadiologyFilterBarProps {
   modalities: Modality[];
-  onChange?: (values: FilterValues) => void;
+  onChange?: (_values: FilterValues) => void;
 }
 
 const defaultFilterValues: FilterValues = {
@@ -70,7 +73,9 @@ export function RadiologyFilterBar({ modalities, onChange }: RadiologyFilterBarP
         <select
           aria-label="Filter by status"
           className="h-10 rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-          onChange={(event) => updateValues({ status: event.target.value as RadiologyStatus | "ALL" })}
+          onChange={(event) =>
+            updateValues({ status: event.target.value as RadiologyStatus | "ALL" })
+          }
           value={values.status}
         >
           <option value="ALL">All statuses</option>

@@ -13,7 +13,7 @@ export function DashboardToolbar({
 }: {
   filteredCount: number;
   onExportExcel: () => void;
-  onSearchChange: (value: string) => void;
+  onSearchChange: (_value: string) => void;
   search: string;
 }) {
   return (

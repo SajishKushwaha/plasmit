@@ -1,6 +1,16 @@
 "use client";
 
-import { Activity, ChartNoAxesCombined, ClipboardCheck, FilePenLine, FlaskConical, HeartPulse, LayoutDashboard, Radio, Stethoscope } from "lucide-react";
+import {
+  Activity,
+  ChartNoAxesCombined,
+  ClipboardCheck,
+  FilePenLine,
+  FlaskConical,
+  HeartPulse,
+  LayoutDashboard,
+  Radio,
+  Stethoscope,
+} from "lucide-react";
 
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -23,7 +33,15 @@ export function PatientNavigation() {
   );
 }
 
-function PatientTab({ icon: Icon, label, value }: { icon: typeof Activity; label: string; value: string }) {
+function PatientTab({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Activity;
+  label: string;
+  value: string;
+}) {
   return (
     <TabsTrigger
       className="h-10 min-w-[132px] shrink-0 rounded-lg bg-transparent px-3 text-sm font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"

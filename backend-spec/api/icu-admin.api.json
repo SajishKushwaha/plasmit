@@ -1,0 +1,32 @@
+{
+  "role": "ICU_ADMIN",
+  "endpoints": [
+    { "method": "GET", "path": "/icu-admin/dashboard", "permission": "ICU_DASHBOARD_VIEW", "response": "IcuDashboard" },
+    { "method": "GET", "path": "/icu-admin/executive-dashboard", "permission": "ICU_DASHBOARD_VIEW", "response": "ExecutiveDashboard" },
+    { "method": "GET", "path": "/icu-admin/analytics/:type", "permission": "ICU_ANALYTICS_VIEW", "response": "AnalyticsDataset" },
+    { "method": "GET", "path": "/icu/beds", "permission": "ICU_BED_VIEW", "response": "Paginated<Bed>" },
+    { "method": "GET", "path": "/icu/beds/:bedId", "permission": "ICU_BED_VIEW", "response": "BedDetail" },
+    { "method": "POST", "path": "/icu/beds/:bedId/allocate", "permission": "ICU_BED_ALLOCATE", "request": "AllocateBedRequest", "response": "BedAllocation" },
+    { "method": "POST", "path": "/icu/beds/:bedId/reserve", "permission": "ICU_BED_RESERVE", "request": "ReserveBedRequest", "response": "Bed" },
+    { "method": "POST", "path": "/icu/beds/:bedId/release", "permission": "ICU_BED_RELEASE", "request": "ReleaseBedRequest", "response": "Bed" },
+    { "method": "POST", "path": "/icu/beds/:bedId/mark-cleaning", "permission": "ICU_BED_UPDATE", "request": "BedStatusReason", "response": "Bed" },
+    { "method": "POST", "path": "/icu/beds/:bedId/mark-available", "permission": "ICU_BED_UPDATE", "request": "BedCleaningClearance", "response": "Bed" },
+    { "method": "POST", "path": "/icu/beds/:bedId/mark-maintenance", "permission": "ICU_BED_UPDATE", "request": "BedStatusReason", "response": "Bed" },
+    { "method": "GET", "path": "/icu/beds/:bedId/history", "permission": "ICU_BED_VIEW", "response": "BedHistory[]" },
+    { "method": "GET", "path": "/icu/admission-requests", "permission": "ICU_ADMISSION_VIEW", "response": "Paginated<AdmissionRequest>" },
+    { "method": "POST", "path": "/icu/admission-requests", "permission": "ICU_ADMISSION_CREATE", "request": "AdmissionRequestCreate", "response": "AdmissionRequest" },
+    { "method": "GET", "path": "/icu/admission-requests/:id", "permission": "ICU_ADMISSION_VIEW", "response": "AdmissionRequestDetail" },
+    { "method": "POST", "path": "/icu/admission-requests/:id/approve", "permission": "ICU_ADMISSION_APPROVE", "request": "ApprovalRequest", "response": "AdmissionRequest" },
+    { "method": "POST", "path": "/icu/admission-requests/:id/reject", "permission": "ICU_ADMISSION_REJECT", "request": "RejectRequest", "response": "AdmissionRequest" },
+    { "method": "POST", "path": "/icu/admission-requests/:id/reserve-bed", "permission": "ICU_BED_RESERVE", "request": "ReserveAdmissionBedRequest", "response": "AdmissionRequest" },
+    { "method": "POST", "path": "/icu/admission-requests/:id/complete-admission", "permission": "ICU_ADMISSION_COMPLETE", "request": "CompleteAdmissionRequest", "response": "Admission" },
+    { "method": "GET", "path": "/icu/staff", "permission": "ICU_STAFF_VIEW", "response": "Paginated<User>" },
+    { "method": "GET", "path": "/icu/shifts", "permission": "ICU_SHIFT_VIEW", "response": "Paginated<ShiftRoster>" },
+    { "method": "POST", "path": "/icu/shifts", "permission": "ICU_SHIFT_CREATE", "request": "ShiftCreateRequest", "response": "ShiftRoster" },
+    { "method": "PUT", "path": "/icu/shifts/:id", "permission": "ICU_SHIFT_UPDATE", "request": "ShiftUpdateRequest", "response": "ShiftRoster" },
+    { "method": "POST", "path": "/icu/shifts/:id/assign-staff", "permission": "ICU_STAFF_ASSIGN", "request": "AssignStaffRequest", "response": "StaffAssignment[]" },
+    { "method": "GET", "path": "/icu/staffing/coverage", "permission": "ICU_STAFF_VIEW", "response": "StaffCoverage" },
+    { "method": "GET", "path": "/icu/staffing/shortages", "permission": "ICU_STAFF_VIEW", "response": "StaffShortage[]" }
+  ]
+}
+

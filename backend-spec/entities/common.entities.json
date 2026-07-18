@@ -1,0 +1,180 @@
+{
+  "entities": {
+    "User": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "employeeId": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "fullName": "string",
+        "email": "email",
+        "phone": "string",
+        "roleId": "uuid",
+        "departmentId": "uuid|null",
+        "unitId": "uuid|null",
+        "status": "ACTIVE|INACTIVE|SUSPENDED",
+        "profileImageUrl": "string|null",
+        "lastLoginAt": "datetime|null",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "Role": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "code": "string",
+        "name": "string",
+        "description": "string",
+        "permissions": "string[]"
+      }
+    },
+    "Patient": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "uhid": "string",
+        "mrn": "string",
+        "fullName": "string",
+        "dateOfBirth": "date",
+        "age": "number",
+        "gender": "MALE|FEMALE|OTHER|UNKNOWN",
+        "bloodGroup": "BloodGroup|null",
+        "phone": "string",
+        "email": "string|null",
+        "address": "Address",
+        "emergencyContact": "EmergencyContact|null",
+        "status": "ACTIVE|INACTIVE",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "Admission": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "admissionNumber": "string",
+        "patientId": "uuid",
+        "admissionType": "AdmissionType",
+        "admissionDateTime": "datetime",
+        "departmentId": "uuid",
+        "unitId": "uuid",
+        "wardId": "uuid",
+        "roomId": "uuid|null",
+        "bedId": "uuid|null",
+        "primaryDoctorId": "uuid",
+        "consultingDoctorIds": "uuid[]",
+        "admissionDiagnosis": "Diagnosis[]",
+        "reasonForAdmission": "string",
+        "clinicalStatus": "ClinicalStatus",
+        "admissionStatus": "AdmissionStatus",
+        "dischargeDateTime": "datetime|null"
+      }
+    },
+    "Department": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "hospitalId": "uuid",
+        "name": "string",
+        "code": "string",
+        "status": "ACTIVE|INACTIVE",
+        "deletedAt": "datetime|null"
+      }
+    },
+    "Unit": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "departmentId": "uuid",
+        "name": "string",
+        "code": "string",
+        "status": "ACTIVE|INACTIVE",
+        "deletedAt": "datetime|null"
+      }
+    },
+    "Ward": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "unitId": "uuid",
+        "name": "string",
+        "code": "string",
+        "status": "ACTIVE|INACTIVE",
+        "deletedAt": "datetime|null"
+      }
+    },
+    "Room": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "wardId": "uuid",
+        "roomNumber": "string",
+        "roomType": "string",
+        "status": "ACTIVE|INACTIVE",
+        "deletedAt": "datetime|null"
+      }
+    },
+    "Bed": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "bedNumber": "string",
+        "bedType": "ICU|HDU|WARD|ISOLATION|VENTILATOR",
+        "wardId": "uuid",
+        "roomId": "uuid|null",
+        "status": "BedStatus",
+        "currentAdmissionId": "uuid|null",
+        "isIsolationBed": "boolean",
+        "equipment": "uuid[]",
+        "lastCleanedAt": "datetime|null"
+      }
+    },
+    "AuditLog": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "userId": "uuid",
+        "roleCode": "string",
+        "action": "string",
+        "entityType": "string",
+        "entityId": "uuid",
+        "admissionId": "uuid|null",
+        "patientId": "uuid|null",
+        "oldValue": "object|null",
+        "newValue": "object|null",
+        "reason": "string|null",
+        "ipAddress": "string",
+        "userAgent": "string",
+        "createdAt": "datetime"
+      }
+    },
+    "Notification": {
+      "primaryKey": "id",
+      "fields": {
+        "id": "uuid",
+        "recipientUserId": "uuid",
+        "type": "string",
+        "title": "string",
+        "message": "string",
+        "priority": "LOW|MEDIUM|HIGH|CRITICAL",
+        "entityType": "string",
+        "entityId": "uuid",
+        "patientId": "uuid|null",
+        "admissionId": "uuid|null",
+        "isRead": "boolean",
+        "createdAt": "datetime"
+      }
+    }
+  },
+  "relationships": [
+    "Hospital -> Department -> Unit -> Ward -> Room -> Bed",
+    "Patient 1:n Admission",
+    "Admission n:1 Bed through BedAllocation",
+    "User n:1 Role",
+    "Role n:m Permission",
+    "AuditLog references any entity through entityType/entityId"
+  ]
+}
+

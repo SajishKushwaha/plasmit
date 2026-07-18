@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/shell/page-header";
 import { cn } from "@/lib/utils";
 import type { Role, StatusTone } from "@/types";
 
-export const surgeryAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU 2", "Receptionist", "Management"];
+export const surgeryAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU 2", "Management"];
 export const surgeryFullAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU 2"];
 
 export function useSurgeryAccess() {

@@ -85,7 +85,7 @@ const moduleMeta: Record<Phase12Module, { eyebrow: string; label: string; icon: 
     eyebrow: "Phase 12 • Mobile",
     label: "Mobile",
     icon: Smartphone,
-    allowed: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Pharmacist", "Billing Executive", "HR Manager", "Management"],
+    allowed: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Pharmacist", "Billing Executive", "HR Manager", "Management"],
     fullAccess: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"],
     warning: "Mobile role previews preserve role permissions and show offline, conflict, push permission, restricted action, and session timeout placeholders.",
   },

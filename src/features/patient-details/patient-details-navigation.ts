@@ -13,7 +13,7 @@ export const patientDetailsNavigationItem: NavigationItem = {
     "Hospital Admin",
     "Doctor",
     "Nurse",
-    "Receptionist",
+    "Receptionlist",
     "Billing Executive",
     "Management",
   ],

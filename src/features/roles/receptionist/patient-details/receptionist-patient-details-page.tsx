@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useRole } from "@/components/providers/role-provider";
 import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -2360,6 +2361,14 @@ function FavoriteRow({
 }
 
 export function PatientDetailsPage({ embedded = false }: { embedded?: boolean }) {
+  const { role } = useRole();
+  const isReceptionlist = role === "Receptionlist";
+  const roleVisiblePatientDetailTabs = React.useMemo(
+    () => isReceptionlist
+      ? visiblePatientDetailTabs.filter((tab) => tab.id === "basic").map((tab) => ({ ...tab, label: "Basic Demographic" }))
+      : visiblePatientDetailTabs,
+    [isReceptionlist],
+  );
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const documentInputRef = React.useRef<HTMLInputElement | null>(null);
   const initialEditingRecord = React.useMemo(() => getInitialEditingPatientRecord(), []);
@@ -2376,11 +2385,17 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   const [previewRecord, setPreviewRecord] = React.useState<PatientRecord | null>(null);
   const [isExtractingDocument, setIsExtractingDocument] = React.useState(false);
   const clinicalBmi = React.useMemo(() => calculateBmi(clinicalHeight, clinicalWeight), [clinicalHeight, clinicalWeight]);
-  const activeTabIndex = visiblePatientDetailTabs.findIndex((tab) => tab.id === activeTab);
+  const activeTabIndex = roleVisiblePatientDetailTabs.findIndex((tab) => tab.id === activeTab);
   const patientGender = editingRecord ? getPatientRecordValue(editingRecord, "Gender") : "";
   const calculatorAge = age || (editingRecord ? getPatientRecordValue(editingRecord, "Age") : "");
   const calculatorHeight = clinicalHeight || (editingRecord ? getPatientRecordValue(editingRecord, "Height") : "");
   const calculatorWeight = clinicalWeight || (editingRecord ? getPatientRecordValue(editingRecord, "Weight") : "");
+
+  React.useEffect(() => {
+    if (isReceptionlist && activeTab !== "basic") {
+      setActiveTab("basic");
+    }
+  }, [activeTab, isReceptionlist]);
 
   React.useEffect(() => {
     if (!editingRecord || !formRef.current) return;
@@ -2424,7 +2439,8 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
 
   function saveCurrentPatientSection() {
     if (!formRef.current) return null;
-    const currentTab = visiblePatientDetailTabs[activeTabIndex];
+    const currentTab = roleVisiblePatientDetailTabs[activeTabIndex];
+    if (!currentTab) return null;
     const section = collectPatientSection(formRef.current, currentTab.id, currentTab.label);
     if (!section.fields.length) return null;
     const savedRecord = upsertPatientRecordSection(editingRecordId, section);
@@ -2445,7 +2461,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         return;
       }
     }
-    const nextTab = visiblePatientDetailTabs[activeTabIndex + 1];
+    const nextTab = roleVisiblePatientDetailTabs[activeTabIndex + 1];
     if (nextTab) {
       setActiveTab(nextTab.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2458,7 +2474,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
     const target = event.target as HTMLElement;
     if (event.key !== "Enter" || target.tagName === "BUTTON" || target.tagName === "TEXTAREA") return;
     event.preventDefault();
-    if (activeTabIndex === visiblePatientDetailTabs.length - 1) {
+    if (activeTabIndex === roleVisiblePatientDetailTabs.length - 1) {
       handlePreview();
       return;
     }
@@ -2602,7 +2618,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
 
       <div className="pt-1">
         <div className="flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1" role="tablist" aria-label="Patient detail sections">
-          {visiblePatientDetailTabs.map((tab) => (
+          {roleVisiblePatientDetailTabs.map((tab) => (
             <button
               aria-selected={activeTab === tab.id}
               className={`h-8 shrink-0 rounded px-3 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${
@@ -2814,7 +2830,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
               <RotateCcw className="h-4 w-4" />
               Clear
             </Button>
-            {activeTabIndex === visiblePatientDetailTabs.length - 1 ? (
+            {activeTabIndex === roleVisiblePatientDetailTabs.length - 1 ? (
               <>
                 <Button onClick={handlePreview} size="sm" type="button" variant="outline">
                   <Eye className="h-4 w-4" />

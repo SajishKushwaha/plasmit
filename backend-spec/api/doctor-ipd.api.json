@@ -1,0 +1,28 @@
+{
+  "role": "DOCTOR_IPD",
+  "endpoints": [
+    { "method": "GET", "path": "/doctor-ipd/dashboard", "permission": "IPD_DASHBOARD_VIEW", "response": "DoctorIpdDashboard" },
+    { "method": "GET", "path": "/doctor-ipd/patients", "permission": "IPD_PATIENT_VIEW", "response": "Paginated<DoctorIpdPatientListItem>" },
+    { "method": "GET", "path": "/admissions/:admissionId/clinical-summary", "permission": "IPD_PATIENT_VIEW", "response": "ClinicalSummary" },
+    { "method": "GET", "path": "/doctor-ipd/rounds", "permission": "IPD_ROUND_VIEW", "response": "Paginated<DoctorRound>" },
+    { "method": "POST", "path": "/admissions/:admissionId/rounds", "permission": "IPD_ROUND_CREATE", "request": "DoctorRoundCreate", "response": "DoctorRound" },
+    { "method": "GET", "path": "/admissions/:admissionId/rounds", "permission": "IPD_ROUND_VIEW", "response": "DoctorRound[]" },
+    { "method": "PUT", "path": "/rounds/:roundId", "permission": "IPD_ROUND_UPDATE", "request": "DoctorRoundUpdate", "response": "DoctorRound" },
+    { "method": "POST", "path": "/rounds/:roundId/complete", "permission": "IPD_ROUND_COMPLETE", "request": "CompleteRoundRequest", "response": "DoctorRound" },
+    { "method": "POST", "path": "/admissions/:admissionId/orders", "permission": "IPD_ORDER_CREATE", "request": "DoctorOrderCreate", "response": "DoctorOrder" },
+    { "method": "GET", "path": "/admissions/:admissionId/orders", "permission": "IPD_ORDER_VIEW", "response": "DoctorOrder[]" },
+    { "method": "GET", "path": "/orders/:orderId", "permission": "IPD_ORDER_VIEW", "response": "DoctorOrder" },
+    { "method": "PUT", "path": "/orders/:orderId", "permission": "IPD_ORDER_UPDATE", "request": "DoctorOrderUpdate", "response": "DoctorOrder" },
+    { "method": "POST", "path": "/orders/:orderId/hold", "permission": "IPD_ORDER_HOLD", "request": "ReasonRequest", "response": "DoctorOrder" },
+    { "method": "POST", "path": "/orders/:orderId/resume", "permission": "IPD_ORDER_RESUME", "request": "ReasonRequest", "response": "DoctorOrder" },
+    { "method": "POST", "path": "/orders/:orderId/discontinue", "permission": "IPD_ORDER_DISCONTINUE", "request": "ReasonRequest", "response": "DoctorOrder" },
+    { "method": "POST", "path": "/orders/:orderId/cancel", "permission": "IPD_ORDER_CANCEL", "request": "ReasonRequest", "response": "DoctorOrder" },
+    { "method": "GET", "path": "/admissions/:admissionId/progress-notes", "permission": "IPD_NOTE_VIEW", "response": "ProgressNote[]" },
+    { "method": "POST", "path": "/admissions/:admissionId/progress-notes", "permission": "IPD_NOTE_CREATE", "request": "ProgressNoteCreate", "response": "ProgressNote" },
+    { "method": "POST", "path": "/progress-notes/:id/sign", "permission": "IPD_NOTE_SIGN", "request": "SignatureRequest", "response": "ProgressNote" },
+    { "method": "POST", "path": "/progress-notes/:id/addendum", "permission": "IPD_NOTE_AMEND", "request": "AddendumRequest", "response": "ProgressNote" },
+    { "method": "GET", "path": "/admissions/:admissionId/results", "permission": "RESULT_VIEW", "response": "InvestigationResult[]" },
+    { "method": "POST", "path": "/admissions/:admissionId/consultation-requests", "permission": "IPD_CONSULT_CREATE", "request": "ConsultationRequestCreate", "response": "ConsultationRequest" }
+  ]
+}
+

@@ -17,8 +17,8 @@ import { getPatientById } from "@/data/patients";
 import { mockAllergies, mockVitals } from "@/data/opd";
 import type { ConsultationRecord, ConsultationStatus, Role, StatusTone } from "@/types";
 
-export const opdAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Nurse", "Receptionist", "Pharmacist", "Lab Technician", "Management"];
-export const opdReadOnlyRoles: Role[] = ["Hospital Admin", "Receptionist", "Pharmacist", "Lab Technician", "Management"];
+export const opdAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Nurse", "Pharmacist", "Lab Technician", "Management"];
+export const opdReadOnlyRoles: Role[] = ["Hospital Admin", "Pharmacist", "Lab Technician", "Management"];
 
 export function useOpdAccess() {
   const { role } = useRole();

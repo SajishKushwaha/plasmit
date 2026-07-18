@@ -1,0 +1,35 @@
+{
+  "basePath": "/api/v1",
+  "responseEnvelope": {
+    "success": "boolean",
+    "message": "string",
+    "data": "object|array|null",
+    "meta": {
+      "timestamp": "datetime",
+      "requestId": "string"
+    }
+  },
+  "paginationQuery": ["page", "limit", "search", "sortBy", "sortOrder", "status", "departmentId", "unitId", "wardId", "bedId", "patientId", "admissionId", "assignedTo", "fromDate", "toDate"],
+  "endpoints": [
+    { "method": "POST", "path": "/auth/login", "permission": "PUBLIC", "request": "LoginRequest", "response": "AuthSession" },
+    { "method": "POST", "path": "/auth/refresh", "permission": "AUTHENTICATED", "request": "RefreshTokenRequest", "response": "AuthSession" },
+    { "method": "POST", "path": "/auth/logout", "permission": "AUTHENTICATED", "request": "LogoutRequest", "response": "Empty" },
+    { "method": "GET", "path": "/me", "permission": "AUTHENTICATED", "response": "UserWithRole" },
+    { "method": "GET", "path": "/users", "permission": "USER_VIEW", "response": "Paginated<User>" },
+    { "method": "POST", "path": "/users", "permission": "USER_CREATE", "request": "UserCreateRequest", "response": "User" },
+    { "method": "GET", "path": "/roles", "permission": "ROLE_VIEW", "response": "Role[]" },
+    { "method": "GET", "path": "/permissions", "permission": "PERMISSION_VIEW", "response": "Permission[]" },
+    { "method": "GET", "path": "/departments", "permission": "LOCATION_VIEW", "response": "Department[]" },
+    { "method": "GET", "path": "/units", "permission": "LOCATION_VIEW", "response": "Unit[]" },
+    { "method": "GET", "path": "/wards", "permission": "LOCATION_VIEW", "response": "Ward[]" },
+    { "method": "GET", "path": "/rooms", "permission": "LOCATION_VIEW", "response": "Room[]" },
+    { "method": "GET", "path": "/beds", "permission": "BED_VIEW", "response": "Paginated<Bed>" },
+    { "method": "GET", "path": "/patients/search", "permission": "PATIENT_SEARCH", "response": "Paginated<PatientSearchItem>" },
+    { "method": "GET", "path": "/patients/:patientId", "permission": "PATIENT_VIEW", "response": "Patient" },
+    { "method": "POST", "path": "/patients", "permission": "PATIENT_CREATE", "request": "PatientCreateRequest", "response": "Patient" },
+    { "method": "GET", "path": "/notifications", "permission": "NOTIFICATION_VIEW", "response": "Paginated<Notification>" },
+    { "method": "POST", "path": "/notifications/:id/read", "permission": "NOTIFICATION_VIEW", "response": "Notification" },
+    { "method": "GET", "path": "/audit-logs", "permission": "AUDIT_VIEW", "response": "Paginated<AuditLog>" }
+  ]
+}
+

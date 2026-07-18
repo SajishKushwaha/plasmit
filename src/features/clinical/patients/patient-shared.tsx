@@ -17,7 +17,7 @@ import type { PatientRecord, Role, StatusTone } from "@/types";
 export const patientAccessRoles: Role[] = [
   "Super Admin",
   "Hospital Admin",
-  "Receptionist",
+  "Receptionlist",
   "Doctor",
   "Doctor OPD",
   "Doctor IPD",

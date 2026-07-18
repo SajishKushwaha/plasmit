@@ -29,7 +29,8 @@ export const roleRoutes: Record<Role, string> = {
   "ICU Pharmacist": "/icu-command-center",
   "Quality Audit": "/icu-command-center",
   "Blood Bank": "/blood-bank/blood-request",
-  Receptionist: "/receptionist",
+  "ER Nurse": "/receptionist/emergency-reception",
+  Receptionlist: "/receptionist/patient-details",
   "Lab Technician": "/dashboard",
   Radiologist: "/dashboard",
   Pharmacist: "/dashboard",
@@ -340,8 +341,11 @@ export const roleModuleAccess: Record<Role, {
   "Blood Bank": {
     allowed: ["/blood-bank"],
   },
-  Receptionist: {
+  "ER Nurse": {
     allowed: ["/receptionist", "/patients"],
+  },
+  Receptionlist: {
+    allowed: ["/receptionist/patient-details", "/patients"],
   },
   "Lab Technician": {
     allowed: ["/dashboard", "/laboratory", "/poct", "/results"],

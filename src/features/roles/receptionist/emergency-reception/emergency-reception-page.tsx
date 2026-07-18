@@ -2,17 +2,13 @@
 
 import * as React from "react";
 import {
-  Activity,
   AlertTriangle,
   BedDouble,
   CheckCircle2,
   ClipboardList,
   Download,
-  FileText,
-  FlaskConical,
   HeartPulse,
   PhoneCall,
-  Pill,
   Printer,
   RefreshCcw,
   Save,
@@ -211,7 +207,7 @@ export function EmergencyReceptionPage() {
           <CardHeader className="bg-surface-muted/60">
             <div>
               <CardTitle>Emergency Triage Sheet</CardTitle>
-              <CardDescription>Receptionist triage format for emergency intake.</CardDescription>
+              <CardDescription>ER nurse triage format for emergency intake.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <span className={cn("rounded-full border px-3 py-1 text-xs font-bold", triageLevelStyles[form.triageLevel])}>
@@ -365,10 +361,6 @@ function EmergencyPatientTable({ patients }: { patients: ReadonlyArray<Emergency
               <TableHead>Glucose</TableHead>
               <TableHead>Triage</TableHead>
               <TableHead>Bed</TableHead>
-              <TableHead>Lab</TableHead>
-              <TableHead>Medication</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead>Events</TableHead>
               <TableHead>Call</TableHead>
             </tr>
           </thead>
@@ -397,16 +389,12 @@ function EmergencyPatientTable({ patients }: { patients: ReadonlyArray<Emergency
                   <span className={cn("inline-flex min-w-20 justify-center rounded-full border px-3 py-1 text-xs font-bold", triageLevelStyles[patient.level])}>{patient.level}</span>
                 </td>
                 <td className="px-3 py-4 text-center font-bold text-foreground">{patient.bed}</td>
-                <td className="px-3 py-4 text-center"><RoundAction icon={FlaskConical} label="Open lab results" /></td>
-                <td className="px-3 py-4 text-center"><RoundAction icon={Pill} label="Open medication" /></td>
-                <td className="px-3 py-4 text-center"><RoundAction icon={FileText} label="Open triage notes" /></td>
-                <td className="px-3 py-4 text-center"><RoundAction icon={Activity} label="Open emergency events" tone="danger" /></td>
                 <td className="px-3 py-4 text-center"><RoundAction icon={PhoneCall} label="Call care team" tone="primary" /></td>
               </tr>
             ))}
             {patients.length === 0 ? (
               <tr>
-                <td className="px-4 py-10 text-center text-sm font-semibold text-muted-foreground" colSpan={17}>
+                <td className="px-4 py-10 text-center text-sm font-semibold text-muted-foreground" colSpan={13}>
                   No emergency patients found.
                 </td>
               </tr>

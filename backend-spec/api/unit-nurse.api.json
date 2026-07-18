@@ -1,0 +1,18 @@
+{
+  "role": "UNIT_NURSE",
+  "endpoints": [
+    { "method": "GET", "path": "/unit-nurse/dashboard", "permission": "UNIT_NURSE_DASHBOARD_VIEW", "response": "UnitNurseDashboard" },
+    { "method": "GET", "path": "/unit-nurse/assigned-patients", "permission": "UNIT_NURSE_PATIENT_VIEW", "response": "Paginated<AssignedPatient>" },
+    { "method": "POST", "path": "/unit-nurse/patient-assignments", "permission": "UNIT_NURSE_ASSIGN_PATIENT", "request": "PatientAssignmentRequest", "response": "StaffAssignment" },
+    { "method": "GET", "path": "/unit-nurse/admission-preparation", "permission": "UNIT_NURSE_CHECKLIST_VIEW", "response": "Paginated<UnitChecklist>" },
+    { "method": "POST", "path": "/unit-nurse/admission-preparation/:id/items/:code/complete", "permission": "UNIT_NURSE_COMPLETE_CHECKLIST", "request": "ChecklistItemCompleteRequest", "response": "UnitChecklist" },
+    { "method": "GET", "path": "/unit-nurse/transfers", "permission": "UNIT_NURSE_TRANSFER_VIEW", "response": "Paginated<TransferRequest>" },
+    { "method": "POST", "path": "/unit-nurse/transfers/:id/complete-checklist", "permission": "UNIT_NURSE_TRANSFER_UPDATE", "request": "TransferChecklistRequest", "response": "TransferRequest" },
+    { "method": "GET", "path": "/unit-nurse/handovers", "permission": "UNIT_NURSE_HANDOVER_VIEW", "response": "Paginated<UnitHandover>" },
+    { "method": "POST", "path": "/unit-nurse/handovers", "permission": "UNIT_NURSE_HANDOVER_CREATE", "request": "UnitHandoverCreate", "response": "UnitHandover" },
+    { "method": "GET", "path": "/unit-nurse/equipment", "permission": "UNIT_NURSE_EQUIPMENT_VIEW", "response": "Paginated<Equipment>" },
+    { "method": "GET", "path": "/unit-nurse/issues", "permission": "UNIT_NURSE_ISSUE_VIEW", "response": "Paginated<UnitIssue>" },
+    { "method": "POST", "path": "/unit-nurse/issues/:id/resolve", "permission": "UNIT_NURSE_ISSUE_UPDATE", "request": "ResolveIssueRequest", "response": "UnitIssue" }
+  ]
+}
+

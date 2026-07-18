@@ -20,7 +20,7 @@ import { getPatientById, mockPatients, mockPatientVisits } from "@/data/patients
 import { mockAdmissions, mockInfectionIsolationFlags } from "@/data/ipd";
 import type { AdmissionRecord, BedRecord, Role, StatusTone, TriagePriority } from "@/types";
 
-export const ipdAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse", "Receptionist", "Billing Executive", "Pharmacist", "Management"];
+export const ipdAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse", "Billing Executive", "Pharmacist", "Management"];
 export const ipdReadOnlyRoles: Role[] = ["Management", "Pharmacist"];
 
 export type IpdPatientWorkspaceContext = {

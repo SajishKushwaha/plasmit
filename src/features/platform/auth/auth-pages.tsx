@@ -69,11 +69,18 @@ const loginCredentials = [
     route: wardNurseRoute,
   },
   {
-    email: "receptionist@hospital.com",
+    email: "ernurse@hospital.com",
     password: "123456",
-    role: "Receptionist" as Role,
-    scope: "receptionist",
-    route: "/receptionist",
+    role: "ER Nurse" as Role,
+    scope: "er-nurse",
+    route: "/receptionist/emergency-reception",
+  },
+  {
+    email: "receptionlist@hospital.com",
+    password: "123456",
+    role: "Receptionlist" as Role,
+    scope: "receptionlist",
+    route: "/receptionist/patient-details",
   },
 ] as const;
 
@@ -186,8 +193,12 @@ export function LoginPage() {
         router.replace(wardNurseRoute);
         return;
       }
-      if (savedScope === "receptionist") {
-        router.replace("/receptionist");
+      if (savedScope === "er-nurse") {
+        router.replace("/receptionist/emergency-reception");
+        return;
+      }
+      if (savedScope === "receptionlist" || savedScope === "receptionist") {
+        router.replace("/receptionist/patient-details");
         return;
       }
       const savedRole = window.localStorage.getItem("plasmit-role") as Role | null;

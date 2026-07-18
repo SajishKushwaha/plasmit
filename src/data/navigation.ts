@@ -601,24 +601,38 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
       });
   }
 
-  if (role === "Receptionist") {
+  if (role === "ER Nurse") {
     return [
       {
-        id: "receptionist-patient-dashboard",
-        label: "Patient Dashboard",
+        id: "er-nurse-dashboard",
+        label: "Dashboard",
         icon: LayoutDashboard,
         route: "/receptionist/emergency-reception",
         group: "Main",
-        allowedRoles: ["Receptionist"],
+        allowedRoles: ["ER Nurse"],
         status: "ready",
       },
       {
-        id: "receptionist-patient-details",
+        id: "er-nurse-patient-details",
         label: "Patient Details",
         icon: Users,
         route: "/receptionist/patient-details",
         group: "Main",
-        allowedRoles: ["Receptionist"],
+        allowedRoles: ["ER Nurse"],
+        status: "ready",
+      },
+    ];
+  }
+
+  if (role === "Receptionlist") {
+    return [
+      {
+        id: "receptionlist-reception",
+        label: "Reception",
+        icon: Users,
+        route: "/receptionist/patient-details",
+        group: "Main",
+        allowedRoles: ["Receptionlist"],
         status: "ready",
       },
     ];

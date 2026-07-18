@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "VitalSign": {
+      "fields": {
+        "id": "uuid",
+        "admissionId": "uuid",
+        "recordedBy": "uuid",
+        "recordedAt": "datetime",
+        "temperature": "number|null",
+        "temperatureUnit": "C|F",
+        "heartRate": "number|null",
+        "respiratoryRate": "number|null",
+        "systolicBP": "number|null",
+        "diastolicBP": "number|null",
+        "spo2": "number|null",
+        "oxygenSupport": "object",
+        "bloodGlucose": "number|null",
+        "painScore": "number|null",
+        "consciousnessLevel": "ALERT|VOICE|PAIN|UNRESPONSIVE",
+        "earlyWarningScore": "number",
+        "remarks": "string"
+      }
+    },
+    "NursingAssessment": {
+      "fields": {
+        "id": "uuid",
+        "admissionId": "uuid",
+        "assessmentType": "INITIAL|SHIFT|HEAD_TO_TOE|PAIN|NEURO|RESPIRATORY|CARDIOVASCULAR|SKIN",
+        "responses": "object",
+        "recordedBy": "uuid",
+        "recordedAt": "datetime",
+        "status": "DRAFT|SIGNED"
+      }
+    },
+    "MedicationAdministration": {
+      "fields": {
+        "id": "uuid",
+        "medicationOrderId": "uuid",
+        "admissionId": "uuid",
+        "scheduledAt": "datetime",
+        "status": "MedicationAdministrationStatus",
+        "administeredAt": "datetime|null",
+        "administeredBy": "uuid|null",
+        "doseGiven": "string|null",
+        "route": "string|null",
+        "site": "string|null",
+        "witnessedBy": "uuid|null",
+        "remarks": "string|null",
+        "adverseReaction": "string|null"
+      }
+    },
+    "NursingTask": {
+      "fields": {
+        "id": "uuid",
+        "admissionId": "uuid",
+        "taskType": "VITALS|MEDICATION|PROCEDURE|SPECIMEN|ASSESSMENT|HANDOVER",
+        "title": "string",
+        "description": "string",
+        "priority": "Priority",
+        "scheduledAt": "datetime|null",
+        "dueAt": "datetime",
+        "assignedTo": "uuid",
+        "createdFromOrderId": "uuid|null",
+        "status": "TaskStatus",
+        "completedAt": "datetime|null",
+        "completionNotes": "string|null"
+      }
+    }
+  }
+}
+

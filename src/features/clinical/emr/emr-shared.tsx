@@ -28,7 +28,6 @@ export const emrAccessRoles: Role[] = [
   "Hospital Admin",
   "Doctor",
   "Nurse",
-  "Receptionist",
   "Billing Executive",
   "Lab Technician",
   "Radiologist",
@@ -38,7 +37,6 @@ export const emrAccessRoles: Role[] = [
 
 export const emrReadOnlyRoles: Role[] = [
   "Hospital Admin",
-  "Receptionist",
   "Billing Executive",
   "Lab Technician",
   "Radiologist",

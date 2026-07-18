@@ -4,7 +4,13 @@ type NavigationRouteNode = Pick<NavigationItem, "route" | "children"> | Navigati
 
 export function normalizeNavigationHref(route: string) {
   const [href = ""] = route.split("#");
-  if (!href || href.startsWith("http:") || href.startsWith("https:") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+  if (
+    !href ||
+    href.startsWith("http:") ||
+    href.startsWith("https:") ||
+    href.startsWith("mailto:") ||
+    href.startsWith("tel:")
+  ) {
     return null;
   }
   return href;

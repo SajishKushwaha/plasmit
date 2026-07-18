@@ -94,12 +94,12 @@ const doctorNavItems = [
 
 interface DoctorSidebarProps {
   collapsed?: boolean;
-  onCollapsedChange?: (collapsed: boolean) => void;
+  onCollapsedChange?: (_collapsed: boolean) => void;
 }
 
 export function DoctorSidebar({
   collapsed = false,
-  onCollapsedChange,
+  onCollapsedChange: _onCollapsedChange,
 }: DoctorSidebarProps) {
   const pathname = usePathname();
   const { setRole } = useRole();
@@ -145,8 +145,7 @@ export function DoctorSidebar({
       <nav className="flex-1 overflow-y-auto px-1.5 py-2">
         {doctorNavItems.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            pathname === item.route || pathname.startsWith(item.route);
+          const isActive = pathname === item.route || pathname.startsWith(item.route);
 
           return (
             <Link
@@ -200,11 +199,7 @@ export function DoctorSidebar({
           className="fixed left-4 top-4 z-40"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
-          {mobileOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
+          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </Button>
 
         {mobileOpen && <>{sidebarContent}</>}

@@ -24,7 +24,10 @@ export function NotificationPopover() {
         </Button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content align="end" className="z-[70] w-[min(92vw,420px)] rounded-lg border border-border bg-surface shadow-soft">
+        <Popover.Content
+          align="end"
+          className="z-[70] w-[min(92vw,420px)] rounded-lg border border-border bg-surface shadow-soft"
+        >
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div>
               <div className="text-sm font-semibold text-foreground">Notifications</div>
@@ -44,9 +47,19 @@ export function NotificationPopover() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-foreground">{item.title}</div>
-                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.message}</div>
+                    <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                      {item.message}
+                    </div>
                   </div>
-                  <Badge tone={item.priority === "high" ? "critical" : item.priority === "medium" ? "warning" : "info"}>
+                  <Badge
+                    tone={
+                      item.priority === "high"
+                        ? "critical"
+                        : item.priority === "medium"
+                          ? "warning"
+                          : "info"
+                    }
+                  >
                     {item.priority}
                   </Badge>
                 </div>

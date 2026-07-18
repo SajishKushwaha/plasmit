@@ -2,5 +2,11 @@ import { EmergencySimplePage } from "@/features/clinical/ipd/ipd-pages";
 import { mockCasualtyCases } from "@/data/ipd";
 
 export default function Page() {
-  return <EmergencySimplePage title="Casualty Management" description="Emergency case sheet, stabilization, treatment placeholders, disposition, and IPD/ICU handoff." rows={mockCasualtyCases} />;
+  return (
+    <EmergencySimplePage
+      title="Casualty Management"
+      description="Emergency case sheet, stabilization, treatment placeholders, disposition, and IPD/ICU handoff."
+      rows={mockCasualtyCases}
+    />
+  );
 }

@@ -11,6 +11,7 @@ build/
 # local env
 .env*.local
 .env
+!.env.example
 
 # debug
 npm-debug.log*
@@ -26,4 +27,5 @@ pnpm-debug.log*
 .idea/
 Thumbs.db
 .vercel
-.env*
+.env.local
+.env.*.local

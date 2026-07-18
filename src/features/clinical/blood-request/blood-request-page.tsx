@@ -9,7 +9,7 @@ import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -93,13 +93,9 @@ const statusTone: Record<BloodRequest["status"], StatusTone> = {
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-surface-muted p-3">
-      <div className="text-xs font-medium text-muted-foreground">
-        {label}:
-      </div>
+      <div className="text-xs font-medium text-muted-foreground">{label}:</div>
 
-      <div className="text-sm font-semibold text-foreground">
-        {value}
-      </div>
+      <div className="text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
 }
@@ -126,7 +122,7 @@ function RequestDrawer({
   action: RequestAction | null;
   request: BloodRequest | null;
   onClose: () => void;
-  onSend: (request: BloodRequest) => void;
+  onSend: (_request: BloodRequest) => void;
 }) {
   const open = Boolean(action && request);
   const isSend = action === "send";
@@ -167,7 +163,10 @@ function RequestDrawer({
             <DetailItem label="Blood Group" value={request.bloodGroup} />
             <DetailItem label="Blood Product" value={request.bloodProducts} />
             <DetailItem label="Units Ordered" value={request.unitsOrdered} />
-            <DetailItem label="Status" value={<Badge tone={statusTone[request.status]}>{request.status}</Badge>} />
+            <DetailItem
+              label="Status"
+              value={<Badge tone={statusTone[request.status]}>{request.status}</Badge>}
+            />
           </div>
 
           {isSend ? (
@@ -202,7 +201,10 @@ function RequestDrawer({
 
 function BloodRequestsTable({ searchQuery }: { searchQuery: string }) {
   const [requests, setRequests] = React.useState(initialBloodRequests);
-  const [drawerState, setDrawerState] = React.useState<{ action: RequestAction; request: BloodRequest } | null>(null);
+  const [drawerState, setDrawerState] = React.useState<{
+    action: RequestAction;
+    request: BloodRequest;
+  } | null>(null);
 
   const handleSend = React.useCallback((request: BloodRequest) => {
     setRequests((current) =>
@@ -238,7 +240,9 @@ function BloodRequestsTable({ searchQuery }: { searchQuery: string }) {
       { header: "Instructions", accessorKey: "instructions" },
       {
         header: "Priority",
-        cell: ({ row }) => <Badge tone={priorityTone[row.original.priority]}>{row.original.priority}</Badge>,
+        cell: ({ row }) => (
+          <Badge tone={priorityTone[row.original.priority]}>{row.original.priority}</Badge>
+        ),
       },
       // {
       //   header: "Status",
@@ -254,7 +258,11 @@ function BloodRequestsTable({ searchQuery }: { searchQuery: string }) {
               Send
             </Button>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => setDrawerState({ action: "view", request })}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setDrawerState({ action: "view", request })}
+            >
               <Eye className="h-3.5 w-3.5" />
               View
             </Button>
@@ -309,9 +317,13 @@ export function BloodRequestPage() {
   const { role } = useRole();
   const [searchQuery, setSearchQuery] = React.useState("");
   const allowed = bloodBankRoles.includes(role);
-  const pendingCount = initialBloodRequests.filter((request) => request.status === "Pending").length;
+  const pendingCount = initialBloodRequests.filter(
+    (request) => request.status === "Pending",
+  ).length;
   const sentCount = initialBloodRequests.filter((request) => request.status === "Sent").length;
-  const receivedCount = initialBloodRequests.filter((request) => request.status === "Received").length;
+  const receivedCount = initialBloodRequests.filter(
+    (request) => request.status === "Received",
+  ).length;
 
   if (!allowed) {
     return (
@@ -333,51 +345,39 @@ export function BloodRequestPage() {
       />
 
       <div className="grid gap-3 md:grid-cols-3">
-     <Card>
-        <CardContent className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-medium text-muted-foreground">
-              Pending Requests:
+        <Card>
+          <CardContent className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center gap-2">
+              <div className="text-xs font-medium text-muted-foreground">Pending Requests:</div>
+
+              <div className="text-2xl font-semibold text-foreground">{pendingCount}</div>
             </div>
 
-            <div className="text-2xl font-semibold text-foreground">
-              {pendingCount}
-            </div>
-          </div>
+            <Send className="h-5 w-5 text-warning" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center gap-2">
+              <div className="text-xs font-medium text-muted-foreground">Sent Requests:</div>
 
-          <Send className="h-5 w-5 text-warning" />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-medium text-muted-foreground">
-              Sent Requests:
+              <div className="text-2xl font-semibold text-foreground">{sentCount}</div>
             </div>
 
-            <div className="text-2xl font-semibold text-foreground">
-              {sentCount}
-            </div>
-          </div>
+            <Send className="h-5 w-5 text-warning" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center gap-2">
+              <div className="text-xs font-medium text-muted-foreground">Received Requests:</div>
 
-          <Send className="h-5 w-5 text-warning" />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-medium text-muted-foreground">
-              Received Requests:
+              <div className="text-2xl font-semibold text-foreground">{receivedCount}</div>
             </div>
 
-            <div className="text-2xl font-semibold text-foreground">
-              {receivedCount}
-            </div>
-          </div>
-
-          <Send className="h-5 w-5 text-warning" />
-        </CardContent>
-      </Card>
+            <Send className="h-5 w-5 text-warning" />
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -386,7 +386,12 @@ export function BloodRequestPage() {
             {/* <label className="text-xs font-medium text-muted-foreground" htmlFor="blood-request-search">
               Search requests
             </label> */}
-            <SearchInput id="blood-request-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search patient, blood group,unit,product,reason..." />
+            <SearchInput
+              id="blood-request-search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search patient, blood group,unit,product,reason..."
+            />
             {/* <CardDescription>Search filters the blood request queue below.</CardDescription> */}
           </div>
           <Badge tone="info">Blood Bank</Badge>

@@ -1,8 +1,33 @@
 "use client";
 
 import * as React from "react";
-import { Activity, BarChart3, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock, Filter, HeartPulse, RefreshCcw, Search, Table2, UsersRound } from "lucide-react";
-import { CartesianGrid, Legend, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Activity,
+  BarChart3,
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Filter,
+  HeartPulse,
+  RefreshCcw,
+  Search,
+  Table2,
+  UsersRound,
+} from "lucide-react";
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ReferenceArea,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,9 +74,9 @@ type ReviewGraphMetric = {
   shortLabel: string;
   unit: string;
   normalText: string;
-  extractor: (observation: RapidObservationSet) => number | null;
-  display: (observation: RapidObservationSet) => string;
-  riskExtractor?: (observation: RapidObservationSet) => AdultObservationRiskLevel;
+  extractor: (_observation: RapidObservationSet) => number | null;
+  display: (_observation: RapidObservationSet) => string;
+  riskExtractor?: (_observation: RapidObservationSet) => AdultObservationRiskLevel;
 };
 
 type ReviewGraphPoint = {
@@ -203,9 +228,12 @@ const reviewGraphMetrics: ReviewGraphMetric[] = [
     extractor: (observation) => gcsGraphValue(observation.consciousness),
     display: (observation) => {
       const value = gcsGraphValue(observation.consciousness);
-      return value === null ? gcsScoreLabel(observation.consciousness) : `${value}/15 - ${gcsScoreLabel(observation.consciousness)}`;
+      return value === null
+        ? gcsScoreLabel(observation.consciousness)
+        : `${value}/15 - ${gcsScoreLabel(observation.consciousness)}`;
     },
-    riskExtractor: (observation) => getRiskLevel("consciousnessSedation", observation.consciousness),
+    riskExtractor: (observation) =>
+      getRiskLevel("consciousnessSedation", observation.consciousness),
   },
   {
     id: "painScore",
@@ -290,10 +318,24 @@ const allVitalsGraphSections: AllVitalsGraphSection[] = [
 const coreVitalsGraphSection: AllVitalsGraphSection = {
   title: "Vitals Graph",
   description: "",
-  metrics: ["respiratoryRate", "oxygenSaturation", "pulseRate", "monitorHeartRate", "bloodPressure", "bloodPressureDiastolic", "temperature"],
+  metrics: [
+    "respiratoryRate",
+    "oxygenSaturation",
+    "pulseRate",
+    "monitorHeartRate",
+    "bloodPressure",
+    "bloodPressureDiastolic",
+    "temperature",
+  ],
 };
 
-const rollingVitalsTimeIntervals = ["Last 3 hours", "Last 6 hours", "Last 12 hours", "Last 24 hours", "Last 48 hours"];
+const rollingVitalsTimeIntervals = [
+  "Last 3 hours",
+  "Last 6 hours",
+  "Last 12 hours",
+  "Last 24 hours",
+  "Last 48 hours",
+];
 const patientVitalsTimeIntervals = ["All times", ...rollingVitalsTimeIntervals];
 
 function getVitalsChartMinWidth(pointCount: number, baseWidth = 760) {
@@ -320,7 +362,13 @@ function HorizontalVitalsChart({
   );
 }
 
-export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table" }: { patients: RapidReviewPatient[]; defaultViewMode?: string }) {
+export function RapidReviewGraphTab({
+  patients,
+  defaultViewMode = "Graph + table",
+}: {
+  patients: RapidReviewPatient[];
+  defaultViewMode?: string;
+}) {
   const [metricId, setMetricId] = React.useState<ReviewGraphMetricId>("respiratoryRate");
   const [patientId, setPatientId] = React.useState(patients[0]?.id ?? "");
   const [viewMode, setViewMode] = React.useState(defaultViewMode);
@@ -335,13 +383,28 @@ export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table
 
   const metric = reviewGraphMetrics.find((item) => item.id === metricId) ?? reviewGraphMetrics[0];
   const selectedPatient = patients.find((patient) => patient.id === patientId) ?? patients[0];
-  const patientDates = selectedPatient ? uniqueObservationDates(selectedPatient.observationHistory) : [];
+  const patientDates = selectedPatient
+    ? uniqueObservationDates(selectedPatient.observationHistory)
+    : [];
   const latestDataDate = latestAvailableDate(patientDates);
   const filteredObservations = selectedPatient
     ? selectedPatient.observationHistory
-      .filter((observation) => observationMatchesDateFilter(observation, dateMode, singleDate, dateFrom, dateTo, latestDataDate))
-      .filter((observation) => observationMatchesTimeFilter(observation, timeMode, timeFrom, timeTo))
-      .sort((a, b) => observationDateTimeSortValue(a).localeCompare(observationDateTimeSortValue(b)))
+        .filter((observation) =>
+          observationMatchesDateFilter(
+            observation,
+            dateMode,
+            singleDate,
+            dateFrom,
+            dateTo,
+            latestDataDate,
+          ),
+        )
+        .filter((observation) =>
+          observationMatchesTimeFilter(observation, timeMode, timeFrom, timeTo),
+        )
+        .sort((a, b) =>
+          observationDateTimeSortValue(a).localeCompare(observationDateTimeSortValue(b)),
+        )
     : [];
   const patientMatches = React.useMemo(() => {
     return patients.filter((patient) => {
@@ -368,7 +431,13 @@ export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table
   }
 
   if (!patients.length) {
-    return <EmptyState icon={BarChart3} title="No patients available" description="No rapid review observations are available for graph review." />;
+    return (
+      <EmptyState
+        icon={BarChart3}
+        title="No patients available"
+        description="No rapid review observations are available for graph review."
+      />
+    );
   }
 
   return (
@@ -377,7 +446,10 @@ export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table
         <CardHeader>
           <div>
             <CardTitle>Review Graph</CardTitle>
-            <CardDescription>Select one patient and review focused vital trends or the complete combined clinical trend.</CardDescription>
+            <CardDescription>
+              Select one patient and review focused vital trends or the complete combined clinical
+              trend.
+            </CardDescription>
           </div>
           <Badge tone="info">Patient-wise</Badge>
         </CardHeader>
@@ -437,18 +509,26 @@ export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table
 
           {search.trim() ? (
             <div className="rounded-md border border-border bg-surface-muted p-3">
-              <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Matching patients</div>
+              <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+                Matching patients
+              </div>
               <div className="flex flex-wrap gap-2">
-                {patientMatches.length ? patientMatches.map((patient) => (
-                  <Button
-                    key={patient.id}
-                    size="sm"
-                    variant={patient.id === selectedPatient?.id ? "default" : "outline"}
-                    onClick={() => setPatientId(patient.id)}
-                  >
-                    {patient.patientName} - {patient.bed}
-                  </Button>
-                )) : <span className="text-sm text-muted-foreground">No patient matched this search.</span>}
+                {patientMatches.length ? (
+                  patientMatches.map((patient) => (
+                    <Button
+                      key={patient.id}
+                      size="sm"
+                      variant={patient.id === selectedPatient?.id ? "default" : "outline"}
+                      onClick={() => setPatientId(patient.id)}
+                    >
+                      {patient.patientName} - {patient.bed}
+                    </Button>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    No patient matched this search.
+                  </span>
+                )}
               </div>
             </div>
           ) : null}
@@ -482,31 +562,85 @@ export function RapidReviewGraphTab({ patients, defaultViewMode = "Graph + table
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <GraphStatCard label="Selected vital" value={isAllVitalsGraph ? "All graphs" : metric.shortLabel} context={isAllVitalsGraph ? `${allVitalsGraphSections.length} panels` : metric.unit} tone="info" icon={BarChart3} />
-        <GraphStatCard label="Total entries" value={activeSummary.totalEntries} context={filterSummary} tone="success" icon={Table2} />
-        <GraphStatCard label="High/Critical" value={activeSummary.highRiskCount + activeSummary.criticalCount} context={`${activeSummary.criticalCount} critical`} tone={activeSummary.criticalCount ? "critical" : activeSummary.highRiskCount ? "danger" : "success"} icon={HeartPulse} />
-        <GraphStatCard label="Patient" value={selectedPatient?.patientName ?? "-"} context={selectedPatient ? `${selectedPatient.bed}, ${selectedPatient.ward}` : "Focused"} tone="info" icon={UsersRound} />
+        <GraphStatCard
+          label="Selected vital"
+          value={isAllVitalsGraph ? "All graphs" : metric.shortLabel}
+          context={isAllVitalsGraph ? `${allVitalsGraphSections.length} panels` : metric.unit}
+          tone="info"
+          icon={BarChart3}
+        />
+        <GraphStatCard
+          label="Total entries"
+          value={activeSummary.totalEntries}
+          context={filterSummary}
+          tone="success"
+          icon={Table2}
+        />
+        <GraphStatCard
+          label="High/Critical"
+          value={activeSummary.highRiskCount + activeSummary.criticalCount}
+          context={`${activeSummary.criticalCount} critical`}
+          tone={
+            activeSummary.criticalCount
+              ? "critical"
+              : activeSummary.highRiskCount
+                ? "danger"
+                : "success"
+          }
+          icon={HeartPulse}
+        />
+        <GraphStatCard
+          label="Patient"
+          value={selectedPatient?.patientName ?? "-"}
+          context={selectedPatient ? `${selectedPatient.bed}, ${selectedPatient.ward}` : "Focused"}
+          tone="info"
+          icon={UsersRound}
+        />
       </div>
 
       {isAllVitalsGraph && selectedPatient ? (
-        <AllVitalsGraphDashboard patient={selectedPatient} data={combinedGraphData} dateSummary={filterSummary} />
+        <AllVitalsGraphDashboard
+          patient={selectedPatient}
+          data={combinedGraphData}
+          dateSummary={filterSummary}
+        />
       ) : viewMode !== "Table only" && selectedPatient ? (
-        <ReviewGraphPanel patient={selectedPatient} data={graphData} metric={metric} dateSummary={filterSummary} />
+        <ReviewGraphPanel
+          patient={selectedPatient}
+          data={graphData}
+          metric={metric}
+          dateSummary={filterSummary}
+        />
       ) : null}
 
       {!isAllVitalsGraph && viewMode !== "Graph only" && selectedPatient ? (
-        <ReviewGraphTable patient={selectedPatient} observations={filteredObservations} metric={metric} dateSummary={filterSummary} />
+        <ReviewGraphTable
+          patient={selectedPatient}
+          observations={filteredObservations}
+          metric={metric}
+          dateSummary={filterSummary}
+        />
       ) : null}
     </div>
   );
 }
 
 export function PatientVitalsGraph({ patient }: { patient: RapidReviewPatient }) {
-  return <VitalsGraphWorkspace data={buildCombinedReviewGraphData(patient.observationHistory)} showGraphTabs />;
+  return (
+    <VitalsGraphWorkspace
+      data={buildCombinedReviewGraphData(patient.observationHistory)}
+      showGraphTabs
+    />
+  );
 }
 
 export function PatientVitalsAllGraphOnly({ patient }: { patient: RapidReviewPatient }) {
-  return <VitalsGraphWorkspace data={buildCombinedReviewGraphData(patient.observationHistory)} showAllGraphOnly />;
+  return (
+    <VitalsGraphWorkspace
+      data={buildCombinedReviewGraphData(patient.observationHistory)}
+      showAllGraphOnly
+    />
+  );
 }
 
 function ReviewGraphDateFilter({
@@ -527,31 +661,51 @@ function ReviewGraphDateFilter({
   onTimeTo,
 }: {
   dateMode: string;
-  onDateMode: (mode: string) => void;
+  onDateMode: (_mode: string) => void;
   singleDate: string;
-  onSingleDate: (date: string) => void;
+  onSingleDate: (_date: string) => void;
   dateFrom: string;
-  onDateFrom: (date: string) => void;
+  onDateFrom: (_date: string) => void;
   dateTo: string;
-  onDateTo: (date: string) => void;
+  onDateTo: (_date: string) => void;
   latestDataDate: string;
   timeMode: string;
-  onTimeMode: (mode: string) => void;
+  onTimeMode: (_mode: string) => void;
   timeFrom: string;
-  onTimeFrom: (time: string) => void;
+  onTimeFrom: (_time: string) => void;
   timeTo: string;
-  onTimeTo: (time: string) => void;
+  onTimeTo: (_time: string) => void;
 }) {
-  const modes = ["All dates", "Latest record date", "Today", "Yesterday", "Last 7 days", "Last 30 days", "Single date", "Custom range"];
-  const timeModes = ["All times", "Morning 06-13", "Afternoon 14-17", "Evening 18-21", "Night 22-05", "Business hours", "Custom time range"];
-  const invalidRange = dateMode === "Custom range" && Boolean(dateFrom && dateTo && dateFrom > dateTo);
+  const modes = [
+    "All dates",
+    "Latest record date",
+    "Today",
+    "Yesterday",
+    "Last 7 days",
+    "Last 30 days",
+    "Single date",
+    "Custom range",
+  ];
+  const timeModes = [
+    "All times",
+    "Morning 06-13",
+    "Afternoon 14-17",
+    "Evening 18-21",
+    "Night 22-05",
+    "Business hours",
+    "Custom time range",
+  ];
+  const invalidRange =
+    dateMode === "Custom range" && Boolean(dateFrom && dateTo && dateFrom > dateTo);
 
   return (
     <div className="rounded-md border border-border bg-surface-muted p-3">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <div className="text-xs font-semibold uppercase text-muted-foreground">Date filter</div>
-          <div className="mt-1 text-sm text-foreground">{dateFilterSummary(dateMode, singleDate, dateFrom, dateTo, latestDataDate)}</div>
+          <div className="mt-1 text-sm text-foreground">
+            {dateFilterSummary(dateMode, singleDate, dateFrom, dateTo, latestDataDate)}
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {modes.map((mode) => (
@@ -578,7 +732,10 @@ function ReviewGraphDateFilter({
               onChange={(event) => onSingleDate(event.target.value)}
             />
           </label>
-          <Button variant="outline" onClick={() => onSingleDate(latestDataDate || todayDateValue())}>
+          <Button
+            variant="outline"
+            onClick={() => onSingleDate(latestDataDate || todayDateValue())}
+          >
             Latest record date
           </Button>
         </div>
@@ -604,10 +761,13 @@ function ReviewGraphDateFilter({
               onChange={(event) => onDateTo(event.target.value)}
             />
           </label>
-          <Button variant="outline" onClick={() => {
-            onDateFrom("");
-            onDateTo("");
-          }}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onDateFrom("");
+              onDateTo("");
+            }}
+          >
             Reset range
           </Button>
         </div>
@@ -623,7 +783,9 @@ function ReviewGraphDateFilter({
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase text-muted-foreground">Time filter</div>
-            <div className="mt-1 text-sm text-foreground">{timeFilterSummary(timeMode, timeFrom, timeTo)}</div>
+            <div className="mt-1 text-sm text-foreground">
+              {timeFilterSummary(timeMode, timeFrom, timeTo)}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {timeModes.map((mode) => (
@@ -659,10 +821,13 @@ function ReviewGraphDateFilter({
                 onChange={(event) => onTimeTo(event.target.value)}
               />
             </label>
-            <Button variant="outline" onClick={() => {
-              onTimeFrom("");
-              onTimeTo("");
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                onTimeFrom("");
+                onTimeTo("");
+              }}
+            >
               <RefreshCcw className="h-4 w-4" />
               Reset time
             </Button>
@@ -689,7 +854,9 @@ function ReviewGraphPanel({
       <CardHeader>
         <div>
           <CardTitle>{metric.label} - Date / Time Trend</CardTitle>
-          <CardDescription>{patient.patientName} - {patient.uhid} - {patient.bed}. {dateSummary}.</CardDescription>
+          <CardDescription>
+            {patient.patientName} - {patient.uhid} - {patient.bed}. {dateSummary}.
+          </CardDescription>
         </div>
         <StatusPill tone="info">{metric.unit}</StatusPill>
       </CardHeader>
@@ -699,7 +866,12 @@ function ReviewGraphPanel({
           <ResponsiveContainer height="100%" width="100%">
             <LineChart data={data} margin={{ left: -16, right: 16, top: 8, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="xLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
+              <XAxis
+                dataKey="xLabel"
+                tick={{ fontSize: 11 }}
+                interval="preserveStartEnd"
+                minTickGap={24}
+              />
               <YAxis tick={{ fontSize: 11 }} width={52} />
               <Tooltip content={<ReviewGraphTooltip metric={metric} />} />
               <Legend />
@@ -732,9 +904,16 @@ function ReviewGraphRiskLegend() {
           <span
             className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium"
             key={level}
-            style={{ backgroundColor: palette.background, borderColor: palette.border, color: palette.text }}
+            style={{
+              backgroundColor: palette.background,
+              borderColor: palette.border,
+              color: palette.text,
+            }}
           >
-            <span className="h-2.5 w-2.5 rounded-full border" style={{ backgroundColor: palette.background, borderColor: palette.text }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full border"
+              style={{ backgroundColor: palette.background, borderColor: palette.text }}
+            />
             {palette.label}
           </span>
         );
@@ -743,7 +922,15 @@ function ReviewGraphRiskLegend() {
   );
 }
 
-function ReviewGraphTooltip({ active, payload, metric }: { active?: boolean; payload?: Array<{ payload?: ReviewGraphPoint }>; metric: ReviewGraphMetric }) {
+function ReviewGraphTooltip({
+  active,
+  payload,
+  metric,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload?: ReviewGraphPoint }>;
+  metric: ReviewGraphMetric;
+}) {
   if (!active) return null;
   const point = payload?.[0]?.payload;
   if (!point) return null;
@@ -751,12 +938,25 @@ function ReviewGraphTooltip({ active, payload, metric }: { active?: boolean; pay
 
   return (
     <div className="rounded-md border border-border bg-background p-3 text-xs shadow-lg">
-      <div className="font-semibold text-foreground">{formatDateLabel(point.date)} - {point.time}</div>
-      <div className="mt-1 text-muted-foreground">{metric.label}: <span className="font-semibold text-foreground">{point.displayValue}</span></div>
+      <div className="font-semibold text-foreground">
+        {formatDateLabel(point.date)} - {point.time}
+      </div>
+      <div className="mt-1 text-muted-foreground">
+        {metric.label}: <span className="font-semibold text-foreground">{point.displayValue}</span>
+      </div>
       {metric.id === "oxygenSaturation" ? (
-        <div className="mt-1 text-muted-foreground">FiO2: <span className="font-semibold text-foreground">{point.fio2}</span></div>
+        <div className="mt-1 text-muted-foreground">
+          FiO2: <span className="font-semibold text-foreground">{point.fio2}</span>
+        </div>
       ) : null}
-      <div className="mt-2 inline-flex rounded-full border px-2 py-0.5 font-medium" style={{ backgroundColor: palette.background, borderColor: palette.border, color: palette.text }}>
+      <div
+        className="mt-2 inline-flex rounded-full border px-2 py-0.5 font-medium"
+        style={{
+          backgroundColor: palette.background,
+          borderColor: palette.border,
+          color: palette.text,
+        }}
+      >
         {palette.label}
       </div>
     </div>
@@ -810,7 +1010,9 @@ function ReviewGraphTable({
       <CardHeader>
         <div>
           <CardTitle>{metric.label} - Date / Time Data</CardTitle>
-          <CardDescription>{patient.patientName} patient-wise table. Date filter: {dateSummary}.</CardDescription>
+          <CardDescription>
+            {patient.patientName} patient-wise table. Date filter: {dateSummary}.
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -818,7 +1020,9 @@ function ReviewGraphTable({
           <table className="w-full min-w-[1080px] border-collapse text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="sticky left-0 z-10 border-b border-r border-border bg-surface-muted px-3 py-2 text-left">Date</th>
+                <th className="sticky left-0 z-10 border-b border-r border-border bg-surface-muted px-3 py-2 text-left">
+                  Date
+                </th>
                 <th className="border-b border-r border-border px-3 py-2 text-left">Time</th>
                 <th className="border-b border-r border-border px-3 py-2 text-left">Value</th>
                 <th className="border-b border-r border-border px-3 py-2 text-left">Risk</th>
@@ -828,33 +1032,56 @@ function ReviewGraphTable({
               </tr>
             </thead>
             <tbody>
-              {observations.length ? observations.map((observation) => {
-                const value = metric.display(observation);
-                const risk = metricRiskLevel(metric, observation);
-                return (
-                  <tr className="border-b border-border last:border-0" key={observation.id}>
-                    <td className="sticky left-0 z-10 whitespace-nowrap border-r border-border bg-background px-3 py-2 font-medium">{formatDateLabel(observationDateValue(observation))}</td>
-                    <td className="whitespace-nowrap border-r border-border px-3 py-2">
-                      <div className="font-medium">{observationTimeLabel(observation)}</div>
-                      <div className="text-xs text-muted-foreground">{observation.shift ?? "Shift not set"}</div>
-                    </td>
-                    <td className="border-r border-border px-3 py-2 font-semibold" style={riskCellStyle(risk)}>{value}</td>
-                    <td className="border-r border-border px-3 py-2">
-                      <Badge tone={riskBadgeTone(risk)}>{adultObservationRiskPalette[risk].label}</Badge>
-                    </td>
-                    <td className="border-r border-border px-3 py-2">
-                      <div className="flex flex-wrap gap-1">
-                        <Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge>
-                        <StatusPill tone={rapidLevelTone(observation.responseLevel)}>{observation.responseLevel}</StatusPill>
-                      </div>
-                    </td>
-                    <td className="border-r border-border px-3 py-2 text-muted-foreground">{observation.recordedBy}</td>
-                    <td className="min-w-[260px] border-r border-border px-3 py-2 text-muted-foreground">{observation.note}</td>
-                  </tr>
-                );
-              }) : (
+              {observations.length ? (
+                observations.map((observation) => {
+                  const value = metric.display(observation);
+                  const risk = metricRiskLevel(metric, observation);
+                  return (
+                    <tr className="border-b border-border last:border-0" key={observation.id}>
+                      <td className="sticky left-0 z-10 whitespace-nowrap border-r border-border bg-background px-3 py-2 font-medium">
+                        {formatDateLabel(observationDateValue(observation))}
+                      </td>
+                      <td className="whitespace-nowrap border-r border-border px-3 py-2">
+                        <div className="font-medium">{observationTimeLabel(observation)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {observation.shift ?? "Shift not set"}
+                        </div>
+                      </td>
+                      <td
+                        className="border-r border-border px-3 py-2 font-semibold"
+                        style={riskCellStyle(risk)}
+                      >
+                        {value}
+                      </td>
+                      <td className="border-r border-border px-3 py-2">
+                        <Badge tone={riskBadgeTone(risk)}>
+                          {adultObservationRiskPalette[risk].label}
+                        </Badge>
+                      </td>
+                      <td className="border-r border-border px-3 py-2">
+                        <div className="flex flex-wrap gap-1">
+                          <Badge tone={rapidZoneTone(observation.dominantZone)}>
+                            {observation.dominantZone}
+                          </Badge>
+                          <StatusPill tone={rapidLevelTone(observation.responseLevel)}>
+                            {observation.responseLevel}
+                          </StatusPill>
+                        </div>
+                      </td>
+                      <td className="border-r border-border px-3 py-2 text-muted-foreground">
+                        {observation.recordedBy}
+                      </td>
+                      <td className="min-w-[260px] border-r border-border px-3 py-2 text-muted-foreground">
+                        {observation.note}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
                 <tr>
-                  <td className="px-3 py-8 text-center text-muted-foreground" colSpan={7}>No graph data matched the selected date and time filter.</td>
+                  <td className="px-3 py-8 text-center text-muted-foreground" colSpan={7}>
+                    No graph data matched the selected date and time filter.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -883,7 +1110,8 @@ function AllVitalsGraphDashboard({
           <div>
             <h3 className="text-base font-semibold text-foreground">All Vitals Graph</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              {patient.patientName} - {patient.uhid} - {patient.bed}. {dateSummary}. Each section uses a normalized 0-100 trend scale so different vitals can be compared together.
+              {patient.patientName} - {patient.uhid} - {patient.bed}. {dateSummary}. Each section
+              uses a normalized 0-100 trend scale so different vitals can be compared together.
             </p>
           </div>
           <StatusPill tone="info">{reviewGraphMetrics.length} vitals</StatusPill>
@@ -934,16 +1162,21 @@ function VitalsGraphWorkspace({
     if (endDate && point.date > endDate) return false;
     return true;
   });
-  const latestDateTime = Math.max(...dateFilteredData.map(graphPointDateTimeValue).filter(Number.isFinite));
-  const filteredData = dateFilteredData.filter((point) => graphPointMatchesTimeInterval(point, timeInterval, startTime, endTime, latestDateTime));
+  const latestDateTime = Math.max(
+    ...dateFilteredData.map(graphPointDateTimeValue).filter(Number.isFinite),
+  );
+  const filteredData = dateFilteredData.filter((point) =>
+    graphPointMatchesTimeInterval(point, timeInterval, startTime, endTime, latestDateTime),
+  );
   const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
   const visibleData = invalidDateRange ? [] : filteredData;
   const dateSummary = startDate
     ? `${formatDateLabel(startDate)}${endDate ? ` - ${formatDateLabel(endDate)}` : " - Select end date"}`
     : "All dates";
-  const timeSummary = timeInterval === "Custom time range" && (startTime || endTime)
-    ? `${startTime || "--:--"} - ${endTime || "--:--"}`
-    : timeInterval;
+  const timeSummary =
+    timeInterval === "Custom time range" && (startTime || endTime)
+      ? `${startTime || "--:--"} - ${endTime || "--:--"}`
+      : timeInterval;
 
   return (
     <div className="space-y-4">
@@ -959,10 +1192,17 @@ function VitalsGraphWorkspace({
               <Filter className="h-4 w-4 shrink-0 text-primary" />
               <span>
                 <span className="block text-sm font-semibold text-foreground">Filter</span>
-                <span className="block truncate text-xs text-muted-foreground">{dateSummary} | {timeSummary}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {dateSummary} | {timeSummary}
+                </span>
               </span>
             </span>
-            <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition", filtersOpen && "rotate-180")} />
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground transition",
+                filtersOpen && "rotate-180",
+              )}
+            />
           </button>
 
           {filtersOpen ? (
@@ -988,7 +1228,9 @@ function VitalsGraphWorkspace({
                     value={timeInterval}
                   >
                     {patientVitalsTimeIntervals.map((interval) => (
-                      <option key={interval} value={interval}>{interval}</option>
+                      <option key={interval} value={interval}>
+                        {interval}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -1033,12 +1275,28 @@ function VitalsGraphWorkspace({
       {showAllGraphOnly ? (
         <VitalsGraphOneReference data={visibleData} />
       ) : showGraphTabs ? (
-        <Tabs className="space-y-4" onValueChange={setActiveGraphSection} value={activeGraphSection}>
-          <TabsList aria-label="Patient vitals graph categories" className="no-tab-scroll-hint w-full rounded-lg bg-surface-muted/70 p-1">
+        <Tabs
+          className="space-y-4"
+          onValueChange={setActiveGraphSection}
+          value={activeGraphSection}
+        >
+          <TabsList
+            aria-label="Patient vitals graph categories"
+            className="no-tab-scroll-hint w-full rounded-lg bg-surface-muted/70 p-1"
+          >
             {/* <TabsTrigger value="All1">All1</TabsTrigger> */}
-            <TabsTrigger className="min-w-[92px] justify-center rounded-lg bg-transparent font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm" value="All">All</TabsTrigger>
+            <TabsTrigger
+              className="min-w-[92px] justify-center rounded-lg bg-transparent font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+              value="All"
+            >
+              All
+            </TabsTrigger>
             {allVitalsGraphSections.map((section) => (
-              <TabsTrigger className="min-w-[132px] justify-center rounded-lg bg-transparent font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm" key={section.title} value={section.title}>
+              <TabsTrigger
+                className="min-w-[132px] justify-center rounded-lg bg-transparent font-bold text-slate-600 hover:bg-white/70 hover:text-slate-900 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                key={section.title}
+                value={section.title}
+              >
                 {section.title}
               </TabsTrigger>
             ))}
@@ -1094,190 +1352,394 @@ type VitalsGraphOneLegend = {
   onClick?: () => void;
 };
 
-function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { data: CombinedReviewGraphPoint[]; graphOnly?: boolean; onlySection?: string }) {
+function VitalsGraphOneReference({
+  data,
+  graphOnly = false,
+  onlySection,
+}: {
+  data: CombinedReviewGraphPoint[];
+  graphOnly?: boolean;
+  onlySection?: string;
+}) {
   const [activeGlucoseGraph, setActiveGlucoseGraph] = React.useState<"india" | "foreign">("india");
   const chartData = buildVitalsGraphOneData(data);
-  const activeGlucoseConfig = activeGlucoseGraph === "india"
-    ? {
-      color: reviewMetricColor("bloodGlucose"),
-      dataKey: "bloodGlucose" as const,
-      domain: [0, 300] as [number, number],
-      label: "India 70-140 mg/dL",
-      max: 140,
-      min: 70,
-      name: "Glucose",
-      ticks: [0, 60, 120, 180, 240, 300],
-      yAxisId: "india" as const,
-    }
-    : {
-      color: "#8b5cf6",
-      dataKey: "bloodGlucoseForeign" as const,
-      domain: [0, 18] as [number, number],
-      label: "Foreign 4.4-10 mmol/L",
-      max: 10,
-      min: 4.4,
-      name: "Foreign graph",
-      ticks: [0, 3, 6, 9, 12, 15, 18],
-      yAxisId: "foreign" as const,
-    };
+  const activeGlucoseConfig =
+    activeGlucoseGraph === "india"
+      ? {
+          color: reviewMetricColor("bloodGlucose"),
+          dataKey: "bloodGlucose" as const,
+          domain: [0, 300] as [number, number],
+          label: "India 70-140 mg/dL",
+          max: 140,
+          min: 70,
+          name: "Glucose",
+          ticks: [0, 60, 120, 180, 240, 300],
+          yAxisId: "india" as const,
+        }
+      : {
+          color: "#8b5cf6",
+          dataKey: "bloodGlucoseForeign" as const,
+          domain: [0, 18] as [number, number],
+          label: "Foreign 4.4-10 mmol/L",
+          max: 10,
+          min: 4.4,
+          name: "Foreign graph",
+          ticks: [0, 3, 6, 9, 12, 15, 18],
+          yAxisId: "foreign" as const,
+        };
 
   if (!chartData.length) {
-    return <EmptyState icon={BarChart3} title="Vitals Graph 1 unavailable" description="No observation data matched the selected date and time filter." />;
+    return (
+      <EmptyState
+        icon={BarChart3}
+        title="Vitals Graph 1 unavailable"
+        description="No observation data matched the selected date and time filter."
+      />
+    );
   }
 
   const content = (
     <>
-        <div className={cn("space-y-4", graphOnly ? "p-0" : "p-4")}>
-          {(!onlySection || onlySection === "CVS") && (
-            <VitalsGraphOneSection
-              graphOnly={graphOnly}
-              legends={[
-                vitalsGraphOneLegend("pulseRate"),
-                vitalsGraphOneLegend("monitorHeartRate"),
-                vitalsGraphOneLegend("bloodPressure"),
-                vitalsGraphOneLegend("bloodPressureDiastolic"),
-              ]}
-              subtitle=""
-              title="CVS"
-            >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
-                <ResponsiveContainer height="100%" width="100%">
+      <div className={cn("space-y-4", graphOnly ? "p-0" : "p-4")}>
+        {(!onlySection || onlySection === "CVS") && (
+          <VitalsGraphOneSection
+            graphOnly={graphOnly}
+            legends={[
+              vitalsGraphOneLegend("pulseRate"),
+              vitalsGraphOneLegend("monitorHeartRate"),
+              vitalsGraphOneLegend("bloodPressure"),
+              vitalsGraphOneLegend("bloodPressureDiastolic"),
+            ]}
+            subtitle=""
+            title="CVS"
+          >
+            <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
+                  <XAxis
+                    dataKey="xLabel"
+                    tick={{ fontSize: 10 }}
+                    interval="preserveStartEnd"
+                    minTickGap={26}
+                  />
                   <YAxis domain={[30, 220]} tick={{ fontSize: 10 }} width={44} />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
-                  <Line connectNulls dataKey="pulseRate" dot={{ r: 3 }} name="Pulse" stroke={reviewMetricColor("pulseRate")} strokeWidth={3} type="monotone" />
-                  <Line connectNulls dataKey="monitorHeartRate" dot={{ r: 3 }} name="HR" stroke={reviewMetricColor("monitorHeartRate")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" />
-                  <Line connectNulls dataKey="bloodPressure" dot={{ r: 3 }} name="BP sys" stroke={reviewMetricColor("bloodPressure")} strokeWidth={3} type="monotone" />
-                  <Line connectNulls dataKey="bloodPressureDiastolic" dot={{ r: 3 }} name="BP dia" stroke={reviewMetricColor("bloodPressureDiastolic")} strokeWidth={2.8} type="monotone" />
+                  <Line
+                    connectNulls
+                    dataKey="pulseRate"
+                    dot={{ r: 3 }}
+                    name="Pulse"
+                    stroke={reviewMetricColor("pulseRate")}
+                    strokeWidth={3}
+                    type="monotone"
+                  />
+                  <Line
+                    connectNulls
+                    dataKey="monitorHeartRate"
+                    dot={{ r: 3 }}
+                    name="HR"
+                    stroke={reviewMetricColor("monitorHeartRate")}
+                    strokeDasharray="7 4"
+                    strokeWidth={2.8}
+                    type="monotone"
+                  />
+                  <Line
+                    connectNulls
+                    dataKey="bloodPressure"
+                    dot={{ r: 3 }}
+                    name="BP sys"
+                    stroke={reviewMetricColor("bloodPressure")}
+                    strokeWidth={3}
+                    type="monotone"
+                  />
+                  <Line
+                    connectNulls
+                    dataKey="bloodPressureDiastolic"
+                    dot={{ r: 3 }}
+                    name="BP dia"
+                    stroke={reviewMetricColor("bloodPressureDiastolic")}
+                    strokeWidth={2.8}
+                    type="monotone"
+                  />
                 </LineChart>
               </ResponsiveContainer>
-              </HorizontalVitalsChart>
-            </VitalsGraphOneSection>
-          )}
+            </HorizontalVitalsChart>
+          </VitalsGraphOneSection>
+        )}
 
-          {(!onlySection || onlySection === "Respiration") && (
-            <VitalsGraphOneSection
-              graphOnly={graphOnly}
-              legends={[
-                vitalsGraphOneLegend("respiratoryRate"),
-                vitalsGraphOneLegend("oxygenSaturation"),
-                vitalsGraphOneLegend("oxygenFlowRate"),
-                vitalsGraphOneLegend("fio2"),
-              ]}
-              subtitle=""
-              title="Respiration"
-            >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
-                <ResponsiveContainer height="100%" width="100%">
+        {(!onlySection || onlySection === "Respiration") && (
+          <VitalsGraphOneSection
+            graphOnly={graphOnly}
+            legends={[
+              vitalsGraphOneLegend("respiratoryRate"),
+              vitalsGraphOneLegend("oxygenSaturation"),
+              vitalsGraphOneLegend("oxygenFlowRate"),
+              vitalsGraphOneLegend("fio2"),
+            ]}
+            subtitle=""
+            title="Respiration"
+          >
+            <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
+                  <XAxis
+                    dataKey="xLabel"
+                    tick={{ fontSize: 10 }}
+                    interval="preserveStartEnd"
+                    minTickGap={26}
+                  />
                   <YAxis domain={[0, 45]} tick={{ fontSize: 10 }} width={44} yAxisId="rate" />
-                  <YAxis domain={[0, 100]} orientation="right" tick={{ fontSize: 10 }} width={38} yAxisId="spo2" />
+                  <YAxis
+                    domain={[0, 100]}
+                    orientation="right"
+                    tick={{ fontSize: 10 }}
+                    width={38}
+                    yAxisId="spo2"
+                  />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
-                  <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={95} y2={100} yAxisId="spo2" />
-                  <Line connectNulls dataKey="respiratoryRate" dot={{ r: 3 }} name="RR" stroke={reviewMetricColor("respiratoryRate")} strokeWidth={3} type="monotone" yAxisId="rate" />
-                  <Line connectNulls dataKey="oxygenFlowRate" dot={{ r: 3 }} name="O2 Flow" stroke={reviewMetricColor("oxygenFlowRate")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" yAxisId="rate" />
-                  <Line connectNulls dataKey="oxygenSaturation" dot={{ r: 3 }} name="SpO2" stroke={reviewMetricColor("oxygenSaturation")} strokeWidth={3.2} type="monotone" yAxisId="spo2" />
-                  <Line connectNulls dataKey="fio2" dot={{ r: 3 }} name="FiO2" stroke={reviewMetricColor("fio2")} strokeDasharray="4 4" strokeWidth={2.8} type="monotone" yAxisId="spo2" />
+                  <ReferenceArea
+                    fill="#16a34a"
+                    fillOpacity={0.06}
+                    y1={95}
+                    y2={100}
+                    yAxisId="spo2"
+                  />
+                  <Line
+                    connectNulls
+                    dataKey="respiratoryRate"
+                    dot={{ r: 3 }}
+                    name="RR"
+                    stroke={reviewMetricColor("respiratoryRate")}
+                    strokeWidth={3}
+                    type="monotone"
+                    yAxisId="rate"
+                  />
+                  <Line
+                    connectNulls
+                    dataKey="oxygenFlowRate"
+                    dot={{ r: 3 }}
+                    name="O2 Flow"
+                    stroke={reviewMetricColor("oxygenFlowRate")}
+                    strokeDasharray="7 4"
+                    strokeWidth={2.8}
+                    type="monotone"
+                    yAxisId="rate"
+                  />
+                  <Line
+                    connectNulls
+                    dataKey="oxygenSaturation"
+                    dot={{ r: 3 }}
+                    name="SpO2"
+                    stroke={reviewMetricColor("oxygenSaturation")}
+                    strokeWidth={3.2}
+                    type="monotone"
+                    yAxisId="spo2"
+                  />
+                  <Line
+                    connectNulls
+                    dataKey="fio2"
+                    dot={{ r: 3 }}
+                    name="FiO2"
+                    stroke={reviewMetricColor("fio2")}
+                    strokeDasharray="4 4"
+                    strokeWidth={2.8}
+                    type="monotone"
+                    yAxisId="spo2"
+                  />
                 </LineChart>
               </ResponsiveContainer>
-              </HorizontalVitalsChart>
-            </VitalsGraphOneSection>
-          )}
+            </HorizontalVitalsChart>
+          </VitalsGraphOneSection>
+        )}
 
-          {(!onlySection || onlySection === "Infection") && (
-            <VitalsGraphOneSection
-              graphOnly={graphOnly}
-              legends={[vitalsGraphOneLegend("temperature")]}
-              subtitle=""
-              title="Infection"
-            >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
-                <ResponsiveContainer height="100%" width="100%">
+        {(!onlySection || onlySection === "Infection") && (
+          <VitalsGraphOneSection
+            graphOnly={graphOnly}
+            legends={[vitalsGraphOneLegend("temperature")]}
+            subtitle=""
+            title="Infection"
+          >
+            <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
+                  <XAxis
+                    dataKey="xLabel"
+                    tick={{ fontSize: 10 }}
+                    interval="preserveStartEnd"
+                    minTickGap={26}
+                  />
                   <YAxis domain={[34, 42]} tick={{ fontSize: 10 }} width={44} />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
                   <ReferenceArea fill="#16a34a" fillOpacity={0.06} y1={36.1} y2={37.5} />
-                  <Line connectNulls dataKey="temperature" dot={{ r: 3 }} name="Temp" stroke={reviewMetricColor("temperature")} strokeWidth={3.2} type="monotone" />
+                  <Line
+                    connectNulls
+                    dataKey="temperature"
+                    dot={{ r: 3 }}
+                    name="Temp"
+                    stroke={reviewMetricColor("temperature")}
+                    strokeWidth={3.2}
+                    type="monotone"
+                  />
                 </LineChart>
               </ResponsiveContainer>
-              </HorizontalVitalsChart>
-            </VitalsGraphOneSection>
-          )}
+            </HorizontalVitalsChart>
+          </VitalsGraphOneSection>
+        )}
 
-          {(!onlySection || onlySection === "Neuro / Pain") && (
-            <VitalsGraphOneSection
-              graphOnly={graphOnly}
-              legends={[
-                vitalsGraphOneLegend("consciousnessSedation"),
-                vitalsGraphOneLegend("painScore"),
-              ]}
-              subtitle=""
-              title="Neuro / Pain"
-            >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
-                <ResponsiveContainer height="100%" width="100%">
+        {(!onlySection || onlySection === "Neuro / Pain") && (
+          <VitalsGraphOneSection
+            graphOnly={graphOnly}
+            legends={[
+              vitalsGraphOneLegend("consciousnessSedation"),
+              vitalsGraphOneLegend("painScore"),
+            ]}
+            subtitle=""
+            title="Neuro / Pain"
+          >
+            <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
-                  <YAxis domain={[0, 15]} tick={{ fontSize: 10 }} ticks={[0, 3, 6, 9, 12, 15]} width={44} />
+                  <XAxis
+                    dataKey="xLabel"
+                    tick={{ fontSize: 10 }}
+                    interval="preserveStartEnd"
+                    minTickGap={26}
+                  />
+                  <YAxis
+                    domain={[0, 15]}
+                    tick={{ fontSize: 10 }}
+                    ticks={[0, 3, 6, 9, 12, 15]}
+                    width={44}
+                  />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
-                  <Line connectNulls dataKey="consciousnessSedation" dot={{ r: 3 }} name="GCS" stroke={reviewMetricColor("consciousnessSedation")} strokeWidth={3} type="monotone" />
-                  <Line connectNulls dataKey="painScore" dot={{ r: 3 }} name="Pain" stroke={reviewMetricColor("painScore")} strokeDasharray="7 4" strokeWidth={2.8} type="monotone" />
+                  <Line
+                    connectNulls
+                    dataKey="consciousnessSedation"
+                    dot={{ r: 3 }}
+                    name="GCS"
+                    stroke={reviewMetricColor("consciousnessSedation")}
+                    strokeWidth={3}
+                    type="monotone"
+                  />
+                  <Line
+                    connectNulls
+                    dataKey="painScore"
+                    dot={{ r: 3 }}
+                    name="Pain"
+                    stroke={reviewMetricColor("painScore")}
+                    strokeDasharray="7 4"
+                    strokeWidth={2.8}
+                    type="monotone"
+                  />
                 </LineChart>
               </ResponsiveContainer>
-              </HorizontalVitalsChart>
-            </VitalsGraphOneSection>
-          )}
+            </HorizontalVitalsChart>
+          </VitalsGraphOneSection>
+        )}
 
-          {(!onlySection || onlySection === "Glucose") && (
-            <VitalsGraphOneSection
-              graphOnly={graphOnly}
-              legends={[
-                vitalsGraphOneLegend("bloodGlucose", " (mg/dL)"),
-                { active: activeGlucoseGraph === "india", color: "#10b981", description: "Target band 70-140 mg/dL", label: "India graph", onClick: () => setActiveGlucoseGraph("india") },
-                { active: activeGlucoseGraph === "foreign", color: "#8b5cf6", description: "Target band 4.4-10 mmol/L", label: "Foreign graph", onClick: () => setActiveGlucoseGraph("foreign") },
-              ]}
-              subtitle=""
-              title="Glucose"
-            >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
-                <ResponsiveContainer height="100%" width="100%">
+        {(!onlySection || onlySection === "Glucose") && (
+          <VitalsGraphOneSection
+            graphOnly={graphOnly}
+            legends={[
+              vitalsGraphOneLegend("bloodGlucose", " (mg/dL)"),
+              {
+                active: activeGlucoseGraph === "india",
+                color: "#10b981",
+                description: "Target band 70-140 mg/dL",
+                label: "India graph",
+                onClick: () => setActiveGlucoseGraph("india"),
+              },
+              {
+                active: activeGlucoseGraph === "foreign",
+                color: "#8b5cf6",
+                description: "Target band 4.4-10 mmol/L",
+                label: "Foreign graph",
+                onClick: () => setActiveGlucoseGraph("foreign"),
+              },
+            ]}
+            subtitle=""
+            title="Glucose"
+          >
+            <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="xLabel" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={26} />
-                  <YAxis domain={activeGlucoseConfig.domain} tick={{ fontSize: 10 }} ticks={activeGlucoseConfig.ticks} width={44} yAxisId={activeGlucoseConfig.yAxisId} />
+                  <XAxis
+                    dataKey="xLabel"
+                    tick={{ fontSize: 10 }}
+                    interval="preserveStartEnd"
+                    minTickGap={26}
+                  />
+                  <YAxis
+                    domain={activeGlucoseConfig.domain}
+                    tick={{ fontSize: 10 }}
+                    ticks={activeGlucoseConfig.ticks}
+                    width={44}
+                    yAxisId={activeGlucoseConfig.yAxisId}
+                  />
                   <Tooltip content={<VitalsGraphOneTooltip />} />
-                  <ReferenceArea fill={activeGlucoseConfig.color} fillOpacity={0.08} y1={activeGlucoseConfig.min} y2={activeGlucoseConfig.max} yAxisId={activeGlucoseConfig.yAxisId} />
-                  <ReferenceLine label={{ value: activeGlucoseConfig.label, fill: activeGlucoseConfig.color, fontSize: 10, position: "insideTopRight" }} stroke={activeGlucoseConfig.color} strokeDasharray="4 4" y={activeGlucoseConfig.max} yAxisId={activeGlucoseConfig.yAxisId} />
-                  <Line connectNulls dataKey={activeGlucoseConfig.dataKey} dot={{ r: 3 }} name={activeGlucoseConfig.name} stroke={activeGlucoseConfig.color} strokeWidth={3.2} type="monotone" yAxisId={activeGlucoseConfig.yAxisId} />
+                  <ReferenceArea
+                    fill={activeGlucoseConfig.color}
+                    fillOpacity={0.08}
+                    y1={activeGlucoseConfig.min}
+                    y2={activeGlucoseConfig.max}
+                    yAxisId={activeGlucoseConfig.yAxisId}
+                  />
+                  <ReferenceLine
+                    label={{
+                      value: activeGlucoseConfig.label,
+                      fill: activeGlucoseConfig.color,
+                      fontSize: 10,
+                      position: "insideTopRight",
+                    }}
+                    stroke={activeGlucoseConfig.color}
+                    strokeDasharray="4 4"
+                    y={activeGlucoseConfig.max}
+                    yAxisId={activeGlucoseConfig.yAxisId}
+                  />
+                  <Line
+                    connectNulls
+                    dataKey={activeGlucoseConfig.dataKey}
+                    dot={{ r: 3 }}
+                    name={activeGlucoseConfig.name}
+                    stroke={activeGlucoseConfig.color}
+                    strokeWidth={3.2}
+                    type="monotone"
+                    yAxisId={activeGlucoseConfig.yAxisId}
+                  />
                 </LineChart>
               </ResponsiveContainer>
-              </HorizontalVitalsChart>
-            </VitalsGraphOneSection>
-          )}
+            </HorizontalVitalsChart>
+          </VitalsGraphOneSection>
+        )}
 
-          {(!onlySection || onlySection === "Intake / Output") && (
-            <VitalsGraphOneSection
-              graphOnly={graphOnly}
-              legends={[
-                { color: reviewMetricColor("fluidIntake"), description: "Intake above baseline", label: "Intake" },
-                { color: reviewMetricColor("urineOutput"), description: "Output below baseline", label: "Output" },
-                { color: "#94a3b8", description: "Zero baseline", label: "Baseline" },
-              ]}
-              subtitle=""
-              title="Intake / Output"
-            >
-              <RapidReviewIntakeOutputGraph data={data} showLabels={!graphOnly} />
-            </VitalsGraphOneSection>
-          )}
-
-        </div>
+        {(!onlySection || onlySection === "Intake / Output") && (
+          <VitalsGraphOneSection
+            graphOnly={graphOnly}
+            legends={[
+              {
+                color: reviewMetricColor("fluidIntake"),
+                description: "Intake above baseline",
+                label: "Intake",
+              },
+              {
+                color: reviewMetricColor("urineOutput"),
+                description: "Output below baseline",
+                label: "Output",
+              },
+              { color: "#94a3b8", description: "Zero baseline", label: "Baseline" },
+            ]}
+            subtitle=""
+            title="Intake / Output"
+          >
+            <RapidReviewIntakeOutputGraph data={data} showLabels={!graphOnly} />
+          </VitalsGraphOneSection>
+        )}
+      </div>
     </>
   );
 
@@ -1309,7 +1771,12 @@ function VitalsGraphOneSection({
   const makeFirstLegendFullWidth = title === "Glucose";
 
   return (
-    <div className={cn("grid overflow-hidden rounded-md border border-border", !graphOnly && "lg:grid-cols-[190px_minmax(0,1fr)]")}>
+    <div
+      className={cn(
+        "grid overflow-hidden rounded-md border border-border",
+        !graphOnly && "lg:grid-cols-[190px_minmax(0,1fr)]",
+      )}
+    >
       {graphOnly ? (
         <div className="border-b border-border bg-surface-muted px-3 py-2">
           <h4 className="text-sm font-semibold text-foreground">{title}</h4>
@@ -1318,16 +1785,28 @@ function VitalsGraphOneSection({
       {!graphOnly ? (
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h4 className="text-sm font-semibold text-foreground">{title}</h4>
-          {subtitle ? <p className="mt-1 text-xs leading-4 text-muted-foreground">{subtitle}</p> : null}
-          <div className={cn("mt-4", useMobilePairedLegend ? "grid grid-cols-2 gap-x-3 gap-y-2.5 lg:block lg:space-y-2.5" : "space-y-2.5")}>
+          {subtitle ? (
+            <p className="mt-1 text-xs leading-4 text-muted-foreground">{subtitle}</p>
+          ) : null}
+          <div
+            className={cn(
+              "mt-4",
+              useMobilePairedLegend
+                ? "grid grid-cols-2 gap-x-3 gap-y-2.5 lg:block lg:space-y-2.5"
+                : "space-y-2.5",
+            )}
+          >
             {legends.map((legend, index) => {
               const content = (
                 <>
-                <span className="mt-0.5 h-4 w-6 shrink-0 rounded-sm border border-slate-900/20 shadow-sm" style={{ backgroundColor: legend.color }} />
-                <span className="min-w-0 leading-5">
-                  <span className="font-semibold text-foreground">{legend.label}</span>
-                  <span className="text-muted-foreground"> {legend.description}</span>
-                </span>
+                  <span
+                    className="mt-0.5 h-4 w-6 shrink-0 rounded-sm border border-slate-900/20 shadow-sm"
+                    style={{ backgroundColor: legend.color }}
+                  />
+                  <span className="min-w-0 leading-5">
+                    <span className="font-semibold text-foreground">{legend.label}</span>
+                    <span className="text-muted-foreground"> {legend.description}</span>
+                  </span>
                 </>
               );
 
@@ -1337,7 +1816,9 @@ function VitalsGraphOneSection({
                     className={cn(
                       "flex w-full items-start gap-2.5 rounded-lg border p-2 text-left text-xs transition focus:outline-none focus:ring-2 focus:ring-ring/20",
                       makeFirstLegendFullWidth && index === 0 && "col-span-2 lg:col-span-1",
-                      legend.active ? "border-primary bg-background shadow-sm" : "border-transparent hover:border-border hover:bg-background/70",
+                      legend.active
+                        ? "border-primary bg-background shadow-sm"
+                        : "border-transparent hover:border-border hover:bg-background/70",
                     )}
                     key={legend.label}
                     onClick={legend.onClick}
@@ -1349,7 +1830,13 @@ function VitalsGraphOneSection({
               }
 
               return (
-                <div className={cn("flex items-start gap-2.5 text-xs", makeFirstLegendFullWidth && index === 0 && "col-span-2 lg:col-span-1")} key={legend.label}>
+                <div
+                  className={cn(
+                    "flex items-start gap-2.5 text-xs",
+                    makeFirstLegendFullWidth && index === 0 && "col-span-2 lg:col-span-1",
+                  )}
+                  key={legend.label}
+                >
                   {content}
                 </div>
               );
@@ -1357,41 +1844,65 @@ function VitalsGraphOneSection({
           </div>
         </div>
       ) : null}
-      <div className={cn("min-w-0 p-3", graphOnly ? "h-[220px]" : title === "Intake / Output" ? "h-[330px]" : "h-[250px]")}>
+      <div
+        className={cn(
+          "min-w-0 p-3",
+          graphOnly ? "h-[220px]" : title === "Intake / Output" ? "h-[330px]" : "h-[250px]",
+        )}
+      >
         {children}
       </div>
     </div>
   );
 }
 
-function VitalsGraphOneTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload?: VitalsGraphOnePoint; name?: string; value?: number | null; color?: string }> }) {
+function VitalsGraphOneTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    payload?: VitalsGraphOnePoint;
+    name?: string;
+    value?: number | null;
+    color?: string;
+  }>;
+}) {
   if (!active) return null;
   const point = payload?.[0]?.payload;
   if (!point) return null;
 
   return (
     <div className="min-w-[180px] rounded-md border border-border bg-background p-3 text-xs shadow-lg">
-      <div className="font-semibold text-foreground">{formatDateLabel(point.date)} - {point.time}</div>
+      <div className="font-semibold text-foreground">
+        {formatDateLabel(point.date)} - {point.time}
+      </div>
       <div className="mt-2 space-y-1.5">
-        {payload?.filter((entry) => entry.value !== null && entry.value !== undefined).map((entry) => (
-          <div className="flex items-center justify-between gap-4" key={entry.name}>
-            <span className="flex items-center gap-2 text-muted-foreground">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
-              {entry.name}
-            </span>
-            <span className="font-semibold text-foreground">{entry.value}</span>
-          </div>
-        ))}
+        {payload
+          ?.filter((entry) => entry.value !== null && entry.value !== undefined)
+          .map((entry) => (
+            <div className="flex items-center justify-between gap-4" key={entry.name}>
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                {entry.name}
+              </span>
+              <span className="font-semibold text-foreground">{entry.value}</span>
+            </div>
+          ))}
       </div>
     </div>
   );
 }
 
-function vitalsGraphOneLegend(metricId: ReviewGraphMetricId, description?: string): VitalsGraphOneLegend {
+function vitalsGraphOneLegend(
+  metricId: ReviewGraphMetricId,
+  description?: string,
+): VitalsGraphOneLegend {
   const metric = reviewGraphMetrics.find((item) => item.id === metricId);
   return {
     color: reviewMetricColor(metricId),
-    description: description ?? `${metric?.label ?? metricId}${metric?.unit ? ` (${metric.unit})` : ""}`,
+    description:
+      description ?? `${metric?.label ?? metricId}${metric?.unit ? ` (${metric.unit})` : ""}`,
     label: metric?.shortLabel ?? metricId,
   };
 }
@@ -1406,7 +1917,12 @@ function AllVitalsGraphSections({
   return (
     <div className="space-y-4">
       {allVitalsGraphSections.map((section) => (
-        <AllVitalsGraphSectionCard data={data} graphOnly={graphOnly} key={section.title} section={section} />
+        <AllVitalsGraphSectionCard
+          data={data}
+          graphOnly={graphOnly}
+          key={section.title}
+          section={section}
+        />
       ))}
     </div>
   );
@@ -1423,7 +1939,7 @@ function DateRangeCalendar({
   endDate: string;
   minDate?: string;
   maxDate?: string;
-  onChange: (startDate: string, endDate: string) => void;
+  onChange: (_startDate: string, _endDate: string) => void;
 }) {
   const initialDate = endDate || startDate || maxDate || todayDateValue();
   const initialParts = dateValueParts(initialDate);
@@ -1431,7 +1947,20 @@ function DateRangeCalendar({
   const [visibleMonth, setVisibleMonth] = React.useState(initialParts.month);
   const [visibleYear, setVisibleYear] = React.useState(initialParts.year);
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
   const firstDayOffset = new Date(visibleYear, visibleMonth, 1).getDay();
   const totalDays = new Date(visibleYear, visibleMonth + 1, 0).getDate();
   const displayValue = startDate
@@ -1482,23 +2011,43 @@ function DateRangeCalendar({
       {open ? (
         <div className="absolute left-0 top-full z-50 mt-2 w-[min(100%,360px)] rounded-lg border border-border bg-surface p-3 shadow-soft">
           <div className="flex items-center justify-between gap-2">
-            <Button aria-label="Previous month" onClick={() => moveMonth(-1)} size="icon" type="button" variant="ghost">
+            <Button
+              aria-label="Previous month"
+              onClick={() => moveMonth(-1)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="text-sm font-semibold text-foreground">{monthNames[visibleMonth]} {visibleYear}</div>
-            <Button aria-label="Next month" onClick={() => moveMonth(1)} size="icon" type="button" variant="ghost">
+            <div className="text-sm font-semibold text-foreground">
+              {monthNames[visibleMonth]} {visibleYear}
+            </div>
+            <Button
+              aria-label="Next month"
+              onClick={() => moveMonth(1)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
           <div className="mt-2 grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
-            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => <span key={day}>{day}</span>)}
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+              <span key={day}>{day}</span>
+            ))}
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
-            {Array.from({ length: firstDayOffset }).map((_, index) => <span key={`blank-${index}`} />)}
+            {Array.from({ length: firstDayOffset }).map((_, index) => (
+              <span key={`blank-${index}`} />
+            ))}
             {Array.from({ length: totalDays }).map((_, index) => {
               const day = index + 1;
               const value = `${visibleYear}-${String(visibleMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const disabled = Boolean((minDate && value < minDate) || (maxDate && value > maxDate));
+              const disabled = Boolean(
+                (minDate && value < minDate) || (maxDate && value > maxDate),
+              );
               const boundary = value === startDate || value === endDate;
               const inRange = Boolean(startDate && endDate && value > startDate && value < endDate);
               return (
@@ -1521,8 +2070,12 @@ function DateRangeCalendar({
             })}
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-            <span className="text-xs text-muted-foreground">{startDate && !endDate ? "Now select end date" : "Select start date, then end date"}</span>
-            <Button onClick={() => onChange("", "")} size="sm" type="button" variant="ghost">Clear</Button>
+            <span className="text-xs text-muted-foreground">
+              {startDate && !endDate ? "Now select end date" : "Select start date, then end date"}
+            </span>
+            <Button onClick={() => onChange("", "")} size="sm" type="button" variant="ghost">
+              Clear
+            </Button>
           </div>
         </div>
       ) : null}
@@ -1543,13 +2096,14 @@ function TimeRangePicker({
 }: {
   startTime: string;
   endTime: string;
-  onChange: (startTime: string, endTime: string) => void;
+  onChange: (_startTime: string, _endTime: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
-  const displayValue = startTime || endTime
-    ? `${startTime || "00:00"} - ${endTime || "23:59"}`
-    : "Select start and end time";
+  const displayValue =
+    startTime || endTime
+      ? `${startTime || "00:00"} - ${endTime || "23:59"}`
+      : "Select start and end time";
 
   React.useEffect(() => {
     function closeOnOutsideClick(event: MouseEvent) {
@@ -1568,7 +2122,9 @@ function TimeRangePicker({
           onClick={() => setOpen((current) => !current)}
           type="button"
         >
-          <span className={cn(!startTime && !endTime && "text-muted-foreground")}>{displayValue}</span>
+          <span className={cn(!startTime && !endTime && "text-muted-foreground")}>
+            {displayValue}
+          </span>
           <Clock className="h-4 w-4 text-muted-foreground" />
         </button>
       </label>
@@ -1596,8 +2152,12 @@ function TimeRangePicker({
             </label>
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-            <Button onClick={() => onChange("", "")} size="sm" type="button" variant="ghost">Clear</Button>
-            <Button onClick={() => setOpen(false)} size="sm" type="button">Done</Button>
+            <Button onClick={() => onChange("", "")} size="sm" type="button" variant="ghost">
+              Clear
+            </Button>
+            <Button onClick={() => setOpen(false)} size="sm" type="button">
+              Done
+            </Button>
           </div>
         </div>
       ) : null}
@@ -1630,20 +2190,48 @@ function AllVitalsGraphSectionCard({
       <ResponsiveContainer height="100%" width="100%">
         <LineChart data={data} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="xLabel" height={graphOnly ? 12 : undefined} tick={graphOnly ? false : { fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
-          <YAxis domain={yAxisConfig.domain} ticks={yAxisConfig.ticks} tick={graphOnly ? false : { fontSize: 11 }} width={graphOnly ? 12 : 48} />
+          <XAxis
+            dataKey="xLabel"
+            height={graphOnly ? 12 : undefined}
+            tick={graphOnly ? false : { fontSize: 11 }}
+            interval="preserveStartEnd"
+            minTickGap={24}
+          />
+          <YAxis
+            domain={yAxisConfig.domain}
+            ticks={yAxisConfig.ticks}
+            tick={graphOnly ? false : { fontSize: 11 }}
+            width={graphOnly ? 12 : 48}
+          />
           <Tooltip content={<CombinedReviewGraphTooltip />} />
           {graphOnly ? null : <Legend />}
           {sectionMetrics.map((metric) => (
             <Line
-              activeDot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} active metric={metric} />}
+              activeDot={(props) => (
+                <CombinedReviewGraphDot
+                  {...(props as unknown as CombinedReviewGraphDotProps)}
+                  active
+                  metric={metric}
+                />
+              )}
               connectNulls
               dataKey={metric.id}
-              dot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} metric={metric} />}
+              dot={(props) => (
+                <CombinedReviewGraphDot
+                  {...(props as unknown as CombinedReviewGraphDotProps)}
+                  metric={metric}
+                />
+              )}
               key={metric.id}
               name={metric.shortLabel}
               stroke={reviewMetricColor(metric.id)}
-              strokeWidth={metric.id === "bloodPressure" || metric.id === "bloodPressureDiastolic" || metric.id === "oxygenSaturation" ? 2.4 : 2}
+              strokeWidth={
+                metric.id === "bloodPressure" ||
+                metric.id === "bloodPressureDiastolic" ||
+                metric.id === "oxygenSaturation"
+                  ? 2.4
+                  : 2
+              }
               type="monotone"
             />
           ))}
@@ -1651,15 +2239,17 @@ function AllVitalsGraphSectionCard({
       </ResponsiveContainer>
     </HorizontalVitalsChart>
   ) : (
-    <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
+    <EmptyState
+      icon={BarChart3}
+      title={`${section.title} graph unavailable`}
+      description="No observation data matched the selected date and time filter."
+    />
   );
 
   if (graphOnly) {
     return (
       <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          {graphContent}
-        </CardContent>
+        <CardContent className="p-4">{graphContent}</CardContent>
       </Card>
     );
   }
@@ -1669,16 +2259,24 @@ function AllVitalsGraphSectionCard({
       <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h3 className="text-2xl font-semibold text-foreground">{section.title}</h3>
-          {section.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p> : null}
+          {section.description ? (
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p>
+          ) : null}
           <div className="mt-5">
             <p className="text-sm font-semibold text-foreground">Legend</p>
             <div className="mt-3 space-y-3">
               {sectionMetrics.map((metric) => (
                 <div className="flex items-start gap-3 text-sm" key={metric.id}>
-                  <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-white shadow-sm" style={{ backgroundColor: reviewMetricColor(metric.id) }} />
+                  <span
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-white shadow-sm"
+                    style={{ backgroundColor: reviewMetricColor(metric.id) }}
+                  />
                   <span className="min-w-0 leading-5">
                     <span className="font-medium text-foreground">{metric.shortLabel}</span>
-                    <span className="text-xs text-muted-foreground"> {metric.label} {metric.unit ? `(${metric.unit})` : ""}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {" "}
+                      {metric.label} {metric.unit ? `(${metric.unit})` : ""}
+                    </span>
                   </span>
                 </div>
               ))}
@@ -1686,9 +2284,7 @@ function AllVitalsGraphSectionCard({
           </div>
         </div>
 
-        <div className="min-w-0 p-4">
-          {graphContent}
-        </div>
+        <div className="min-w-0 p-4">{graphContent}</div>
       </CardContent>
     </Card>
   );
@@ -1705,11 +2301,35 @@ function AllVitalsGlucoseSectionCard({
 }) {
   const glucoseMetric = reviewGraphMetrics.find((item) => item.id === "bloodGlucose");
   const glucoseStandards = [
-    { id: "india", label: "India", min: 70, max: 140, unit: "mg/dL", domain: [0, 300] as [number, number], ticks: [0, 60, 120, 180, 240, 300], color: "#10b981", fill: "#d1fae5", text: "#047857" },
-    { id: "foreign", label: "Foreign", min: 4.4, max: 10, unit: "mmol/L", domain: [0, 18] as [number, number], ticks: [0, 3, 6, 9, 12, 15, 18], color: "#8b5cf6", fill: "#ede9fe", text: "#6d28d9" },
+    {
+      id: "india",
+      label: "India",
+      min: 70,
+      max: 140,
+      unit: "mg/dL",
+      domain: [0, 300] as [number, number],
+      ticks: [0, 60, 120, 180, 240, 300],
+      color: "#10b981",
+      fill: "#d1fae5",
+      text: "#047857",
+    },
+    {
+      id: "foreign",
+      label: "Foreign",
+      min: 4.4,
+      max: 10,
+      unit: "mmol/L",
+      domain: [0, 18] as [number, number],
+      ticks: [0, 3, 6, 9, 12, 15, 18],
+      color: "#8b5cf6",
+      fill: "#ede9fe",
+      text: "#6d28d9",
+    },
   ] as const;
-  const [activeStandardId, setActiveStandardId] = React.useState<(typeof glucoseStandards)[number]["id"]>("india");
-  const activeStandard = glucoseStandards.find((item) => item.id === activeStandardId) ?? glucoseStandards[0];
+  const [activeStandardId, setActiveStandardId] =
+    React.useState<(typeof glucoseStandards)[number]["id"]>("india");
+  const activeStandard =
+    glucoseStandards.find((item) => item.id === activeStandardId) ?? glucoseStandards[0];
   const glucoseData = data.map((point) => {
     const glucoseMgDl = typeof point.bloodGlucose === "number" ? point.bloodGlucose : null;
     if (activeStandard.id === "india" || glucoseMgDl === null) return point;
@@ -1728,17 +2348,59 @@ function AllVitalsGlucoseSectionCard({
       <ResponsiveContainer height="100%" width="100%">
         <LineChart data={glucoseData} margin={{ left: -10, right: 18, top: 12, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <ReferenceArea fill={activeStandard.color} fillOpacity={0.1} ifOverflow="extendDomain" y1={activeStandard.min} y2={activeStandard.max} />
-          <ReferenceLine label={graphOnly ? undefined : { value: `${activeStandard.label} ${activeStandard.min}-${activeStandard.max} ${activeStandard.unit}`, fill: activeStandard.text, fontSize: 10, position: "insideTopRight" }} stroke={activeStandard.color} strokeDasharray="4 4" y={activeStandard.max} />
-          <XAxis dataKey="xLabel" height={graphOnly ? 12 : undefined} tick={graphOnly ? false : { fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
-          <YAxis domain={activeStandard.domain} ticks={activeStandard.ticks} tick={graphOnly ? false : { fontSize: 11 }} width={graphOnly ? 12 : 48} />
+          <ReferenceArea
+            fill={activeStandard.color}
+            fillOpacity={0.1}
+            ifOverflow="extendDomain"
+            y1={activeStandard.min}
+            y2={activeStandard.max}
+          />
+          <ReferenceLine
+            label={
+              graphOnly
+                ? undefined
+                : {
+                    value: `${activeStandard.label} ${activeStandard.min}-${activeStandard.max} ${activeStandard.unit}`,
+                    fill: activeStandard.text,
+                    fontSize: 10,
+                    position: "insideTopRight",
+                  }
+            }
+            stroke={activeStandard.color}
+            strokeDasharray="4 4"
+            y={activeStandard.max}
+          />
+          <XAxis
+            dataKey="xLabel"
+            height={graphOnly ? 12 : undefined}
+            tick={graphOnly ? false : { fontSize: 11 }}
+            interval="preserveStartEnd"
+            minTickGap={24}
+          />
+          <YAxis
+            domain={activeStandard.domain}
+            ticks={activeStandard.ticks}
+            tick={graphOnly ? false : { fontSize: 11 }}
+            width={graphOnly ? 12 : 48}
+          />
           <Tooltip content={<CombinedReviewGraphTooltip />} />
           {graphOnly ? null : <Legend />}
           <Line
-            activeDot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} active metric={glucoseMetric ?? reviewGraphMetrics[0]} />}
+            activeDot={(props) => (
+              <CombinedReviewGraphDot
+                {...(props as unknown as CombinedReviewGraphDotProps)}
+                active
+                metric={glucoseMetric ?? reviewGraphMetrics[0]}
+              />
+            )}
             connectNulls
             dataKey="bloodGlucose"
-            dot={(props) => <CombinedReviewGraphDot {...(props as unknown as CombinedReviewGraphDotProps)} metric={glucoseMetric ?? reviewGraphMetrics[0]} />}
+            dot={(props) => (
+              <CombinedReviewGraphDot
+                {...(props as unknown as CombinedReviewGraphDotProps)}
+                metric={glucoseMetric ?? reviewGraphMetrics[0]}
+              />
+            )}
             name={glucoseMetric?.shortLabel ?? "Glucose"}
             stroke={reviewMetricColor("bloodGlucose")}
             strokeWidth={2.4}
@@ -1748,15 +2410,17 @@ function AllVitalsGlucoseSectionCard({
       </ResponsiveContainer>
     </HorizontalVitalsChart>
   ) : (
-    <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
+    <EmptyState
+      icon={BarChart3}
+      title={`${section.title} graph unavailable`}
+      description="No observation data matched the selected date and time filter."
+    />
   );
 
   if (graphOnly) {
     return (
       <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          {graphContent}
-        </CardContent>
+        <CardContent className="p-4">{graphContent}</CardContent>
       </Card>
     );
   }
@@ -1766,15 +2430,25 @@ function AllVitalsGlucoseSectionCard({
       <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h3 className="text-2xl font-semibold text-foreground">{section.title}</h3>
-          {section.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p> : null}
+          {section.description ? (
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p>
+          ) : null}
           <div className="mt-5">
             <p className="text-sm font-semibold text-foreground">Legend</p>
             <div className="mt-3 space-y-3">
               <div className="flex items-start gap-3 text-sm">
-                <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-white shadow-sm" style={{ backgroundColor: reviewMetricColor("bloodGlucose") }} />
+                <span
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-white shadow-sm"
+                  style={{ backgroundColor: reviewMetricColor("bloodGlucose") }}
+                />
                 <span className="min-w-0 leading-5">
-                  <span className="font-medium text-foreground">{glucoseMetric?.shortLabel ?? "Glucose"}</span>
-                  <span className="text-xs text-muted-foreground"> Blood glucose trend ({activeStandard.unit})</span>
+                  <span className="font-medium text-foreground">
+                    {glucoseMetric?.shortLabel ?? "Glucose"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {" "}
+                    Blood glucose trend ({activeStandard.unit})
+                  </span>
                 </span>
               </div>
               {glucoseStandards.map((standard) => {
@@ -1783,16 +2457,24 @@ function AllVitalsGlucoseSectionCard({
                   <button
                     className={cn(
                       "flex w-full items-start gap-3 rounded-lg border p-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-ring/20",
-                      active ? "border-primary bg-white shadow-sm" : "border-border bg-transparent hover:bg-white/70",
+                      active
+                        ? "border-primary bg-white shadow-sm"
+                        : "border-border bg-transparent hover:bg-white/70",
                     )}
                     key={standard.id}
                     onClick={() => setActiveStandardId(standard.id)}
                     type="button"
-                    >
-                    <span className="mt-1 h-3 w-6 shrink-0 rounded-sm border" style={{ backgroundColor: standard.fill, borderColor: standard.color }} />
+                  >
+                    <span
+                      className="mt-1 h-3 w-6 shrink-0 rounded-sm border"
+                      style={{ backgroundColor: standard.fill, borderColor: standard.color }}
+                    />
                     <span className="min-w-0 leading-5">
                       <span className="font-medium text-foreground">{standard.label} graph</span>
-                      <span className="text-xs text-muted-foreground"> Target band {standard.min}-{standard.max} {standard.unit}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {" "}
+                        Target band {standard.min}-{standard.max} {standard.unit}
+                      </span>
                     </span>
                   </button>
                 );
@@ -1801,9 +2483,7 @@ function AllVitalsGlucoseSectionCard({
           </div>
         </div>
 
-        <div className="min-w-0 p-4">
-          {graphContent}
-        </div>
+        <div className="min-w-0 p-4">{graphContent}</div>
       </CardContent>
     </Card>
   );
@@ -1823,15 +2503,17 @@ function AllVitalsFluidBalanceSectionCard({
   const graphContent = data.length ? (
     <RapidReviewIntakeOutputGraph data={data} showLabels={!graphOnly} />
   ) : (
-    <EmptyState icon={BarChart3} title={`${section.title} graph unavailable`} description="No observation data matched the selected date and time filter." />
+    <EmptyState
+      icon={BarChart3}
+      title={`${section.title} graph unavailable`}
+      description="No observation data matched the selected date and time filter."
+    />
   );
 
   if (graphOnly) {
     return (
       <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          {graphContent}
-        </CardContent>
+        <CardContent className="p-4">{graphContent}</CardContent>
       </Card>
     );
   }
@@ -1841,22 +2523,34 @@ function AllVitalsFluidBalanceSectionCard({
       <CardContent className="grid gap-0 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
         <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
           <h3 className="text-2xl font-semibold text-foreground">{section.title}</h3>
-          {section.description ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p> : null}
+          {section.description ? (
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">{section.description}</p>
+          ) : null}
           <div className="mt-5">
             <p className="text-sm font-semibold text-foreground">Legend</p>
             <div className="mt-3 space-y-3">
               <div className="flex items-start gap-3 text-sm">
                 <span className="mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-white bg-sky-500 shadow-sm" />
                 <span className="min-w-0 leading-5">
-                  <span className="font-medium text-foreground">{intakeMetric?.shortLabel ?? "Intake"}</span>
-                  <span className="text-xs text-muted-foreground"> Fluid intake above baseline ({intakeMetric?.unit ?? "ml/hr"})</span>
+                  <span className="font-medium text-foreground">
+                    {intakeMetric?.shortLabel ?? "Intake"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {" "}
+                    Fluid intake above baseline ({intakeMetric?.unit ?? "ml/hr"})
+                  </span>
                 </span>
               </div>
               <div className="flex items-start gap-3 text-sm">
                 <span className="mt-0.5 h-4 w-4 shrink-0 rounded-sm border border-white bg-emerald-500 shadow-sm" />
                 <span className="min-w-0 leading-5">
-                  <span className="font-medium text-foreground">{outputMetric?.shortLabel ?? "Output"}</span>
-                  <span className="text-xs text-muted-foreground"> Urine output below baseline ({outputMetric?.unit ?? "ml/hr"})</span>
+                  <span className="font-medium text-foreground">
+                    {outputMetric?.shortLabel ?? "Output"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {" "}
+                    Urine output below baseline ({outputMetric?.unit ?? "ml/hr"})
+                  </span>
                 </span>
               </div>
               <div className="flex items-start gap-3 text-sm">
@@ -1870,15 +2564,19 @@ function AllVitalsFluidBalanceSectionCard({
           </div>
         </div>
 
-        <div className="min-w-0 p-4">
-          {graphContent}
-        </div>
+        <div className="min-w-0 p-4">{graphContent}</div>
       </CardContent>
     </Card>
   );
 }
 
-function RapidReviewIntakeOutputGraph({ data, showLabels = true }: { data: CombinedReviewGraphPoint[]; showLabels?: boolean }) {
+function RapidReviewIntakeOutputGraph({
+  data,
+  showLabels = true,
+}: {
+  data: CombinedReviewGraphPoint[];
+  showLabels?: boolean;
+}) {
   const width = Math.max(640, data.length * 56);
   const height = 260;
   const pad = 34;
@@ -1887,28 +2585,66 @@ function RapidReviewIntakeOutputGraph({ data, showLabels = true }: { data: Combi
   const plotWidth = width - pad * 2;
   const intakePlotHeight = baseline - pad - 10;
   const outputPlotHeight = height - labelSpace - baseline - 10;
-  const intakeValues = data.map((point) => parseObservationNumber(String(point.displays.fluidIntake ?? "")) ?? 0);
-  const outputValues = data.map((point) => parseObservationNumber(String(point.displays.urineOutput ?? "")) ?? 0);
+  const intakeValues = data.map(
+    (point) => parseObservationNumber(String(point.displays.fluidIntake ?? "")) ?? 0,
+  );
+  const outputValues = data.map(
+    (point) => parseObservationNumber(String(point.displays.urineOutput ?? "")) ?? 0,
+  );
   const maxVolume = Math.max(40, ...intakeValues, ...outputValues);
 
   return (
     <div className="overflow-x-auto rounded-md border border-border bg-background p-3">
-      <svg className="block" height={height} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
-        <line stroke="#cbd5e1" strokeDasharray="4 4" x1={pad} x2={width - pad} y1={baseline} y2={baseline} />
+      <svg
+        className="block"
+        height={height}
+        role="img"
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+      >
+        <line
+          stroke="#cbd5e1"
+          strokeDasharray="4 4"
+          x1={pad}
+          x2={width - pad}
+          y1={baseline}
+          y2={baseline}
+        />
         {data.map((point, index) => {
-          const x = pad + (data.length <= 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth);
+          const x =
+            pad + (data.length <= 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth);
           const intake = intakeValues[index] ?? 0;
           const output = outputValues[index] ?? 0;
-          const intakeHeight = intake > 0 ? Math.max(4, (intake / maxVolume) * intakePlotHeight) : 0;
-          const outputHeight = output > 0 ? Math.max(4, (output / maxVolume) * outputPlotHeight) : 0;
+          const intakeHeight =
+            intake > 0 ? Math.max(4, (intake / maxVolume) * intakePlotHeight) : 0;
+          const outputHeight =
+            output > 0 ? Math.max(4, (output / maxVolume) * outputPlotHeight) : 0;
           const risk = point.risks.urineOutput ?? "empty";
           const palette = adultObservationRiskPalette[risk];
           return (
             <g key={`${point.date}-${point.time}-${index}`}>
-              <rect fill="#0ea5e9" height={intakeHeight} rx="4" width="16" x={x - 20} y={baseline - intakeHeight} />
+              <rect
+                fill="#0ea5e9"
+                height={intakeHeight}
+                rx="4"
+                width="16"
+                x={x - 20}
+                y={baseline - intakeHeight}
+              />
               <rect fill="#10b981" height={outputHeight} rx="4" width="16" x={x + 4} y={baseline} />
-              <circle cx={x} cy={baseline + outputHeight + 7} fill={palette.background} r="4" stroke={palette.text} strokeWidth="1.5" />
-              {showLabels ? <text fill="#475569" fontSize="10" textAnchor="middle" x={x} y={height - 8}>{point.time}</text> : null}
+              <circle
+                cx={x}
+                cy={baseline + outputHeight + 7}
+                fill={palette.background}
+                r="4"
+                stroke={palette.text}
+                strokeWidth="1.5"
+              />
+              {showLabels ? (
+                <text fill="#475569" fontSize="10" textAnchor="middle" x={x} y={height - 8}>
+                  {point.time}
+                </text>
+              ) : null}
             </g>
           );
         })}
@@ -1925,7 +2661,13 @@ type CombinedReviewGraphTooltipEntry = {
   value?: number | null;
 };
 
-function CombinedReviewGraphTooltip({ active, payload }: { active?: boolean; payload?: CombinedReviewGraphTooltipEntry[] }) {
+function CombinedReviewGraphTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: CombinedReviewGraphTooltipEntry[];
+}) {
   if (!active) return null;
   const point = payload?.[0]?.payload;
   if (!point) return null;
@@ -1933,7 +2675,9 @@ function CombinedReviewGraphTooltip({ active, payload }: { active?: boolean; pay
 
   return (
     <div className="max-h-[360px] min-w-[260px] overflow-auto rounded-md border border-border bg-background p-3 text-xs shadow-lg">
-      <div className="font-semibold text-foreground">{formatDateLabel(point.date)} - {point.time}</div>
+      <div className="font-semibold text-foreground">
+        {formatDateLabel(point.date)} - {point.time}
+      </div>
       <div className="mt-2 space-y-1">
         {visibleEntries.map((entry) => {
           const metricId = String(entry.dataKey) as ReviewGraphMetricId;
@@ -1944,11 +2688,23 @@ function CombinedReviewGraphTooltip({ active, payload }: { active?: boolean; pay
           return (
             <div className="flex items-center justify-between gap-4" key={metric.id}>
               <span className="inline-flex items-center gap-2 text-muted-foreground">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: entry.color }}
+                />
                 {metric.shortLabel}
               </span>
-              <span className="font-semibold text-foreground">{point.displays[metric.id] ?? "--"}</span>
-              <span className="rounded-full border px-2 py-0.5 font-medium" style={{ backgroundColor: palette.background, borderColor: palette.border, color: palette.text }}>
+              <span className="font-semibold text-foreground">
+                {point.displays[metric.id] ?? "--"}
+              </span>
+              <span
+                className="rounded-full border px-2 py-0.5 font-medium"
+                style={{
+                  backgroundColor: palette.background,
+                  borderColor: palette.border,
+                  color: palette.text,
+                }}
+              >
                 {palette.label}
               </span>
             </div>
@@ -1969,9 +2725,18 @@ type CombinedReviewGraphDotProps = {
   value?: number | null;
 };
 
-function CombinedReviewGraphDot({ active, cx, cy, metric, payload, stroke, value }: CombinedReviewGraphDotProps) {
+function CombinedReviewGraphDot({
+  active,
+  cx,
+  cy,
+  metric,
+  payload,
+  stroke,
+  value,
+}: CombinedReviewGraphDotProps) {
   const metricValue = typeof value === "number" ? value : payload?.[metric.id];
-  if (typeof cx !== "number" || typeof cy !== "number" || typeof metricValue !== "number") return null;
+  if (typeof cx !== "number" || typeof cy !== "number" || typeof metricValue !== "number")
+    return null;
 
   const risk = payload?.risks[metric.id] ?? "empty";
   const palette = adultObservationRiskPalette[risk];
@@ -2005,7 +2770,9 @@ function GraphStatCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <div className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{value}</div>
+          <div className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">
+            {value}
+          </div>
         </div>
         <div className="rounded-md border border-border bg-surface-muted p-2">
           <Icon className="h-4 w-4 text-muted-foreground" />
@@ -2039,7 +2806,8 @@ function buildVitalsGraphOneData(data: CombinedReviewGraphPoint[]): VitalsGraphO
       consciousnessSedation: parseObservationNumber(point.displays.consciousnessSedation ?? ""),
       painScore: parseObservationNumber(point.displays.painScore ?? ""),
       bloodGlucose: parseObservationNumber(point.displays.bloodGlucose ?? ""),
-      bloodGlucoseForeign: typeof point.bloodGlucose === "number" ? mgDlToMmolL(point.bloodGlucose) : null,
+      bloodGlucoseForeign:
+        typeof point.bloodGlucose === "number" ? mgDlToMmolL(point.bloodGlucose) : null,
       fluidIntake,
       urineOutput,
       fluidBalance: fluidIntake !== null && urineOutput !== null ? fluidIntake - urineOutput : null,
@@ -2068,7 +2836,10 @@ function reviewMetricColor(metricId: ReviewGraphMetricId) {
   return reviewMetricColors[metricId];
 }
 
-function combinedGraphYAxisConfig(section: AllVitalsGraphSection): { domain: [number, number]; ticks?: number[] } {
+function combinedGraphYAxisConfig(section: AllVitalsGraphSection): {
+  domain: [number, number];
+  ticks?: number[];
+} {
   if (section.title === "Neuro / Pain") return { domain: [0, 18], ticks: [0, 3, 6, 9, 12, 15] };
   return { domain: [0, 100] };
 }
@@ -2077,11 +2848,17 @@ function metricRiskLevel(metric: ReviewGraphMetric, observation: RapidObservatio
   if (metric.riskExtractor) return metric.riskExtractor(observation);
   const value = metric.extractor(observation);
   const displayValue = metric.display(observation);
-  return getRiskLevel(metric.vitalType, metric.vitalType === "pulseRhythm" ? displayValue : value ?? displayValue);
+  return getRiskLevel(
+    metric.vitalType,
+    metric.vitalType === "pulseRhythm" ? displayValue : (value ?? displayValue),
+  );
 }
 
-function urineOutputRiskLevel(value: string | number | null | undefined): AdultObservationRiskLevel {
-  const numericValue = typeof value === "number" ? value : parseObservationNumber(String(value ?? ""));
+function urineOutputRiskLevel(
+  value: string | number | null | undefined,
+): AdultObservationRiskLevel {
+  const numericValue =
+    typeof value === "number" ? value : parseObservationNumber(String(value ?? ""));
   if (numericValue === null) return "empty";
   if (numericValue < 15) return "critical";
   if (numericValue < 30) return "highRisk";
@@ -2103,8 +2880,16 @@ function bloodGlucoseValue(observation: RapidObservationSet) {
   const oxygenLoad = oxygenFlowValue(observation.oxygenFlow) ?? 0;
   const minutes = observationTimeMinutes(observation) ?? 0;
   const hour = Math.floor(minutes / 60);
-  const mealLoad = hour >= 7 && hour <= 9 ? 18 : hour >= 12 && hour <= 14 ? 28 : hour >= 18 && hour <= 20 ? 24 : 0;
-  const responseLoad = observation.responseLevel === "MER Call" ? 68 : observation.responseLevel === "MDT Review" ? 42 : observation.responseLevel === "RN Review" ? 24 : 8;
+  const mealLoad =
+    hour >= 7 && hour <= 9 ? 18 : hour >= 12 && hour <= 14 ? 28 : hour >= 18 && hour <= 20 ? 24 : 0;
+  const responseLoad =
+    observation.responseLevel === "MER Call"
+      ? 68
+      : observation.responseLevel === "MDT Review"
+        ? 42
+        : observation.responseLevel === "RN Review"
+          ? 24
+          : 8;
   const feverLoad = temperature > 38 ? 22 : temperature > 37.5 ? 12 : 0;
   const glucose = 82 + responseLoad + mealLoad + painScore * 5 + oxygenLoad * 3 + feverLoad;
   return Math.round(Math.max(62, Math.min(320, glucose)));
@@ -2121,12 +2906,27 @@ function rapidReviewFluidIntakeValue(observation: RapidObservationSet) {
   const painScore = parseObservationNumber(observation.painScore) ?? 0;
   const minutes = observationTimeMinutes(observation) ?? 0;
   const hourFactor = (Math.floor(minutes / 60) % 4) * 8;
-  const riskLoad = observation.responseLevel === "MER Call" ? 48 : observation.responseLevel === "MDT Review" ? 34 : observation.responseLevel === "RN Review" ? 20 : 8;
+  const riskLoad =
+    observation.responseLevel === "MER Call"
+      ? 48
+      : observation.responseLevel === "MDT Review"
+        ? 34
+        : observation.responseLevel === "RN Review"
+          ? 20
+          : 8;
   const renalGuard = urine < 30 ? 12 : urine < 40 ? 22 : 34;
-  return Math.round(Math.min(160, Math.max(35, renalGuard + riskLoad + hourFactor + oxygenFlow * 4 + painScore * 2)));
+  return Math.round(
+    Math.min(
+      160,
+      Math.max(35, renalGuard + riskLoad + hourFactor + oxygenFlow * 4 + painScore * 2),
+    ),
+  );
 }
 
-function buildReviewGraphData(observations: RapidObservationSet[], metric: ReviewGraphMetric): ReviewGraphPoint[] {
+function buildReviewGraphData(
+  observations: RapidObservationSet[],
+  metric: ReviewGraphMetric,
+): ReviewGraphPoint[] {
   return observations.map((observation) => {
     const value = metric.extractor(observation);
     const displayValue = metric.display(observation);
@@ -2158,7 +2958,9 @@ function buildReviewGraphSummary(observations: RapidObservationSet[], metric: Re
   );
 }
 
-function buildCombinedReviewGraphData(observations: RapidObservationSet[]): CombinedReviewGraphPoint[] {
+function buildCombinedReviewGraphData(
+  observations: RapidObservationSet[],
+): CombinedReviewGraphPoint[] {
   return observations.map((observation) => {
     const date = observationDateValue(observation);
     const time = observationTimeLabel(observation);
@@ -2199,7 +3001,9 @@ function buildCombinedReviewGraphSummary(observations: RapidObservationSet[]) {
 }
 
 function uniqueObservationDates(observations: RapidObservationSet[]) {
-  return Array.from(new Set(observations.map((observation) => observationDateValue(observation)))).sort((a, b) => b.localeCompare(a));
+  return Array.from(
+    new Set(observations.map((observation) => observationDateValue(observation))),
+  ).sort((a, b) => b.localeCompare(a));
 }
 
 function observationMatchesDateFilter(
@@ -2226,7 +3030,12 @@ function observationMatchesDateFilter(
   return true;
 }
 
-function observationMatchesTimeFilter(observation: RapidObservationSet, mode: string, timeFrom: string, timeTo: string) {
+function observationMatchesTimeFilter(
+  observation: RapidObservationSet,
+  mode: string,
+  timeFrom: string,
+  timeTo: string,
+) {
   const minutes = observationTimeMinutes(observation);
   if (minutes === null) return true;
   if (mode === "All times") return true;
@@ -2247,12 +3056,21 @@ function observationMatchesTimeFilter(observation: RapidObservationSet, mode: st
   return true;
 }
 
-function graphPointMatchesTimeInterval(point: CombinedReviewGraphPoint, interval: string, timeFrom: string, timeTo: string, latestDateTime: number) {
+function graphPointMatchesTimeInterval(
+  point: CombinedReviewGraphPoint,
+  interval: string,
+  timeFrom: string,
+  timeTo: string,
+  latestDateTime: number,
+) {
   const rollingHours = rollingTimeIntervalHours(interval);
   if (rollingHours) {
     const pointDateTime = graphPointDateTimeValue(point);
     if (!Number.isFinite(pointDateTime) || !Number.isFinite(latestDateTime)) return true;
-    return pointDateTime >= latestDateTime - rollingHours * 60 * 60 * 1000 && pointDateTime <= latestDateTime;
+    return (
+      pointDateTime >= latestDateTime - rollingHours * 60 * 60 * 1000 &&
+      pointDateTime <= latestDateTime
+    );
   }
 
   const minutes = timeToMinutes(point.time);
@@ -2284,13 +3102,20 @@ function graphPointDateTimeValue(point: Pick<CombinedReviewGraphPoint, "date" | 
   return Number.isFinite(value) ? value : Number.NaN;
 }
 
-function formatGraphPointDateTime(value: number) {
+function _formatGraphPointDateTime(value: number) {
   const date = new Date(value);
   return `${formatDateLabel(dateToValue(date))} ${date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
 }
 
-function dateFilterSummary(mode: string, singleDate: string, dateFrom: string, dateTo: string, latestDataDate: string) {
-  if (mode === "Latest record date") return latestDataDate ? formatDateLabel(latestDataDate) : "Latest record date";
+function dateFilterSummary(
+  mode: string,
+  singleDate: string,
+  dateFrom: string,
+  dateTo: string,
+  latestDataDate: string,
+) {
+  if (mode === "Latest record date")
+    return latestDataDate ? formatDateLabel(latestDataDate) : "Latest record date";
   if (mode === "Single date") return singleDate ? formatDateLabel(singleDate) : "Single date";
   if (mode === "Custom range") {
     if (dateFrom && dateTo && dateFrom > dateTo) return "Invalid date range";
@@ -2328,7 +3153,20 @@ function observationTimeLabel(observation: RapidObservationSet) {
 function formatDateLabel(value: string) {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return value;
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const monthIndex = Number(match[2]) - 1;
   return `${Number(match[3])} ${monthNames[monthIndex] ?? match[2]} ${match[1]}`;
 }
@@ -2369,7 +3207,8 @@ function timeToMinutes(value: string) {
   if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours > 23 || minutes > 59) return null;
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours > 23 || minutes > 59)
+    return null;
   return hours * 60 + minutes;
 }
 
@@ -2410,8 +3249,10 @@ function diastolicRiskLevel(value: string): AdultObservationRiskLevel {
   const diastolic = diastolicValue(value);
   if (diastolic === null) return "empty";
   if (diastolic >= 120 || diastolic <= 40) return "critical";
-  if ((diastolic >= 100 && diastolic <= 119) || (diastolic >= 41 && diastolic <= 49)) return "highRisk";
-  if ((diastolic >= 90 && diastolic <= 99) || (diastolic >= 50 && diastolic <= 59)) return "warning";
+  if ((diastolic >= 100 && diastolic <= 119) || (diastolic >= 41 && diastolic <= 49))
+    return "highRisk";
+  if ((diastolic >= 90 && diastolic <= 99) || (diastolic >= 50 && diastolic <= 59))
+    return "warning";
   return "normal";
 }
 
@@ -2429,7 +3270,8 @@ function normalizeReviewGraphValue(metricId: ReviewGraphMetricId, value: number 
   if (metricId === "fio2") return scaleToPercent(value, 21, 100);
   if (metricId === "bloodPressure") return scaleToPercent(value, 70, 220);
   if (metricId === "bloodPressureDiastolic") return scaleToPercent(value, 40, 130);
-  if (metricId === "pulseRate" || metricId === "monitorHeartRate") return scaleToPercent(value, 40, 180);
+  if (metricId === "pulseRate" || metricId === "monitorHeartRate")
+    return scaleToPercent(value, 40, 180);
   if (metricId === "temperature") return scaleToPercent(value, 34, 42);
   if (metricId === "consciousnessSedation" || metricId === "painScore") return value;
   if (metricId === "bloodGlucose") return value;
@@ -2444,7 +3286,10 @@ function scaleToPercent(value: number, min: number, max: number) {
 }
 
 function fio2Value(observation: RapidObservationSet) {
-  return observation.fio2 ?? inferFio2FromOxygenSupport(observation.oxygenFlow, observation.deliveryMethod);
+  return (
+    observation.fio2 ??
+    inferFio2FromOxygenSupport(observation.oxygenFlow, observation.deliveryMethod)
+  );
 }
 
 function monitorHeartRateValue(observation: RapidObservationSet) {

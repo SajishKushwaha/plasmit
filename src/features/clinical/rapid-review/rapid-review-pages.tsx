@@ -36,7 +36,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/shell/page-header";
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
@@ -154,7 +153,14 @@ type ObservationReviewDialogState = {
 } | null;
 
 type ClinicalConsultPriority = "Routine" | "Urgent" | "Emergency";
-type ClinicalConsultStatus = "Requested" | "Acknowledged" | "Assigned" | "In progress" | "Advice given" | "Completed" | "Escalated";
+type ClinicalConsultStatus =
+  | "Requested"
+  | "Acknowledged"
+  | "Assigned"
+  | "In progress"
+  | "Advice given"
+  | "Completed"
+  | "Escalated";
 
 type ClinicalConsultEvent = {
   id: string;
@@ -272,10 +278,44 @@ const clinicalConsultDoctorsByDepartment: Record<string, string[]> = {
   "Emergency Team": ["MER team", "Emergency physician", "Rapid response coordinator"],
 };
 
-const clinicalConsultRequestTypes = ["Bedside review", "Phone advice", "Investigation review", "Procedure clearance", "Transfer advice", "Second opinion"];
-const clinicalConsultInvestigations = ["None", "ECG", "ABG", "Serum electrolytes", "Chest X-ray", "CT review", "Echo", "Dialysis review", "Medication review", "Procedure clearance", "ICU transfer assessment"];
-const clinicalConsultResponseTargets = ["Immediate / 5 min", "Within 15 min", "Within 30 min", "Within 1 hour", "Same shift", "Today"];
-const clinicalConsultStatusWorkflow: ClinicalConsultStatus[] = ["Requested", "Acknowledged", "Assigned", "In progress", "Advice given", "Completed", "Escalated"];
+const clinicalConsultRequestTypes = [
+  "Bedside review",
+  "Phone advice",
+  "Investigation review",
+  "Procedure clearance",
+  "Transfer advice",
+  "Second opinion",
+];
+const clinicalConsultInvestigations = [
+  "None",
+  "ECG",
+  "ABG",
+  "Serum electrolytes",
+  "Chest X-ray",
+  "CT review",
+  "Echo",
+  "Dialysis review",
+  "Medication review",
+  "Procedure clearance",
+  "ICU transfer assessment",
+];
+const clinicalConsultResponseTargets = [
+  "Immediate / 5 min",
+  "Within 15 min",
+  "Within 30 min",
+  "Within 1 hour",
+  "Same shift",
+  "Today",
+];
+const clinicalConsultStatusWorkflow: ClinicalConsultStatus[] = [
+  "Requested",
+  "Acknowledged",
+  "Assigned",
+  "In progress",
+  "Advice given",
+  "Completed",
+  "Escalated",
+];
 
 function includes(value: string, search: string) {
   return value.toLowerCase().includes(search.toLowerCase());
@@ -294,7 +334,20 @@ function optionValue(value: string) {
 }
 
 function isRapidReviewTab(value: string | null): value is string {
-  return Boolean(value && ["queue", "entry", "nurse-review", "doctor", "consults", "log", "chart", "rules", "review-graph"].includes(value));
+  return Boolean(
+    value &&
+    [
+      "queue",
+      "entry",
+      "nurse-review",
+      "doctor",
+      "consults",
+      "log",
+      "chart",
+      "rules",
+      "review-graph",
+    ].includes(value),
+  );
 }
 
 export function RapidReviewPage() {
@@ -312,41 +365,68 @@ export function RapidReviewPage() {
   const [selectedPatientId, setSelectedPatientId] = React.useState(
     initialPatientId && rapidReviewPatients.some((patient) => patient.id === initialPatientId)
       ? initialPatientId
-      : rapidReviewPatients[0]?.id ?? "",
+      : (rapidReviewPatients[0]?.id ?? ""),
   );
-  const [activeTab, setActiveTab] = React.useState(isRapidReviewTab(initialTab) ? initialTab : "queue");
+  const [activeTab, setActiveTab] = React.useState(
+    isRapidReviewTab(initialTab) ? initialTab : "queue",
+  );
   const [dialogState, setDialogState] = React.useState<DialogState | null>(null);
-  const [observationReviewDialog, setObservationReviewDialog] = React.useState<ObservationReviewDialogState>(null);
+  const [observationReviewDialog, setObservationReviewDialog] =
+    React.useState<ObservationReviewDialogState>(null);
   const [updates, setUpdates] = React.useState<Record<string, ReviewUpdate>>({});
-  const [addedObservations, setAddedObservations] = React.useState<Record<string, RapidObservationSet[]>>({});
-  const [editedObservations, setEditedObservations] = React.useState<Record<string, RapidObservationSet>>({});
-  const [voidedObservations, setVoidedObservations] = React.useState<Record<string, NurseObservationVoid>>({});
+  const [addedObservations, setAddedObservations] = React.useState<
+    Record<string, RapidObservationSet[]>
+  >({});
+  const [editedObservations, setEditedObservations] = React.useState<
+    Record<string, RapidObservationSet>
+  >({});
+  const [voidedObservations, setVoidedObservations] = React.useState<
+    Record<string, NurseObservationVoid>
+  >({});
   const [nurseAuditTrail, setNurseAuditTrail] = React.useState<NurseObservationAuditItem[]>([]);
-  const [observationReviews, setObservationReviews] = React.useState<Record<string, ObservationReviewUpdate>>({});
-  const [clinicalConsults, setClinicalConsults] = React.useState<ClinicalConsultRequest[]>(() => createInitialClinicalConsultRequests(rapidReviewPatients));
+  const [observationReviews, setObservationReviews] = React.useState<
+    Record<string, ObservationReviewUpdate>
+  >({});
+  const [clinicalConsults, setClinicalConsults] = React.useState<ClinicalConsultRequest[]>(() =>
+    createInitialClinicalConsultRequests(rapidReviewPatients),
+  );
 
   const nurseReviewPatients = React.useMemo<RapidReviewPatient[]>(
-    () => rapidReviewPatients.map((patient) => ({
-      ...patient,
-      observationHistory: [...patient.observationHistory, ...(addedObservations[patient.id] ?? [])].map((observation) => editedObservations[observation.id] ?? observation),
-    })),
+    () =>
+      rapidReviewPatients.map((patient) => ({
+        ...patient,
+        observationHistory: [
+          ...patient.observationHistory,
+          ...(addedObservations[patient.id] ?? []),
+        ].map((observation) => editedObservations[observation.id] ?? observation),
+      })),
     [addedObservations, editedObservations],
   );
 
   const patients = React.useMemo<RapidReviewPatient[]>(
-    () => nurseReviewPatients.map((patient) => ({
-      ...patient,
-      observationHistory: patient.observationHistory.filter((observation) => !voidedObservations[observation.id]),
-    })),
+    () =>
+      nurseReviewPatients.map((patient) => ({
+        ...patient,
+        observationHistory: patient.observationHistory.filter(
+          (observation) => !voidedObservations[observation.id],
+        ),
+      })),
     [nurseReviewPatients, voidedObservations],
   );
 
-  const wards = React.useMemo(() => ["All wards", ...Array.from(new Set(patients.map((patient) => patient.ward)))], [patients]);
+  const wards = React.useMemo(
+    () => ["All wards", ...Array.from(new Set(patients.map((patient) => patient.ward)))],
+    [patients],
+  );
 
   const rows = React.useMemo(() => {
     const filtered = patients.filter((patient) => {
       const text = `${patient.patientName} ${patient.uhid} ${patient.visitNo} ${patient.ward} ${patient.bed} ${patient.source} ${patient.consultant} ${patient.owner} ${patient.responseLevel} ${patient.trigger}`;
-      return includes(text, search) && (response === "All response" || patient.responseLevel === response) && (ward === "All wards" || patient.ward === ward);
+      return (
+        includes(text, search) &&
+        (response === "All response" || patient.responseLevel === response) &&
+        (ward === "All wards" || patient.ward === ward)
+      );
     });
 
     return [...filtered].sort((a, b) => {
@@ -354,187 +434,271 @@ export function RapidReviewPage() {
       if (sortBy === "Newest wait") return a.waitMinutes - b.waitMinutes;
       if (sortBy === "Patient name") return a.patientName.localeCompare(b.patientName);
       if (sortBy === "Ward") return `${a.ward} ${a.bed}`.localeCompare(`${b.ward} ${b.bed}`);
-      return rapidPriorityRank(b.responseLevel) - rapidPriorityRank(a.responseLevel) || b.waitMinutes - a.waitMinutes;
+      return (
+        rapidPriorityRank(b.responseLevel) - rapidPriorityRank(a.responseLevel) ||
+        b.waitMinutes - a.waitMinutes
+      );
     });
   }, [patients, response, search, sortBy, ward]);
 
-  const selectedPatient = patients.find((patient) => patient.id === selectedPatientId) ?? patients[0];
+  const selectedPatient =
+    patients.find((patient) => patient.id === selectedPatientId) ?? patients[0];
   const merCount = patients.filter((patient) => patient.responseLevel === "MER Call").length;
   const mdtCount = patients.filter((patient) => patient.responseLevel === "MDT Review").length;
   const rnCount = patients.filter((patient) => patient.responseLevel === "RN Review").length;
-  const openCount = patients.filter((patient) => effectiveStatus(patient, updates) !== "Closed").length;
+  const openCount = patients.filter(
+    (patient) => effectiveStatus(patient, updates) !== "Closed",
+  ).length;
   const pendingObservationCount = React.useMemo(
-    () => patients.flatMap((patient) => patient.observationHistory).filter((observation) => observationReviewStatus(observation, observationReviews) === "Pending doctor review").length,
+    () =>
+      patients
+        .flatMap((patient) => patient.observationHistory)
+        .filter(
+          (observation) =>
+            observationReviewStatus(observation, observationReviews) === "Pending doctor review",
+        ).length,
     [observationReviews, patients],
   );
 
-  const handleSaveReview = React.useCallback((patient: RapidReviewPatient, update: ReviewUpdate) => {
-    setUpdates((current) => ({ ...current, [patient.id]: update }));
-    toast.success(`${update.decision} recorded for ${patient.patientName}`);
-    setDialogState(null);
-  }, []);
+  const handleSaveReview = React.useCallback(
+    (patient: RapidReviewPatient, update: ReviewUpdate) => {
+      setUpdates((current) => ({ ...current, [patient.id]: update }));
+      toast.success(`${update.decision} recorded for ${patient.patientName}`);
+      setDialogState(null);
+    },
+    [],
+  );
 
-  const handleAddObservation = React.useCallback((patient: RapidReviewPatient, observation: RapidObservationSet) => {
-    setAddedObservations((current) => ({ ...current, [patient.id]: [...(current[patient.id] ?? []), observation] }));
-    setNurseAuditTrail((current) => [createNurseObservationAuditItem("Created", patient, observation, {
-      performedBy: observation.recordedBy,
-      reason: "New nurse observation entry",
-      summary: "Observation created from Nurse Entry",
-      newObservation: observation,
-    }), ...current]);
-    setSelectedPatientId(patient.id);
-    setActiveTab("doctor");
-    toast.success(`Observation added for ${patient.patientName}`);
-  }, [setSelectedPatientId]);
+  const handleAddObservation = React.useCallback(
+    (patient: RapidReviewPatient, observation: RapidObservationSet) => {
+      setAddedObservations((current) => ({
+        ...current,
+        [patient.id]: [...(current[patient.id] ?? []), observation],
+      }));
+      setNurseAuditTrail((current) => [
+        createNurseObservationAuditItem("Created", patient, observation, {
+          performedBy: observation.recordedBy,
+          reason: "New nurse observation entry",
+          summary: "Observation created from Nurse Entry",
+          newObservation: observation,
+        }),
+        ...current,
+      ]);
+      setSelectedPatientId(patient.id);
+      setActiveTab("doctor");
+      toast.success(`Observation added for ${patient.patientName}`);
+    },
+    [setSelectedPatientId],
+  );
 
-  const handleUpdateNurseObservation = React.useCallback((patient: RapidReviewPatient, original: RapidObservationSet, updated: RapidObservationSet, reason: string, performedBy: string) => {
-    setEditedObservations((current) => ({ ...current, [original.id]: updated }));
-    setNurseAuditTrail((current) => [createNurseObservationAuditItem("Edited", patient, updated, {
-      performedBy,
-      reason,
-      summary: "Nurse amendment saved",
-      previousObservation: original,
-      newObservation: updated,
-    }), ...current]);
-    setSelectedPatientId(patient.id);
-    toast.success(`Observation edited for ${patient.patientName}`);
-  }, [setSelectedPatientId]);
+  const handleUpdateNurseObservation = React.useCallback(
+    (
+      patient: RapidReviewPatient,
+      original: RapidObservationSet,
+      updated: RapidObservationSet,
+      reason: string,
+      performedBy: string,
+    ) => {
+      setEditedObservations((current) => ({ ...current, [original.id]: updated }));
+      setNurseAuditTrail((current) => [
+        createNurseObservationAuditItem("Edited", patient, updated, {
+          performedBy,
+          reason,
+          summary: "Nurse amendment saved",
+          previousObservation: original,
+          newObservation: updated,
+        }),
+        ...current,
+      ]);
+      setSelectedPatientId(patient.id);
+      toast.success(`Observation edited for ${patient.patientName}`);
+    },
+    [setSelectedPatientId],
+  );
 
-  const handleVoidNurseObservation = React.useCallback((patient: RapidReviewPatient, observation: RapidObservationSet, voidEntry: NurseObservationVoid) => {
-    setVoidedObservations((current) => ({ ...current, [observation.id]: voidEntry }));
-    setNurseAuditTrail((current) => [createNurseObservationAuditItem("Voided", patient, observation, {
-      performedBy: voidEntry.voidedBy,
-      reason: voidEntry.reason,
-      summary: voidEntry.note || "Observation voided from active clinical chart",
-      previousObservation: observation,
-    }), ...current]);
-    setSelectedPatientId(patient.id);
-    toast.success(`Observation voided for ${patient.patientName}`);
-  }, [setSelectedPatientId]);
+  const handleVoidNurseObservation = React.useCallback(
+    (
+      patient: RapidReviewPatient,
+      observation: RapidObservationSet,
+      voidEntry: NurseObservationVoid,
+    ) => {
+      setVoidedObservations((current) => ({ ...current, [observation.id]: voidEntry }));
+      setNurseAuditTrail((current) => [
+        createNurseObservationAuditItem("Voided", patient, observation, {
+          performedBy: voidEntry.voidedBy,
+          reason: voidEntry.reason,
+          summary: voidEntry.note || "Observation voided from active clinical chart",
+          previousObservation: observation,
+        }),
+        ...current,
+      ]);
+      setSelectedPatientId(patient.id);
+      toast.success(`Observation voided for ${patient.patientName}`);
+    },
+    [setSelectedPatientId],
+  );
 
-  const handleOpenDoctorReview = React.useCallback((patient: RapidReviewPatient) => {
-    setSelectedPatientId(patient.id);
-    setActiveTab("doctor");
-    toast.info(`${patient.patientName} loaded in Doctor Review`);
-  }, [setSelectedPatientId]);
+  const handleOpenDoctorReview = React.useCallback(
+    (patient: RapidReviewPatient) => {
+      setSelectedPatientId(patient.id);
+      setActiveTab("doctor");
+      toast.info(`${patient.patientName} loaded in Doctor Review`);
+    },
+    [setSelectedPatientId],
+  );
 
-  const handleSaveObservationReview = React.useCallback((observation: RapidObservationSet, update: ObservationReviewUpdate) => {
-    setObservationReviews((current) => ({ ...current, [observation.id]: update }));
-    toast.success(`${update.reviewStatus} by ${update.reviewedBy}`);
-    setObservationReviewDialog(null);
-  }, []);
+  const handleSaveObservationReview = React.useCallback(
+    (observation: RapidObservationSet, update: ObservationReviewUpdate) => {
+      setObservationReviews((current) => ({ ...current, [observation.id]: update }));
+      toast.success(`${update.reviewStatus} by ${update.reviewedBy}`);
+      setObservationReviewDialog(null);
+    },
+    [],
+  );
 
   const handleCreateClinicalConsult = React.useCallback((request: ClinicalConsultRequest) => {
     setClinicalConsults((current) => [request, ...current]);
     toast.success(`${request.department} consult requested for ${request.patientName}`);
   }, []);
 
-  const handleUpdateClinicalConsultStatus = React.useCallback((requestId: string, status: ClinicalConsultStatus) => {
-    setClinicalConsults((current) => current.map((request) => {
-      if (request.id !== requestId) return request;
-      const advice = status === "Advice given" && !request.advice
-        ? `Advice recorded by ${request.requestedTo}. Continue monitoring and update if vitals worsen.`
-        : request.advice;
-      return appendClinicalConsultEvent(
-        { ...request, status, advice, lastUpdated: "Just now" },
-        status,
-        clinicalConsultStatusActionText(status),
-        request.requestedTo,
-        clinicalConsultStatusEventNote(status, request),
+  const handleUpdateClinicalConsultStatus = React.useCallback(
+    (requestId: string, status: ClinicalConsultStatus) => {
+      setClinicalConsults((current) =>
+        current.map((request) => {
+          if (request.id !== requestId) return request;
+          const advice =
+            status === "Advice given" && !request.advice
+              ? `Advice recorded by ${request.requestedTo}. Continue monitoring and update if vitals worsen.`
+              : request.advice;
+          return appendClinicalConsultEvent(
+            { ...request, status, advice, lastUpdated: "Just now" },
+            status,
+            clinicalConsultStatusActionText(status),
+            request.requestedTo,
+            clinicalConsultStatusEventNote(status, request),
+          );
+        }),
       );
-    }));
-    toast.success(`Consult marked ${status}`);
-  }, []);
+      toast.success(`Consult marked ${status}`);
+    },
+    [],
+  );
 
   const handleSendClinicalConsultReminder = React.useCallback((requestId: string) => {
-    setClinicalConsults((current) => current.map((request) => {
-      if (request.id !== requestId) return request;
-      return {
-        ...request,
-        advice: request.advice ?? `Reminder sent to ${request.requestedTo}. Awaiting consult response.`,
-        lastUpdated: "Reminder sent just now",
-        events: [
-          ...request.events,
-          createClinicalConsultEvent(request.status, "Reminder sent", "Consult coordinator", `Reminder sent to ${request.requestedTo}.`),
-        ],
-      };
-    }));
+    setClinicalConsults((current) =>
+      current.map((request) => {
+        if (request.id !== requestId) return request;
+        return {
+          ...request,
+          advice:
+            request.advice ?? `Reminder sent to ${request.requestedTo}. Awaiting consult response.`,
+          lastUpdated: "Reminder sent just now",
+          events: [
+            ...request.events,
+            createClinicalConsultEvent(
+              request.status,
+              "Reminder sent",
+              "Consult coordinator",
+              `Reminder sent to ${request.requestedTo}.`,
+            ),
+          ],
+        };
+      }),
+    );
     toast.success("Consult reminder sent");
   }, []);
 
-  const columns = React.useMemo<ColumnDef<RapidReviewPatient>[]>(() => [
-    {
-      header: "Patient",
-      cell: ({ row }) => (
-        <div className="min-w-[190px]">
-          <div className="font-medium text-foreground">{row.original.patientName}</div>
-          <div className="text-xs text-muted-foreground">{row.original.uhid} - {row.original.visitNo}</div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            <Badge tone="muted">{row.original.ageGender}</Badge>
-            <Badge tone="info">{row.original.source}</Badge>
+  const columns = React.useMemo<ColumnDef<RapidReviewPatient>[]>(
+    () => [
+      {
+        header: "Patient",
+        cell: ({ row }) => (
+          <div className="min-w-[190px]">
+            <div className="font-medium text-foreground">{row.original.patientName}</div>
+            <div className="text-xs text-muted-foreground">
+              {row.original.uhid} - {row.original.visitNo}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              <Badge tone="muted">{row.original.ageGender}</Badge>
+              <Badge tone="info">{row.original.source}</Badge>
+            </div>
           </div>
-        </div>
-      ),
-    },
-    {
-      header: "Location",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.bed}</div>
-          <div className="text-xs text-muted-foreground">{row.original.ward}</div>
-        </div>
-      ),
-    },
-    {
-      header: "Trigger",
-      cell: ({ row }) => (
-        <div className="max-w-[300px]">
-          <StatusPill tone={rapidLevelTone(row.original.responseLevel)}>{row.original.responseLevel}</StatusPill>
-          <div className="mt-1 text-xs leading-5 text-muted-foreground">{row.original.trigger}</div>
-        </div>
-      ),
-    },
-    {
-      header: "Time",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.reviewDue}</div>
-          <div className="text-xs text-muted-foreground">{row.original.waitMinutes} min waiting</div>
-        </div>
-      ),
-    },
-    {
-      header: "Status",
-      cell: ({ row }) => {
-        const status = effectiveStatus(row.original, updates);
-        return <StatusPill tone={rapidStatusTone(status)}>{status}</StatusPill>;
+        ),
       },
-    },
-    {
-      header: "Owner",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{updates[row.original.id]?.owner ?? row.original.owner}</div>
-          <div className="text-xs text-muted-foreground">{row.original.lastObservationAt}</div>
-        </div>
-      ),
-    },
-    {
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex min-w-[174px] flex-wrap gap-1">
-          <Button size="sm" onClick={() => handleOpenDoctorReview(row.original)}>
-            <ClipboardCheck className="h-4 w-4" />
-            Review
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setDialogState({ patient: row.original, intent: "escalate" })} disabled={row.original.responseLevel === "Routine" && readOnly}>
-            <Zap className="h-4 w-4" />
-            Escalate
-          </Button>
-        </div>
-      ),
-    },
-  ], [handleOpenDoctorReview, readOnly, updates]);
+      {
+        header: "Location",
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium">{row.original.bed}</div>
+            <div className="text-xs text-muted-foreground">{row.original.ward}</div>
+          </div>
+        ),
+      },
+      {
+        header: "Trigger",
+        cell: ({ row }) => (
+          <div className="max-w-[300px]">
+            <StatusPill tone={rapidLevelTone(row.original.responseLevel)}>
+              {row.original.responseLevel}
+            </StatusPill>
+            <div className="mt-1 text-xs leading-5 text-muted-foreground">
+              {row.original.trigger}
+            </div>
+          </div>
+        ),
+      },
+      {
+        header: "Time",
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium">{row.original.reviewDue}</div>
+            <div className="text-xs text-muted-foreground">
+              {row.original.waitMinutes} min waiting
+            </div>
+          </div>
+        ),
+      },
+      {
+        header: "Status",
+        cell: ({ row }) => {
+          const status = effectiveStatus(row.original, updates);
+          return <StatusPill tone={rapidStatusTone(status)}>{status}</StatusPill>;
+        },
+      },
+      {
+        header: "Owner",
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium">
+              {updates[row.original.id]?.owner ?? row.original.owner}
+            </div>
+            <div className="text-xs text-muted-foreground">{row.original.lastObservationAt}</div>
+          </div>
+        ),
+      },
+      {
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex min-w-[174px] flex-wrap gap-1">
+            <Button size="sm" onClick={() => handleOpenDoctorReview(row.original)}>
+              <ClipboardCheck className="h-4 w-4" />
+              Review
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setDialogState({ patient: row.original, intent: "escalate" })}
+              disabled={row.original.responseLevel === "Routine" && readOnly}
+            >
+              <Zap className="h-4 w-4" />
+              Escalate
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [handleOpenDoctorReview, readOnly, updates],
+  );
 
   if (!allowed || !roleProfile) {
     return (
@@ -550,35 +714,65 @@ export function RapidReviewPage() {
 
   return (
     <>
-    
-          <div className="text-end mb-3 mt-3">
-            <Button variant="outline" onClick={() => toast.success("Rapid review queue refreshed")}>
-              <RefreshCcw className="h-4 w-4" />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
-            <Button variant="outline" onClick={() => setActiveTab("entry")} disabled={readOnly}>
-              <Plus className="h-4 w-4" />
-              Add observation
-            </Button>
-            <Button onClick={() => rows[0] && handleOpenDoctorReview(rows[0])} disabled={!rows.length}>
-              <Stethoscope className="h-4 w-4" />
-              Start review
-            </Button>
-          </div>
-       
+      <div className="text-end mb-3 mt-3">
+        <Button variant="outline" onClick={() => toast.success("Rapid review queue refreshed")}>
+          <RefreshCcw className="h-4 w-4" />
+          Refresh
+        </Button>
+        <Button variant="outline" onClick={() => window.print()}>
+          <Printer className="h-4 w-4" />
+          Print
+        </Button>
+        <Button variant="outline" onClick={() => setActiveTab("entry")} disabled={readOnly}>
+          <Plus className="h-4 w-4" />
+          Add observation
+        </Button>
+        <Button onClick={() => rows[0] && handleOpenDoctorReview(rows[0])} disabled={!rows.length}>
+          <Stethoscope className="h-4 w-4" />
+          Start review
+        </Button>
+      </div>
 
       <SummaryGrid>
-        <StatCard label="MER calls" value={merCount} change="Immediate" context="Purple zone" tone="critical" icon={ShieldAlert} />
-        <StatCard label="MDT review" value={mdtCount} change="30 min" context="Red zone or urine risk" tone="danger" icon={HeartPulse} />
-        <StatCard label="RN review" value={rnCount} change="Prompt" context="Yellow zone" tone="warning" icon={BellRing} />
-        <StatCard label="Doctor pending" value={pendingObservationCount} change="Review" context={`${openCount} active queue`} tone="info" icon={Eye} />
+        <StatCard
+          label="MER calls"
+          value={merCount}
+          change="Immediate"
+          context="Purple zone"
+          tone="critical"
+          icon={ShieldAlert}
+        />
+        <StatCard
+          label="MDT review"
+          value={mdtCount}
+          change="30 min"
+          context="Red zone or urine risk"
+          tone="danger"
+          icon={HeartPulse}
+        />
+        <StatCard
+          label="RN review"
+          value={rnCount}
+          change="Prompt"
+          context="Yellow zone"
+          tone="warning"
+          icon={BellRing}
+        />
+        <StatCard
+          label="Doctor pending"
+          value={pendingObservationCount}
+          change="Review"
+          context={`${openCount} active queue`}
+          tone="info"
+          icon={Eye}
+        />
       </SummaryGrid>
 
-      <AlertBanner icon={UserRound} tone={readOnly ? "warning" : "info"} title={`Current role: ${role}`}>
+      <AlertBanner
+        icon={UserRound}
+        tone={readOnly ? "warning" : "info"}
+        title={`Current role: ${role}`}
+      >
         {roleProfile.summary} Available actions: {roleProfile.actions.join(", ")}.
       </AlertBanner>
 
@@ -596,10 +790,24 @@ export function RapidReviewPage() {
         </TabsList>
 
         <TabsContent value="queue" className="space-y-4">
-          <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, UHID, ward, bed, trigger, consultant...">
-            <NativeSelect label="Response level" value={response} onChange={setResponse} options={["All response", "MER Call", "MDT Review", "RN Review", "Routine"]} />
+          <FilterBar
+            search={search}
+            onSearch={setSearch}
+            placeholder="Search patient, UHID, ward, bed, trigger, consultant..."
+          >
+            <NativeSelect
+              label="Response level"
+              value={response}
+              onChange={setResponse}
+              options={["All response", "MER Call", "MDT Review", "RN Review", "Routine"]}
+            />
             <NativeSelect label="Ward" value={ward} onChange={setWard} options={wards} />
-            <NativeSelect label="Sort" value={sortBy} onChange={setSortBy} options={["Clinical priority", "Oldest wait", "Newest wait", "Patient name", "Ward"]} />
+            <NativeSelect
+              label="Sort"
+              value={sortBy}
+              onChange={setSortBy}
+              options={["Clinical priority", "Oldest wait", "Newest wait", "Patient name", "Ward"]}
+            />
           </FilterBar>
 
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -653,7 +861,9 @@ export function RapidReviewPage() {
             onCreateConsult={handleCreateClinicalConsult}
             onSelectedPatient={setSelectedPatientId}
             onUpdateConsultStatus={handleUpdateClinicalConsultStatus}
-            onReview={(patient, observation) => setObservationReviewDialog({ patient, observation })}
+            onReview={(patient, observation) =>
+              setObservationReviewDialog({ patient, observation })
+            }
           />
         </TabsContent>
 
@@ -672,7 +882,9 @@ export function RapidReviewPage() {
           <DateWiseLogTab
             patients={patients}
             reviews={observationReviews}
-            onReview={(patient, observation) => setObservationReviewDialog({ patient, observation })}
+            onReview={(patient, observation) =>
+              setObservationReviewDialog({ patient, observation })
+            }
           />
         </TabsContent>
 
@@ -705,7 +917,11 @@ export function RapidReviewPage() {
         onConfirm={handleSaveReview}
       />
       <ObservationReviewDialog
-        key={observationReviewDialog ? observationReviewDialog.observation.id : "observation-review-closed"}
+        key={
+          observationReviewDialog
+            ? observationReviewDialog.observation.id
+            : "observation-review-closed"
+        }
         state={observationReviewDialog}
         role={role}
         readOnly={readOnly}
@@ -725,12 +941,17 @@ function NurseObservationEntryTab({
 }: {
   patients: RapidReviewPatient[];
   selectedPatientId: string;
-  onSelectedPatient: (value: string) => void;
+  onSelectedPatient: (_value: string) => void;
   readOnly: boolean;
-  onAddObservation: (patient: RapidReviewPatient, observation: RapidObservationSet) => void;
+  onAddObservation: (_patient: RapidReviewPatient, _observation: RapidObservationSet) => void;
 }) {
-  const [draft, setDraft] = React.useState<ObservationDraft>(() => createObservationDraft(selectedPatientId));
-  const selectedPatient = patients.find((patient) => patient.id === draft.patientId) ?? patients.find((patient) => patient.id === selectedPatientId) ?? patients[0];
+  const [draft, setDraft] = React.useState<ObservationDraft>(() =>
+    createObservationDraft(selectedPatientId),
+  );
+  const selectedPatient =
+    patients.find((patient) => patient.id === draft.patientId) ??
+    patients.find((patient) => patient.id === selectedPatientId) ??
+    patients[0];
   const preview = buildObservationPreview(draft);
   const pulseDeficit = pulseDeficitValue(draft.monitorHeartRate, draft.pulse);
   const pulseDeficitRisk = pulseDeficitRiskLevel(draft.monitorHeartRate, draft.pulse);
@@ -759,14 +980,24 @@ function NurseObservationEntryTab({
         <CardHeader>
           <div>
             <CardTitle>Nurse Observation Entry</CardTitle>
-            <CardDescription>Respiratory rate, saturation, oxygen flow, blood pressure, pulse rhythm, temperature, GCS score, pain, and urine output are entered here.</CardDescription>
+            <CardDescription>
+              Respiratory rate, saturation, oxygen flow, blood pressure, pulse rhythm, temperature,
+              GCS score, pain, and urine output are entered here.
+            </CardDescription>
           </div>
-          <StatusPill tone={rapidLevelTone(preview.responseLevel)}>{preview.responseLevel}</StatusPill>
+          <StatusPill tone={rapidLevelTone(preview.responseLevel)}>
+            {preview.responseLevel}
+          </StatusPill>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <FormField label="Patient">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.patientId} onChange={(event) => handlePatientChange(event.target.value)} disabled={readOnly}>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.patientId}
+                onChange={(event) => handlePatientChange(event.target.value)}
+                disabled={readOnly}
+              >
                 {patients.map((patient) => (
                   <option key={patient.id} value={patient.id}>
                     {patient.patientName} - {patient.uhid} - {patient.bed}
@@ -775,38 +1006,92 @@ function NurseObservationEntryTab({
               </select>
             </FormField>
             <FormField label="Date">
-              <input className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" type="date" value={draft.observationDate} onChange={(event) => updateDraft("observationDate", event.target.value)} disabled={readOnly} />
+              <input
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                type="date"
+                value={draft.observationDate}
+                onChange={(event) => updateDraft("observationDate", event.target.value)}
+                disabled={readOnly}
+              />
             </FormField>
             <FormField label="Time">
-              <input className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" type="time" value={draft.observationTime} onChange={(event) => updateDraft("observationTime", event.target.value)} disabled={readOnly} />
+              <input
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                type="time"
+                value={draft.observationTime}
+                onChange={(event) => updateDraft("observationTime", event.target.value)}
+                disabled={readOnly}
+              />
             </FormField>
             <FormField label="Shift">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.shift} onChange={(event) => updateDraft("shift", event.target.value as ObservationDraft["shift"])} disabled={readOnly}>
-                {["Morning", "Evening", "Night", "Emergency"].map((item) => <option key={item}>{item}</option>)}
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.shift}
+                onChange={(event) =>
+                  updateDraft("shift", event.target.value as ObservationDraft["shift"])
+                }
+                disabled={readOnly}
+              >
+                {["Morning", "Evening", "Night", "Emergency"].map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
               </select>
             </FormField>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <FormField label="Recorded by">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.recordedBy} onChange={(event) => updateDraft("recordedBy", event.target.value)} disabled={readOnly}>
-                {["Ward Nurse", "Shift Coordinator", "ER Nurse", "Renal Nurse", "Pediatric Nurse"].map((item) => <option key={item}>{item}</option>)}
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.recordedBy}
+                onChange={(event) => updateDraft("recordedBy", event.target.value)}
+                disabled={readOnly}
+              >
+                {[
+                  "Ward Nurse",
+                  "Shift Coordinator",
+                  "ER Nurse",
+                  "Renal Nurse",
+                  "Pediatric Nurse",
+                ].map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
               </select>
             </FormField>
             <FormField label="Respiratory rate">
-              <VitalInput value={draft.respiratoryRate} onChange={(value) => updateDraft("respiratoryRate", value)} disabled={readOnly} suffix="/min" />
+              <VitalInput
+                value={draft.respiratoryRate}
+                onChange={(value) => updateDraft("respiratoryRate", value)}
+                disabled={readOnly}
+                suffix="/min"
+              />
             </FormField>
             <FormField label="O2 saturation">
-              <VitalInput value={draft.spo2} onChange={(value) => updateDraft("spo2", value)} disabled={readOnly} suffix="%" />
+              <VitalInput
+                value={draft.spo2}
+                onChange={(value) => updateDraft("spo2", value)}
+                disabled={readOnly}
+                suffix="%"
+              />
             </FormField>
             <FormField label="O2 flow rate">
-              <VitalInput value={draft.oxygenFlow} onChange={(value) => updateDraft("oxygenFlow", value)} disabled={readOnly} suffix="L/min" />
+              <VitalInput
+                value={draft.oxygenFlow}
+                onChange={(value) => updateDraft("oxygenFlow", value)}
+                disabled={readOnly}
+                suffix="L/min"
+              />
             </FormField>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-4">
             <FormField label="FiO2">
-              <VitalInput value={draft.fio2} onChange={(value) => updateDraft("fio2", value)} disabled={readOnly} suffix="%" />
+              <VitalInput
+                value={draft.fio2}
+                onChange={(value) => updateDraft("fio2", value)}
+                disabled={readOnly}
+                suffix="%"
+              />
             </FormField>
             <FormField label="Blood pressure">
               <BloodPressureInput
@@ -818,52 +1103,136 @@ function NurseObservationEntryTab({
               />
             </FormField>
             <FormField label="Delivery method">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.deliveryMethod} onChange={(event) => updateDraft("deliveryMethod", event.target.value as ObservationDraft["deliveryMethod"])} disabled={readOnly}>
-                {["Room air", "Nasal cannula", "Simple mask", "Venturi mask", "NRBM", "CPAP", "Ventilator"].map((item) => <option key={item}>{item}</option>)}
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.deliveryMethod}
+                onChange={(event) =>
+                  updateDraft(
+                    "deliveryMethod",
+                    event.target.value as ObservationDraft["deliveryMethod"],
+                  )
+                }
+                disabled={readOnly}
+              >
+                {[
+                  "Room air",
+                  "Nasal cannula",
+                  "Simple mask",
+                  "Venturi mask",
+                  "NRBM",
+                  "CPAP",
+                  "Ventilator",
+                ].map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
               </select>
             </FormField>
             <FormField label="Pulse rhythm">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseRhythm} onChange={(event) => updateDraft("pulseRhythm", event.target.value as RapidPulseRhythm)} disabled={readOnly}>
-                {rapidPulseRhythmOptions.map((item) => <option key={item}>{item}</option>)}
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.pulseRhythm}
+                onChange={(event) =>
+                  updateDraft("pulseRhythm", event.target.value as RapidPulseRhythm)
+                }
+                disabled={readOnly}
+              >
+                {rapidPulseRhythmOptions.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
               </select>
             </FormField>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <FormField label="Pulse rate">
-              <VitalInput value={draft.pulse} onChange={(value) => updateDraft("pulse", value)} disabled={readOnly} suffix="/min" />
+              <VitalInput
+                value={draft.pulse}
+                onChange={(value) => updateDraft("pulse", value)}
+                disabled={readOnly}
+                suffix="/min"
+              />
             </FormField>
             <FormField label="Monitor heart rate">
-              <VitalInput value={draft.monitorHeartRate} onChange={(value) => updateDraft("monitorHeartRate", value)} disabled={readOnly} suffix="bpm" />
+              <VitalInput
+                value={draft.monitorHeartRate}
+                onChange={(value) => updateDraft("monitorHeartRate", value)}
+                disabled={readOnly}
+                suffix="bpm"
+              />
             </FormField>
             <FormField label="Pulse source">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseSource} onChange={(event) => updateDraft("pulseSource", event.target.value as RapidPulseSource)} disabled={readOnly}>
-                {rapidPulseSourceOptions.map((item) => <option key={item}>{item}</option>)}
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.pulseSource}
+                onChange={(event) =>
+                  updateDraft("pulseSource", event.target.value as RapidPulseSource)
+                }
+                disabled={readOnly}
+              >
+                {rapidPulseSourceOptions.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
               </select>
             </FormField>
             <FormField label="Pulse site">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseSite} onChange={(event) => updateDraft("pulseSite", event.target.value as RapidPulseSite)} disabled={readOnly}>
-                {rapidPulseSiteOptions.map((item) => <option key={item}>{item}</option>)}
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.pulseSite}
+                onChange={(event) => updateDraft("pulseSite", event.target.value as RapidPulseSite)}
+                disabled={readOnly}
+              >
+                {rapidPulseSiteOptions.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
               </select>
             </FormField>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <FormField label="Pulse quality">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseQuality} onChange={(event) => updateDraft("pulseQuality", event.target.value as RapidPulseQuality)} disabled={readOnly}>
-                {rapidPulseQualityOptions.map((item) => <option key={item}>{item}</option>)}
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.pulseQuality}
+                onChange={(event) =>
+                  updateDraft("pulseQuality", event.target.value as RapidPulseQuality)
+                }
+                disabled={readOnly}
+              >
+                {rapidPulseQualityOptions.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
               </select>
             </FormField>
             <FormField label="Pulse action taken">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseActionTaken} onChange={(event) => updateDraft("pulseActionTaken", event.target.value as RapidPulseAction)} disabled={readOnly}>
-                {rapidPulseActionOptions.map((item) => <option key={item}>{item}</option>)}
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.pulseActionTaken}
+                onChange={(event) =>
+                  updateDraft("pulseActionTaken", event.target.value as RapidPulseAction)
+                }
+                disabled={readOnly}
+              >
+                {rapidPulseActionOptions.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
               </select>
             </FormField>
             <FormField label="Temperature">
-              <VitalInput value={draft.temperature} onChange={(value) => updateDraft("temperature", value)} disabled={readOnly} suffix="deg C" step="0.1" />
+              <VitalInput
+                value={draft.temperature}
+                onChange={(value) => updateDraft("temperature", value)}
+                disabled={readOnly}
+                suffix="deg C"
+                step="0.1"
+              />
             </FormField>
             <FormField label="GCS score">
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.consciousness} onChange={(event) => updateDraft("consciousness", event.target.value)} disabled={readOnly}>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={draft.consciousness}
+                onChange={(event) => updateDraft("consciousness", event.target.value)}
+                disabled={readOnly}
+              >
                 {consciousnessScores.map((item) => (
                   <option key={item.score} value={item.score}>
                     {item.score}/{item.meaning}
@@ -872,23 +1241,41 @@ function NurseObservationEntryTab({
               </select>
             </FormField>
             <FormField label="Pain score">
-              <VitalInput value={draft.painScore} onChange={(value) => updateDraft("painScore", value)} disabled={readOnly} suffix="/10" />
+              <VitalInput
+                value={draft.painScore}
+                onChange={(value) => updateDraft("painScore", value)}
+                disabled={readOnly}
+                suffix="/10"
+              />
             </FormField>
             <FormField label="Urine output">
-              <VitalInput value={draft.urineOutput} onChange={(value) => updateDraft("urineOutput", value)} disabled={readOnly} suffix="ml/hr" />
+              <VitalInput
+                value={draft.urineOutput}
+                onChange={(value) => updateDraft("urineOutput", value)}
+                disabled={readOnly}
+                suffix="ml/hr"
+              />
             </FormField>
             <FormField label="Pulse deficit">
               <div className="flex h-9 items-center justify-between gap-2 rounded-md border border-border bg-surface-muted px-3">
-                <span className="text-sm font-semibold text-foreground">{pulseDeficit === null ? "--" : `${pulseDeficit} bpm`}</span>
+                <span className="text-sm font-semibold text-foreground">
+                  {pulseDeficit === null ? "--" : `${pulseDeficit} bpm`}
+                </span>
                 <Badge tone={adultRiskTone(pulseDeficitRisk)}>
-                  {pulseDeficitRisk === "empty" ? "Not checked" : (pulseDeficit ?? 0) > 10 ? "Suspected" : "Normal"}
+                  {pulseDeficitRisk === "empty"
+                    ? "Not checked"
+                    : (pulseDeficit ?? 0) > 10
+                      ? "Suspected"
+                      : "Normal"}
                 </Badge>
               </div>
             </FormField>
             <FormField label="System preview">
               <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface-muted px-3">
                 <Badge tone={rapidZoneTone(preview.dominantZone)}>{preview.dominantZone}</Badge>
-                <StatusPill tone={rapidLevelTone(preview.responseLevel)}>{preview.responseLevel}</StatusPill>
+                <StatusPill tone={rapidLevelTone(preview.responseLevel)}>
+                  {preview.responseLevel}
+                </StatusPill>
               </div>
             </FormField>
           </div>
@@ -897,14 +1284,18 @@ function NurseObservationEntryTab({
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="text-sm font-semibold text-foreground">Pulse rhythm symptoms</div>
-                <div className="mt-1 text-xs text-muted-foreground">Select only symptoms present during the pulse rhythm assessment.</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Select only symptoms present during the pulse rhythm assessment.
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge tone={adultRiskTone(pulseRhythmRiskLevel(draft.pulseRhythm))}>
-                  Rhythm {adultObservationRiskPalette[pulseRhythmRiskLevel(draft.pulseRhythm)].label}
+                  Rhythm{" "}
+                  {adultObservationRiskPalette[pulseRhythmRiskLevel(draft.pulseRhythm)].label}
                 </Badge>
                 <Badge tone={adultRiskTone(pulseQualityRiskLevel(draft.pulseQuality))}>
-                  Quality {adultObservationRiskPalette[pulseQualityRiskLevel(draft.pulseQuality)].label}
+                  Quality{" "}
+                  {adultObservationRiskPalette[pulseQualityRiskLevel(draft.pulseQuality)].label}
                 </Badge>
                 {pulseDeficitRisk !== "normal" && pulseDeficitRisk !== "empty" ? (
                   <Badge tone={adultRiskTone(pulseDeficitRisk)}>Pulse deficit</Badge>
@@ -939,10 +1330,17 @@ function NurseObservationEntryTab({
           <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-muted p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={rapidZoneTone(preview.dominantZone)}>{preview.dominantZone} zone</Badge>
-                <StatusPill tone={rapidLevelTone(preview.responseLevel)}>{preview.responseLevel}</StatusPill>
+                <Badge tone={rapidZoneTone(preview.dominantZone)}>
+                  {preview.dominantZone} zone
+                </Badge>
+                <StatusPill tone={rapidLevelTone(preview.responseLevel)}>
+                  {preview.responseLevel}
+                </StatusPill>
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">System preview updates from the vitals before save. Doctor can review it from Doctor Review or Date Wise Log.</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                System preview updates from the vitals before save. Doctor can review it from Doctor
+                Review or Date Wise Log.
+              </div>
             </div>
             <Button
               disabled={readOnly || !selectedPatient}
@@ -965,13 +1363,18 @@ function NurseObservationEntryTab({
           <CardHeader>
             <div>
               <CardTitle>Selected Patient</CardTitle>
-              <CardDescription>Add entry goes into the selected patient date-wise observation log.</CardDescription>
+              <CardDescription>
+                Add entry goes into the selected patient date-wise observation log.
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-1">
             <DetailRow label="Patient" value={selectedPatient?.patientName ?? "Not selected"} />
             <DetailRow label="UHID" value={selectedPatient?.uhid ?? "-"} />
-            <DetailRow label="Location" value={selectedPatient ? `${selectedPatient.bed}, ${selectedPatient.ward}` : "-"} />
+            <DetailRow
+              label="Location"
+              value={selectedPatient ? `${selectedPatient.bed}, ${selectedPatient.ward}` : "-"}
+            />
             <DetailRow label="Consultant" value={selectedPatient?.consultant ?? "-"} />
           </CardContent>
         </Card>
@@ -1004,8 +1407,18 @@ function NurseReviewTab({
   reviews: Record<string, ObservationReviewUpdate>;
   role: Role;
   voidedObservations: Record<string, NurseObservationVoid>;
-  onEditObservation: (patient: RapidReviewPatient, original: RapidObservationSet, updated: RapidObservationSet, reason: string, performedBy: string) => void;
-  onVoidObservation: (patient: RapidReviewPatient, observation: RapidObservationSet, voidEntry: NurseObservationVoid) => void;
+  onEditObservation: (
+    _patient: RapidReviewPatient,
+    _original: RapidObservationSet,
+    _updated: RapidObservationSet,
+    _reason: string,
+    _performedBy: string,
+  ) => void;
+  onVoidObservation: (
+    _patient: RapidReviewPatient,
+    _observation: RapidObservationSet,
+    _voidEntry: NurseObservationVoid,
+  ) => void;
 }) {
   const [search, setSearch] = React.useState("");
   const [patientFilter, setPatientFilter] = React.useState("All patients");
@@ -1026,19 +1439,49 @@ function NurseReviewTab({
   const allRows = flattenObservationRows(patients);
   const dateOptions = uniqueObservationDates(patients);
   const latestDataDate = latestAvailableDate(dateOptions);
-  const editedObservationIds = new Set(auditTrail.filter((item) => item.action === "Edited").map((item) => item.observationId));
-  const patientOptions = ["All patients", ...patients.map((patient) => `${patient.patientName} - ${patient.uhid}`)];
-  const shiftOptions = ["All shifts", ...uniqueValues(allRows.map((row) => row.observation.shift ?? "Shift not set"))];
+  const editedObservationIds = new Set(
+    auditTrail.filter((item) => item.action === "Edited").map((item) => item.observationId),
+  );
+  const patientOptions = [
+    "All patients",
+    ...patients.map((patient) => `${patient.patientName} - ${patient.uhid}`),
+  ];
+  const shiftOptions = [
+    "All shifts",
+    ...uniqueValues(allRows.map((row) => row.observation.shift ?? "Shift not set")),
+  ];
   const rows = allRows
     .map((row) => ({
       ...row,
-      nurseStatus: nurseObservationStatus(row.observation, reviews, voidedObservations, editedObservationIds),
+      nurseStatus: nurseObservationStatus(
+        row.observation,
+        reviews,
+        voidedObservations,
+        editedObservationIds,
+      ),
     }))
-    .filter((row) => patientFilter === "All patients" || `${row.patient.patientName} - ${row.patient.uhid}` === patientFilter)
-    .filter((row) => shiftFilter === "All shifts" || (row.observation.shift ?? "Shift not set") === shiftFilter)
+    .filter(
+      (row) =>
+        patientFilter === "All patients" ||
+        `${row.patient.patientName} - ${row.patient.uhid}` === patientFilter,
+    )
+    .filter(
+      (row) =>
+        shiftFilter === "All shifts" || (row.observation.shift ?? "Shift not set") === shiftFilter,
+    )
     .filter((row) => statusFilter === "All status" || row.nurseStatus === statusFilter)
     .filter((row) => riskFilter === "All response" || row.observation.responseLevel === riskFilter)
-    .filter((row) => observationMatchesDateFilter(row.observation, dateMode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate))
+    .filter((row) =>
+      observationMatchesDateFilter(
+        row.observation,
+        dateMode,
+        selectedDates,
+        singleDate,
+        dateFrom,
+        dateTo,
+        latestDataDate,
+      ),
+    )
     .filter((row) => observationMatchesTimeFilter(row.observation, timeMode, timeFrom, timeTo))
     .filter((row) => {
       if (!search.trim()) return true;
@@ -1058,7 +1501,11 @@ function NurseReviewTab({
       ].join(" ");
       return includes(text, search);
     })
-    .sort((a, b) => observationDateTimeSortValue(b.observation).localeCompare(observationDateTimeSortValue(a.observation)));
+    .sort((a, b) =>
+      observationDateTimeSortValue(b.observation).localeCompare(
+        observationDateTimeSortValue(a.observation),
+      ),
+    );
 
   const activeCount = rows.filter((row) => row.nurseStatus === "Active").length;
   const editedCount = rows.filter((row) => row.nurseStatus === "Edited").length;
@@ -1081,7 +1528,9 @@ function NurseReviewTab({
         <CardHeader>
           <div>
             <CardTitle>Nurse Review</CardTitle>
-            <CardDescription>Edit nurse-entered observations, void incorrect entries, and keep an audit trail.</CardDescription>
+            <CardDescription>
+              Edit nurse-entered observations, void incorrect entries, and keep an audit trail.
+            </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone="info">{rows.length} records</Badge>
@@ -1091,11 +1540,35 @@ function NurseReviewTab({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, UHID, bed, nurse, note, status...">
-            <NativeSelect label="Patient" value={patientFilter} onChange={setPatientFilter} options={patientOptions} />
-            <NativeSelect label="Shift" value={shiftFilter} onChange={setShiftFilter} options={shiftOptions} />
-            <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={["All status", "Active", "Edited", "Doctor reviewed", "Voided"]} />
-            <NativeSelect label="Risk" value={riskFilter} onChange={setRiskFilter} options={["All response", "MER Call", "MDT Review", "RN Review", "Routine"]} />
+          <FilterBar
+            search={search}
+            onSearch={setSearch}
+            placeholder="Search patient, UHID, bed, nurse, note, status..."
+          >
+            <NativeSelect
+              label="Patient"
+              value={patientFilter}
+              onChange={setPatientFilter}
+              options={patientOptions}
+            />
+            <NativeSelect
+              label="Shift"
+              value={shiftFilter}
+              onChange={setShiftFilter}
+              options={shiftOptions}
+            />
+            <NativeSelect
+              label="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={["All status", "Active", "Edited", "Doctor reviewed", "Voided"]}
+            />
+            <NativeSelect
+              label="Risk"
+              value={riskFilter}
+              onChange={setRiskFilter}
+              options={["All response", "MER Call", "MDT Review", "RN Review", "Routine"]}
+            />
           </FilterBar>
 
           <DoctorReviewDateTimeFilter
@@ -1131,7 +1604,10 @@ function NurseReviewTab({
         <CardHeader>
           <div>
             <CardTitle>Observation Correction Worklist</CardTitle>
-            <CardDescription>Use edit for clinical corrections. Use void when an entry should be removed from active charts.</CardDescription>
+            <CardDescription>
+              Use edit for clinical corrections. Use void when an entry should be removed from
+              active charts.
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -1139,13 +1615,19 @@ function NurseReviewTab({
             <table className="w-full min-w-[1420px] border-collapse text-sm">
               <thead className="bg-surface-muted text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="sticky left-0 z-10 border-b border-r border-border bg-surface-muted px-3 py-2 text-left">Patient</th>
+                  <th className="sticky left-0 z-10 border-b border-r border-border bg-surface-muted px-3 py-2 text-left">
+                    Patient
+                  </th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Date</th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Time</th>
-                  <th className="border-b border-r border-border px-3 py-2 text-left">By / Shift</th>
+                  <th className="border-b border-r border-border px-3 py-2 text-left">
+                    By / Shift
+                  </th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Vitals</th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Pulse</th>
-                  <th className="border-b border-r border-border px-3 py-2 text-left">Neuro / Pain</th>
+                  <th className="border-b border-r border-border px-3 py-2 text-left">
+                    Neuro / Pain
+                  </th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Risk</th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Status</th>
                   <th className="border-b border-border px-3 py-2 text-right">Actions</th>
@@ -1156,44 +1638,102 @@ function NurseReviewTab({
                   const isVoided = row.nurseStatus === "Voided";
                   const voidInfo = voidedObservations[row.observation.id];
                   return (
-                    <tr className={cn("border-b border-border last:border-0", isVoided && "bg-surface-muted/70 text-muted-foreground")} key={row.observation.id}>
+                    <tr
+                      className={cn(
+                        "border-b border-border last:border-0",
+                        isVoided && "bg-surface-muted/70 text-muted-foreground",
+                      )}
+                      key={row.observation.id}
+                    >
                       <td className="sticky left-0 z-10 border-r border-border bg-background px-3 py-2">
-                        <div className="font-semibold text-foreground">{row.patient.patientName}</div>
-                        <div className="text-xs text-muted-foreground">{row.patient.uhid} - {row.patient.bed}, {row.patient.ward}</div>
-                      </td>
-                      <td className="border-r border-border px-3 py-2">{formatDateLabel(observationDateValue(row.observation))}</td>
-                      <td className="border-r border-border px-3 py-2">{observationTimeLabel(row.observation)}</td>
-                      <td className="border-r border-border px-3 py-2">
-                        <div className="font-medium text-foreground">{row.observation.recordedBy}</div>
-                        <div className="text-xs text-muted-foreground">{row.observation.shift ?? "Shift not set"}</div>
+                        <div className="font-semibold text-foreground">
+                          {row.patient.patientName}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {row.patient.uhid} - {row.patient.bed}, {row.patient.ward}
+                        </div>
                       </td>
                       <td className="border-r border-border px-3 py-2">
-                        <div className="text-xs">RR {row.observation.respiratoryRate} / SpO2 {row.observation.spo2} / O2 {row.observation.oxygenFlow}</div>
-                        <div className="text-xs text-muted-foreground">BP {row.observation.bloodPressure}, Temp {row.observation.temperature}, Urine {row.observation.urineOutput}</div>
+                        {formatDateLabel(observationDateValue(row.observation))}
                       </td>
                       <td className="border-r border-border px-3 py-2">
-                        <div className="text-xs">Pulse {row.observation.pulse}, HR {monitorHeartRateValue(row.observation)}</div>
-                        <div className="text-xs text-muted-foreground">{pulseRhythmLabel(row.observation)} - {pulseQualityLabel(row.observation)}</div>
+                        {observationTimeLabel(row.observation)}
                       </td>
                       <td className="border-r border-border px-3 py-2">
-                        <div className="text-xs">{gcsScoreLabel(row.observation.consciousness)}</div>
-                        <div className="text-xs text-muted-foreground">Pain {row.observation.painScore}</div>
+                        <div className="font-medium text-foreground">
+                          {row.observation.recordedBy}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {row.observation.shift ?? "Shift not set"}
+                        </div>
                       </td>
                       <td className="border-r border-border px-3 py-2">
-                        <Badge tone={rapidZoneTone(row.observation.dominantZone)}>{row.observation.dominantZone}</Badge>
-                        <div className="mt-1"><StatusPill tone={rapidLevelTone(row.observation.responseLevel)}>{row.observation.responseLevel}</StatusPill></div>
+                        <div className="text-xs">
+                          RR {row.observation.respiratoryRate} / SpO2 {row.observation.spo2} / O2{" "}
+                          {row.observation.oxygenFlow}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          BP {row.observation.bloodPressure}, Temp {row.observation.temperature},
+                          Urine {row.observation.urineOutput}
+                        </div>
                       </td>
                       <td className="border-r border-border px-3 py-2">
-                        <StatusPill tone={nurseObservationStatusTone(row.nurseStatus)}>{row.nurseStatus}</StatusPill>
-                        {voidInfo ? <div className="mt-1 text-xs text-muted-foreground">{voidInfo.reason}</div> : null}
+                        <div className="text-xs">
+                          Pulse {row.observation.pulse}, HR {monitorHeartRateValue(row.observation)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {pulseRhythmLabel(row.observation)} - {pulseQualityLabel(row.observation)}
+                        </div>
+                      </td>
+                      <td className="border-r border-border px-3 py-2">
+                        <div className="text-xs">
+                          {gcsScoreLabel(row.observation.consciousness)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Pain {row.observation.painScore}
+                        </div>
+                      </td>
+                      <td className="border-r border-border px-3 py-2">
+                        <Badge tone={rapidZoneTone(row.observation.dominantZone)}>
+                          {row.observation.dominantZone}
+                        </Badge>
+                        <div className="mt-1">
+                          <StatusPill tone={rapidLevelTone(row.observation.responseLevel)}>
+                            {row.observation.responseLevel}
+                          </StatusPill>
+                        </div>
+                      </td>
+                      <td className="border-r border-border px-3 py-2">
+                        <StatusPill tone={nurseObservationStatusTone(row.nurseStatus)}>
+                          {row.nurseStatus}
+                        </StatusPill>
+                        {voidInfo ? (
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {voidInfo.reason}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex justify-end gap-2">
-                          <Button disabled={readOnly || isVoided} size="sm" variant="outline" onClick={() => setEditDialog({ patient: row.patient, observation: row.observation })}>
+                          <Button
+                            disabled={readOnly || isVoided}
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setEditDialog({ patient: row.patient, observation: row.observation })
+                            }
+                          >
                             <Edit3 className="h-4 w-4" />
                             Edit
                           </Button>
-                          <Button disabled={readOnly || isVoided} size="sm" variant="danger" onClick={() => setVoidDialog({ patient: row.patient, observation: row.observation })}>
+                          <Button
+                            disabled={readOnly || isVoided}
+                            size="sm"
+                            variant="danger"
+                            onClick={() =>
+                              setVoidDialog({ patient: row.patient, observation: row.observation })
+                            }
+                          >
                             <Trash2 className="h-4 w-4" />
                             Void
                           </Button>
@@ -1204,7 +1744,12 @@ function NurseReviewTab({
                 })}
                 {!rows.length ? (
                   <tr>
-                    <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={10}>No nurse observations match the selected filters.</td>
+                    <td
+                      className="px-3 py-8 text-center text-sm text-muted-foreground"
+                      colSpan={10}
+                    >
+                      No nurse observations match the selected filters.
+                    </td>
                   </tr>
                 ) : null}
               </tbody>
@@ -1244,7 +1789,15 @@ function NurseReviewTab({
   );
 }
 
-function NurseReviewStat({ label, value, tone }: { label: string; value: number; tone: StatusTone }) {
+function NurseReviewStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: StatusTone;
+}) {
   return (
     <div className="rounded-md border border-border bg-background p-3">
       <div className="text-xs font-semibold uppercase text-muted-foreground">{label}</div>
@@ -1262,7 +1815,9 @@ function NurseAuditTrailCard({ auditTrail }: { auditTrail: NurseObservationAudit
       <CardHeader>
         <div>
           <CardTitle>Nurse Observation Audit Trail</CardTitle>
-          <CardDescription>Every edit and void action is kept here for clinical accountability.</CardDescription>
+          <CardDescription>
+            Every edit and void action is kept here for clinical accountability.
+          </CardDescription>
         </div>
         <Badge tone="muted">{auditTrail.length} audit events</Badge>
       </CardHeader>
@@ -1284,19 +1839,26 @@ function NurseAuditTrailCard({ auditTrail }: { auditTrail: NurseObservationAudit
               <tbody>
                 {auditTrail.slice(0, 12).map((item) => (
                   <tr className="border-b border-border last:border-0" key={item.id}>
-                    <td className="border-r border-border px-3 py-2">{formatDateLabel(item.date)}</td>
+                    <td className="border-r border-border px-3 py-2">
+                      {formatDateLabel(item.date)}
+                    </td>
                     <td className="border-r border-border px-3 py-2">{item.time}</td>
                     <td className="border-r border-border px-3 py-2">
                       <div className="font-medium text-foreground">{item.patientName}</div>
                       <div className="text-xs text-muted-foreground">{item.observationId}</div>
                     </td>
-                    <td className="border-r border-border px-3 py-2"><Badge tone={nurseAuditActionTone(item.action)}>{item.action}</Badge></td>
+                    <td className="border-r border-border px-3 py-2">
+                      <Badge tone={nurseAuditActionTone(item.action)}>{item.action}</Badge>
+                    </td>
                     <td className="border-r border-border px-3 py-2">{item.performedBy}</td>
                     <td className="border-r border-border px-3 py-2">{item.reason}</td>
                     <td className="px-3 py-2">
                       <div className="text-xs text-foreground">{item.summary}</div>
                       {item.previousSummary || item.newSummary ? (
-                        <div className="mt-1 text-xs text-muted-foreground">{item.previousSummary ? `Before: ${item.previousSummary}` : ""} {item.newSummary ? `After: ${item.newSummary}` : ""}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {item.previousSummary ? `Before: ${item.previousSummary}` : ""}{" "}
+                          {item.newSummary ? `After: ${item.newSummary}` : ""}
+                        </div>
                       ) : null}
                     </td>
                   </tr>
@@ -1326,12 +1888,22 @@ function NurseObservationEditDialog({
   readOnly: boolean;
   reviews: Record<string, ObservationReviewUpdate>;
   role: Role;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (patient: RapidReviewPatient, original: RapidObservationSet, updated: RapidObservationSet, reason: string, performedBy: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onConfirm: (
+    _patient: RapidReviewPatient,
+    _original: RapidObservationSet,
+    _updated: RapidObservationSet,
+    _reason: string,
+    _performedBy: string,
+  ) => void;
 }) {
   const patient = state?.patient ?? null;
   const observation = state?.observation ?? null;
-  const [draft, setDraft] = React.useState<ObservationDraft>(() => observation && patient ? createObservationDraftFromObservation(patient.id, observation) : createObservationDraft(""));
+  const [draft, setDraft] = React.useState<ObservationDraft>(() =>
+    observation && patient
+      ? createObservationDraftFromObservation(patient.id, observation)
+      : createObservationDraft(""),
+  );
   const [reason, setReason] = React.useState("Clinical correction after nurse verification");
   const [performedBy, setPerformedBy] = React.useState(role === "Nurse" ? "Current Nurse" : role);
 
@@ -1352,9 +1924,13 @@ function NurseObservationEditDialog({
         <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-64px)] w-[calc(100vw-32px)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div className="min-w-0">
-              <DialogPrimitive.Title className="text-base font-semibold text-foreground">Edit nurse observation</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="text-base font-semibold text-foreground">
+                Edit nurse observation
+              </DialogPrimitive.Title>
               <DialogPrimitive.Description className="mt-1 text-xs text-muted-foreground">
-                {patient.patientName} - {patient.uhid} - {formatDateLabel(observationDateValue(observation))}, {observationTimeLabel(observation)}
+                {patient.patientName} - {patient.uhid} -{" "}
+                {formatDateLabel(observationDateValue(observation))},{" "}
+                {observationTimeLabel(observation)}
               </DialogPrimitive.Description>
             </div>
             <DialogPrimitive.Close asChild>
@@ -1367,137 +1943,330 @@ function NurseObservationEditDialog({
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
               {doctorReviewed ? (
-                <AlertBanner icon={AlertTriangle} tone="warning" title="Doctor review already exists">
-                  Editing this observation will mark the amended entry for doctor re-review in active charts.
+                <AlertBanner
+                  icon={AlertTriangle}
+                  tone="warning"
+                  title="Doctor review already exists"
+                >
+                  Editing this observation will mark the amended entry for doctor re-review in
+                  active charts.
                 </AlertBanner>
               ) : null}
 
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <FormField label="Date">
-                  <input className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" type="date" value={draft.observationDate} onChange={(event) => updateDraft("observationDate", event.target.value)} disabled={readOnly} />
+                  <input
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    type="date"
+                    value={draft.observationDate}
+                    onChange={(event) => updateDraft("observationDate", event.target.value)}
+                    disabled={readOnly}
+                  />
                 </FormField>
                 <FormField label="Time">
-                  <input className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" type="time" value={draft.observationTime} onChange={(event) => updateDraft("observationTime", event.target.value)} disabled={readOnly} />
+                  <input
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    type="time"
+                    value={draft.observationTime}
+                    onChange={(event) => updateDraft("observationTime", event.target.value)}
+                    disabled={readOnly}
+                  />
                 </FormField>
                 <FormField label="Shift">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.shift} onChange={(event) => updateDraft("shift", event.target.value as ObservationDraft["shift"])} disabled={readOnly}>
-                    {["Morning", "Evening", "Night", "Emergency"].map((item) => <option key={item}>{item}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={draft.shift}
+                    onChange={(event) =>
+                      updateDraft("shift", event.target.value as ObservationDraft["shift"])
+                    }
+                    disabled={readOnly}
+                  >
+                    {["Morning", "Evening", "Night", "Emergency"].map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
                   </select>
                 </FormField>
                 <FormField label="Edited by">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={performedBy} onChange={(event) => setPerformedBy(event.target.value)} disabled={readOnly}>
-                    {["Current Nurse", "Ward Nurse", "Shift Coordinator", "ER Nurse", "Renal Nurse", role].map((item) => <option key={item}>{item}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={performedBy}
+                    onChange={(event) => setPerformedBy(event.target.value)}
+                    disabled={readOnly}
+                  >
+                    {[
+                      "Current Nurse",
+                      "Ward Nurse",
+                      "Shift Coordinator",
+                      "ER Nurse",
+                      "Renal Nurse",
+                      role,
+                    ].map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
                   </select>
                 </FormField>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <FormField label="Respiratory rate">
-                  <VitalInput value={draft.respiratoryRate} onChange={(value) => updateDraft("respiratoryRate", value)} disabled={readOnly} suffix="/min" />
+                  <VitalInput
+                    value={draft.respiratoryRate}
+                    onChange={(value) => updateDraft("respiratoryRate", value)}
+                    disabled={readOnly}
+                    suffix="/min"
+                  />
                 </FormField>
                 <FormField label="O2 saturation">
-                  <VitalInput value={draft.spo2} onChange={(value) => updateDraft("spo2", value)} disabled={readOnly} suffix="%" />
+                  <VitalInput
+                    value={draft.spo2}
+                    onChange={(value) => updateDraft("spo2", value)}
+                    disabled={readOnly}
+                    suffix="%"
+                  />
                 </FormField>
                 <FormField label="O2 flow rate">
-                  <VitalInput value={draft.oxygenFlow} onChange={(value) => updateDraft("oxygenFlow", value)} disabled={readOnly} suffix="L/min" />
+                  <VitalInput
+                    value={draft.oxygenFlow}
+                    onChange={(value) => updateDraft("oxygenFlow", value)}
+                    disabled={readOnly}
+                    suffix="L/min"
+                  />
                 </FormField>
                 <FormField label="FiO2">
-                  <VitalInput value={draft.fio2} onChange={(value) => updateDraft("fio2", value)} disabled={readOnly} suffix="%" />
+                  <VitalInput
+                    value={draft.fio2}
+                    onChange={(value) => updateDraft("fio2", value)}
+                    disabled={readOnly}
+                    suffix="%"
+                  />
                 </FormField>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <FormField label="Blood pressure">
-                  <BloodPressureInput disabled={readOnly} diastolic={draft.diastolic} onDiastolicChange={(value) => updateDraft("diastolic", value)} onSystolicChange={(value) => updateDraft("systolic", value)} systolic={draft.systolic} />
+                  <BloodPressureInput
+                    disabled={readOnly}
+                    diastolic={draft.diastolic}
+                    onDiastolicChange={(value) => updateDraft("diastolic", value)}
+                    onSystolicChange={(value) => updateDraft("systolic", value)}
+                    systolic={draft.systolic}
+                  />
                 </FormField>
                 <FormField label="Delivery method">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.deliveryMethod} onChange={(event) => updateDraft("deliveryMethod", event.target.value as ObservationDraft["deliveryMethod"])} disabled={readOnly}>
-                    {["Room air", "Nasal cannula", "Simple mask", "Venturi mask", "NRBM", "CPAP", "Ventilator"].map((item) => <option key={item}>{item}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={draft.deliveryMethod}
+                    onChange={(event) =>
+                      updateDraft(
+                        "deliveryMethod",
+                        event.target.value as ObservationDraft["deliveryMethod"],
+                      )
+                    }
+                    disabled={readOnly}
+                  >
+                    {[
+                      "Room air",
+                      "Nasal cannula",
+                      "Simple mask",
+                      "Venturi mask",
+                      "NRBM",
+                      "CPAP",
+                      "Ventilator",
+                    ].map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
                   </select>
                 </FormField>
                 <FormField label="Pulse rhythm">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseRhythm} onChange={(event) => updateDraft("pulseRhythm", event.target.value as RapidPulseRhythm)} disabled={readOnly}>
-                    {rapidPulseRhythmOptions.map((item) => <option key={item}>{item}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={draft.pulseRhythm}
+                    onChange={(event) =>
+                      updateDraft("pulseRhythm", event.target.value as RapidPulseRhythm)
+                    }
+                    disabled={readOnly}
+                  >
+                    {rapidPulseRhythmOptions.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
                   </select>
                 </FormField>
                 <FormField label="Pulse rate">
-                  <VitalInput value={draft.pulse} onChange={(value) => updateDraft("pulse", value)} disabled={readOnly} suffix="/min" />
+                  <VitalInput
+                    value={draft.pulse}
+                    onChange={(value) => updateDraft("pulse", value)}
+                    disabled={readOnly}
+                    suffix="/min"
+                  />
                 </FormField>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <FormField label="Monitor heart rate">
-                  <VitalInput value={draft.monitorHeartRate} onChange={(value) => updateDraft("monitorHeartRate", value)} disabled={readOnly} suffix="bpm" />
+                  <VitalInput
+                    value={draft.monitorHeartRate}
+                    onChange={(value) => updateDraft("monitorHeartRate", value)}
+                    disabled={readOnly}
+                    suffix="bpm"
+                  />
                 </FormField>
                 <FormField label="Pulse source">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseSource} onChange={(event) => updateDraft("pulseSource", event.target.value as RapidPulseSource)} disabled={readOnly}>
-                    {rapidPulseSourceOptions.map((item) => <option key={item}>{item}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={draft.pulseSource}
+                    onChange={(event) =>
+                      updateDraft("pulseSource", event.target.value as RapidPulseSource)
+                    }
+                    disabled={readOnly}
+                  >
+                    {rapidPulseSourceOptions.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
                   </select>
                 </FormField>
                 <FormField label="Pulse site">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseSite} onChange={(event) => updateDraft("pulseSite", event.target.value as RapidPulseSite)} disabled={readOnly}>
-                    {rapidPulseSiteOptions.map((item) => <option key={item}>{item}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={draft.pulseSite}
+                    onChange={(event) =>
+                      updateDraft("pulseSite", event.target.value as RapidPulseSite)
+                    }
+                    disabled={readOnly}
+                  >
+                    {rapidPulseSiteOptions.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
                   </select>
                 </FormField>
                 <FormField label="Pulse quality">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseQuality} onChange={(event) => updateDraft("pulseQuality", event.target.value as RapidPulseQuality)} disabled={readOnly}>
-                    {rapidPulseQualityOptions.map((item) => <option key={item}>{item}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={draft.pulseQuality}
+                    onChange={(event) =>
+                      updateDraft("pulseQuality", event.target.value as RapidPulseQuality)
+                    }
+                    disabled={readOnly}
+                  >
+                    {rapidPulseQualityOptions.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
                   </select>
                 </FormField>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <FormField label="Pulse action taken">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.pulseActionTaken} onChange={(event) => updateDraft("pulseActionTaken", event.target.value as RapidPulseAction)} disabled={readOnly}>
-                    {rapidPulseActionOptions.map((item) => <option key={item}>{item}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={draft.pulseActionTaken}
+                    onChange={(event) =>
+                      updateDraft("pulseActionTaken", event.target.value as RapidPulseAction)
+                    }
+                    disabled={readOnly}
+                  >
+                    {rapidPulseActionOptions.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
                   </select>
                 </FormField>
                 <FormField label="Temperature">
-                  <VitalInput value={draft.temperature} onChange={(value) => updateDraft("temperature", value)} disabled={readOnly} suffix="deg C" step="0.1" />
+                  <VitalInput
+                    value={draft.temperature}
+                    onChange={(value) => updateDraft("temperature", value)}
+                    disabled={readOnly}
+                    suffix="deg C"
+                    step="0.1"
+                  />
                 </FormField>
                 <FormField label="GCS score">
-                  <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.consciousness} onChange={(event) => updateDraft("consciousness", event.target.value)} disabled={readOnly}>
-                    {consciousnessScores.map((item) => <option key={item.score} value={item.score}>{item.score}/{item.meaning}</option>)}
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={draft.consciousness}
+                    onChange={(event) => updateDraft("consciousness", event.target.value)}
+                    disabled={readOnly}
+                  >
+                    {consciousnessScores.map((item) => (
+                      <option key={item.score} value={item.score}>
+                        {item.score}/{item.meaning}
+                      </option>
+                    ))}
                   </select>
                 </FormField>
                 <FormField label="Pain score">
-                  <VitalInput value={draft.painScore} onChange={(value) => updateDraft("painScore", value)} disabled={readOnly} suffix="/10" />
+                  <VitalInput
+                    value={draft.painScore}
+                    onChange={(value) => updateDraft("painScore", value)}
+                    disabled={readOnly}
+                    suffix="/10"
+                  />
                 </FormField>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <FormField label="Urine output">
-                  <VitalInput value={draft.urineOutput} onChange={(value) => updateDraft("urineOutput", value)} disabled={readOnly} suffix="ml/hr" />
+                  <VitalInput
+                    value={draft.urineOutput}
+                    onChange={(value) => updateDraft("urineOutput", value)}
+                    disabled={readOnly}
+                    suffix="ml/hr"
+                  />
                 </FormField>
                 <FormField label="Pulse deficit">
-                  <div className="flex h-9 items-center rounded-md border border-border bg-surface-muted px-3 text-sm font-semibold text-foreground">{pulseDeficit === null ? "--" : `${pulseDeficit} bpm`}</div>
+                  <div className="flex h-9 items-center rounded-md border border-border bg-surface-muted px-3 text-sm font-semibold text-foreground">
+                    {pulseDeficit === null ? "--" : `${pulseDeficit} bpm`}
+                  </div>
                 </FormField>
                 <FormField label="Risk preview">
                   <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface-muted px-3">
                     <Badge tone={rapidZoneTone(preview.dominantZone)}>{preview.dominantZone}</Badge>
-                    <StatusPill tone={rapidLevelTone(preview.responseLevel)}>{preview.responseLevel}</StatusPill>
+                    <StatusPill tone={rapidLevelTone(preview.responseLevel)}>
+                      {preview.responseLevel}
+                    </StatusPill>
                   </div>
                 </FormField>
                 <FormField label="Correction reason">
-                  <input className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Clinical correction" disabled={readOnly} />
+                  <input
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    placeholder="Clinical correction"
+                    disabled={readOnly}
+                  />
                 </FormField>
               </div>
 
               <FormField label="Bedside note">
-                <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={draft.note} onChange={(event) => updateDraft("note", event.target.value)} disabled={readOnly} />
+                <textarea
+                  className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                  value={draft.note}
+                  onChange={(event) => updateDraft("note", event.target.value)}
+                  disabled={readOnly}
+                />
               </FormField>
             </div>
           </div>
 
           <div className="flex flex-col gap-2 border-t border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-muted-foreground">{readOnly ? "Read-only role cannot edit nurse observations." : "Save correction is active. Reason is stored in audit trail."}</div>
+            <div className="text-xs text-muted-foreground">
+              {readOnly
+                ? "Read-only role cannot edit nurse observations."
+                : "Save correction is active. Reason is stored in audit trail."}
+            </div>
             <div className="flex justify-end gap-2">
               <DialogPrimitive.Close asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogPrimitive.Close>
               <Button
                 disabled={readOnly}
-                onClick={() => onConfirm(patient, observation, buildNurseUpdatedObservationFromDraft(draft, observation, doctorReviewed), reason.trim() || "Clinical correction after nurse verification", performedBy)}
+                onClick={() =>
+                  onConfirm(
+                    patient,
+                    observation,
+                    buildNurseUpdatedObservationFromDraft(draft, observation, doctorReviewed),
+                    reason.trim() || "Clinical correction after nurse verification",
+                    performedBy,
+                  )
+                }
               >
                 <Save className="h-4 w-4" />
                 Save correction
@@ -1522,8 +2291,12 @@ function NurseObservationVoidDialog({
   readOnly: boolean;
   role: Role;
   reviews: Record<string, ObservationReviewUpdate>;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (patient: RapidReviewPatient, observation: RapidObservationSet, voidEntry: NurseObservationVoid) => void;
+  onOpenChange: (_open: boolean) => void;
+  onConfirm: (
+    _patient: RapidReviewPatient,
+    _observation: RapidObservationSet,
+    _voidEntry: NurseObservationVoid,
+  ) => void;
 }) {
   const patient = state?.patient ?? null;
   const observation = state?.observation ?? null;
@@ -1534,7 +2307,16 @@ function NurseObservationVoidDialog({
   if (!patient || !observation) return null;
 
   const doctorReviewed = observationReviewStatus(observation, reviews) !== "Pending doctor review";
-  const reasonOptions = ["Wrong value entered", "Duplicate entry", "Wrong patient selected", "Wrong date/time", "Device artifact", "Entered in wrong chart", "Cancelled by nurse after verification", "Other"];
+  const reasonOptions = [
+    "Wrong value entered",
+    "Duplicate entry",
+    "Wrong patient selected",
+    "Wrong date/time",
+    "Device artifact",
+    "Entered in wrong chart",
+    "Cancelled by nurse after verification",
+    "Other",
+  ];
 
   return (
     <DialogPrimitive.Root open={Boolean(state)} onOpenChange={onOpenChange}>
@@ -1543,9 +2325,12 @@ function NurseObservationVoidDialog({
         <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-64px)] w-[calc(100vw-32px)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div>
-              <DialogPrimitive.Title className="text-base font-semibold text-foreground">Void nurse observation</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="text-base font-semibold text-foreground">
+                Void nurse observation
+              </DialogPrimitive.Title>
               <DialogPrimitive.Description className="mt-1 text-xs text-muted-foreground">
-                {patient.patientName} - {formatDateLabel(observationDateValue(observation))}, {observationTimeLabel(observation)}
+                {patient.patientName} - {formatDateLabel(observationDateValue(observation))},{" "}
+                {observationTimeLabel(observation)}
               </DialogPrimitive.Description>
             </div>
             <DialogPrimitive.Close asChild>
@@ -1556,32 +2341,71 @@ function NurseObservationVoidDialog({
           </div>
 
           <div className="space-y-4 overflow-y-auto p-4">
-            <AlertBanner icon={AlertTriangle} tone={doctorReviewed ? "danger" : "warning"} title={doctorReviewed ? "Reviewed entry will be voided" : "Void keeps audit trail"}>
-              This removes the observation from active Doctor Review, Review Graph, and Timeline, but the audit record remains visible in Nurse Review.
+            <AlertBanner
+              icon={AlertTriangle}
+              tone={doctorReviewed ? "danger" : "warning"}
+              title={doctorReviewed ? "Reviewed entry will be voided" : "Void keeps audit trail"}
+            >
+              This removes the observation from active Doctor Review, Review Graph, and Timeline,
+              but the audit record remains visible in Nurse Review.
             </AlertBanner>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <DetailRow label="Patient" value={`${patient.patientName} - ${patient.uhid}`} />
-              <DetailRow label="Vitals" value={`RR ${observation.respiratoryRate}, SpO2 ${observation.spo2}, BP ${observation.bloodPressure}, Pulse ${observation.pulse}`} />
+              <DetailRow
+                label="Vitals"
+                value={`RR ${observation.respiratoryRate}, SpO2 ${observation.spo2}, BP ${observation.bloodPressure}, Pulse ${observation.pulse}`}
+              />
               <FormField label="Voided by">
-                <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={voidedBy} onChange={(event) => setVoidedBy(event.target.value)} disabled={readOnly}>
-                  {["Current Nurse", "Ward Nurse", "Shift Coordinator", "ER Nurse", "Renal Nurse", role].map((item) => <option key={item}>{item}</option>)}
+                <select
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                  value={voidedBy}
+                  onChange={(event) => setVoidedBy(event.target.value)}
+                  disabled={readOnly}
+                >
+                  {[
+                    "Current Nurse",
+                    "Ward Nurse",
+                    "Shift Coordinator",
+                    "ER Nurse",
+                    "Renal Nurse",
+                    role,
+                  ].map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
                 </select>
               </FormField>
               <FormField label="Reason">
-                <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={reason} onChange={(event) => setReason(event.target.value)} disabled={readOnly}>
-                  {reasonOptions.map((item) => <option key={item}>{item}</option>)}
+                <select
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  disabled={readOnly}
+                >
+                  {reasonOptions.map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
                 </select>
               </FormField>
             </div>
 
             <FormField label="Void note">
-              <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add details for audit..." disabled={readOnly} />
+              <textarea
+                className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Add details for audit..."
+                disabled={readOnly}
+              />
             </FormField>
           </div>
 
           <div className="flex flex-col gap-2 border-t border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-muted-foreground">{readOnly ? "Read-only role cannot void observations." : "Void action requires a reason and stays in audit trail."}</div>
+            <div className="text-xs text-muted-foreground">
+              {readOnly
+                ? "Read-only role cannot void observations."
+                : "Void action requires a reason and stays in audit trail."}
+            </div>
             <div className="flex justify-end gap-2">
               <DialogPrimitive.Close asChild>
                 <Button variant="outline">Cancel</Button>
@@ -1589,13 +2413,15 @@ function NurseObservationVoidDialog({
               <Button
                 disabled={readOnly || !reason.trim()}
                 variant="danger"
-                onClick={() => onConfirm(patient, observation, {
-                  observationId: observation.id,
-                  voidedBy,
-                  voidedAt: `${formatDateLabel(todayDateValue())}, ${currentTimeValue()}`,
-                  reason,
-                  note: note.trim(),
-                })}
+                onClick={() =>
+                  onConfirm(patient, observation, {
+                    observationId: observation.id,
+                    voidedBy,
+                    voidedAt: `${formatDateLabel(todayDateValue())}, ${currentTimeValue()}`,
+                    reason,
+                    note: note.trim(),
+                  })
+                }
               >
                 <Trash2 className="h-4 w-4" />
                 Void entry
@@ -1619,9 +2445,9 @@ function ClinicalConsultQueueTab({
   patients: RapidReviewPatient[];
   requests: ClinicalConsultRequest[];
   readOnly: boolean;
-  onOpenPatient: (patient: RapidReviewPatient) => void;
-  onReminder: (requestId: string) => void;
-  onStatusChange: (requestId: string, status: ClinicalConsultStatus) => void;
+  onOpenPatient: (_patient: RapidReviewPatient) => void;
+  onReminder: (_requestId: string) => void;
+  onStatusChange: (_requestId: string, _status: ClinicalConsultStatus) => void;
 }) {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("Open consults");
@@ -1631,37 +2457,58 @@ function ClinicalConsultQueueTab({
   const [doctorFilter, setDoctorFilter] = React.useState("All doctors");
   const [sortBy, setSortBy] = React.useState("Clinical priority");
 
-  const patientOptions = ["All patients", ...uniqueValues(requests.map((request) => `${request.patientName} - ${request.uhid}`))];
-  const departmentOptions = ["All departments", ...uniqueValues(requests.map((request) => request.department))];
-  const doctorOptions = ["All doctors", ...uniqueValues(requests.map((request) => request.requestedTo))];
+  const patientOptions = [
+    "All patients",
+    ...uniqueValues(requests.map((request) => `${request.patientName} - ${request.uhid}`)),
+  ];
+  const departmentOptions = [
+    "All departments",
+    ...uniqueValues(requests.map((request) => request.department)),
+  ];
+  const doctorOptions = [
+    "All doctors",
+    ...uniqueValues(requests.map((request) => request.requestedTo)),
+  ];
   const rows = requests
-    .filter((request) => patientFilter === "All patients" || `${request.patientName} - ${request.uhid}` === patientFilter)
-    .filter((request) => departmentFilter === "All departments" || request.department === departmentFilter)
+    .filter(
+      (request) =>
+        patientFilter === "All patients" ||
+        `${request.patientName} - ${request.uhid}` === patientFilter,
+    )
+    .filter(
+      (request) =>
+        departmentFilter === "All departments" || request.department === departmentFilter,
+    )
     .filter((request) => priorityFilter === "All priority" || request.priority === priorityFilter)
     .filter((request) => doctorFilter === "All doctors" || request.requestedTo === doctorFilter)
     .filter((request) => clinicalConsultStatusMatches(request, statusFilter))
     .filter((request) => {
       if (!search.trim()) return true;
-      return includes([
-        request.patientName,
-        request.uhid,
-        request.location,
-        request.department,
-        request.requestedTo,
-        request.priority,
-        request.status,
-        request.requestType,
-        request.investigation,
-        request.clinicalQuestion,
-        request.handoffSummary,
-        request.advice ?? "",
-      ].join(" "), search);
+      return includes(
+        [
+          request.patientName,
+          request.uhid,
+          request.location,
+          request.department,
+          request.requestedTo,
+          request.priority,
+          request.status,
+          request.requestType,
+          request.investigation,
+          request.clinicalQuestion,
+          request.handoffSummary,
+          request.advice ?? "",
+        ].join(" "),
+        search,
+      );
     })
     .sort((a, b) => sortClinicalConsults(a, b, sortBy));
 
   const openCount = requests.filter((request) => request.status !== "Completed").length;
   const delayedCount = requests.filter(clinicalConsultIsDelayed).length;
-  const awaitingAdviceCount = requests.filter((request) => request.status !== "Completed" && request.status !== "Advice given").length;
+  const awaitingAdviceCount = requests.filter(
+    (request) => request.status !== "Completed" && request.status !== "Advice given",
+  ).length;
   const completedCount = requests.filter((request) => request.status === "Completed").length;
   const statusColumns = clinicalConsultStatusWorkflow.map((status) => ({
     status,
@@ -1674,7 +2521,10 @@ function ClinicalConsultQueueTab({
         <CardHeader>
           <div>
             <CardTitle>Consult Queue</CardTitle>
-            <CardDescription>Global closed-loop view for specialty, on-call, investigation, and escalation requests.</CardDescription>
+            <CardDescription>
+              Global closed-loop view for specialty, on-call, investigation, and escalation
+              requests.
+            </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone={openCount ? "warning" : "success"}>{openCount} open</Badge>
@@ -1682,19 +2532,82 @@ function ClinicalConsultQueueTab({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, UHID, department, doctor, investigation, advice...">
-            <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={["All status", "Open consults", "Delayed", "Requested", "Acknowledged", "Assigned", "In progress", "Advice given", "Completed", "Escalated"]} />
-            <NativeSelect label="Patient" value={patientFilter} onChange={setPatientFilter} options={patientOptions} />
-            <NativeSelect label="Department" value={departmentFilter} onChange={setDepartmentFilter} options={departmentOptions} />
-            <NativeSelect label="Priority" value={priorityFilter} onChange={setPriorityFilter} options={["All priority", "Emergency", "Urgent", "Routine"]} />
-            <NativeSelect label="Doctor" value={doctorFilter} onChange={setDoctorFilter} options={doctorOptions} />
-            <NativeSelect label="Sort" value={sortBy} onChange={setSortBy} options={["Clinical priority", "Oldest request", "Newest request", "Department", "Status"]} />
+          <FilterBar
+            search={search}
+            onSearch={setSearch}
+            placeholder="Search patient, UHID, department, doctor, investigation, advice..."
+          >
+            <NativeSelect
+              label="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                "All status",
+                "Open consults",
+                "Delayed",
+                "Requested",
+                "Acknowledged",
+                "Assigned",
+                "In progress",
+                "Advice given",
+                "Completed",
+                "Escalated",
+              ]}
+            />
+            <NativeSelect
+              label="Patient"
+              value={patientFilter}
+              onChange={setPatientFilter}
+              options={patientOptions}
+            />
+            <NativeSelect
+              label="Department"
+              value={departmentFilter}
+              onChange={setDepartmentFilter}
+              options={departmentOptions}
+            />
+            <NativeSelect
+              label="Priority"
+              value={priorityFilter}
+              onChange={setPriorityFilter}
+              options={["All priority", "Emergency", "Urgent", "Routine"]}
+            />
+            <NativeSelect
+              label="Doctor"
+              value={doctorFilter}
+              onChange={setDoctorFilter}
+              options={doctorOptions}
+            />
+            <NativeSelect
+              label="Sort"
+              value={sortBy}
+              onChange={setSortBy}
+              options={[
+                "Clinical priority",
+                "Oldest request",
+                "Newest request",
+                "Department",
+                "Status",
+              ]}
+            />
           </FilterBar>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <ClinicalConsultQueueStat label="Open" value={openCount} tone={openCount ? "warning" : "success"} />
-            <ClinicalConsultQueueStat label="Delayed" value={delayedCount} tone={delayedCount ? "critical" : "success"} />
-            <ClinicalConsultQueueStat label="Awaiting advice" value={awaitingAdviceCount} tone={awaitingAdviceCount ? "danger" : "success"} />
+            <ClinicalConsultQueueStat
+              label="Open"
+              value={openCount}
+              tone={openCount ? "warning" : "success"}
+            />
+            <ClinicalConsultQueueStat
+              label="Delayed"
+              value={delayedCount}
+              tone={delayedCount ? "critical" : "success"}
+            />
+            <ClinicalConsultQueueStat
+              label="Awaiting advice"
+              value={awaitingAdviceCount}
+              tone={awaitingAdviceCount ? "danger" : "success"}
+            />
             <ClinicalConsultQueueStat label="Completed" value={completedCount} tone="muted" />
           </div>
         </CardContent>
@@ -1704,7 +2617,10 @@ function ClinicalConsultQueueTab({
         <CardHeader>
           <div>
             <CardTitle>Consult Request Tracking Board</CardTitle>
-            <CardDescription>Status-wise containers show exactly where each doctor consult request is stuck or completed.</CardDescription>
+            <CardDescription>
+              Status-wise containers show exactly where each doctor consult request is stuck or
+              completed.
+            </CardDescription>
           </div>
           <Badge tone="info">{rows.length} shown</Badge>
         </CardHeader>
@@ -1752,9 +2668,9 @@ function ClinicalConsultStatusColumn({
   requests: ClinicalConsultRequest[];
   patients: RapidReviewPatient[];
   readOnly: boolean;
-  onOpenPatient: (patient: RapidReviewPatient) => void;
-  onReminder: (requestId: string) => void;
-  onStatusChange: (requestId: string, status: ClinicalConsultStatus) => void;
+  onOpenPatient: (_patient: RapidReviewPatient) => void;
+  onReminder: (_requestId: string) => void;
+  onStatusChange: (_requestId: string, _status: ClinicalConsultStatus) => void;
 }) {
   return (
     <div className="flex min-h-[520px] flex-col rounded-md border border-border bg-surface-muted">
@@ -1763,7 +2679,9 @@ function ClinicalConsultStatusColumn({
           <StatusPill tone={clinicalConsultStatusTone(status)}>{status}</StatusPill>
           <Badge tone="muted">{requests.length}</Badge>
         </div>
-        <div className="mt-2 text-xs leading-5 text-muted-foreground">{clinicalConsultStatusMeaning(status)}</div>
+        <div className="mt-2 text-xs leading-5 text-muted-foreground">
+          {clinicalConsultStatusMeaning(status)}
+        </div>
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
@@ -1803,19 +2721,28 @@ function ClinicalConsultBoardCard({
   request: ClinicalConsultRequest;
   patient?: RapidReviewPatient;
   readOnly: boolean;
-  onOpenPatient: (patient: RapidReviewPatient) => void;
-  onReminder: (requestId: string) => void;
-  onStatusChange: (requestId: string, status: ClinicalConsultStatus) => void;
+  onOpenPatient: (_patient: RapidReviewPatient) => void;
+  onReminder: (_requestId: string) => void;
+  onStatusChange: (_requestId: string, _status: ClinicalConsultStatus) => void;
 }) {
   const delayed = clinicalConsultIsDelayed(request);
   const action = clinicalConsultPrimaryAction(request);
 
   return (
-    <div className={cn("rounded-md border border-border bg-background p-3 shadow-sm", delayed && "border-danger/40 bg-danger/5")}>
+    <div
+      className={cn(
+        "rounded-md border border-border bg-background p-3 shadow-sm",
+        delayed && "border-danger/40 bg-danger/5",
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-foreground">{request.patientName}</div>
-          <div className="text-xs text-muted-foreground">{request.uhid} - {request.location}</div>
+          <div className="truncate text-sm font-semibold text-foreground">
+            {request.patientName}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {request.uhid} - {request.location}
+          </div>
         </div>
         <Badge tone={clinicalConsultPriorityTone(request.priority)}>{request.priority}</Badge>
       </div>
@@ -1831,13 +2758,17 @@ function ClinicalConsultBoardCard({
         </div>
         <div className="flex items-start justify-between gap-2">
           <span className="text-muted-foreground">Target</span>
-          <span className={cn("text-right font-medium", delayed ? "text-danger" : "text-foreground")}>
+          <span
+            className={cn("text-right font-medium", delayed ? "text-danger" : "text-foreground")}
+          >
             {delayed ? "Delayed" : clinicalConsultDueLabel(request)}
           </span>
         </div>
         <div className="flex items-start justify-between gap-2">
           <span className="text-muted-foreground">Requested</span>
-          <span className="text-right font-medium text-foreground">{formatDateLabel(request.date)}, {request.time}</span>
+          <span className="text-right font-medium text-foreground">
+            {formatDateLabel(request.date)}, {request.time}
+          </span>
         </div>
       </div>
 
@@ -1858,15 +2789,34 @@ function ClinicalConsultBoardCard({
             {action.label}
           </Button>
           <div className="grid grid-cols-2 gap-2">
-            <Button disabled={!patient} size="sm" variant="outline" onClick={() => patient && onOpenPatient(patient)}>
+            <Button
+              disabled={!patient}
+              size="sm"
+              variant="outline"
+              onClick={() => patient && onOpenPatient(patient)}
+            >
               Patient
             </Button>
             {delayed && request.status !== "Completed" ? (
-              <Button disabled={readOnly} size="sm" variant="outline" onClick={() => onReminder(request.id)}>
+              <Button
+                disabled={readOnly}
+                size="sm"
+                variant="outline"
+                onClick={() => onReminder(request.id)}
+              >
                 Remind
               </Button>
             ) : (
-              <Button disabled={readOnly || ["Completed", "Escalated"].includes(request.status) || request.priority === "Routine"} size="sm" variant="danger" onClick={() => onStatusChange(request.id, "Escalated")}>
+              <Button
+                disabled={
+                  readOnly ||
+                  ["Completed", "Escalated"].includes(request.status) ||
+                  request.priority === "Routine"
+                }
+                size="sm"
+                variant="danger"
+                onClick={() => onStatusChange(request.id, "Escalated")}
+              >
                 Escalate
               </Button>
             )}
@@ -1881,7 +2831,10 @@ function ClinicalConsultAuditLog({ requests }: { requests: ClinicalConsultReques
   const [filter, setFilter] = React.useState("All logs");
   const [search, setSearch] = React.useState("");
   const [patientFilter, setPatientFilter] = React.useState("All patients");
-  const patientOptions = ["All patients", ...uniqueValues(requests.map((request) => `${request.patientName} - ${request.uhid}`))];
+  const patientOptions = [
+    "All patients",
+    ...uniqueValues(requests.map((request) => `${request.patientName} - ${request.uhid}`)),
+  ];
   const rows = requests
     .filter((request) => {
       if (filter === "All logs") return true;
@@ -1890,26 +2843,39 @@ function ClinicalConsultAuditLog({ requests }: { requests: ClinicalConsultReques
       if (filter === "Escalated") return request.status === "Escalated";
       return request.priority === filter;
     })
-    .filter((request) => patientFilter === "All patients" || `${request.patientName} - ${request.uhid}` === patientFilter)
+    .filter(
+      (request) =>
+        patientFilter === "All patients" ||
+        `${request.patientName} - ${request.uhid}` === patientFilter,
+    )
     .filter((request) => {
       if (!search.trim()) return true;
-      return includes([
-        request.patientName,
-        request.uhid,
-        request.location,
-        request.department,
-        request.requestedTo,
-        request.requestedBy,
-        request.priority,
-        request.status,
-        request.requestType,
-        request.investigation,
-        request.responseTarget,
-        request.clinicalQuestion,
-        request.handoffSummary,
-        request.advice ?? "",
-        ...request.events.flatMap((event) => [event.action, event.actor, event.at, event.note, event.status]),
-      ].join(" "), search);
+      return includes(
+        [
+          request.patientName,
+          request.uhid,
+          request.location,
+          request.department,
+          request.requestedTo,
+          request.requestedBy,
+          request.priority,
+          request.status,
+          request.requestType,
+          request.investigation,
+          request.responseTarget,
+          request.clinicalQuestion,
+          request.handoffSummary,
+          request.advice ?? "",
+          ...request.events.flatMap((event) => [
+            event.action,
+            event.actor,
+            event.at,
+            event.note,
+            event.status,
+          ]),
+        ].join(" "),
+        search,
+      );
     })
     .sort((a, b) => clinicalConsultSortValue(b).localeCompare(clinicalConsultSortValue(a)));
 
@@ -1918,14 +2884,24 @@ function ClinicalConsultAuditLog({ requests }: { requests: ClinicalConsultReques
       <CardHeader>
         <div>
           <CardTitle>Consult Audit Log</CardTitle>
-          <CardDescription>Completed consults and full request history stay here with clinical question, advice, handoff, and status timeline.</CardDescription>
+          <CardDescription>
+            Completed consults and full request history stay here with clinical question, advice,
+            handoff, and status timeline.
+          </CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">
-          {["Completed", "Active", "Escalated", "Emergency", "Urgent", "Routine", "All logs"].map((item) => (
-            <Button key={item} size="sm" variant={filter === item ? "default" : "outline"} onClick={() => setFilter(item)}>
-              {item}
-            </Button>
-          ))}
+          {["Completed", "Active", "Escalated", "Emergency", "Urgent", "Routine", "All logs"].map(
+            (item) => (
+              <Button
+                key={item}
+                size="sm"
+                variant={filter === item ? "default" : "outline"}
+                onClick={() => setFilter(item)}
+              >
+                {item}
+              </Button>
+            ),
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -1939,29 +2915,47 @@ function ClinicalConsultAuditLog({ requests }: { requests: ClinicalConsultReques
               onChange={(event) => setSearch(event.target.value)}
             />
             <div className="flex flex-wrap gap-2">
-              <NativeSelect label="Patient" value={patientFilter} onChange={setPatientFilter} options={patientOptions} />
+              <NativeSelect
+                label="Patient"
+                value={patientFilter}
+                onChange={setPatientFilter}
+                options={patientOptions}
+              />
             </div>
           </div>
         </div>
 
         {rows.map((request) => (
-          <div className="overflow-hidden rounded-lg border border-border bg-background" key={request.id}>
+          <div
+            className="overflow-hidden rounded-lg border border-border bg-background"
+            key={request.id}
+          >
             <div className="border-b border-border bg-surface-muted p-4">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-base font-semibold text-foreground">{request.patientName}</div>
+                    <div className="text-base font-semibold text-foreground">
+                      {request.patientName}
+                    </div>
                     <Badge tone="muted">{request.uhid}</Badge>
-                    <StatusPill tone={clinicalConsultStatusTone(request.status)}>{request.status}</StatusPill>
-                    <Badge tone={clinicalConsultPriorityTone(request.priority)}>{request.priority}</Badge>
-                    {clinicalConsultIsDelayed(request) ? <Badge tone="critical">Delayed</Badge> : null}
+                    <StatusPill tone={clinicalConsultStatusTone(request.status)}>
+                      {request.status}
+                    </StatusPill>
+                    <Badge tone={clinicalConsultPriorityTone(request.priority)}>
+                      {request.priority}
+                    </Badge>
+                    {clinicalConsultIsDelayed(request) ? (
+                      <Badge tone="critical">Delayed</Badge>
+                    ) : null}
                   </div>
                   <div className="mt-1 text-sm text-muted-foreground">{request.location}</div>
                 </div>
                 <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 xl:min-w-[420px]">
                   <div className="rounded-md bg-background px-3 py-2">
                     <div className="font-semibold uppercase">Requested</div>
-                    <div className="mt-1 text-foreground">{formatDateLabel(request.date)}, {request.time}</div>
+                    <div className="mt-1 text-foreground">
+                      {formatDateLabel(request.date)}, {request.time}
+                    </div>
                   </div>
                   <div className="rounded-md bg-background px-3 py-2">
                     <div className="font-semibold uppercase">Last update</div>
@@ -1980,13 +2974,35 @@ function ClinicalConsultAuditLog({ requests }: { requests: ClinicalConsultReques
                   <ClinicalAuditMetaTile label="Response target" value={request.responseTarget} />
                   <ClinicalAuditMetaTile label="Request type" value={request.requestType} />
                   <ClinicalAuditMetaTile label="Investigation" value={request.investigation} />
-                  <ClinicalAuditMetaTile label="Current status" value={<StatusPill tone={clinicalConsultStatusTone(request.status)}>{request.status}</StatusPill>} />
-                  <ClinicalAuditMetaTile label="Delay status" value={clinicalConsultIsDelayed(request) ? <Badge tone="critical">Delayed</Badge> : clinicalConsultDueLabel(request)} />
+                  <ClinicalAuditMetaTile
+                    label="Current status"
+                    value={
+                      <StatusPill tone={clinicalConsultStatusTone(request.status)}>
+                        {request.status}
+                      </StatusPill>
+                    }
+                  />
+                  <ClinicalAuditMetaTile
+                    label="Delay status"
+                    value={
+                      clinicalConsultIsDelayed(request) ? (
+                        <Badge tone="critical">Delayed</Badge>
+                      ) : (
+                        clinicalConsultDueLabel(request)
+                      )
+                    }
+                  />
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
-                  <ClinicalAuditTextBlock title="Clinical question" text={request.clinicalQuestion} />
-                  <ClinicalAuditTextBlock title="Final advice / current note" text={request.advice ?? "Advice not recorded yet."} />
+                  <ClinicalAuditTextBlock
+                    title="Clinical question"
+                    text={request.clinicalQuestion}
+                  />
+                  <ClinicalAuditTextBlock
+                    title="Final advice / current note"
+                    text={request.advice ?? "Advice not recorded yet."}
+                  />
                 </div>
 
                 <ClinicalAuditTextBlock title="Handoff summary" text={request.handoffSummary} />
@@ -1994,7 +3010,9 @@ function ClinicalConsultAuditLog({ requests }: { requests: ClinicalConsultReques
 
               <div className="rounded-md border border-border bg-surface-muted p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-xs font-semibold uppercase text-muted-foreground">Status timeline</div>
+                  <div className="text-xs font-semibold uppercase text-muted-foreground">
+                    Status timeline
+                  </div>
                   <Badge tone="muted">{request.events.length} events</Badge>
                 </div>
                 <div className="mt-3 max-h-[360px] space-y-3 overflow-y-auto pr-1">
@@ -2007,13 +3025,21 @@ function ClinicalConsultAuditLog({ requests }: { requests: ClinicalConsultReques
                       <div className="rounded-md border border-border bg-background p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="text-sm font-semibold text-foreground">{event.action}</div>
-                            <div className="mt-0.5 text-xs text-muted-foreground">{event.actor}</div>
+                            <div className="text-sm font-semibold text-foreground">
+                              {event.action}
+                            </div>
+                            <div className="mt-0.5 text-xs text-muted-foreground">
+                              {event.actor}
+                            </div>
                             <div className="mt-0.5 text-xs text-muted-foreground">{event.at}</div>
                           </div>
-                          <StatusPill tone={clinicalConsultStatusTone(event.status)}>{event.status}</StatusPill>
+                          <StatusPill tone={clinicalConsultStatusTone(event.status)}>
+                            {event.status}
+                          </StatusPill>
                         </div>
-                        <div className="mt-2 text-xs leading-5 text-muted-foreground">{event.note}</div>
+                        <div className="mt-2 text-xs leading-5 text-muted-foreground">
+                          {event.note}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -2046,12 +3072,22 @@ function ClinicalAuditTextBlock({ title, text }: { title: string; text: string }
   return (
     <div className="rounded-md border border-border bg-surface-muted p-3">
       <div className="text-xs font-semibold uppercase text-muted-foreground">{title}</div>
-      <div className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-foreground">{text}</div>
+      <div className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-foreground">
+        {text}
+      </div>
     </div>
   );
 }
 
-function ClinicalConsultQueueStat({ label, value, tone }: { label: string; value: number; tone: StatusTone }) {
+function ClinicalConsultQueueStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: StatusTone;
+}) {
   return (
     <div className="rounded-md border border-border bg-background p-3">
       <div className="text-xs font-semibold uppercase text-muted-foreground">{label}</div>
@@ -2081,10 +3117,10 @@ function DoctorReviewTab({
   reviews: Record<string, ObservationReviewUpdate>;
   role: Role;
   selectedPatientId: string;
-  onCreateConsult: (request: ClinicalConsultRequest) => void;
-  onSelectedPatient: (patientId: string) => void;
-  onUpdateConsultStatus: (requestId: string, status: ClinicalConsultStatus) => void;
-  onReview: (patient: RapidReviewPatient, observation: RapidObservationSet) => void;
+  onCreateConsult: (_request: ClinicalConsultRequest) => void;
+  onSelectedPatient: (_patientId: string) => void;
+  onUpdateConsultStatus: (_requestId: string, _status: ClinicalConsultStatus) => void;
+  onReview: (_patient: RapidReviewPatient, _observation: RapidObservationSet) => void;
 }) {
   const [patientFilter, setPatientFilter] = React.useState("All patients");
   const [statusFilter, setStatusFilter] = React.useState("Pending doctor review");
@@ -2107,25 +3143,69 @@ function DoctorReviewTab({
   const latestDataDate = latestAvailableDate(dateOptions);
   const rows = flattenObservationRows(patients)
     .filter((row) => patientFilter === "All patients" || row.patient.id === patientFilter)
-    .filter((row) => statusFilter === "All status" || observationReviewStatus(row.observation, reviews) === statusFilter)
-    .filter((row) => observationMatchesDateFilter(row.observation, dateMode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate))
+    .filter(
+      (row) =>
+        statusFilter === "All status" ||
+        observationReviewStatus(row.observation, reviews) === statusFilter,
+    )
+    .filter((row) =>
+      observationMatchesDateFilter(
+        row.observation,
+        dateMode,
+        selectedDates,
+        singleDate,
+        dateFrom,
+        dateTo,
+        latestDataDate,
+      ),
+    )
     .filter((row) => observationMatchesTimeFilter(row.observation, timeMode, timeFrom, timeTo))
-    .sort((a, b) => observationDateTimeSortValue(b.observation).localeCompare(observationDateTimeSortValue(a.observation)));
+    .sort((a, b) =>
+      observationDateTimeSortValue(b.observation).localeCompare(
+        observationDateTimeSortValue(a.observation),
+      ),
+    );
 
-  const pending = flattenObservationRows(patients).filter((row) => observationReviewStatus(row.observation, reviews) === "Pending doctor review").length;
-  const chartPatient = patients.find((patient) => patient.id === selectedPatientId) ?? rows[0]?.patient ?? patients[0];
-  const patientRows = chartPatient ? rows.filter((row) => row.patient.id === chartPatient.id) : rows;
+  const pending = flattenObservationRows(patients).filter(
+    (row) => observationReviewStatus(row.observation, reviews) === "Pending doctor review",
+  ).length;
+  const chartPatient =
+    patients.find((patient) => patient.id === selectedPatientId) ?? rows[0]?.patient ?? patients[0];
+  const patientRows = chartPatient
+    ? rows.filter((row) => row.patient.id === chartPatient.id)
+    : rows;
   const chartObservations = chartPatient
     ? chartPatient.observationHistory
-      .filter((observation) => observationMatchesDateFilter(observation, dateMode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate))
-      .filter((observation) => observationMatchesTimeFilter(observation, timeMode, timeFrom, timeTo))
-      .sort((a, b) => observationDateTimeSortValue(a).localeCompare(observationDateTimeSortValue(b)))
+        .filter((observation) =>
+          observationMatchesDateFilter(
+            observation,
+            dateMode,
+            selectedDates,
+            singleDate,
+            dateFrom,
+            dateTo,
+            latestDataDate,
+          ),
+        )
+        .filter((observation) =>
+          observationMatchesTimeFilter(observation, timeMode, timeFrom, timeTo),
+        )
+        .sort((a, b) =>
+          observationDateTimeSortValue(a).localeCompare(observationDateTimeSortValue(b)),
+        )
     : [];
-  const nextObservation = patientRows[0]?.observation ?? chartObservations.at(-1) ?? chartPatient?.observationHistory.at(-1);
+  const nextObservation =
+    patientRows[0]?.observation ??
+    chartObservations.at(-1) ??
+    chartPatient?.observationHistory.at(-1);
   const chartEntryCount = chartObservations.length;
   const latestObservation = chartObservations.at(-1) ?? chartPatient?.observationHistory.at(-1);
-  const openConsultCount = clinicalConsults.filter((request) => request.status !== "Completed").length;
-  const urgentConsultCount = clinicalConsults.filter((request) => request.status !== "Completed" && request.priority !== "Routine").length;
+  const openConsultCount = clinicalConsults.filter(
+    (request) => request.status !== "Completed",
+  ).length;
+  const urgentConsultCount = clinicalConsults.filter(
+    (request) => request.status !== "Completed" && request.priority !== "Routine",
+  ).length;
 
   function updateDateMode(value: string) {
     setDateMode(value);
@@ -2143,7 +3223,10 @@ function DoctorReviewTab({
         <CardHeader>
           <div>
             <CardTitle>Doctor Review Command Center</CardTitle>
-            <CardDescription>Select patient, review date/status, then use the full 24-hour chart for clinical review.</CardDescription>
+            <CardDescription>
+              Select patient, review date/status, then use the full 24-hour chart for clinical
+              review.
+            </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone="info">{rows.length} readings</Badge>
@@ -2161,22 +3244,41 @@ function DoctorReviewTab({
                 onChange={(event) => handleChartPatientChange(event.target.value)}
               >
                 {patients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>{patient.patientName} - {patient.uhid} - {patient.bed}</option>
+                  <option key={patient.id} value={patient.id}>
+                    {patient.patientName} - {patient.uhid} - {patient.bed}
+                  </option>
                 ))}
               </select>
             </label>
             <label className="min-w-0 space-y-1 text-sm">
               <span className="font-medium text-foreground">Worklist patient</span>
-              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20" value={patientFilter} onChange={(event) => setPatientFilter(event.target.value)}>
+              <select
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                value={patientFilter}
+                onChange={(event) => setPatientFilter(event.target.value)}
+              >
                 <option value="All patients">All patients</option>
                 {patients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>{patient.patientName} - {patient.uhid}</option>
+                  <option key={patient.id} value={patient.id}>
+                    {patient.patientName} - {patient.uhid}
+                  </option>
                 ))}
               </select>
             </label>
-            <NativeSelect label="Review status" value={statusFilter} onChange={setStatusFilter} options={["All status", "Pending doctor review", "Reviewed", "Escalated", "Closed"]} />
+            <NativeSelect
+              label="Review status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={["All status", "Pending doctor review", "Reviewed", "Escalated", "Closed"]}
+            />
             <div className="flex min-w-0">
-              <Button className="h-9 w-full whitespace-nowrap" disabled={!nextObservation} onClick={() => nextObservation && chartPatient && onReview(chartPatient, nextObservation)}>
+              <Button
+                className="h-9 w-full whitespace-nowrap"
+                disabled={!nextObservation}
+                onClick={() =>
+                  nextObservation && chartPatient && onReview(chartPatient, nextObservation)
+                }
+              >
                 <ClipboardCheck className="h-4 w-4" />
                 Review latest
               </Button>
@@ -2210,12 +3312,16 @@ function DoctorReviewTab({
         observations={chartObservations}
         reviews={reviews}
         onCellClick={(row, hour, value, level) => {
-          const observationAtHour = [...chartObservations].reverse().find((observation) => observationHourKey(observation) === hour);
+          const observationAtHour = [...chartObservations]
+            .reverse()
+            .find((observation) => observationHourKey(observation) === hour);
           if (chartPatient && observationAtHour && value !== undefined) {
             onReview(chartPatient, observationAtHour);
             return;
           }
-          toast.info(`${row.label} at ${hour}: ${value ?? "--"} (${adultObservationRiskPalette[level].label})`);
+          toast.info(
+            `${row.label} at ${hour}: ${value ?? "--"} (${adultObservationRiskPalette[level].label})`,
+          );
         }}
       />
 
@@ -2231,71 +3337,122 @@ function DoctorReviewTab({
       <div className="grid gap-4 xl:grid-cols-[minmax(320px,440px)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
           <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <WorkflowStep icon={Plus} title="Nurse enters" description="Hourly vitals and intervention." />
-            <WorkflowStep icon={ListChecks} title="System triage" description="Risk zone is calculated." />
-            <WorkflowStep icon={Eye} title="Doctor reviews" description={`${pending} pending readings.`} />
+            <WorkflowStep
+              icon={Plus}
+              title="Nurse enters"
+              description="Hourly vitals and intervention."
+            />
+            <WorkflowStep
+              icon={ListChecks}
+              title="System triage"
+              description="Risk zone is calculated."
+            />
+            <WorkflowStep
+              icon={Eye}
+              title="Doctor reviews"
+              description={`${pending} pending readings.`}
+            />
           </div>
-        {chartPatient ? (
-          <Card>
-            <CardHeader>
-              <div>
-                <CardTitle>{chartPatient.patientName}</CardTitle>
-                <CardDescription>{chartPatient.uhid} - {chartPatient.bed}, {chartPatient.ward}</CardDescription>
-              </div>
-              <StatusPill tone={rapidLevelTone(chartPatient.responseLevel)}>{chartPatient.responseLevel}</StatusPill>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <DetailRow label="Consultant" value={chartPatient.consultant} />
-                <DetailRow label="Due" value={chartPatient.reviewDue} />
-                <DetailRow label="Last obs" value={latestObservation ? observationTimeLabel(latestObservation) : chartPatient.lastObservationAt} />
-                <DetailRow label="24 hr entries" value={`${chartEntryCount} records`} />
-                <DetailRow label="Urine" value={chartPatient.urineOutput} />
-                <DetailRow label="Owner" value={chartPatient.owner} />
-              </div>
-              <div className="rounded-md border border-border bg-surface-muted p-3">
-                <div className="text-xs font-semibold uppercase text-muted-foreground">Suggested review focus</div>
-                <div className="mt-2 space-y-2">
-                  {chartPatient.recommendedActions.slice(0, 4).map((action) => (
-                    <div className="flex gap-2 text-sm text-foreground" key={action}>
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" />
-                      <span>{action}</span>
-                    </div>
-                  ))}
+          {chartPatient ? (
+            <Card>
+              <CardHeader>
+                <div>
+                  <CardTitle>{chartPatient.patientName}</CardTitle>
+                  <CardDescription>
+                    {chartPatient.uhid} - {chartPatient.bed}, {chartPatient.ward}
+                  </CardDescription>
                 </div>
-              </div>
-              <FormField label="Quick doctor note">
-                <textarea
-                  className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-                  value={quickNote}
-                  onChange={(event) => setQuickNote(event.target.value)}
-                  placeholder="Add quick note before opening detailed review..."
-                />
-              </FormField>
-              <div className="flex flex-wrap gap-2">
-                <Button disabled={!nextObservation} onClick={() => nextObservation && onReview(chartPatient, nextObservation)}>
-                  <ClipboardCheck className="h-4 w-4" />
-                  Review selected
-                </Button>
-                <Button disabled={readOnly || !chartPatient} variant="outline" onClick={() => setConsultDialog({ patient: chartPatient, observation: nextObservation ?? latestObservation })}>
-                  <UserPlus className="h-4 w-4" />
-                  Request consult
-                </Button>
-                <Button variant="outline" onClick={() => toast.success("Quick doctor note saved in static review workspace")}>
-                  <Save className="h-4 w-4" />
-                  Save note
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
+                <StatusPill tone={rapidLevelTone(chartPatient.responseLevel)}>
+                  {chartPatient.responseLevel}
+                </StatusPill>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <DetailRow label="Consultant" value={chartPatient.consultant} />
+                  <DetailRow label="Due" value={chartPatient.reviewDue} />
+                  <DetailRow
+                    label="Last obs"
+                    value={
+                      latestObservation
+                        ? observationTimeLabel(latestObservation)
+                        : chartPatient.lastObservationAt
+                    }
+                  />
+                  <DetailRow label="24 hr entries" value={`${chartEntryCount} records`} />
+                  <DetailRow label="Urine" value={chartPatient.urineOutput} />
+                  <DetailRow label="Owner" value={chartPatient.owner} />
+                </div>
+                <div className="rounded-md border border-border bg-surface-muted p-3">
+                  <div className="text-xs font-semibold uppercase text-muted-foreground">
+                    Suggested review focus
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    {chartPatient.recommendedActions.slice(0, 4).map((action) => (
+                      <div className="flex gap-2 text-sm text-foreground" key={action}>
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" />
+                        <span>{action}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <FormField label="Quick doctor note">
+                  <textarea
+                    className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={quickNote}
+                    onChange={(event) => setQuickNote(event.target.value)}
+                    placeholder="Add quick note before opening detailed review..."
+                  />
+                </FormField>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    disabled={!nextObservation}
+                    onClick={() => nextObservation && onReview(chartPatient, nextObservation)}
+                  >
+                    <ClipboardCheck className="h-4 w-4" />
+                    Review selected
+                  </Button>
+                  <Button
+                    disabled={readOnly || !chartPatient}
+                    variant="outline"
+                    onClick={() =>
+                      setConsultDialog({
+                        patient: chartPatient,
+                        observation: nextObservation ?? latestObservation,
+                      })
+                    }
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Request consult
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      toast.success("Quick doctor note saved in static review workspace")
+                    }
+                  >
+                    <Save className="h-4 w-4" />
+                    Save note
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
-        <DoctorReviewWorklist rows={rows} reviews={reviews} onSelectPatient={handleChartPatientChange} onReview={onReview} />
+        <DoctorReviewWorklist
+          rows={rows}
+          reviews={reviews}
+          onSelectPatient={handleChartPatientChange}
+          onReview={onReview}
+        />
       </div>
 
       <ClinicalConsultDialog
-        key={consultDialog ? `${consultDialog.patient.id}-${consultDialog.observation?.id ?? "patient"}` : "consult-closed"}
+        key={
+          consultDialog
+            ? `${consultDialog.patient.id}-${consultDialog.observation?.id ?? "patient"}`
+            : "consult-closed"
+        }
         state={consultDialog}
         role={role}
         readOnly={readOnly}
@@ -2329,27 +3486,46 @@ function DoctorReviewDateTimeFilter({
   onTimeTo,
 }: {
   dateMode: string;
-  onDateMode: (mode: string) => void;
+  onDateMode: (_mode: string) => void;
   selectedDates: string[];
   singleDate: string;
-  onSingleDate: (date: string) => void;
+  onSingleDate: (_date: string) => void;
   dateFrom: string;
-  onDateFrom: (date: string) => void;
+  onDateFrom: (_date: string) => void;
   dateTo: string;
-  onDateTo: (date: string) => void;
+  onDateTo: (_date: string) => void;
   latestDataDate: string;
   hasDates: boolean;
   timeMode: string;
-  onTimeMode: (mode: string) => void;
+  onTimeMode: (_mode: string) => void;
   timeFrom: string;
-  onTimeFrom: (time: string) => void;
+  onTimeFrom: (_time: string) => void;
   timeTo: string;
-  onTimeTo: (time: string) => void;
+  onTimeTo: (_time: string) => void;
 }) {
-  const dateModes = ["All dates", "Latest record date", "Today", "Yesterday", "Last 7 days", "Last 30 days", "Single date", "Custom range"];
-  const timeModes = ["All times", "Morning 06-13", "Afternoon 14-17", "Evening 18-21", "Night 22-05", "Business hours", "Custom time range"];
-  const invalidDateRange = dateMode === "Custom range" && Boolean(dateFrom && dateTo && dateFrom > dateTo);
-  const sameTimeRange = timeMode === "Custom time range" && Boolean(timeFrom && timeTo && timeFrom === timeTo);
+  const dateModes = [
+    "All dates",
+    "Latest record date",
+    "Today",
+    "Yesterday",
+    "Last 7 days",
+    "Last 30 days",
+    "Single date",
+    "Custom range",
+  ];
+  const timeModes = [
+    "All times",
+    "Morning 06-13",
+    "Afternoon 14-17",
+    "Evening 18-21",
+    "Night 22-05",
+    "Business hours",
+    "Custom time range",
+  ];
+  const invalidDateRange =
+    dateMode === "Custom range" && Boolean(dateFrom && dateTo && dateFrom > dateTo);
+  const sameTimeRange =
+    timeMode === "Custom time range" && Boolean(timeFrom && timeTo && timeFrom === timeTo);
 
   if (!hasDates) {
     return (
@@ -2365,7 +3541,14 @@ function DoctorReviewDateTimeFilter({
         <div>
           <div className="text-xs font-semibold uppercase text-muted-foreground">Date filter</div>
           <div className="mt-1 text-sm text-foreground">
-            {dateFilterSummary(dateMode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate)}
+            {dateFilterSummary(
+              dateMode,
+              selectedDates,
+              singleDate,
+              dateFrom,
+              dateTo,
+              latestDataDate,
+            )}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -2393,7 +3576,10 @@ function DoctorReviewDateTimeFilter({
               onChange={(event) => onSingleDate(event.target.value)}
             />
           </label>
-          <Button variant="outline" onClick={() => onSingleDate(latestDataDate || todayDateValue())}>
+          <Button
+            variant="outline"
+            onClick={() => onSingleDate(latestDataDate || todayDateValue())}
+          >
             Latest record date
           </Button>
         </div>
@@ -2419,10 +3605,13 @@ function DoctorReviewDateTimeFilter({
               onChange={(event) => onDateTo(event.target.value)}
             />
           </label>
-          <Button variant="outline" onClick={() => {
-            onDateFrom("");
-            onDateTo("");
-          }}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onDateFrom("");
+              onDateTo("");
+            }}
+          >
             <RefreshCcw className="h-4 w-4" />
             Reset range
           </Button>
@@ -2439,7 +3628,9 @@ function DoctorReviewDateTimeFilter({
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase text-muted-foreground">Time filter</div>
-            <div className="mt-1 text-sm text-foreground">{timeFilterSummary(timeMode, timeFrom, timeTo)}</div>
+            <div className="mt-1 text-sm text-foreground">
+              {timeFilterSummary(timeMode, timeFrom, timeTo)}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {timeModes.map((mode) => (
@@ -2475,10 +3666,13 @@ function DoctorReviewDateTimeFilter({
                 onChange={(event) => onTimeTo(event.target.value)}
               />
             </label>
-            <Button variant="outline" onClick={() => {
-              onTimeFrom("");
-              onTimeTo("");
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                onTimeFrom("");
+                onTimeTo("");
+              }}
+            >
               <RefreshCcw className="h-4 w-4" />
               Reset time
             </Button>
@@ -2487,7 +3681,8 @@ function DoctorReviewDateTimeFilter({
 
         {sameTimeRange ? (
           <div className="mt-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
-            Same start and end time will match the full day. Choose different times for a narrow range.
+            Same start and end time will match the full day. Choose different times for a narrow
+            range.
           </div>
         ) : null}
       </div>
@@ -2507,11 +3702,17 @@ function ClinicalConsultPanel({
   observation?: RapidObservationSet;
   requests: ClinicalConsultRequest[];
   readOnly: boolean;
-  onRequest: (patient: RapidReviewPatient, observation?: RapidObservationSet) => void;
-  onStatusChange: (requestId: string, status: ClinicalConsultStatus) => void;
+  onRequest: (_patient: RapidReviewPatient, _observation?: RapidObservationSet) => void;
+  onStatusChange: (_requestId: string, _status: ClinicalConsultStatus) => void;
 }) {
   if (!patient) {
-    return <EmptyState icon={UserPlus} title="No patient selected" description="Select a patient to request a consult or investigation review." />;
+    return (
+      <EmptyState
+        icon={UserPlus}
+        title="No patient selected"
+        description="Select a patient to request a consult or investigation review."
+      />
+    );
   }
 
   const patientRequests = requests
@@ -2519,18 +3720,27 @@ function ClinicalConsultPanel({
     .sort((a, b) => clinicalConsultSortValue(b).localeCompare(clinicalConsultSortValue(a)));
   const openRequests = patientRequests.filter((request) => request.status !== "Completed");
   const emergencyRequests = openRequests.filter((request) => request.priority === "Emergency");
-  const awaitingAdvice = openRequests.filter((request) => !["Advice given", "Completed"].includes(request.status));
+  const awaitingAdvice = openRequests.filter(
+    (request) => !["Advice given", "Completed"].includes(request.status),
+  );
 
   return (
     <Card>
       <CardHeader>
         <div>
           <CardTitle>Clinical Consult & Escalation</CardTitle>
-          <CardDescription>{patient.patientName} - specialty review, on-call doctor, investigation, and advice tracking.</CardDescription>
+          <CardDescription>
+            {patient.patientName} - specialty review, on-call doctor, investigation, and advice
+            tracking.
+          </CardDescription>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={openRequests.length ? "warning" : "success"}>{openRequests.length} open</Badge>
-          <Badge tone={emergencyRequests.length ? "critical" : "muted"}>{emergencyRequests.length} emergency</Badge>
+          <Badge tone={openRequests.length ? "warning" : "success"}>
+            {openRequests.length} open
+          </Badge>
+          <Badge tone={emergencyRequests.length ? "critical" : "muted"}>
+            {emergencyRequests.length} emergency
+          </Badge>
           <Button disabled={readOnly} onClick={() => onRequest(patient, observation)}>
             <UserPlus className="h-4 w-4" />
             Request consult
@@ -2539,9 +3749,23 @@ function ClinicalConsultPanel({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid gap-3 md:grid-cols-3">
-          <ClinicalConsultStat label="Open consults" value={openRequests.length} tone={openRequests.length ? "warning" : "success"} />
-          <ClinicalConsultStat label="Awaiting advice" value={awaitingAdvice.length} tone={awaitingAdvice.length ? "danger" : "success"} />
-          <ClinicalConsultStat label="Latest status" value={patientRequests[0]?.status ?? "No request"} tone={patientRequests[0] ? clinicalConsultStatusTone(patientRequests[0].status) : "muted"} />
+          <ClinicalConsultStat
+            label="Open consults"
+            value={openRequests.length}
+            tone={openRequests.length ? "warning" : "success"}
+          />
+          <ClinicalConsultStat
+            label="Awaiting advice"
+            value={awaitingAdvice.length}
+            tone={awaitingAdvice.length ? "danger" : "success"}
+          />
+          <ClinicalConsultStat
+            label="Latest status"
+            value={patientRequests[0]?.status ?? "No request"}
+            tone={
+              patientRequests[0] ? clinicalConsultStatusTone(patientRequests[0].status) : "muted"
+            }
+          />
         </div>
 
         {patientRequests.length ? (
@@ -2551,12 +3775,18 @@ function ClinicalConsultPanel({
                 <tr>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Date</th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Time</th>
-                  <th className="border-b border-r border-border px-3 py-2 text-left">Department</th>
-                  <th className="border-b border-r border-border px-3 py-2 text-left">Requested to</th>
+                  <th className="border-b border-r border-border px-3 py-2 text-left">
+                    Department
+                  </th>
+                  <th className="border-b border-r border-border px-3 py-2 text-left">
+                    Requested to
+                  </th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Priority</th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Need</th>
                   <th className="border-b border-r border-border px-3 py-2 text-left">Status</th>
-                  <th className="border-b border-r border-border px-3 py-2 text-left">Advice / handoff</th>
+                  <th className="border-b border-r border-border px-3 py-2 text-left">
+                    Advice / handoff
+                  </th>
                   <th className="border-b border-border px-3 py-2 text-right">Action</th>
                 </tr>
               </thead>
@@ -2565,26 +3795,38 @@ function ClinicalConsultPanel({
                   const nextStatus = nextClinicalConsultStatus(request.status);
                   return (
                     <tr className="border-b border-border last:border-0" key={request.id}>
-                      <td className="border-r border-border px-3 py-2 font-medium">{formatDateLabel(request.date)}</td>
+                      <td className="border-r border-border px-3 py-2 font-medium">
+                        {formatDateLabel(request.date)}
+                      </td>
                       <td className="border-r border-border px-3 py-2">{request.time}</td>
                       <td className="border-r border-border px-3 py-2">{request.department}</td>
                       <td className="border-r border-border px-3 py-2">
                         <div className="font-medium text-foreground">{request.requestedTo}</div>
-                        <div className="text-xs text-muted-foreground">{request.responseTarget}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {request.responseTarget}
+                        </div>
                       </td>
                       <td className="border-r border-border px-3 py-2">
-                        <Badge tone={clinicalConsultPriorityTone(request.priority)}>{request.priority}</Badge>
+                        <Badge tone={clinicalConsultPriorityTone(request.priority)}>
+                          {request.priority}
+                        </Badge>
                       </td>
                       <td className="border-r border-border px-3 py-2">
                         <div className="font-medium text-foreground">{request.requestType}</div>
                         <div className="text-xs text-muted-foreground">{request.investigation}</div>
                       </td>
                       <td className="border-r border-border px-3 py-2">
-                        <StatusPill tone={clinicalConsultStatusTone(request.status)}>{request.status}</StatusPill>
-                        <div className="mt-1 text-xs text-muted-foreground">{request.lastUpdated}</div>
+                        <StatusPill tone={clinicalConsultStatusTone(request.status)}>
+                          {request.status}
+                        </StatusPill>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {request.lastUpdated}
+                        </div>
                       </td>
                       <td className="border-r border-border px-3 py-2">
-                        <div className="line-clamp-2 text-xs text-foreground">{request.advice || request.clinicalQuestion}</div>
+                        <div className="line-clamp-2 text-xs text-foreground">
+                          {request.advice || request.clinicalQuestion}
+                        </div>
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex justify-end gap-2">
@@ -2597,7 +3839,9 @@ function ClinicalConsultPanel({
                             {nextStatus ?? "Done"}
                           </Button>
                           <Button
-                            disabled={readOnly || ["Completed", "Escalated"].includes(request.status)}
+                            disabled={
+                              readOnly || ["Completed", "Escalated"].includes(request.status)
+                            }
                             size="sm"
                             variant="ghost"
                             onClick={() => onStatusChange(request.id, "Escalated")}
@@ -2615,10 +3859,19 @@ function ClinicalConsultPanel({
         ) : (
           <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border bg-surface-muted p-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="font-semibold text-foreground">No consult requested for this patient</div>
-              <div className="mt-1 text-sm text-muted-foreground">Use consult request when specialty advice, on-call review, or investigation escalation is needed.</div>
+              <div className="font-semibold text-foreground">
+                No consult requested for this patient
+              </div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                Use consult request when specialty advice, on-call review, or investigation
+                escalation is needed.
+              </div>
             </div>
-            <Button disabled={readOnly} variant="outline" onClick={() => onRequest(patient, observation)}>
+            <Button
+              disabled={readOnly}
+              variant="outline"
+              onClick={() => onRequest(patient, observation)}
+            >
               <PhoneCall className="h-4 w-4" />
               Call on-call
             </Button>
@@ -2629,7 +3882,15 @@ function ClinicalConsultPanel({
   );
 }
 
-function ClinicalConsultStat({ label, value, tone }: { label: string; value: string | number; tone: StatusTone }) {
+function ClinicalConsultStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone: StatusTone;
+}) {
   return (
     <div className="rounded-md border border-border bg-background p-3">
       <div className="text-xs font-semibold uppercase text-muted-foreground">{label}</div>
@@ -2651,20 +3912,36 @@ function ClinicalConsultDialog({
   state: ClinicalConsultDialogState;
   role: Role;
   readOnly: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (request: ClinicalConsultRequest) => void;
+  onOpenChange: (_open: boolean) => void;
+  onConfirm: (_request: ClinicalConsultRequest) => void;
 }) {
   const patient = state?.patient ?? null;
   const observation = state?.observation;
-  const defaultDepartment = patient ? defaultClinicalConsultDepartment(patient, observation) : clinicalConsultDepartments[0];
+  const defaultDepartment = patient
+    ? defaultClinicalConsultDepartment(patient, observation)
+    : clinicalConsultDepartments[0];
   const [department, setDepartment] = React.useState(defaultDepartment);
-  const [requestedTo, setRequestedTo] = React.useState((clinicalConsultDoctorsByDepartment[defaultDepartment] ?? ["On-call doctor"])[0]);
-  const [priority, setPriority] = React.useState<ClinicalConsultPriority>(patient ? defaultClinicalConsultPriority(patient, observation) : "Routine");
-  const [requestType, setRequestType] = React.useState(patient ? defaultClinicalConsultType(patient, observation) : clinicalConsultRequestTypes[0]);
-  const [investigation, setInvestigation] = React.useState(patient ? defaultClinicalConsultInvestigation(patient, observation) : "None");
-  const [responseTarget, setResponseTarget] = React.useState(defaultClinicalConsultResponseTarget(priority));
-  const [clinicalQuestion, setClinicalQuestion] = React.useState(patient ? defaultClinicalQuestion(patient, observation) : "");
-  const [handoffSummary, setHandoffSummary] = React.useState(patient ? defaultClinicalHandoff(patient, observation) : "");
+  const [requestedTo, setRequestedTo] = React.useState(
+    (clinicalConsultDoctorsByDepartment[defaultDepartment] ?? ["On-call doctor"])[0],
+  );
+  const [priority, setPriority] = React.useState<ClinicalConsultPriority>(
+    patient ? defaultClinicalConsultPriority(patient, observation) : "Routine",
+  );
+  const [requestType, setRequestType] = React.useState(
+    patient ? defaultClinicalConsultType(patient, observation) : clinicalConsultRequestTypes[0],
+  );
+  const [investigation, setInvestigation] = React.useState(
+    patient ? defaultClinicalConsultInvestigation(patient, observation) : "None",
+  );
+  const [responseTarget, setResponseTarget] = React.useState(
+    defaultClinicalConsultResponseTarget(priority),
+  );
+  const [clinicalQuestion, setClinicalQuestion] = React.useState(
+    patient ? defaultClinicalQuestion(patient, observation) : "",
+  );
+  const [handoffSummary, setHandoffSummary] = React.useState(
+    patient ? defaultClinicalHandoff(patient, observation) : "",
+  );
 
   if (!patient) return null;
 
@@ -2675,7 +3952,9 @@ function ClinicalConsultDialog({
         <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-64px)] w-[calc(100vw-32px)] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div className="min-w-0">
-              <DialogPrimitive.Title className="text-base font-semibold text-foreground">Clinical consult request</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="text-base font-semibold text-foreground">
+                Clinical consult request
+              </DialogPrimitive.Title>
               <DialogPrimitive.Description className="mt-1 text-xs text-muted-foreground">
                 {patient.patientName} - {patient.uhid} - {patient.bed}, {patient.ward}
               </DialogPrimitive.Description>
@@ -2690,7 +3969,11 @@ function ClinicalConsultDialog({
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
               <div className="space-y-4">
-                <AlertBanner icon={ShieldAlert} tone={clinicalConsultPriorityTone(priority)} title={`${priority} consult - ${department}`}>
+                <AlertBanner
+                  icon={ShieldAlert}
+                  tone={clinicalConsultPriorityTone(priority)}
+                  title={`${priority} consult - ${department}`}
+                >
                   {patient.trigger}
                 </AlertBanner>
 
@@ -2702,16 +3985,31 @@ function ClinicalConsultDialog({
                       onChange={(event) => {
                         const nextDepartment = event.target.value;
                         setDepartment(nextDepartment);
-                        setRequestedTo((clinicalConsultDoctorsByDepartment[nextDepartment] ?? ["On-call doctor"])[0]);
+                        setRequestedTo(
+                          (clinicalConsultDoctorsByDepartment[nextDepartment] ?? [
+                            "On-call doctor",
+                          ])[0],
+                        );
                       }}
                       disabled={readOnly}
                     >
-                      {clinicalConsultDepartments.map((item) => <option key={item}>{item}</option>)}
+                      {clinicalConsultDepartments.map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Requested to">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={requestedTo} onChange={(event) => setRequestedTo(event.target.value)} disabled={readOnly}>
-                      {(clinicalConsultDoctorsByDepartment[department] ?? ["On-call doctor"]).map((item) => <option key={item}>{item}</option>)}
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={requestedTo}
+                      onChange={(event) => setRequestedTo(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {(clinicalConsultDoctorsByDepartment[department] ?? ["On-call doctor"]).map(
+                        (item) => (
+                          <option key={item}>{item}</option>
+                        ),
+                      )}
                     </select>
                   </FormField>
                   <FormField label="Priority">
@@ -2725,32 +4023,65 @@ function ClinicalConsultDialog({
                       }}
                       disabled={readOnly}
                     >
-                      {["Routine", "Urgent", "Emergency"].map((item) => <option key={item}>{item}</option>)}
+                      {["Routine", "Urgent", "Emergency"].map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Response target">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={responseTarget} onChange={(event) => setResponseTarget(event.target.value)} disabled={readOnly}>
-                      {clinicalConsultResponseTargets.map((item) => <option key={item}>{item}</option>)}
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={responseTarget}
+                      onChange={(event) => setResponseTarget(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {clinicalConsultResponseTargets.map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Request type">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={requestType} onChange={(event) => setRequestType(event.target.value)} disabled={readOnly}>
-                      {clinicalConsultRequestTypes.map((item) => <option key={item}>{item}</option>)}
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={requestType}
+                      onChange={(event) => setRequestType(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {clinicalConsultRequestTypes.map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Investigation / action">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={investigation} onChange={(event) => setInvestigation(event.target.value)} disabled={readOnly}>
-                      {clinicalConsultInvestigations.map((item) => <option key={item}>{item}</option>)}
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={investigation}
+                      onChange={(event) => setInvestigation(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {clinicalConsultInvestigations.map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                 </div>
 
                 <FormField label="Clinical question">
-                  <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={clinicalQuestion} onChange={(event) => setClinicalQuestion(event.target.value)} disabled={readOnly} />
+                  <textarea
+                    className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={clinicalQuestion}
+                    onChange={(event) => setClinicalQuestion(event.target.value)}
+                    disabled={readOnly}
+                  />
                 </FormField>
 
                 <FormField label="Handoff summary">
-                  <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={handoffSummary} onChange={(event) => setHandoffSummary(event.target.value)} disabled={readOnly} />
+                  <textarea
+                    className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={handoffSummary}
+                    onChange={(event) => setHandoffSummary(event.target.value)}
+                    disabled={readOnly}
+                  />
                 </FormField>
               </div>
 
@@ -2760,7 +4091,9 @@ function ClinicalConsultDialog({
                     <CardTitle>Patient Snapshot</CardTitle>
                     <CardDescription>Latest context for the receiving doctor.</CardDescription>
                   </div>
-                  <Badge tone={rapidLevelTone(patient.responseLevel)}>{patient.responseLevel}</Badge>
+                  <Badge tone={rapidLevelTone(patient.responseLevel)}>
+                    {patient.responseLevel}
+                  </Badge>
                 </CardHeader>
                 <CardContent className="space-y-1">
                   <DetailRow label="Patient" value={patient.patientName} />
@@ -2770,10 +4103,19 @@ function ClinicalConsultDialog({
                   <DetailRow label="Review due" value={patient.reviewDue} />
                   {observation ? (
                     <>
-                      <DetailRow label="Date" value={formatDateLabel(observationDateValue(observation))} />
+                      <DetailRow
+                        label="Date"
+                        value={formatDateLabel(observationDateValue(observation))}
+                      />
                       <DetailRow label="Time" value={observationTimeLabel(observation)} />
-                      <DetailRow label="RR / SpO2" value={`${observation.respiratoryRate} / ${observation.spo2}`} />
-                      <DetailRow label="BP / Pulse" value={`${observation.bloodPressure} / ${observation.pulse}`} />
+                      <DetailRow
+                        label="RR / SpO2"
+                        value={`${observation.respiratoryRate} / ${observation.spo2}`}
+                      />
+                      <DetailRow
+                        label="BP / Pulse"
+                        value={`${observation.bloodPressure} / ${observation.pulse}`}
+                      />
                       <DetailRow label="Rhythm" value={pulseRhythmLabel(observation)} />
                     </>
                   ) : null}
@@ -2784,7 +4126,9 @@ function ClinicalConsultDialog({
 
           <div className="flex flex-col gap-2 border-t border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-muted-foreground">
-              {readOnly ? "Read-only role cannot send consult requests." : "Request will be added to consult tracker for closed-loop follow-up."}
+              {readOnly
+                ? "Read-only role cannot send consult requests."
+                : "Request will be added to consult tracker for closed-loop follow-up."}
             </div>
             <div className="flex justify-end gap-2">
               <DialogPrimitive.Close asChild>
@@ -2792,19 +4136,23 @@ function ClinicalConsultDialog({
               </DialogPrimitive.Close>
               <Button
                 disabled={readOnly}
-                onClick={() => onConfirm(buildClinicalConsultRequest({
-                  patient,
-                  observation,
-                  role,
-                  department,
-                  requestedTo,
-                  priority,
-                  requestType,
-                  investigation,
-                  responseTarget,
-                  clinicalQuestion,
-                  handoffSummary,
-                }))}
+                onClick={() =>
+                  onConfirm(
+                    buildClinicalConsultRequest({
+                      patient,
+                      observation,
+                      role,
+                      department,
+                      requestedTo,
+                      priority,
+                      requestType,
+                      investigation,
+                      responseTarget,
+                      clinicalQuestion,
+                      handoffSummary,
+                    }),
+                  )
+                }
               >
                 <Send className="h-4 w-4" />
                 Send request
@@ -2826,12 +4174,23 @@ function AdultObservationChartCard({
   patient?: RapidReviewPatient;
   observations?: RapidObservationSet[];
   reviews: Record<string, ObservationReviewUpdate>;
-  onCellClick: (row: AdultObservationDataRow, hour: string, value: string | number | undefined, level: AdultObservationRiskLevel) => void;
+  onCellClick: (
+    _row: AdultObservationDataRow,
+    _hour: string,
+    _value: string | number | undefined,
+    _level: AdultObservationRiskLevel,
+  ) => void;
 }) {
   const [expanded, setExpanded] = React.useState(false);
 
   if (!patient) {
-    return <EmptyState icon={CalendarDays} title="No patient selected" description="Select a patient from the doctor review panel to load the adult observation chart." />;
+    return (
+      <EmptyState
+        icon={CalendarDays}
+        title="No patient selected"
+        description="Select a patient from the doctor review panel to load the adult observation chart."
+      />
+    );
   }
 
   const chartObservations = observations ?? patient.observationHistory;
@@ -2840,83 +4199,110 @@ function AdultObservationChartCard({
   return (
     <>
       {expanded ? <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" /> : null}
-    <Card className={cn("min-w-0 overflow-hidden", expanded && "fixed inset-3 z-50 flex flex-col bg-background shadow-2xl")}>
-      <CardHeader className="items-start">
-        <div>
-          <CardTitle>Adult Observation Chart - 24 Hours</CardTitle>
-          <CardDescription>Hourly vitals monitoring with risk-based color zones for {patient.patientName}.</CardDescription>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="muted">{chartObservations.length} entries</Badge>
-          <StatusPill tone={rapidLevelTone(patient.responseLevel)}>{patient.responseLevel}</StatusPill>
-          <Button size="sm" variant="outline" onClick={() => setExpanded((current) => !current)}>
-            {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            {expanded ? "Exit full screen" : "Full screen"}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className={cn("space-y-3 p-3", expanded && "flex min-h-0 flex-1 flex-col")}>
-        <AdultObservationLegend />
-        <div className="rounded-lg border" style={{ borderColor: adultObservationRiskPalette.empty.border }}>
-          <div className={cn("overflow-auto", expanded ? "h-[calc(100vh-174px)]" : "max-h-[calc(100vh-260px)] min-h-[560px]")}>
-            <table className="w-full min-w-[1760px] border-collapse text-xs">
-              <thead>
-                <tr>
-                  <th
-                    className="sticky left-0 top-0 z-30 min-w-[190px] border-b border-r bg-surface-muted px-3 py-2 text-left text-[11px] font-semibold uppercase text-muted-foreground"
-                    style={{ borderColor: adultObservationRiskPalette.empty.border }}
-                  >
-                    Vital
-                  </th>
-                  {adultObservationHours.map((hour) => (
-                    <th
-                      className="sticky top-0 z-20 min-w-[64px] border-b border-r bg-surface-muted px-2 py-2 text-center text-[11px] font-semibold text-muted-foreground"
-                      style={{ borderColor: adultObservationRiskPalette.empty.border }}
-                      key={hour}
-                    >
-                      {hour}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {chartRows.map((row) => (
-                  <tr key={row.vitalType}>
-                    <th
-                      className="sticky left-0 z-10 border-b border-r bg-background px-3 py-2 text-left align-middle font-semibold text-foreground"
-                      style={{ borderColor: adultObservationRiskPalette.empty.border }}
-                    >
-                      <div>{row.label}</div>
-                      {row.unit ? <div className="mt-0.5 text-[10px] font-medium text-muted-foreground">{row.unit}</div> : null}
-                    </th>
-                    {adultObservationHours.map((hour) => {
-                      const value = row.values[hour];
-                      const level = getRiskLevel(row.vitalType, value);
-                      return (
-                        <AdultObservationCell
-                          key={`${row.vitalType}-${hour}`}
-                          row={row}
-                          hour={hour}
-                          value={value}
-                          level={level}
-                          onClick={() => onCellClick(row, hour, value, level)}
-                        />
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <Card
+        className={cn(
+          "min-w-0 overflow-hidden",
+          expanded && "fixed inset-3 z-50 flex flex-col bg-background shadow-2xl",
+        )}
+      >
+        <CardHeader className="items-start">
+          <div>
+            <CardTitle>Adult Observation Chart - 24 Hours</CardTitle>
+            <CardDescription>
+              Hourly vitals monitoring with risk-based color zones for {patient.patientName}.
+            </CardDescription>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="muted">{chartObservations.length} entries</Badge>
+            <StatusPill tone={rapidLevelTone(patient.responseLevel)}>
+              {patient.responseLevel}
+            </StatusPill>
+            <Button size="sm" variant="outline" onClick={() => setExpanded((current) => !current)}>
+              {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              {expanded ? "Exit full screen" : "Full screen"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className={cn("space-y-3 p-3", expanded && "flex min-h-0 flex-1 flex-col")}>
+          <AdultObservationLegend />
+          <div
+            className="rounded-lg border"
+            style={{ borderColor: adultObservationRiskPalette.empty.border }}
+          >
+            <div
+              className={cn(
+                "overflow-auto",
+                expanded ? "h-[calc(100vh-174px)]" : "max-h-[calc(100vh-260px)] min-h-[560px]",
+              )}
+            >
+              <table className="w-full min-w-[1760px] border-collapse text-xs">
+                <thead>
+                  <tr>
+                    <th
+                      className="sticky left-0 top-0 z-30 min-w-[190px] border-b border-r bg-surface-muted px-3 py-2 text-left text-[11px] font-semibold uppercase text-muted-foreground"
+                      style={{ borderColor: adultObservationRiskPalette.empty.border }}
+                    >
+                      Vital
+                    </th>
+                    {adultObservationHours.map((hour) => (
+                      <th
+                        className="sticky top-0 z-20 min-w-[64px] border-b border-r bg-surface-muted px-2 py-2 text-center text-[11px] font-semibold text-muted-foreground"
+                        style={{ borderColor: adultObservationRiskPalette.empty.border }}
+                        key={hour}
+                      >
+                        {hour}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {chartRows.map((row) => (
+                    <tr key={row.vitalType}>
+                      <th
+                        className="sticky left-0 z-10 border-b border-r bg-background px-3 py-2 text-left align-middle font-semibold text-foreground"
+                        style={{ borderColor: adultObservationRiskPalette.empty.border }}
+                      >
+                        <div>{row.label}</div>
+                        {row.unit ? (
+                          <div className="mt-0.5 text-[10px] font-medium text-muted-foreground">
+                            {row.unit}
+                          </div>
+                        ) : null}
+                      </th>
+                      {adultObservationHours.map((hour) => {
+                        const value = row.values[hour];
+                        const level = getRiskLevel(row.vitalType, value);
+                        return (
+                          <AdultObservationCell
+                            key={`${row.vitalType}-${hour}`}
+                            row={row}
+                            hour={hour}
+                            value={value}
+                            level={level}
+                            onClick={() => onCellClick(row, hour, value, level)}
+                          />
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 }
 
 function AdultObservationLegend() {
-  const levels: AdultObservationRiskLevel[] = ["critical", "highRisk", "warning", "normal", "empty"];
+  const levels: AdultObservationRiskLevel[] = [
+    "critical",
+    "highRisk",
+    "warning",
+    "normal",
+    "empty",
+  ];
   return (
     <div className="flex flex-wrap gap-2">
       {levels.map((level) => (
@@ -2925,7 +4311,10 @@ function AdultObservationLegend() {
           key={level}
           style={adultObservationLegendStyle(level)}
         >
-          <span className="h-2.5 w-2.5 rounded-full border" style={adultObservationSwatchStyle(level)} />
+          <span
+            className="h-2.5 w-2.5 rounded-full border"
+            style={adultObservationSwatchStyle(level)}
+          />
           {adultObservationRiskPalette[level].label}
         </span>
       ))}
@@ -2970,11 +4359,17 @@ function DoctorReviewWorklist({
 }: {
   rows: Array<{ patient: RapidReviewPatient; observation: RapidObservationSet }>;
   reviews: Record<string, ObservationReviewUpdate>;
-  onSelectPatient: (patientId: string) => void;
-  onReview: (patient: RapidReviewPatient, observation: RapidObservationSet) => void;
+  onSelectPatient: (_patientId: string) => void;
+  onReview: (_patient: RapidReviewPatient, _observation: RapidObservationSet) => void;
 }) {
   if (!rows.length) {
-    return <EmptyState icon={FileText} title="No observation records" description="Change filters to see doctor review worklist." />;
+    return (
+      <EmptyState
+        icon={FileText}
+        title="No observation records"
+        description="Change filters to see doctor review worklist."
+      />
+    );
   }
 
   return (
@@ -3003,32 +4398,57 @@ function DoctorReviewWorklist({
               {rows.map(({ patient, observation }) => {
                 const reviewStatus = observationReviewStatus(observation, reviews);
                 const review = observationReviewDetails(observation, reviews);
-                const deficitRisk = pulseDeficitRiskLevel(monitorHeartRateValue(observation), observation.pulse);
+                const deficitRisk = pulseDeficitRiskLevel(
+                  monitorHeartRateValue(observation),
+                  observation.pulse,
+                );
                 return (
                   <tr
                     className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-muted/60"
                     key={observation.id}
                     onClick={() => onSelectPatient(patient.id)}
                   >
-                    <td className="whitespace-nowrap px-3 py-2 font-medium">{formatDateLabel(observationDateValue(observation))}</td>
+                    <td className="whitespace-nowrap px-3 py-2 font-medium">
+                      {formatDateLabel(observationDateValue(observation))}
+                    </td>
                     <td className="whitespace-nowrap px-3 py-2">
                       <div className="font-medium">{observationTimeLabel(observation)}</div>
-                      <div className="text-xs text-muted-foreground">{observation.shift ?? "Shift not set"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {observation.shift ?? "Shift not set"}
+                      </div>
                     </td>
                     <td className="px-3 py-2">
                       <div className="font-semibold text-foreground">{patient.patientName}</div>
-                      <div className="text-xs text-muted-foreground">{patient.uhid} - {patient.bed}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {patient.uhid} - {patient.bed}
+                      </div>
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
-                        <Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge>
-                        <StatusPill tone={rapidLevelTone(observation.responseLevel)}>{observation.responseLevel}</StatusPill>
-                        <Badge tone={adultRiskTone(pulseRhythmRiskLevel(pulseRhythmLabel(observation)))}>Rhythm: {pulseRhythmLabel(observation)}</Badge>
-                        {deficitRisk !== "normal" && deficitRisk !== "empty" ? <Badge tone={adultRiskTone(deficitRisk)}>Deficit {pulseDeficitChartValue(observation)} bpm</Badge> : null}
+                        <Badge tone={rapidZoneTone(observation.dominantZone)}>
+                          {observation.dominantZone}
+                        </Badge>
+                        <StatusPill tone={rapidLevelTone(observation.responseLevel)}>
+                          {observation.responseLevel}
+                        </StatusPill>
+                        <Badge
+                          tone={adultRiskTone(pulseRhythmRiskLevel(pulseRhythmLabel(observation)))}
+                        >
+                          Rhythm: {pulseRhythmLabel(observation)}
+                        </Badge>
+                        {deficitRisk !== "normal" && deficitRisk !== "empty" ? (
+                          <Badge tone={adultRiskTone(deficitRisk)}>
+                            Deficit {pulseDeficitChartValue(observation)} bpm
+                          </Badge>
+                        ) : null}
                       </div>
                     </td>
-                    <td className="px-3 py-2"><StatusPill tone={reviewStatusTone(reviewStatus)}>{reviewStatus}</StatusPill></td>
-                    <td className="min-w-[220px] px-3 py-2 text-xs text-muted-foreground">{review.doctorAction}</td>
+                    <td className="px-3 py-2">
+                      <StatusPill tone={reviewStatusTone(reviewStatus)}>{reviewStatus}</StatusPill>
+                    </td>
+                    <td className="min-w-[220px] px-3 py-2 text-xs text-muted-foreground">
+                      {review.doctorAction}
+                    </td>
                     <td className="px-3 py-2">
                       <Button
                         size="sm"
@@ -3059,7 +4479,7 @@ function DateWiseLogTab({
 }: {
   patients: RapidReviewPatient[];
   reviews: Record<string, ObservationReviewUpdate>;
-  onReview: (patient: RapidReviewPatient, observation: RapidObservationSet) => void;
+  onReview: (_patient: RapidReviewPatient, _observation: RapidObservationSet) => void;
 }) {
   const [search, setSearch] = React.useState("");
   const [dateMode, setDateMode] = React.useState("All dates");
@@ -3082,9 +4502,20 @@ function DateWiseLogTab({
   const dateOptions = uniqueObservationDates(patients);
   const wardOptions = ["All wards", ...uniqueValues(patients.map((patient) => patient.ward))];
   const sourceOptions = ["All sources", ...uniqueValues(patients.map((patient) => patient.source))];
-  const shiftOptions = ["All shifts", ...uniqueValues(allRows.map((row) => row.observation.shift ?? "Shift not set"))];
-  const enteredByOptions = ["All staff", ...uniqueValues(allRows.map((row) => row.observation.recordedBy))];
-  const reviewedByOptions = ["All reviewers", ...uniqueValues(allRows.map((row) => observationReviewDetails(row.observation, reviews).reviewedBy))];
+  const shiftOptions = [
+    "All shifts",
+    ...uniqueValues(allRows.map((row) => row.observation.shift ?? "Shift not set")),
+  ];
+  const enteredByOptions = [
+    "All staff",
+    ...uniqueValues(allRows.map((row) => row.observation.recordedBy)),
+  ];
+  const reviewedByOptions = [
+    "All reviewers",
+    ...uniqueValues(
+      allRows.map((row) => observationReviewDetails(row.observation, reviews).reviewedBy),
+    ),
+  ];
   const dateCounts = observationDateCounts(allRows);
   const latestDataDate = latestAvailableDate(dateOptions);
 
@@ -3095,24 +4526,58 @@ function DateWiseLogTab({
       return includes(text, search);
     })
     .filter((row) => patientFilter === "All patients" || row.patient.id === patientFilter)
-    .filter((row) => observationMatchesDateFilter(row.observation, dateMode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate))
+    .filter((row) =>
+      observationMatchesDateFilter(
+        row.observation,
+        dateMode,
+        selectedDates,
+        singleDate,
+        dateFrom,
+        dateTo,
+        latestDataDate,
+      ),
+    )
     .filter((row) => wardFilter === "All wards" || row.patient.ward === wardFilter)
     .filter((row) => sourceFilter === "All sources" || row.patient.source === sourceFilter)
-    .filter((row) => responseFilter === "All response" || row.observation.responseLevel === responseFilter)
-    .filter((row) => statusFilter === "All status" || observationReviewStatus(row.observation, reviews) === statusFilter)
-    .filter((row) => shiftFilter === "All shifts" || (row.observation.shift ?? "Shift not set") === shiftFilter)
-    .filter((row) => enteredByFilter === "All staff" || row.observation.recordedBy === enteredByFilter)
-    .filter((row) => reviewedByFilter === "All reviewers" || observationReviewDetails(row.observation, reviews).reviewedBy === reviewedByFilter)
+    .filter(
+      (row) =>
+        responseFilter === "All response" || row.observation.responseLevel === responseFilter,
+    )
+    .filter(
+      (row) =>
+        statusFilter === "All status" ||
+        observationReviewStatus(row.observation, reviews) === statusFilter,
+    )
+    .filter(
+      (row) =>
+        shiftFilter === "All shifts" || (row.observation.shift ?? "Shift not set") === shiftFilter,
+    )
+    .filter(
+      (row) => enteredByFilter === "All staff" || row.observation.recordedBy === enteredByFilter,
+    )
+    .filter(
+      (row) =>
+        reviewedByFilter === "All reviewers" ||
+        observationReviewDetails(row.observation, reviews).reviewedBy === reviewedByFilter,
+    )
     .sort((a, b) => compareObservationLogRows(a, b, reviews, sortBy));
 
   const selectedPatientCount = new Set(rows.map((row) => row.patient.id)).size;
-  const pendingCount = rows.filter((row) => observationReviewStatus(row.observation, reviews) === "Pending doctor review").length;
-  const criticalCount = rows.filter((row) => row.observation.dominantZone === "Purple" || row.observation.responseLevel === "MER Call").length;
+  const pendingCount = rows.filter(
+    (row) => observationReviewStatus(row.observation, reviews) === "Pending doctor review",
+  ).length;
+  const criticalCount = rows.filter(
+    (row) =>
+      row.observation.dominantZone === "Purple" || row.observation.responseLevel === "MER Call",
+  ).length;
   const totalPages = Math.max(1, Math.ceil(rows.length / DATE_LOG_PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageStart = rows.length ? (currentPage - 1) * DATE_LOG_PAGE_SIZE + 1 : 0;
   const pageEnd = Math.min(currentPage * DATE_LOG_PAGE_SIZE, rows.length);
-  const paginatedRows = rows.slice((currentPage - 1) * DATE_LOG_PAGE_SIZE, currentPage * DATE_LOG_PAGE_SIZE);
+  const paginatedRows = rows.slice(
+    (currentPage - 1) * DATE_LOG_PAGE_SIZE,
+    currentPage * DATE_LOG_PAGE_SIZE,
+  );
 
   function resetFilters() {
     setSearch("");
@@ -3152,17 +4617,55 @@ function DateWiseLogTab({
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Filtered records" value={rows.length} change={dateFilterSummary(dateMode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate)} context="Observation log rows" tone="info" icon={FileText} />
-        <StatCard label="Patients" value={selectedPatientCount} change={patientFilter === "All patients" ? "All selected" : "Focused"} context="Matched patient records" tone="success" icon={UserRound} />
-        <StatCard label="Pending reviews" value={pendingCount} change="Action needed" context="Doctor review status" tone="warning" icon={Clock3} />
-        <StatCard label="Critical / MER" value={criticalCount} change="Priority" context="Purple zone or MER call" tone="critical" icon={ShieldAlert} />
+        <StatCard
+          label="Filtered records"
+          value={rows.length}
+          change={dateFilterSummary(
+            dateMode,
+            selectedDates,
+            singleDate,
+            dateFrom,
+            dateTo,
+            latestDataDate,
+          )}
+          context="Observation log rows"
+          tone="info"
+          icon={FileText}
+        />
+        <StatCard
+          label="Patients"
+          value={selectedPatientCount}
+          change={patientFilter === "All patients" ? "All selected" : "Focused"}
+          context="Matched patient records"
+          tone="success"
+          icon={UserRound}
+        />
+        <StatCard
+          label="Pending reviews"
+          value={pendingCount}
+          change="Action needed"
+          context="Doctor review status"
+          tone="warning"
+          icon={Clock3}
+        />
+        <StatCard
+          label="Critical / MER"
+          value={criticalCount}
+          change="Priority"
+          context="Purple zone or MER call"
+          tone="critical"
+          icon={ShieldAlert}
+        />
       </div>
 
       <Card>
         <CardHeader>
           <div>
             <CardTitle>Date Wise Log Filters</CardTitle>
-            <CardDescription>Filter one patient across multiple dates, or audit multiple patients by ward, staff, response, and review status.</CardDescription>
+            <CardDescription>
+              Filter one patient across multiple dates, or audit multiple patients by ward, staff,
+              response, and review status.
+            </CardDescription>
           </div>
           <Button variant="outline" onClick={resetFilters}>
             <RefreshCcw className="h-4 w-4" />
@@ -3170,7 +4673,11 @@ function DateWiseLogTab({
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          <FilterBar search={search} onSearch={updateSearch} placeholder="Search patient, UHID, bed, recorded by, doctor, note, action...">
+          <FilterBar
+            search={search}
+            onSearch={updateSearch}
+            placeholder="Search patient, UHID, bed, recorded by, doctor, note, action..."
+          >
             <label className="flex min-w-[230px] items-center gap-2 text-xs text-muted-foreground">
               <span className="sr-only">Patient</span>
               <select
@@ -3183,7 +4690,9 @@ function DateWiseLogTab({
               >
                 <option value="All patients">All patients</option>
                 {patients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>{patient.patientName} - {patient.uhid} - {patient.bed}</option>
+                  <option key={patient.id} value={patient.id}>
+                    {patient.patientName} - {patient.uhid} - {patient.bed}
+                  </option>
                 ))}
               </select>
             </label>
@@ -3194,7 +4703,14 @@ function DateWiseLogTab({
                 setSortBy(value);
                 setPage(1);
               }}
-              options={["Newest first", "Oldest first", "Clinical priority", "Patient name", "Review status", "Entered by"]}
+              options={[
+                "Newest first",
+                "Oldest first",
+                "Clinical priority",
+                "Patient name",
+                "Review status",
+                "Entered by",
+              ]}
             />
           </FilterBar>
 
@@ -3227,13 +4743,69 @@ function DateWiseLogTab({
           />
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <NativeSelect label="Ward" value={wardFilter} onChange={(value) => { setWardFilter(value); setPage(1); }} options={wardOptions} />
-            <NativeSelect label="Source" value={sourceFilter} onChange={(value) => { setSourceFilter(value); setPage(1); }} options={sourceOptions} />
-            <NativeSelect label="Response" value={responseFilter} onChange={(value) => { setResponseFilter(value); setPage(1); }} options={["All response", "MER Call", "MDT Review", "RN Review", "Routine"]} />
-            <NativeSelect label="Review status" value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} options={["All status", "Pending doctor review", "Reviewed", "Escalated", "Closed"]} />
-            <NativeSelect label="Shift" value={shiftFilter} onChange={(value) => { setShiftFilter(value); setPage(1); }} options={shiftOptions} />
-            <NativeSelect label="Entered by" value={enteredByFilter} onChange={(value) => { setEnteredByFilter(value); setPage(1); }} options={enteredByOptions} />
-            <NativeSelect label="Reviewed by" value={reviewedByFilter} onChange={(value) => { setReviewedByFilter(value); setPage(1); }} options={reviewedByOptions} />
+            <NativeSelect
+              label="Ward"
+              value={wardFilter}
+              onChange={(value) => {
+                setWardFilter(value);
+                setPage(1);
+              }}
+              options={wardOptions}
+            />
+            <NativeSelect
+              label="Source"
+              value={sourceFilter}
+              onChange={(value) => {
+                setSourceFilter(value);
+                setPage(1);
+              }}
+              options={sourceOptions}
+            />
+            <NativeSelect
+              label="Response"
+              value={responseFilter}
+              onChange={(value) => {
+                setResponseFilter(value);
+                setPage(1);
+              }}
+              options={["All response", "MER Call", "MDT Review", "RN Review", "Routine"]}
+            />
+            <NativeSelect
+              label="Review status"
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setPage(1);
+              }}
+              options={["All status", "Pending doctor review", "Reviewed", "Escalated", "Closed"]}
+            />
+            <NativeSelect
+              label="Shift"
+              value={shiftFilter}
+              onChange={(value) => {
+                setShiftFilter(value);
+                setPage(1);
+              }}
+              options={shiftOptions}
+            />
+            <NativeSelect
+              label="Entered by"
+              value={enteredByFilter}
+              onChange={(value) => {
+                setEnteredByFilter(value);
+                setPage(1);
+              }}
+              options={enteredByOptions}
+            />
+            <NativeSelect
+              label="Reviewed by"
+              value={reviewedByFilter}
+              onChange={(value) => {
+                setReviewedByFilter(value);
+                setPage(1);
+              }}
+              options={reviewedByOptions}
+            />
           </div>
         </CardContent>
       </Card>
@@ -3272,15 +4844,15 @@ function DateSmartFilter({
   dateCounts: Record<string, number>;
   latestDataDate: string;
   mode: string;
-  onMode: (mode: string) => void;
+  onMode: (_mode: string) => void;
   selectedDates: string[];
-  onSelectedDates: (dates: string[]) => void;
+  onSelectedDates: (_dates: string[]) => void;
   singleDate: string;
-  onSingleDate: (date: string) => void;
+  onSingleDate: (_date: string) => void;
   dateFrom: string;
-  onDateFrom: (date: string) => void;
+  onDateFrom: (_date: string) => void;
   dateTo: string;
-  onDateTo: (date: string) => void;
+  onDateTo: (_date: string) => void;
 }) {
   if (!dates.length) {
     return (
@@ -3290,7 +4862,8 @@ function DateSmartFilter({
     );
   }
 
-  const allSelected = mode === "All dates" || selectedDates.length === 0 || selectedDates.length === dates.length;
+  const allSelected =
+    mode === "All dates" || selectedDates.length === 0 || selectedDates.length === dates.length;
   const dateModeGroups = [
     { label: "Quick", modes: ["All dates", "Latest record date", "Today", "Yesterday"] },
     { label: "Rolling", modes: ["Last 24 hours", "Last 48 hours", "Last 7 days", "Last 30 days"] },
@@ -3319,7 +4892,9 @@ function DateSmartFilter({
         <div className="grid gap-3 xl:grid-cols-4">
           {dateModeGroups.map((group) => (
             <div key={group.label}>
-              <div className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
+              <div className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">
+                {group.label}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {group.modes.map((dateMode) => (
                   <Button
@@ -3348,7 +4923,10 @@ function DateSmartFilter({
               onChange={(event) => onSingleDate(event.target.value)}
             />
           </label>
-          <Button variant="outline" onClick={() => onSingleDate(latestDataDate || todayDateValue())}>
+          <Button
+            variant="outline"
+            onClick={() => onSingleDate(latestDataDate || todayDateValue())}
+          >
             Latest record date
           </Button>
         </div>
@@ -3374,10 +4952,13 @@ function DateSmartFilter({
               onChange={(event) => onDateTo(event.target.value)}
             />
           </label>
-          <Button variant="outline" onClick={() => {
-            onDateFrom("");
-            onDateTo("");
-          }}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onDateFrom("");
+              onDateTo("");
+            }}
+          >
             <RefreshCcw className="h-4 w-4" />
             Reset range
           </Button>
@@ -3393,16 +4974,24 @@ function DateSmartFilter({
       <div className="mt-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="text-xs text-muted-foreground">Available dates</div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant={allSelected ? "default" : "outline"} onClick={() => {
-            onMode("All dates");
-            onSelectedDates([]);
-          }}>
+          <Button
+            size="sm"
+            variant={allSelected ? "default" : "outline"}
+            onClick={() => {
+              onMode("All dates");
+              onSelectedDates([]);
+            }}
+          >
             Show all
           </Button>
-          <Button size="sm" variant="outline" onClick={() => {
-            onMode("Specific dates");
-            onSelectedDates(dates);
-          }}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              onMode("Specific dates");
+              onSelectedDates(dates);
+            }}
+          >
             Select all dates
           </Button>
         </div>
@@ -3410,9 +4999,18 @@ function DateSmartFilter({
 
       <div className="mt-2 flex flex-wrap gap-2">
         {dates.map((date) => {
-          const selected = mode !== "Specific dates"
-            ? observationMatchesDateValue(date, mode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate)
-            : selectedDates.length === 0 || selectedDates.includes(date);
+          const selected =
+            mode !== "Specific dates"
+              ? observationMatchesDateValue(
+                  date,
+                  mode,
+                  selectedDates,
+                  singleDate,
+                  dateFrom,
+                  dateTo,
+                  latestDataDate,
+                )
+              : selectedDates.length === 0 || selectedDates.includes(date);
           return (
             <button
               className={cn(
@@ -3447,25 +5045,41 @@ function TimeSmartFilter({
   onTimeTo,
 }: {
   mode: string;
-  onMode: (mode: string) => void;
+  onMode: (_mode: string) => void;
   timeFrom: string;
-  onTimeFrom: (time: string) => void;
+  onTimeFrom: (_time: string) => void;
   timeTo: string;
-  onTimeTo: (time: string) => void;
+  onTimeTo: (_time: string) => void;
 }) {
-  const modes = ["All times", "Morning 06-13", "Afternoon 14-17", "Evening 18-21", "Night 22-05", "Business hours", "Custom time range"];
-  const invalidRange = mode === "Custom time range" && Boolean(timeFrom && timeTo && timeFrom === timeTo);
+  const modes = [
+    "All times",
+    "Morning 06-13",
+    "Afternoon 14-17",
+    "Evening 18-21",
+    "Night 22-05",
+    "Business hours",
+    "Custom time range",
+  ];
+  const invalidRange =
+    mode === "Custom time range" && Boolean(timeFrom && timeTo && timeFrom === timeTo);
 
   return (
     <div className="rounded-md border border-border bg-surface-muted p-3">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <div className="text-xs font-semibold uppercase text-muted-foreground">Time filter</div>
-          <div className="mt-1 text-sm text-foreground">{timeFilterSummary(mode, timeFrom, timeTo)}</div>
+          <div className="mt-1 text-sm text-foreground">
+            {timeFilterSummary(mode, timeFrom, timeTo)}
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {modes.map((item) => (
-            <Button key={item} size="sm" variant={mode === item ? "default" : "outline"} onClick={() => onMode(item)}>
+            <Button
+              key={item}
+              size="sm"
+              variant={mode === item ? "default" : "outline"}
+              onClick={() => onMode(item)}
+            >
               {item}
             </Button>
           ))}
@@ -3492,10 +5106,13 @@ function TimeSmartFilter({
               onChange={(event) => onTimeTo(event.target.value)}
             />
           </label>
-          <Button variant="outline" onClick={() => {
-            onTimeFrom("");
-            onTimeTo("");
-          }}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onTimeFrom("");
+              onTimeTo("");
+            }}
+          >
             <RefreshCcw className="h-4 w-4" />
             Reset time
           </Button>
@@ -3504,7 +5121,8 @@ function TimeSmartFilter({
 
       {invalidRange ? (
         <div className="mt-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
-          Same start and end time will match the full day. Choose different times for a narrow range.
+          Same start and end time will match the full day. Choose different times for a narrow
+          range.
         </div>
       ) : null}
     </div>
@@ -3524,16 +5142,22 @@ function ObservationLogTable({
 }: {
   rows: ObservationLogRow[];
   reviews: Record<string, ObservationReviewUpdate>;
-  onReview: (patient: RapidReviewPatient, observation: RapidObservationSet) => void;
+  onReview: (_patient: RapidReviewPatient, _observation: RapidObservationSet) => void;
   totalRows: number;
   currentPage: number;
   totalPages: number;
   pageStart: number;
   pageEnd: number;
-  onPageChange: (page: number) => void;
+  onPageChange: (_page: number) => void;
 }) {
   if (!totalRows) {
-    return <EmptyState icon={FileText} title="No observation records" description="Change date, patient, or review filters to see observation history." />;
+    return (
+      <EmptyState
+        icon={FileText}
+        title="No observation records"
+        description="Change date, patient, or review filters to see observation history."
+      />
+    );
   }
 
   return (
@@ -3560,46 +5184,73 @@ function ObservationLogTable({
               const review = observationReviewDetails(observation, reviews);
               const reviewStatus = observationReviewStatus(observation, reviews);
               return (
-                <tr key={observation.id} className="border-b border-border last:border-0 hover:bg-surface-muted/60">
+                <tr
+                  key={observation.id}
+                  className="border-b border-border last:border-0 hover:bg-surface-muted/60"
+                >
                   <td className="whitespace-nowrap px-3 py-2 font-medium">
                     {formatDateLabel(observationDateValue(observation))}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">
                     <div className="font-medium">{observationTimeLabel(observation)}</div>
-                    <div className="text-xs text-muted-foreground">{observation.shift ?? "Shift not set"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {observation.shift ?? "Shift not set"}
+                    </div>
                   </td>
                   <td className="px-3 py-2">
                     <div className="font-medium">{patient.patientName}</div>
-                    <div className="text-xs text-muted-foreground">{patient.uhid} - {patient.bed}, {patient.ward}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {patient.uhid} - {patient.bed}, {patient.ward}
+                    </div>
                   </td>
                   <td className="px-3 py-2">
                     <div>{observation.recordedBy}</div>
-                    <div className="text-xs text-muted-foreground">{observation.deliveryMethod ?? "Method not set"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {observation.deliveryMethod ?? "Method not set"}
+                    </div>
                   </td>
                   <td className="min-w-[230px] px-3 py-2 text-xs leading-5">
-                    RR {observation.respiratoryRate} | SpO2 {observation.spo2} | FiO2 {fio2Value(observation)} | BP {observation.bloodPressure} | HR {monitorHeartRateValue(observation)} | Pulse {observation.pulse} | Deficit {pulseDeficitChartValue(observation)} | Rhythm {pulseRhythmLabel(observation)} | Quality {pulseQualityLabel(observation)} | Temp {observation.temperature}
+                    RR {observation.respiratoryRate} | SpO2 {observation.spo2} | FiO2{" "}
+                    {fio2Value(observation)} | BP {observation.bloodPressure} | HR{" "}
+                    {monitorHeartRateValue(observation)} | Pulse {observation.pulse} | Deficit{" "}
+                    {pulseDeficitChartValue(observation)} | Rhythm {pulseRhythmLabel(observation)} |
+                    Quality {pulseQualityLabel(observation)} | Temp {observation.temperature}
                   </td>
                   <td className="px-3 py-2 text-xs leading-5">
-                    O2 {observation.oxygenFlow}<br />Urine {observation.urineOutput}
+                    O2 {observation.oxygenFlow}
+                    <br />
+                    Urine {observation.urineOutput}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-col items-start gap-1">
-                      <Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge>
-                      <StatusPill tone={rapidLevelTone(observation.responseLevel)}>{observation.responseLevel}</StatusPill>
+                      <Badge tone={rapidZoneTone(observation.dominantZone)}>
+                        {observation.dominantZone}
+                      </Badge>
+                      <StatusPill tone={rapidLevelTone(observation.responseLevel)}>
+                        {observation.responseLevel}
+                      </StatusPill>
                     </div>
                   </td>
-                  <td className="px-3 py-2"><StatusPill tone={reviewStatusTone(reviewStatus)}>{reviewStatus}</StatusPill></td>
+                  <td className="px-3 py-2">
+                    <StatusPill tone={reviewStatusTone(reviewStatus)}>{reviewStatus}</StatusPill>
+                  </td>
                   <td className="px-3 py-2">
                     <div>{review.reviewedBy}</div>
                     <div className="text-xs text-muted-foreground">{review.reviewedAt}</div>
                   </td>
                   <td className="min-w-[240px] px-3 py-2 text-xs text-muted-foreground">
                     <div>{review.doctorAction}</div>
-                    {review.ecgRhythm !== "Not confirmed" ? <div className="mt-1 text-foreground">ECG: {review.ecgRhythm}</div> : null}
+                    {review.ecgRhythm !== "Not confirmed" ? (
+                      <div className="mt-1 text-foreground">ECG: {review.ecgRhythm}</div>
+                    ) : null}
                     <div className="mt-1">{review.rhythmPlan}</div>
                   </td>
                   <td className="px-3 py-2">
-                    <Button size="sm" variant={reviewStatus === "Pending doctor review" ? "default" : "outline"} onClick={() => onReview(patient, observation)}>
+                    <Button
+                      size="sm"
+                      variant={reviewStatus === "Pending doctor review" ? "default" : "outline"}
+                      onClick={() => onReview(patient, observation)}
+                    >
                       <Eye className="h-4 w-4" />
                       Review
                     </Button>
@@ -3612,9 +5263,14 @@ function ObservationLogTable({
       </div>
       <div className="flex flex-col gap-3 border-t border-border px-3 py-3 text-xs text-muted-foreground lg:flex-row lg:items-center lg:justify-between">
         <div>
-          Showing {pageStart}-{pageEnd} of {totalRows} observation records. Page {currentPage} of {totalPages}.
+          Showing {pageStart}-{pageEnd} of {totalRows} observation records. Page {currentPage} of{" "}
+          {totalPages}.
         </div>
-        <ObservationLogPagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
+        <ObservationLogPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
       </div>
     </div>
   );
@@ -3627,13 +5283,18 @@ function ObservationLogPagination({
 }: {
   currentPage: number;
   totalPages: number;
-  onPageChange: (page: number) => void;
+  onPageChange: (_page: number) => void;
 }) {
   const pages = paginationPages(currentPage, totalPages);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => onPageChange(currentPage - 1)}>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={currentPage <= 1}
+        onClick={() => onPageChange(currentPage - 1)}
+      >
         Previous
       </Button>
       {pages.map((pageNumber) => (
@@ -3646,14 +5307,27 @@ function ObservationLogPagination({
           {pageNumber}
         </Button>
       ))}
-      <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => onPageChange(currentPage + 1)}>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={currentPage >= totalPages}
+        onClick={() => onPageChange(currentPage + 1)}
+      >
         Next
       </Button>
     </div>
   );
 }
 
-function WorkflowStep({ icon: Icon, title, description }: { icon: typeof Plus; title: string; description: string }) {
+function WorkflowStep({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: typeof Plus;
+  title: string;
+  description: string;
+}) {
   return (
     <Card>
       <CardContent className="flex gap-3 p-3">
@@ -3669,7 +5343,19 @@ function WorkflowStep({ icon: Icon, title, description }: { icon: typeof Plus; t
   );
 }
 
-function VitalInput({ value, onChange, disabled, suffix, step = "1" }: { value: string; onChange: (value: string) => void; disabled?: boolean; suffix: string; step?: string }) {
+function VitalInput({
+  value,
+  onChange,
+  disabled,
+  suffix,
+  step = "1",
+}: {
+  value: string;
+  onChange: (_value: string) => void;
+  disabled?: boolean;
+  suffix: string;
+  step?: string;
+}) {
   return (
     <div className="relative">
       <input
@@ -3680,7 +5366,9 @@ function VitalInput({ value, onChange, disabled, suffix, step = "1" }: { value: 
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
       />
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">{suffix}</span>
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
+        {suffix}
+      </span>
     </div>
   );
 }
@@ -3694,15 +5382,17 @@ function BloodPressureInput({
 }: {
   systolic: string;
   diastolic: string;
-  onSystolicChange: (value: string) => void;
-  onDiastolicChange: (value: string) => void;
+  onSystolicChange: (_value: string) => void;
+  onDiastolicChange: (_value: string) => void;
   disabled?: boolean;
 }) {
   return (
     <div className="relative">
       <div className="grid h-9 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring/20">
         <label className="relative min-w-0">
-          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold uppercase text-muted-foreground">SYS</span>
+          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold uppercase text-muted-foreground">
+            SYS
+          </span>
           <input
             className="h-full w-full border-0 bg-transparent pl-9 pr-2 text-sm outline-none"
             type="number"
@@ -3714,9 +5404,13 @@ function BloodPressureInput({
             placeholder="120"
           />
         </label>
-        <span className="flex h-full items-center border-x border-input px-2 text-sm font-semibold text-muted-foreground">/</span>
+        <span className="flex h-full items-center border-x border-input px-2 text-sm font-semibold text-muted-foreground">
+          /
+        </span>
         <label className="relative min-w-0">
-          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold uppercase text-muted-foreground">DIA</span>
+          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold uppercase text-muted-foreground">
+            DIA
+          </span>
           <input
             className="h-full w-full border-0 bg-transparent pl-9 pr-2 text-sm outline-none"
             type="number"
@@ -3729,7 +5423,9 @@ function BloodPressureInput({
           />
         </label>
       </div>
-      <div className="mt-1 text-[11px] text-muted-foreground">{systolic || "--"}/{diastolic || "--"} mmHg</div>
+      <div className="mt-1 text-[11px] text-muted-foreground">
+        {systolic || "--"}/{diastolic || "--"} mmHg
+      </div>
     </div>
   );
 }
@@ -3743,7 +5439,7 @@ function QueueCommandPanel({
   rows: RapidReviewPatient[];
   updates: Record<string, ReviewUpdate>;
   readOnly: boolean;
-  onReview: (patient: RapidReviewPatient, intent: DialogState["intent"]) => void;
+  onReview: (_patient: RapidReviewPatient, _intent: DialogState["intent"]) => void;
 }) {
   const top = rows[0];
 
@@ -3751,14 +5447,21 @@ function QueueCommandPanel({
     return (
       <Card>
         <CardContent className="p-4">
-          <EmptyState icon={Activity} title="No rapid review patients" description="Change filters to bring patients back into the queue." />
+          <EmptyState
+            icon={Activity}
+            title="No rapid review patients"
+            description="Change filters to bring patients back into the queue."
+          />
         </CardContent>
       </Card>
     );
   }
 
   const status = effectiveStatus(top, updates);
-  const highestMetric = top.metrics.find((metric) => metric.zone === "Purple") ?? top.metrics.find((metric) => metric.zone === "Red") ?? top.metrics[0];
+  const highestMetric =
+    top.metrics.find((metric) => metric.zone === "Purple") ??
+    top.metrics.find((metric) => metric.zone === "Red") ??
+    top.metrics[0];
 
   return (
     <Card className="self-start">
@@ -3774,7 +5477,9 @@ function QueueCommandPanel({
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-foreground">{top.patientName}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{top.uhid} - {top.bed}, {top.ward}</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {top.uhid} - {top.bed}, {top.ward}
+              </div>
             </div>
             <StatusPill tone={rapidStatusTone(status)}>{status}</StatusPill>
           </div>
@@ -3782,14 +5487,27 @@ function QueueCommandPanel({
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-          <CompactMetric label={highestMetric.label} value={`${highestMetric.value}${highestMetric.unit ? ` ${highestMetric.unit}` : ""}`} zone={highestMetric.zone} />
-          <CompactMetric label="Urine output" value={top.urineOutput} zone={top.responseLevel === "MDT Review" ? "Red" : "Safe"} />
+          <CompactMetric
+            label={highestMetric.label}
+            value={`${highestMetric.value}${highestMetric.unit ? ` ${highestMetric.unit}` : ""}`}
+            zone={highestMetric.zone}
+          />
+          <CompactMetric
+            label="Urine output"
+            value={top.urineOutput}
+            zone={top.responseLevel === "MDT Review" ? "Red" : "Safe"}
+          />
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase text-muted-foreground">Recommended actions</div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground">
+            Recommended actions
+          </div>
           {top.recommendedActions.slice(0, 4).map((action) => (
-            <div key={action} className="flex gap-2 rounded-md border border-border px-3 py-2 text-xs">
+            <div
+              key={action}
+              className="flex gap-2 rounded-md border border-border px-3 py-2 text-xs"
+            >
               <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
               <span>{action}</span>
             </div>
@@ -3801,7 +5519,12 @@ function QueueCommandPanel({
             <ClipboardCheck className="h-4 w-4" />
             Open review
           </Button>
-          <Button className="flex-1" variant="outline" onClick={() => onReview(top, "escalate")} disabled={readOnly}>
+          <Button
+            className="flex-1"
+            variant="outline"
+            onClick={() => onReview(top, "escalate")}
+            disabled={readOnly}
+          >
             <Zap className="h-4 w-4" />
             Escalate
           </Button>
@@ -3831,9 +5554,9 @@ function ObservationChartTab({
 }: {
   selectedPatient: RapidReviewPatient;
   selectedPatientId: string;
-  onSelectedPatient: (value: string) => void;
+  onSelectedPatient: (_value: string) => void;
   reviews: Record<string, ObservationReviewUpdate>;
-  onReview: (patient: RapidReviewPatient) => void;
+  onReview: (_patient: RapidReviewPatient) => void;
   readOnly: boolean;
 }) {
   const timeline = patientTimelineObservations(selectedPatient);
@@ -3866,10 +5589,40 @@ function ObservationChartTab({
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <TimelineSummaryTile label="Latest response" value={summary.latest?.responseLevel ?? "-"} change={summary.latest ? observationTimeLabel(summary.latest) : "-"} context="Current clinical state" tone={summary.latest ? rapidLevelTone(summary.latest.responseLevel) : "info"} icon={Activity} />
-        <TimelineSummaryTile label="First warning" value={summary.firstWarning ? observationTimeLabel(summary.firstWarning) : "-"} change={summary.firstWarning?.responseLevel ?? "None"} context="First non-routine trigger" tone={summary.firstWarning ? rapidLevelTone(summary.firstWarning.responseLevel) : "success"} icon={BellRing} />
-        <TimelineSummaryTile label="Peak risk" value={summary.peak ? summary.peak.responseLevel : "-"} change={summary.peak ? observationTimeLabel(summary.peak) : "-"} context={summary.peak?.dominantZone ?? "No high risk"} tone={summary.peak ? rapidLevelTone(summary.peak.responseLevel) : "info"} icon={ShieldAlert} />
-        <TimelineSummaryTile label="Readings" value={timeline.length} change="Timeline" context={`${summary.reviewedCount} reviewed / ${summary.pendingCount} pending`} tone="info" icon={Clock3} />
+        <TimelineSummaryTile
+          label="Latest response"
+          value={summary.latest?.responseLevel ?? "-"}
+          change={summary.latest ? observationTimeLabel(summary.latest) : "-"}
+          context="Current clinical state"
+          tone={summary.latest ? rapidLevelTone(summary.latest.responseLevel) : "info"}
+          icon={Activity}
+        />
+        <TimelineSummaryTile
+          label="First warning"
+          value={summary.firstWarning ? observationTimeLabel(summary.firstWarning) : "-"}
+          change={summary.firstWarning?.responseLevel ?? "None"}
+          context="First non-routine trigger"
+          tone={
+            summary.firstWarning ? rapidLevelTone(summary.firstWarning.responseLevel) : "success"
+          }
+          icon={BellRing}
+        />
+        <TimelineSummaryTile
+          label="Peak risk"
+          value={summary.peak ? summary.peak.responseLevel : "-"}
+          change={summary.peak ? observationTimeLabel(summary.peak) : "-"}
+          context={summary.peak?.dominantZone ?? "No high risk"}
+          tone={summary.peak ? rapidLevelTone(summary.peak.responseLevel) : "info"}
+          icon={ShieldAlert}
+        />
+        <TimelineSummaryTile
+          label="Readings"
+          value={timeline.length}
+          change="Timeline"
+          context={`${summary.reviewedCount} reviewed / ${summary.pendingCount} pending`}
+          tone="info"
+          icon={Clock3}
+        />
       </div>
 
       <TimelineRiskJourney observations={timeline} />
@@ -3878,12 +5631,18 @@ function ObservationChartTab({
         patient={selectedPatient}
         reviews={reviews}
         onCellClick={(row, hour, value, level) => {
-          toast.info(`${row.label} at ${hour}: ${value ?? "--"} (${adultObservationRiskPalette[level].label})`);
+          toast.info(
+            `${row.label} at ${hour}: ${value ?? "--"} (${adultObservationRiskPalette[level].label})`,
+          );
         }}
       />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <PatientTimelineEvents patient={selectedPatient} observations={timeline} reviews={reviews} />
+        <PatientTimelineEvents
+          patient={selectedPatient}
+          observations={timeline}
+          reviews={reviews}
+        />
 
         <div className="space-y-4">
           <TimelineHandoverSummary patient={selectedPatient} summary={summary} />
@@ -3892,7 +5651,9 @@ function ObservationChartTab({
             <CardHeader>
               <div>
                 <CardTitle>Latest Vitals Snapshot</CardTitle>
-                <CardDescription>Current patient condition from the latest observation set.</CardDescription>
+                <CardDescription>
+                  Current patient condition from the latest observation set.
+                </CardDescription>
               </div>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
@@ -3927,7 +5688,9 @@ function TimelineSummaryTile({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <div className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">{value}</div>
+          <div className="mt-2 truncate text-2xl font-semibold tracking-tight text-foreground">
+            {value}
+          </div>
         </div>
         <div className="rounded-md border border-border bg-surface-muted p-2">
           <Icon className="h-4 w-4 text-muted-foreground" />
@@ -3947,7 +5710,9 @@ function TimelineRiskJourney({ observations }: { observations: RapidObservationS
       <CardHeader>
         <div>
           <CardTitle>Risk Journey</CardTitle>
-          <CardDescription>Read-only sequence of how the patient moved through response levels over time.</CardDescription>
+          <CardDescription>
+            Read-only sequence of how the patient moved through response levels over time.
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -3956,8 +5721,15 @@ function TimelineRiskJourney({ observations }: { observations: RapidObservationS
             {observations.map((observation, index) => (
               <div className="flex items-center gap-2" key={observation.id}>
                 {index > 0 ? <div className="h-px w-5 bg-border" /> : null}
-                <div className={cn("min-w-[92px] rounded-md border px-2 py-2 text-center", zonePanelClass(observation.dominantZone))}>
-                  <div className="text-[11px] font-semibold">{observationTimeLabel(observation)}</div>
+                <div
+                  className={cn(
+                    "min-w-[92px] rounded-md border px-2 py-2 text-center",
+                    zonePanelClass(observation.dominantZone),
+                  )}
+                >
+                  <div className="text-[11px] font-semibold">
+                    {observationTimeLabel(observation)}
+                  </div>
                   <div className="mt-1 text-[10px]">{observation.responseLevel}</div>
                 </div>
               </div>
@@ -3983,7 +5755,10 @@ function PatientTimelineEvents({
       <CardHeader>
         <div>
           <CardTitle>{patient.patientName} Timeline</CardTitle>
-          <CardDescription>{patient.uhid} - {patient.bed}, {patient.ward}. Chronological clinical story from nurse entries and review outcomes.</CardDescription>
+          <CardDescription>
+            {patient.uhid} - {patient.bed}, {patient.ward}. Chronological clinical story from nurse
+            entries and review outcomes.
+          </CardDescription>
         </div>
         <Badge tone="info">{observations.length} events</Badge>
       </CardHeader>
@@ -3993,19 +5768,30 @@ function PatientTimelineEvents({
           const review = observationReviewDetails(observation, reviews);
           const reviewStatus = observationReviewStatus(observation, reviews);
           return (
-            <div className="relative grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-[96px_minmax(0,1fr)]" key={observation.id}>
+            <div
+              className="relative grid gap-3 rounded-md border border-border bg-background p-3 sm:grid-cols-[96px_minmax(0,1fr)]"
+              key={observation.id}
+            >
               <div className="text-sm">
-                <div className="font-semibold text-foreground">{observationTimeLabel(observation)}</div>
-                <div className="mt-1 text-xs text-muted-foreground">{formatDateLabel(observationDateValue(observation))}</div>
+                <div className="font-semibold text-foreground">
+                  {observationTimeLabel(observation)}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {formatDateLabel(observationDateValue(observation))}
+                </div>
                 <div className="mt-2">
-                  <Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge>
+                  <Badge tone={rapidZoneTone(observation.dominantZone)}>
+                    {observation.dominantZone}
+                  </Badge>
                 </div>
               </div>
               <div className="min-w-0 space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusPill tone={rapidLevelTone(observation.responseLevel)}>{observation.responseLevel}</StatusPill>
+                      <StatusPill tone={rapidLevelTone(observation.responseLevel)}>
+                        {observation.responseLevel}
+                      </StatusPill>
                       <StatusPill tone={reviewStatusTone(reviewStatus)}>{reviewStatus}</StatusPill>
                       <Badge tone="muted">{timelineChangeLabel(observation, previous)}</Badge>
                     </div>
@@ -4023,16 +5809,26 @@ function PatientTimelineEvents({
                   <TimelineVital label="BP" value={observation.bloodPressure} />
                   <TimelineVital label="HR" value={monitorHeartRateValue(observation)} />
                   <TimelineVital label="Pulse" value={observation.pulse} />
-                  <TimelineVital label="Deficit" value={`${pulseDeficitChartValue(observation)} bpm`} />
+                  <TimelineVital
+                    label="Deficit"
+                    value={`${pulseDeficitChartValue(observation)} bpm`}
+                  />
                   <TimelineVital label="Rhythm" value={pulseRhythmLabel(observation)} />
                   <TimelineVital label="Quality" value={pulseQualityLabel(observation)} />
                   <TimelineVital label="Temp" value={observation.temperature} />
-                  <TimelineVital label="O2" value={`${observation.oxygenFlow}${observation.deliveryMethod ? `, ${observation.deliveryMethod}` : ""}`} />
-                  <TimelineVital label="GCS / pain" value={`${gcsScoreLabel(observation.consciousness)} / ${observation.painScore}`} />
+                  <TimelineVital
+                    label="O2"
+                    value={`${observation.oxygenFlow}${observation.deliveryMethod ? `, ${observation.deliveryMethod}` : ""}`}
+                  />
+                  <TimelineVital
+                    label="GCS / pain"
+                    value={`${gcsScoreLabel(observation.consciousness)} / ${observation.painScore}`}
+                  />
                   <TimelineVital label="Urine" value={observation.urineOutput} />
                 </div>
                 <div className="rounded-md border border-border bg-surface-muted p-2 text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Review action:</span> {review.doctorAction}
+                  <span className="font-medium text-foreground">Review action:</span>{" "}
+                  {review.doctorAction}
                 </div>
               </div>
             </div>
@@ -4064,13 +5860,22 @@ function TimelineHandoverSummary({
       <CardHeader>
         <div>
           <CardTitle>Handover Summary</CardTitle>
-          <CardDescription>Latest status and unresolved items for the next clinician.</CardDescription>
+          <CardDescription>
+            Latest status and unresolved items for the next clinician.
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-1">
         <DetailRow label="Consultant" value={patient.consultant} />
         <DetailRow label="Owner" value={patient.owner} />
-        <DetailRow label="Latest" value={summary.latest ? `${observationTimeLabel(summary.latest)} - ${summary.latest.responseLevel}` : "-"} />
+        <DetailRow
+          label="Latest"
+          value={
+            summary.latest
+              ? `${observationTimeLabel(summary.latest)} - ${summary.latest.responseLevel}`
+              : "-"
+          }
+        />
         <DetailRow label="Trigger" value={patient.trigger} />
         <DetailRow label="Urine" value={patient.urineOutput} />
         <DetailRow label="Review due" value={patient.reviewDue} />
@@ -4090,28 +5895,54 @@ function TimelineTurningPoints({ summary }: { summary: PatientTimelineSummary })
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        <TurningPoint label="First warning" observation={summary.firstWarning} fallback="No warning trigger recorded" />
-        <TurningPoint label="First high risk" observation={summary.firstHighRisk} fallback="No MDT/MER threshold crossed" />
+        <TurningPoint
+          label="First warning"
+          observation={summary.firstWarning}
+          fallback="No warning trigger recorded"
+        />
+        <TurningPoint
+          label="First high risk"
+          observation={summary.firstHighRisk}
+          fallback="No MDT/MER threshold crossed"
+        />
         <TurningPoint label="Peak risk" observation={summary.peak} fallback="No peak risk event" />
-        <TurningPoint label="Latest state" observation={summary.latest} fallback="No latest observation" />
+        <TurningPoint
+          label="Latest state"
+          observation={summary.latest}
+          fallback="No latest observation"
+        />
       </CardContent>
     </Card>
   );
 }
 
-function TurningPoint({ label, observation, fallback }: { label: string; observation?: RapidObservationSet; fallback: string }) {
+function TurningPoint({
+  label,
+  observation,
+  fallback,
+}: {
+  label: string;
+  observation?: RapidObservationSet;
+  fallback: string;
+}) {
   return (
     <div className="rounded-md border border-border p-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-xs font-semibold uppercase text-muted-foreground">{label}</div>
           <div className="mt-1 text-sm font-medium text-foreground">
-            {observation ? `${observationTimeLabel(observation)} - ${observation.responseLevel}` : fallback}
+            {observation
+              ? `${observationTimeLabel(observation)} - ${observation.responseLevel}`
+              : fallback}
           </div>
         </div>
-        {observation ? <Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge> : null}
+        {observation ? (
+          <Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge>
+        ) : null}
       </div>
-      {observation ? <div className="mt-2 text-xs leading-5 text-muted-foreground">{observation.note}</div> : null}
+      {observation ? (
+        <div className="mt-2 text-xs leading-5 text-muted-foreground">{observation.note}</div>
+      ) : null}
     </div>
   );
 }
@@ -4165,37 +5996,74 @@ function MultiObservationTable({
           <tbody>
             {rows.map((observation) => (
               <tr key={observation.id} className="border-b border-border last:border-0">
-                <td className="whitespace-nowrap px-3 py-2 font-medium">{formatDateLabel(observationDateValue(observation))}</td>
+                <td className="whitespace-nowrap px-3 py-2 font-medium">
+                  {formatDateLabel(observationDateValue(observation))}
+                </td>
                 <td className="whitespace-nowrap px-3 py-2">
                   <div className="font-medium">{observationTimeLabel(observation)}</div>
-                  <div className="text-xs text-muted-foreground">{observation.shift ?? "Shift not set"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {observation.shift ?? "Shift not set"}
+                  </div>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{observation.recordedBy}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                  {observation.recordedBy}
+                </td>
                 <td className="px-3 py-2">{observation.respiratoryRate}</td>
                 <td className="px-3 py-2">{observation.spo2}</td>
                 <td className="whitespace-nowrap px-3 py-2">
                   <div>{observation.oxygenFlow}</div>
-                  <div className="text-xs text-muted-foreground">{observation.deliveryMethod ?? "Method not set"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {observation.deliveryMethod ?? "Method not set"}
+                  </div>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">{observation.bloodPressure}</td>
                 <td className="px-3 py-2">{monitorHeartRateValue(observation)}</td>
                 <td className="px-3 py-2">{observation.pulse}</td>
                 <td className="whitespace-nowrap px-3 py-2">
-                  <Badge tone={adultRiskTone(pulseDeficitRiskLevel(monitorHeartRateValue(observation), observation.pulse))}>{pulseDeficitChartValue(observation)} bpm</Badge>
+                  <Badge
+                    tone={adultRiskTone(
+                      pulseDeficitRiskLevel(monitorHeartRateValue(observation), observation.pulse),
+                    )}
+                  >
+                    {pulseDeficitChartValue(observation)} bpm
+                  </Badge>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
-                  <Badge tone={adultRiskTone(pulseRhythmRiskLevel(pulseRhythmLabel(observation)))}>{pulseRhythmLabel(observation)}</Badge>
+                  <Badge tone={adultRiskTone(pulseRhythmRiskLevel(pulseRhythmLabel(observation)))}>
+                    {pulseRhythmLabel(observation)}
+                  </Badge>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
-                  <div><Badge tone={adultRiskTone(pulseQualityRiskLevel(pulseQualityLabel(observation)))}>{pulseQualityLabel(observation)}</Badge></div>
-                  <div className="mt-1 text-xs text-muted-foreground">{pulseSiteLabel(observation)} - {observation.pulseSource ?? "Manual radial pulse"}</div>
+                  <div>
+                    <Badge
+                      tone={adultRiskTone(pulseQualityRiskLevel(pulseQualityLabel(observation)))}
+                    >
+                      {pulseQualityLabel(observation)}
+                    </Badge>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {pulseSiteLabel(observation)} -{" "}
+                    {observation.pulseSource ?? "Manual radial pulse"}
+                  </div>
                 </td>
                 <td className="px-3 py-2">{observation.temperature}</td>
-                <td className="whitespace-nowrap px-3 py-2">{gcsScoreLabel(observation.consciousness)} / {observation.painScore}</td>
+                <td className="whitespace-nowrap px-3 py-2">
+                  {gcsScoreLabel(observation.consciousness)} / {observation.painScore}
+                </td>
                 <td className="whitespace-nowrap px-3 py-2">{observation.urineOutput}</td>
-                <td className="px-3 py-2"><Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge></td>
-                <td className="px-3 py-2"><StatusPill tone={rapidLevelTone(observation.responseLevel)}>{observation.responseLevel}</StatusPill></td>
-                <td className="min-w-[220px] px-3 py-2 text-muted-foreground">{observation.note}</td>
+                <td className="px-3 py-2">
+                  <Badge tone={rapidZoneTone(observation.dominantZone)}>
+                    {observation.dominantZone}
+                  </Badge>
+                </td>
+                <td className="px-3 py-2">
+                  <StatusPill tone={rapidLevelTone(observation.responseLevel)}>
+                    {observation.responseLevel}
+                  </StatusPill>
+                </td>
+                <td className="min-w-[220px] px-3 py-2 text-muted-foreground">
+                  {observation.note}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -4213,40 +6081,51 @@ function patientMetricsWithRhythm(patient: RapidReviewPatient) {
   const quality = pulseQualityLabel(latestObservation);
   const qualityRisk = pulseQualityRiskLevel(quality);
   const deficit = pulseDeficitChartValue(latestObservation);
-  const deficitRisk = pulseDeficitRiskLevel(monitorHeartRateValue(latestObservation), latestObservation.pulse);
+  const deficitRisk = pulseDeficitRiskLevel(
+    monitorHeartRateValue(latestObservation),
+    latestObservation.pulse,
+  );
   const additions: RapidReviewPatient["metrics"] = [
-    patient.metrics.some((metric) => metric.id === "fio2") ? null : {
-      id: "fio2",
-      label: "FiO2",
-      value: fio2Value(latestObservation),
-      zone: adultRiskZone(getRiskLevel("fio2", fio2Value(latestObservation))),
-      trend: "Stable",
-      note: "Inspired oxygen concentration from oxygen support.",
-    },
-    patient.metrics.some((metric) => metric.id === "pulse-rhythm") ? null : {
-      id: "pulse-rhythm",
-      label: "Pulse rhythm",
-      value: rhythm,
-      zone: adultRiskZone(risk),
-      trend: risk === "normal" ? "Stable" : "Worsening",
-      note: `${adultObservationRiskPalette[risk].label} rhythm from latest observation.`,
-    },
-    patient.metrics.some((metric) => metric.id === "pulse-quality") ? null : {
-      id: "pulse-quality",
-      label: "Pulse quality",
-      value: quality,
-      zone: adultRiskZone(qualityRisk),
-      trend: qualityRisk === "normal" ? "Stable" : "Worsening",
-      note: `${adultObservationRiskPalette[qualityRisk].label} pulse quality at ${pulseSiteLabel(latestObservation)}.`,
-    },
-    patient.metrics.some((metric) => metric.id === "pulse-deficit") ? null : {
-      id: "pulse-deficit",
-      label: "Pulse deficit",
-      value: `${deficit} bpm`,
-      zone: adultRiskZone(deficitRisk),
-      trend: deficitRisk === "normal" || deficitRisk === "empty" ? "Stable" : "Worsening",
-      note: `Monitor HR ${monitorHeartRateValue(latestObservation)} vs pulse ${latestObservation.pulse}.`,
-    },
+    patient.metrics.some((metric) => metric.id === "fio2")
+      ? null
+      : {
+          id: "fio2",
+          label: "FiO2",
+          value: fio2Value(latestObservation),
+          zone: adultRiskZone(getRiskLevel("fio2", fio2Value(latestObservation))),
+          trend: "Stable",
+          note: "Inspired oxygen concentration from oxygen support.",
+        },
+    patient.metrics.some((metric) => metric.id === "pulse-rhythm")
+      ? null
+      : {
+          id: "pulse-rhythm",
+          label: "Pulse rhythm",
+          value: rhythm,
+          zone: adultRiskZone(risk),
+          trend: risk === "normal" ? "Stable" : "Worsening",
+          note: `${adultObservationRiskPalette[risk].label} rhythm from latest observation.`,
+        },
+    patient.metrics.some((metric) => metric.id === "pulse-quality")
+      ? null
+      : {
+          id: "pulse-quality",
+          label: "Pulse quality",
+          value: quality,
+          zone: adultRiskZone(qualityRisk),
+          trend: qualityRisk === "normal" ? "Stable" : "Worsening",
+          note: `${adultObservationRiskPalette[qualityRisk].label} pulse quality at ${pulseSiteLabel(latestObservation)}.`,
+        },
+    patient.metrics.some((metric) => metric.id === "pulse-deficit")
+      ? null
+      : {
+          id: "pulse-deficit",
+          label: "Pulse deficit",
+          value: `${deficit} bpm`,
+          zone: adultRiskZone(deficitRisk),
+          trend: deficitRisk === "normal" || deficitRisk === "empty" ? "Stable" : "Worsening",
+          note: `Monitor HR ${monitorHeartRateValue(latestObservation)} vs pulse ${latestObservation.pulse}.`,
+        },
   ].filter(Boolean) as RapidReviewPatient["metrics"];
   return [...patient.metrics, ...additions];
 }
@@ -4257,7 +6136,10 @@ function MetricTile({ metric }: { metric: RapidReviewPatient["metrics"][number] 
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-xs font-medium opacity-80">{metric.label}</div>
-          <div className="mt-1 text-xl font-semibold">{metric.value}{metric.unit ? <span className="ml-1 text-sm font-medium">{metric.unit}</span> : null}</div>
+          <div className="mt-1 text-xl font-semibold">
+            {metric.value}
+            {metric.unit ? <span className="ml-1 text-sm font-medium">{metric.unit}</span> : null}
+          </div>
         </div>
         <Badge tone={rapidZoneTone(metric.zone)}>{metric.zone}</Badge>
       </div>
@@ -4284,8 +6166,17 @@ function ResponseRulesTab({ role }: { role: Role }) {
 
   return (
     <>
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search response criteria, action, owner...">
-        <NativeSelect label="Level" value={level} onChange={setLevel} options={["All levels", "MER Call", "MDT Review", "RN Review"]} />
+      <FilterBar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Search response criteria, action, owner..."
+      >
+        <NativeSelect
+          label="Level"
+          value={level}
+          onChange={setLevel}
+          options={["All levels", "MER Call", "MDT Review", "RN Review"]}
+        />
       </FilterBar>
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -4298,7 +6189,9 @@ function ResponseRulesTab({ role }: { role: Role }) {
         <CardHeader>
           <div>
             <CardTitle>Observation Rule Matrix</CardTitle>
-            <CardDescription>Bedside thresholds and expected action from respiratory rate through pain score.</CardDescription>
+            <CardDescription>
+              Bedside thresholds and expected action from respiratory rate through pain score.
+            </CardDescription>
           </div>
           <Badge tone="info">{observationRows.length} rules</Badge>
         </CardHeader>
@@ -4316,18 +6209,32 @@ function ResponseRulesTab({ role }: { role: Role }) {
                 </tr>
               </thead>
               <tbody>
-                {observationRows.length ? observationRows.map((row) => (
-                  <tr key={row.metric} className="border-b border-border last:border-0">
-                    <td className="whitespace-nowrap px-3 py-2 font-semibold">{row.metric}</td>
-                    <td className="px-3 py-2"><RuleCell tone="success" label={row.safe} /></td>
-                    <td className="px-3 py-2"><RuleCell tone="warning" label={row.yellow} /></td>
-                    <td className="px-3 py-2"><RuleCell tone="danger" label={row.red} /></td>
-                    <td className="px-3 py-2"><RuleCell tone="critical" label={row.purple} /></td>
-                    <td className="min-w-[280px] px-3 py-2 text-muted-foreground">{row.doctorNote}</td>
-                  </tr>
-                )) : (
+                {observationRows.length ? (
+                  observationRows.map((row) => (
+                    <tr key={row.metric} className="border-b border-border last:border-0">
+                      <td className="whitespace-nowrap px-3 py-2 font-semibold">{row.metric}</td>
+                      <td className="px-3 py-2">
+                        <RuleCell tone="success" label={row.safe} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <RuleCell tone="warning" label={row.yellow} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <RuleCell tone="danger" label={row.red} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <RuleCell tone="critical" label={row.purple} />
+                      </td>
+                      <td className="min-w-[280px] px-3 py-2 text-muted-foreground">
+                        {row.doctorNote}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
                   <tr>
-                    <td className="px-3 py-8 text-center text-muted-foreground" colSpan={6}>No observation rule matched your search.</td>
+                    <td className="px-3 py-8 text-center text-muted-foreground" colSpan={6}>
+                      No observation rule matched your search.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -4369,7 +6276,8 @@ function ResponseRulesTab({ role }: { role: Role }) {
         </Card>
 
         <AlertBanner icon={ShieldAlert} tone="info" title={`Role aware for ${role}`}>
-          These rules are shown as decision support. Final clinical judgement, hospital policy, and bedside assessment remain primary.
+          These rules are shown as decision support. Final clinical judgement, hospital policy, and
+          bedside assessment remain primary.
         </AlertBanner>
       </div>
     </>
@@ -4379,7 +6287,15 @@ function ResponseRulesTab({ role }: { role: Role }) {
 function RuleCell({ tone, label }: { tone: StatusTone; label: string }) {
   return (
     <div className="flex min-h-10 items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5">
-      <Badge tone={tone}>{tone === "success" ? "Safe" : tone === "warning" ? "Yellow" : tone === "danger" ? "Red" : "Purple"}</Badge>
+      <Badge tone={tone}>
+        {tone === "success"
+          ? "Safe"
+          : tone === "warning"
+            ? "Yellow"
+            : tone === "danger"
+              ? "Red"
+              : "Purple"}
+      </Badge>
       <span className="text-xs leading-5 text-foreground">{label}</span>
     </div>
   );
@@ -4391,7 +6307,9 @@ function ResponseRuleCard({ rule }: { rule: (typeof rapidResponseRules)[number] 
       <CardHeader>
         <div>
           <CardTitle>{rule.title}</CardTitle>
-          <CardDescription>{rule.owner} - Target {rule.targetTime}</CardDescription>
+          <CardDescription>
+            {rule.owner} - Target {rule.targetTime}
+          </CardDescription>
         </div>
         <StatusPill tone={rule.tone}>{rule.level}</StatusPill>
       </CardHeader>
@@ -4400,8 +6318,13 @@ function ResponseRuleCard({ rule }: { rule: (typeof rapidResponseRules)[number] 
           <div className="text-xs font-semibold uppercase text-muted-foreground">Criteria</div>
           <div className="mt-2 space-y-2">
             {rule.criteria.map((item) => (
-              <div key={item} className="flex gap-2 rounded-md border border-border px-3 py-2 text-xs">
-                <AlertTriangle className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", toneTextClass(rule.tone))} />
+              <div
+                key={item}
+                className="flex gap-2 rounded-md border border-border px-3 py-2 text-xs"
+              >
+                <AlertTriangle
+                  className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", toneTextClass(rule.tone))}
+                />
                 <span>{item}</span>
               </div>
             ))}
@@ -4411,7 +6334,10 @@ function ResponseRuleCard({ rule }: { rule: (typeof rapidResponseRules)[number] 
           <div className="text-xs font-semibold uppercase text-muted-foreground">Actions</div>
           <div className="mt-2 space-y-2">
             {rule.actions.map((item) => (
-              <div key={item} className="flex gap-2 rounded-md border border-border px-3 py-2 text-xs">
+              <div
+                key={item}
+                className="flex gap-2 rounded-md border border-border px-3 py-2 text-xs"
+              >
                 <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
                 <span>{item}</span>
               </div>
@@ -4433,19 +6359,25 @@ function ObservationReviewDialog({
   state: ObservationReviewDialogState;
   role: Role;
   readOnly: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (observation: RapidObservationSet, update: ObservationReviewUpdate) => void;
+  onOpenChange: (_open: boolean) => void;
+  onConfirm: (_observation: RapidObservationSet, _update: ObservationReviewUpdate) => void;
 }) {
   const patient = state?.patient ?? null;
   const observation = state?.observation ?? null;
-  const [reviewStatus, setReviewStatus] = React.useState<ObservationReviewUpdate["reviewStatus"]>(observation?.responseLevel === "Routine" ? "Reviewed" : "Reviewed");
+  const [reviewStatus, setReviewStatus] = React.useState<ObservationReviewUpdate["reviewStatus"]>(
+    observation?.responseLevel === "Routine" ? "Reviewed" : "Reviewed",
+  );
   const isDoctorRole = role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD";
   const [reviewedBy, setReviewedBy] = React.useState(isDoctorRole ? "Current Doctor" : role);
   const [reviewedAt, setReviewedAt] = React.useState("24 May 2026, now");
-  const [doctorAction, setDoctorAction] = React.useState(observation ? defaultDoctorAction(observation) : "Continue clinical review");
+  const [doctorAction, setDoctorAction] = React.useState(
+    observation ? defaultDoctorAction(observation) : "Continue clinical review",
+  );
   const [note, setNote] = React.useState(observation?.note ?? "");
   const [ecgRhythm, setEcgRhythm] = React.useState<RapidEcgRhythm>("Not confirmed");
-  const [rhythmPlan, setRhythmPlan] = React.useState(observation ? defaultPulseRhythmPlan(observation) : "");
+  const [rhythmPlan, setRhythmPlan] = React.useState(
+    observation ? defaultPulseRhythmPlan(observation) : "",
+  );
 
   if (!patient || !observation) return null;
 
@@ -4456,9 +6388,13 @@ function ObservationReviewDialog({
         <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-64px)] w-[calc(100vw-32px)] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div className="min-w-0">
-              <DialogPrimitive.Title className="text-base font-semibold text-foreground">Doctor observation review</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="text-base font-semibold text-foreground">
+                Doctor observation review
+              </DialogPrimitive.Title>
               <DialogPrimitive.Description className="mt-1 text-xs text-muted-foreground">
-                {patient.patientName} - {patient.uhid} - {formatDateLabel(observationDateValue(observation))}, {observationTimeLabel(observation)}
+                {patient.patientName} - {patient.uhid} -{" "}
+                {formatDateLabel(observationDateValue(observation))},{" "}
+                {observationTimeLabel(observation)}
               </DialogPrimitive.Description>
             </div>
             <DialogPrimitive.Close asChild>
@@ -4479,63 +6415,155 @@ function ObservationReviewDialog({
                   <ObservationValue label="BP" value={observation.bloodPressure} />
                   <ObservationValue label="Monitor HR" value={monitorHeartRateValue(observation)} />
                   <ObservationValue label="Pulse" value={observation.pulse} />
-                  <ObservationValue label="Pulse deficit" value={`${pulseDeficitChartValue(observation)} bpm`} />
+                  <ObservationValue
+                    label="Pulse deficit"
+                    value={`${pulseDeficitChartValue(observation)} bpm`}
+                  />
                   <ObservationValue label="Rhythm" value={pulseRhythmLabel(observation)} />
                   <ObservationValue label="Pulse quality" value={pulseQualityLabel(observation)} />
                   <ObservationValue label="Temp" value={observation.temperature} />
-                  <ObservationValue label="GCS / Pain" value={`${gcsScoreLabel(observation.consciousness)} / ${observation.painScore}`} />
+                  <ObservationValue
+                    label="GCS / Pain"
+                    value={`${gcsScoreLabel(observation.consciousness)} / ${observation.painScore}`}
+                  />
                   <ObservationValue label="Urine" value={observation.urineOutput} />
                 </div>
 
-                <AlertBanner icon={ShieldAlert} tone={rapidLevelTone(observation.responseLevel)} title={`${observation.dominantZone} zone - ${observation.responseLevel}`}>
-                  Recorded by {observation.recordedBy}. Delivery method: {observation.deliveryMethod ?? "Not set"}. FiO2: {fio2Value(observation)}. Pulse source: {observation.pulseSource ?? "Manual radial pulse"} at {pulseSiteLabel(observation)}. Note: {observation.note}
+                <AlertBanner
+                  icon={ShieldAlert}
+                  tone={rapidLevelTone(observation.responseLevel)}
+                  title={`${observation.dominantZone} zone - ${observation.responseLevel}`}
+                >
+                  Recorded by {observation.recordedBy}. Delivery method:{" "}
+                  {observation.deliveryMethod ?? "Not set"}. FiO2: {fio2Value(observation)}. Pulse
+                  source: {observation.pulseSource ?? "Manual radial pulse"} at{" "}
+                  {pulseSiteLabel(observation)}. Note: {observation.note}
                 </AlertBanner>
 
                 <div className="rounded-md border border-border bg-surface-muted p-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-sm font-semibold text-foreground">Rhythm clinical check</div>
+                      <div className="text-sm font-semibold text-foreground">
+                        Rhythm clinical check
+                      </div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        Symptoms: {observation.pulseSymptoms?.length ? observation.pulseSymptoms.join(", ") : "None recorded"}. Quality: {pulseQualityLabel(observation)}. Pulse deficit: {pulseDeficitChartValue(observation)} bpm. Nurse action: {observation.pulseActionTaken ?? "No immediate action"}.
+                        Symptoms:{" "}
+                        {observation.pulseSymptoms?.length
+                          ? observation.pulseSymptoms.join(", ")
+                          : "None recorded"}
+                        . Quality: {pulseQualityLabel(observation)}. Pulse deficit:{" "}
+                        {pulseDeficitChartValue(observation)} bpm. Nurse action:{" "}
+                        {observation.pulseActionTaken ?? "No immediate action"}.
                       </div>
                     </div>
-                    <Badge tone={adultRiskTone(pulseRhythmRiskLevel(pulseRhythmLabel(observation)))}>
-                      {adultObservationRiskPalette[pulseRhythmRiskLevel(pulseRhythmLabel(observation))].label}
+                    <Badge
+                      tone={adultRiskTone(pulseRhythmRiskLevel(pulseRhythmLabel(observation)))}
+                    >
+                      {
+                        adultObservationRiskPalette[
+                          pulseRhythmRiskLevel(pulseRhythmLabel(observation))
+                        ].label
+                      }
                     </Badge>
                   </div>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <FormField label="Review status">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={reviewStatus} onChange={(event) => setReviewStatus(event.target.value as ObservationReviewUpdate["reviewStatus"])} disabled={readOnly}>
-                      {["Reviewed", "Escalated", "Closed", "Pending doctor review"].map((item) => <option key={item}>{item}</option>)}
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={reviewStatus}
+                      onChange={(event) =>
+                        setReviewStatus(
+                          event.target.value as ObservationReviewUpdate["reviewStatus"],
+                        )
+                      }
+                      disabled={readOnly}
+                    >
+                      {["Reviewed", "Escalated", "Closed", "Pending doctor review"].map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Reviewed by">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={reviewedBy} onChange={(event) => setReviewedBy(event.target.value)} disabled={readOnly}>
-                      {["Current Doctor", "Dr. Aman Verma", "Dr. Nisha Rao", "Emergency Team", "Shift Coordinator", role].map((item) => <option key={item}>{item}</option>)}
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={reviewedBy}
+                      onChange={(event) => setReviewedBy(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {[
+                        "Current Doctor",
+                        "Dr. Aman Verma",
+                        "Dr. Nisha Rao",
+                        "Emergency Team",
+                        "Shift Coordinator",
+                        role,
+                      ].map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Reviewed at">
-                    <input className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={reviewedAt} onChange={(event) => setReviewedAt(event.target.value)} disabled={readOnly} />
+                    <input
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={reviewedAt}
+                      onChange={(event) => setReviewedAt(event.target.value)}
+                      disabled={readOnly}
+                    />
                   </FormField>
                   <FormField label="Doctor action">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={doctorAction} onChange={(event) => setDoctorAction(event.target.value)} disabled={readOnly}>
-                      {["Continue routine observation", "Increase observation frequency", "Order ECG and review rhythm", "Check electrolytes", "Cardiology review", "Review oxygen and pain plan", "Start MDT review", "Escalate to MER call", "Review fluid and urine output", "Close after stable repeat"].map((item) => <option key={item}>{item}</option>)}
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={doctorAction}
+                      onChange={(event) => setDoctorAction(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {[
+                        "Continue routine observation",
+                        "Increase observation frequency",
+                        "Order ECG and review rhythm",
+                        "Check electrolytes",
+                        "Cardiology review",
+                        "Review oxygen and pain plan",
+                        "Start MDT review",
+                        "Escalate to MER call",
+                        "Review fluid and urine output",
+                        "Close after stable repeat",
+                      ].map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="ECG rhythm confirmation">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={ecgRhythm} onChange={(event) => setEcgRhythm(event.target.value as RapidEcgRhythm)} disabled={readOnly}>
-                      {rapidEcgRhythmOptions.map((item) => <option key={item}>{item}</option>)}
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={ecgRhythm}
+                      onChange={(event) => setEcgRhythm(event.target.value as RapidEcgRhythm)}
+                      disabled={readOnly}
+                    >
+                      {rapidEcgRhythmOptions.map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Rhythm plan">
-                    <input className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={rhythmPlan} onChange={(event) => setRhythmPlan(event.target.value)} disabled={readOnly} />
+                    <input
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={rhythmPlan}
+                      onChange={(event) => setRhythmPlan(event.target.value)}
+                      disabled={readOnly}
+                    />
                   </FormField>
                 </div>
 
                 <FormField label="Doctor note">
-                  <textarea className="min-h-28 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={note} onChange={(event) => setNote(event.target.value)} disabled={readOnly} />
+                  <textarea
+                    className="min-h-28 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    disabled={readOnly}
+                  />
                 </FormField>
               </div>
 
@@ -4548,29 +6576,72 @@ function ObservationReviewDialog({
                 </CardHeader>
                 <CardContent className="space-y-1">
                   <DetailRow label="Entered by" value={observation.recordedBy} />
-                  <DetailRow label="Date" value={formatDateLabel(observationDateValue(observation))} />
+                  <DetailRow
+                    label="Date"
+                    value={formatDateLabel(observationDateValue(observation))}
+                  />
                   <DetailRow label="Time" value={observationTimeLabel(observation)} />
                   <DetailRow label="Shift" value={observation.shift ?? "Not set"} />
-                  <DetailRow label="Pulse source" value={observation.pulseSource ?? "Manual radial pulse"} />
+                  <DetailRow
+                    label="Pulse source"
+                    value={observation.pulseSource ?? "Manual radial pulse"}
+                  />
                   <DetailRow label="Pulse site" value={pulseSiteLabel(observation)} />
                   <DetailRow label="Pulse quality" value={pulseQualityLabel(observation)} />
                   <DetailRow label="Monitor HR" value={monitorHeartRateValue(observation)} />
-                  <DetailRow label="Pulse deficit" value={`${pulseDeficitChartValue(observation)} bpm`} />
-                  <DetailRow label="Rhythm action" value={observation.pulseActionTaken ?? "No immediate action"} />
-                  <DetailRow label="Zone" value={<Badge tone={rapidZoneTone(observation.dominantZone)}>{observation.dominantZone}</Badge>} />
-                  <DetailRow label="Response" value={<StatusPill tone={rapidLevelTone(observation.responseLevel)}>{observation.responseLevel}</StatusPill>} />
+                  <DetailRow
+                    label="Pulse deficit"
+                    value={`${pulseDeficitChartValue(observation)} bpm`}
+                  />
+                  <DetailRow
+                    label="Rhythm action"
+                    value={observation.pulseActionTaken ?? "No immediate action"}
+                  />
+                  <DetailRow
+                    label="Zone"
+                    value={
+                      <Badge tone={rapidZoneTone(observation.dominantZone)}>
+                        {observation.dominantZone}
+                      </Badge>
+                    }
+                  />
+                  <DetailRow
+                    label="Response"
+                    value={
+                      <StatusPill tone={rapidLevelTone(observation.responseLevel)}>
+                        {observation.responseLevel}
+                      </StatusPill>
+                    }
+                  />
                 </CardContent>
               </Card>
             </div>
           </div>
 
           <div className="flex flex-col gap-2 border-t border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-muted-foreground">{readOnly ? "Read-only role cannot save doctor review." : "This review updates the date-wise observation audit in the UI."}</div>
+            <div className="text-xs text-muted-foreground">
+              {readOnly
+                ? "Read-only role cannot save doctor review."
+                : "This review updates the date-wise observation audit in the UI."}
+            </div>
             <div className="flex justify-end gap-2">
               <DialogPrimitive.Close asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogPrimitive.Close>
-              <Button disabled={readOnly} onClick={() => onConfirm(observation, { reviewStatus, reviewedBy, reviewedAt, doctorAction, note, ecgRhythm, rhythmPlan })}>
+              <Button
+                disabled={readOnly}
+                onClick={() =>
+                  onConfirm(observation, {
+                    reviewStatus,
+                    reviewedBy,
+                    reviewedAt,
+                    doctorAction,
+                    note,
+                    ecgRhythm,
+                    rhythmPlan,
+                  })
+                }
+              >
                 <ClipboardCheck className="h-4 w-4" />
                 Save doctor review
               </Button>
@@ -4601,14 +6672,20 @@ function ReviewActionDialog({
   state: DialogState | null;
   readOnly: boolean;
   role: Role;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (patient: RapidReviewPatient, update: ReviewUpdate) => void;
+  onOpenChange: (_open: boolean) => void;
+  onConfirm: (_patient: RapidReviewPatient, _update: ReviewUpdate) => void;
 }) {
   const patient = state?.patient ?? null;
   const intent = state?.intent ?? "review";
-  const initialDecision = patient ? defaultDialogDecision(patient, intent) : "Record clinical review";
-  const initialStatus: RapidQueueStatus = patient ? defaultDialogStatus(patient, intent) : "Acknowledged";
-  const initialNextObservation = patient ? defaultNextObservation(patient.responseLevel) : "Repeat observations every 15 minutes";
+  const initialDecision = patient
+    ? defaultDialogDecision(patient, intent)
+    : "Record clinical review";
+  const initialStatus: RapidQueueStatus = patient
+    ? defaultDialogStatus(patient, intent)
+    : "Acknowledged";
+  const initialNextObservation = patient
+    ? defaultNextObservation(patient.responseLevel)
+    : "Repeat observations every 15 minutes";
   const [decision, setDecision] = React.useState(initialDecision);
   const [status, setStatus] = React.useState<RapidQueueStatus>(initialStatus);
   const [nextObservation, setNextObservation] = React.useState(initialNextObservation);
@@ -4624,7 +6701,9 @@ function ReviewActionDialog({
         <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-64px)] w-[calc(100vw-32px)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
             <div className="min-w-0">
-              <DialogPrimitive.Title className="text-base font-semibold text-foreground">Rapid review action</DialogPrimitive.Title>
+              <DialogPrimitive.Title className="text-base font-semibold text-foreground">
+                Rapid review action
+              </DialogPrimitive.Title>
               <DialogPrimitive.Description className="mt-1 text-xs text-muted-foreground">
                 {patient.patientName} - {patient.uhid} - {patient.bed}, {patient.ward}
               </DialogPrimitive.Description>
@@ -4639,35 +6718,79 @@ function ReviewActionDialog({
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
               <div className="space-y-4">
-                <AlertBanner icon={ShieldAlert} tone={rapidLevelTone(patient.responseLevel)} title={patient.responseLevel}>
+                <AlertBanner
+                  icon={ShieldAlert}
+                  tone={rapidLevelTone(patient.responseLevel)}
+                  title={patient.responseLevel}
+                >
                   {patient.trigger}
                 </AlertBanner>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FormField label="Decision">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={decision} onChange={(event) => setDecision(event.target.value)} disabled={readOnly}>
-                      {["Record clinical review", "Record observation review", "Start MDT review", "Escalate to MDT review", "Place MER call", "Continue routine observation", "Close after stable repeat"].map((item) => (
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={decision}
+                      onChange={(event) => setDecision(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {[
+                        "Record clinical review",
+                        "Record observation review",
+                        "Start MDT review",
+                        "Escalate to MDT review",
+                        "Place MER call",
+                        "Continue routine observation",
+                        "Close after stable repeat",
+                      ].map((item) => (
                         <option key={item}>{item}</option>
                       ))}
                     </select>
                   </FormField>
                   <FormField label="Queue status">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={status} onChange={(event) => setStatus(event.target.value as RapidQueueStatus)} disabled={readOnly}>
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={status}
+                      onChange={(event) => setStatus(event.target.value as RapidQueueStatus)}
+                      disabled={readOnly}
+                    >
                       {["In review", "Acknowledged", "Escalated", "Closed"].map((item) => (
                         <option key={item}>{item}</option>
                       ))}
                     </select>
                   </FormField>
                   <FormField label="Owner">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={owner} onChange={(event) => setOwner(event.target.value)} disabled={readOnly}>
-                      {[patient.owner, patient.consultant, "Emergency Team", "Shift Coordinator", role].map((item) => (
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={owner}
+                      onChange={(event) => setOwner(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {[
+                        patient.owner,
+                        patient.consultant,
+                        "Emergency Team",
+                        "Shift Coordinator",
+                        role,
+                      ].map((item) => (
                         <option key={item}>{item}</option>
                       ))}
                     </select>
                   </FormField>
                   <FormField label="Next observations">
-                    <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={nextObservation} onChange={(event) => setNextObservation(event.target.value)} disabled={readOnly}>
-                      {["Continuous or every 5 minutes", "Repeat observations every 15 minutes", "Repeat observations every 30 minutes", "Repeat observations every 1 hour", "Routine ward frequency"].map((item) => (
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                      value={nextObservation}
+                      onChange={(event) => setNextObservation(event.target.value)}
+                      disabled={readOnly}
+                    >
+                      {[
+                        "Continuous or every 5 minutes",
+                        "Repeat observations every 15 minutes",
+                        "Repeat observations every 30 minutes",
+                        "Repeat observations every 1 hour",
+                        "Routine ward frequency",
+                      ].map((item) => (
                         <option key={item}>{item}</option>
                       ))}
                     </select>
@@ -4684,13 +6807,19 @@ function ReviewActionDialog({
                 </FormField>
 
                 <div className="rounded-md border border-border">
-                  <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">Latest observations</div>
+                  <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">
+                    Latest observations
+                  </div>
                   <div className="grid gap-2 p-3 sm:grid-cols-2">
                     {patientMetricsWithRhythm(patient).map((metric) => (
-                      <div key={metric.id} className="flex items-center justify-between gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs">
+                      <div
+                        key={metric.id}
+                        className="flex items-center justify-between gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs"
+                      >
                         <span className="font-medium">{metric.label}</span>
                         <span className="flex items-center gap-2">
-                          {metric.value}{metric.unit ? ` ${metric.unit}` : ""}
+                          {metric.value}
+                          {metric.unit ? ` ${metric.unit}` : ""}
                           <Badge tone={rapidZoneTone(metric.zone)}>{metric.zone}</Badge>
                         </span>
                       </div>
@@ -4708,7 +6837,9 @@ function ReviewActionDialog({
 
               <div className="space-y-3">
                 <div className="rounded-md border border-border bg-surface-muted p-3">
-                  <div className="text-xs font-semibold uppercase text-muted-foreground">Patient context</div>
+                  <div className="text-xs font-semibold uppercase text-muted-foreground">
+                    Patient context
+                  </div>
                   <div className="mt-2 space-y-1 text-sm">
                     <div className="font-semibold">{patient.patientName}</div>
                     <div className="text-xs text-muted-foreground">{patient.ageGender}</div>
@@ -4725,7 +6856,9 @@ function ReviewActionDialog({
                   </div>
                   <div className="space-y-2">
                     {patient.recommendedActions.map((action) => (
-                      <div key={action} className="text-xs leading-5 text-muted-foreground">{action}</div>
+                      <div key={action} className="text-xs leading-5 text-muted-foreground">
+                        {action}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -4735,7 +6868,9 @@ function ReviewActionDialog({
 
           <div className="flex flex-col gap-2 border-t border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-muted-foreground">
-              {readOnly ? "Read-only role. Switch to Doctor, Nurse, or Admin to save." : "Action will be added to the static review audit trail."}
+              {readOnly
+                ? "Read-only role. Switch to Doctor, Nurse, or Admin to save."
+                : "Action will be added to the static review audit trail."}
             </div>
             <div className="flex justify-end gap-2">
               <DialogPrimitive.Close asChild>
@@ -4743,7 +6878,16 @@ function ReviewActionDialog({
               </DialogPrimitive.Close>
               <Button
                 disabled={readOnly}
-                onClick={() => onConfirm(patient, { status, decision, note, owner, nextObservation, updatedAt: "Just now" })}
+                onClick={() =>
+                  onConfirm(patient, {
+                    status,
+                    decision,
+                    note,
+                    owner,
+                    nextObservation,
+                    updatedAt: "Just now",
+                  })
+                }
               >
                 <ClipboardCheck className="h-4 w-4" />
                 Save review
@@ -4757,12 +6901,16 @@ function ReviewActionDialog({
 }
 
 function defaultDialogDecision(patient: RapidReviewPatient, intent: DialogState["intent"]) {
-  if (intent === "escalate") return patient.responseLevel === "MER Call" ? "Place MER call" : "Escalate to MDT review";
+  if (intent === "escalate")
+    return patient.responseLevel === "MER Call" ? "Place MER call" : "Escalate to MDT review";
   if (intent === "observe") return "Record observation review";
   return "Record clinical review";
 }
 
-function defaultDialogStatus(patient: RapidReviewPatient, intent: DialogState["intent"]): RapidQueueStatus {
+function defaultDialogStatus(
+  patient: RapidReviewPatient,
+  intent: DialogState["intent"],
+): RapidQueueStatus {
   if (intent === "escalate") return "Escalated";
   if (patient.responseLevel === "Routine") return "Closed";
   return "Acknowledged";
@@ -4774,9 +6922,15 @@ function defaultNextObservation(level: RapidResponseLevel) {
   return "Repeat observations every 30 minutes";
 }
 
-function createInitialClinicalConsultRequests(patients: RapidReviewPatient[]): ClinicalConsultRequest[] {
-  const emergencyPatient = patients.find((patient) => patient.responseLevel === "MER Call") ?? patients[0];
-  const dialysisPatient = patients.find((patient) => patient.trigger.toLowerCase().includes("dialysis")) ?? patients.find((patient) => patient.responseLevel === "MDT Review") ?? patients[1];
+function createInitialClinicalConsultRequests(
+  patients: RapidReviewPatient[],
+): ClinicalConsultRequest[] {
+  const emergencyPatient =
+    patients.find((patient) => patient.responseLevel === "MER Call") ?? patients[0];
+  const dialysisPatient =
+    patients.find((patient) => patient.trigger.toLowerCase().includes("dialysis")) ??
+    patients.find((patient) => patient.responseLevel === "MDT Review") ??
+    patients[1];
   const requests: ClinicalConsultRequest[] = [];
 
   if (emergencyPatient) {
@@ -4801,7 +6955,14 @@ function createInitialClinicalConsultRequests(patients: RapidReviewPatient[]): C
       handoffSummary: defaultClinicalHandoff(emergencyPatient, observation),
       status: "Requested",
       lastUpdated: "Just now",
-      events: [createClinicalConsultEvent("Requested", "Consult requested", "Current Doctor", "Cardiology emergency bedside review requested.")],
+      events: [
+        createClinicalConsultEvent(
+          "Requested",
+          "Consult requested",
+          "Current Doctor",
+          "Cardiology emergency bedside review requested.",
+        ),
+      ],
     });
   }
 
@@ -4829,8 +6990,18 @@ function createInitialClinicalConsultRequests(patients: RapidReviewPatient[]): C
       advice: "Review potassium, fluid balance, and dialysis timing before next shift.",
       lastUpdated: "10 min ago",
       events: [
-        createClinicalConsultEvent("Requested", "Consult requested", "Current Doctor", "Nephrology dialysis review requested."),
-        createClinicalConsultEvent("Acknowledged", "Request acknowledged", "On-call nephrologist", "Nephrology team acknowledged the request."),
+        createClinicalConsultEvent(
+          "Requested",
+          "Consult requested",
+          "Current Doctor",
+          "Nephrology dialysis review requested.",
+        ),
+        createClinicalConsultEvent(
+          "Acknowledged",
+          "Request acknowledged",
+          "On-call nephrologist",
+          "Nephrology team acknowledged the request.",
+        ),
       ],
     });
   }
@@ -4872,7 +7043,8 @@ function buildClinicalConsultRequest({
     location: `${patient.bed}, ${patient.ward}`,
     date: todayDateValue(),
     time: currentTimeValue(),
-    requestedBy: role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD" ? "Current Doctor" : role,
+    requestedBy:
+      role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD" ? "Current Doctor" : role,
     department,
     requestedTo,
     priority,
@@ -4883,11 +7055,25 @@ function buildClinicalConsultRequest({
     handoffSummary,
     status: "Requested",
     lastUpdated: "Just now",
-    events: [createClinicalConsultEvent("Requested", "Consult requested", role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD" ? "Current Doctor" : role, `Request sent to ${requestedTo}.`)],
+    events: [
+      createClinicalConsultEvent(
+        "Requested",
+        "Consult requested",
+        role === "Doctor" || role === "Doctor OPD" || role === "Doctor IPD"
+          ? "Current Doctor"
+          : role,
+        `Request sent to ${requestedTo}.`,
+      ),
+    ],
   };
 }
 
-function createClinicalConsultEvent(status: ClinicalConsultStatus, action: string, actor: string, note: string): ClinicalConsultEvent {
+function createClinicalConsultEvent(
+  status: ClinicalConsultStatus,
+  action: string,
+  actor: string,
+  note: string,
+): ClinicalConsultEvent {
   return {
     id: `consult-event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     status,
@@ -4921,42 +7107,71 @@ function clinicalConsultStatusActionText(status: ClinicalConsultStatus) {
   return "Consult requested";
 }
 
-function clinicalConsultStatusEventNote(status: ClinicalConsultStatus, request: ClinicalConsultRequest) {
+function clinicalConsultStatusEventNote(
+  status: ClinicalConsultStatus,
+  request: ClinicalConsultRequest,
+) {
   if (status === "Acknowledged") return `${request.requestedTo} acknowledged the consult request.`;
   if (status === "Assigned") return `${request.requestedTo} is assigned as consult owner.`;
   if (status === "In progress") return `${request.requestedTo} started consult review.`;
-  if (status === "Advice given") return request.advice ?? `Advice recorded by ${request.requestedTo}.`;
+  if (status === "Advice given")
+    return request.advice ?? `Advice recorded by ${request.requestedTo}.`;
   if (status === "Completed") return "Consult closed after advice/action was accepted.";
   if (status === "Escalated") return "Consult escalated due to clinical priority or delay.";
   return "Consult request created.";
 }
 
-function defaultClinicalConsultDepartment(patient: RapidReviewPatient, observation?: RapidObservationSet) {
+function defaultClinicalConsultDepartment(
+  patient: RapidReviewPatient,
+  observation?: RapidObservationSet,
+) {
   const trigger = patient.trigger.toLowerCase();
   const rhythm = observation ? pulseRhythmLabel(observation) : "Regular";
   const spo2 = observation ? parsePercentValue(observation.spo2) : null;
   const oxygenFlow = observation ? oxygenFlowChartValue(observation) : 0;
   if (patient.responseLevel === "MER Call") return "ICU / Anaesthesia";
-  if (["AF", "SVT", "VT", "VF", "Complete heart block", "Irregularly irregular"].includes(rhythm)) return "Cardiology";
-  if (trigger.includes("dialysis") || trigger.includes("urine") || trigger.includes("renal")) return "Nephrology";
-  if ((spo2 !== null && spo2 < 94) || Number(oxygenFlow) >= 6 || trigger.includes("oxygen") || trigger.includes("respiratory")) return "Pulmonology";
-  if (trigger.includes("ct") || trigger.includes("x-ray") || trigger.includes("scan")) return "Radiology";
+  if (["AF", "SVT", "VT", "VF", "Complete heart block", "Irregularly irregular"].includes(rhythm))
+    return "Cardiology";
+  if (trigger.includes("dialysis") || trigger.includes("urine") || trigger.includes("renal"))
+    return "Nephrology";
+  if (
+    (spo2 !== null && spo2 < 94) ||
+    Number(oxygenFlow) >= 6 ||
+    trigger.includes("oxygen") ||
+    trigger.includes("respiratory")
+  )
+    return "Pulmonology";
+  if (trigger.includes("ct") || trigger.includes("x-ray") || trigger.includes("scan"))
+    return "Radiology";
   return "Medicine";
 }
 
-function defaultClinicalConsultPriority(patient: RapidReviewPatient, observation?: RapidObservationSet): ClinicalConsultPriority {
-  if (patient.responseLevel === "MER Call" || observation?.dominantZone === "Purple") return "Emergency";
-  if (patient.responseLevel === "MDT Review" || observation?.dominantZone === "Red") return "Urgent";
+function defaultClinicalConsultPriority(
+  patient: RapidReviewPatient,
+  observation?: RapidObservationSet,
+): ClinicalConsultPriority {
+  if (patient.responseLevel === "MER Call" || observation?.dominantZone === "Purple")
+    return "Emergency";
+  if (patient.responseLevel === "MDT Review" || observation?.dominantZone === "Red")
+    return "Urgent";
   return "Routine";
 }
 
-function defaultClinicalConsultType(patient: RapidReviewPatient, observation?: RapidObservationSet) {
-  if (patient.responseLevel === "MER Call" || observation?.dominantZone === "Purple") return "Bedside review";
-  if (defaultClinicalConsultInvestigation(patient, observation) !== "None") return "Investigation review";
+function defaultClinicalConsultType(
+  patient: RapidReviewPatient,
+  observation?: RapidObservationSet,
+) {
+  if (patient.responseLevel === "MER Call" || observation?.dominantZone === "Purple")
+    return "Bedside review";
+  if (defaultClinicalConsultInvestigation(patient, observation) !== "None")
+    return "Investigation review";
   return "Phone advice";
 }
 
-function defaultClinicalConsultInvestigation(patient: RapidReviewPatient, observation?: RapidObservationSet) {
+function defaultClinicalConsultInvestigation(
+  patient: RapidReviewPatient,
+  observation?: RapidObservationSet,
+) {
   const department = defaultClinicalConsultDepartment(patient, observation);
   const trigger = patient.trigger.toLowerCase();
   if (department === "Cardiology") return "ECG";
@@ -4978,7 +7193,8 @@ function defaultClinicalQuestion(patient: RapidReviewPatient, observation?: Rapi
 }
 
 function defaultClinicalHandoff(patient: RapidReviewPatient, observation?: RapidObservationSet) {
-  if (!observation) return `${patient.patientName}, ${patient.uhid}, ${patient.bed}, ${patient.ward}. Trigger: ${patient.trigger}.`;
+  if (!observation)
+    return `${patient.patientName}, ${patient.uhid}, ${patient.bed}, ${patient.ward}. Trigger: ${patient.trigger}.`;
   return [
     `${patient.patientName}, ${patient.uhid}, ${patient.bed}, ${patient.ward}.`,
     `Trigger: ${patient.trigger}.`,
@@ -4998,16 +7214,38 @@ function clinicalConsultStatusMatches(request: ClinicalConsultRequest, filter: s
   return request.status === filter;
 }
 
-function sortClinicalConsults(a: ClinicalConsultRequest, b: ClinicalConsultRequest, sortBy: string) {
-  if (sortBy === "Oldest request") return clinicalConsultSortValue(a).localeCompare(clinicalConsultSortValue(b));
-  if (sortBy === "Newest request") return clinicalConsultSortValue(b).localeCompare(clinicalConsultSortValue(a));
-  if (sortBy === "Department") return a.department.localeCompare(b.department) || clinicalConsultSortValue(b).localeCompare(clinicalConsultSortValue(a));
-  if (sortBy === "Status") return a.status.localeCompare(b.status) || clinicalConsultSortValue(b).localeCompare(clinicalConsultSortValue(a));
-  return clinicalConsultPriorityRank(b) - clinicalConsultPriorityRank(a) || Number(clinicalConsultIsDelayed(b)) - Number(clinicalConsultIsDelayed(a)) || clinicalConsultSortValue(a).localeCompare(clinicalConsultSortValue(b));
+function sortClinicalConsults(
+  a: ClinicalConsultRequest,
+  b: ClinicalConsultRequest,
+  sortBy: string,
+) {
+  if (sortBy === "Oldest request")
+    return clinicalConsultSortValue(a).localeCompare(clinicalConsultSortValue(b));
+  if (sortBy === "Newest request")
+    return clinicalConsultSortValue(b).localeCompare(clinicalConsultSortValue(a));
+  if (sortBy === "Department")
+    return (
+      a.department.localeCompare(b.department) ||
+      clinicalConsultSortValue(b).localeCompare(clinicalConsultSortValue(a))
+    );
+  if (sortBy === "Status")
+    return (
+      a.status.localeCompare(b.status) ||
+      clinicalConsultSortValue(b).localeCompare(clinicalConsultSortValue(a))
+    );
+  return (
+    clinicalConsultPriorityRank(b) - clinicalConsultPriorityRank(a) ||
+    Number(clinicalConsultIsDelayed(b)) - Number(clinicalConsultIsDelayed(a)) ||
+    clinicalConsultSortValue(a).localeCompare(clinicalConsultSortValue(b))
+  );
 }
 
 function clinicalConsultPriorityRank(request: ClinicalConsultRequest) {
-  const priorityRank: Record<ClinicalConsultPriority, number> = { Routine: 1, Urgent: 2, Emergency: 3 };
+  const priorityRank: Record<ClinicalConsultPriority, number> = {
+    Routine: 1,
+    Urgent: 2,
+    Emergency: 3,
+  };
   const statusBoost = clinicalConsultIsDelayed(request) ? 2 : 0;
   const openBoost = request.status === "Completed" ? 0 : 1;
   return priorityRank[request.priority] + statusBoost + openBoost;
@@ -5016,11 +7254,14 @@ function clinicalConsultPriorityRank(request: ClinicalConsultRequest) {
 function clinicalConsultIsDelayed(request: ClinicalConsultRequest) {
   if (request.status === "Completed" || request.status === "Advice given") return false;
   if (request.priority === "Emergency" && request.status === "Requested") return true;
-  return clinicalConsultElapsedMinutes(request) > clinicalConsultTargetMinutes(request.responseTarget);
+  return (
+    clinicalConsultElapsedMinutes(request) > clinicalConsultTargetMinutes(request.responseTarget)
+  );
 }
 
 function clinicalConsultDueLabel(request: ClinicalConsultRequest) {
-  const remaining = clinicalConsultTargetMinutes(request.responseTarget) - clinicalConsultElapsedMinutes(request);
+  const remaining =
+    clinicalConsultTargetMinutes(request.responseTarget) - clinicalConsultElapsedMinutes(request);
   if (request.status === "Completed") return "Closed";
   if (request.status === "Advice given") return "Advice received";
   if (remaining <= 0) return "Due now";
@@ -5132,7 +7373,8 @@ function clinicalConsultPriorityTone(priority: ClinicalConsultPriority): StatusT
 function clinicalConsultStatusTone(status: ClinicalConsultStatus): StatusTone {
   if (status === "Escalated") return "critical";
   if (status === "Requested") return "info";
-  if (status === "Acknowledged" || status === "Assigned" || status === "In progress") return "warning";
+  if (status === "Acknowledged" || status === "Assigned" || status === "In progress")
+    return "warning";
   if (status === "Advice given") return "success";
   return "muted";
 }
@@ -5142,7 +7384,10 @@ function currentTimeValue() {
   return `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 }
 
-function createObservationDraftFromObservation(patientId: string, observation: RapidObservationSet): ObservationDraft {
+function createObservationDraftFromObservation(
+  patientId: string,
+  observation: RapidObservationSet,
+): ObservationDraft {
   const [systolic = "", diastolic = ""] = observation.bloodPressure.split("/");
   return {
     patientId,
@@ -5226,7 +7471,10 @@ function buildObservationPreview(draft: ObservationDraft) {
   };
 }
 
-function buildObservationFromDraft(draft: ObservationDraft, observationId?: string): RapidObservationSet {
+function buildObservationFromDraft(
+  draft: ObservationDraft,
+  observationId?: string,
+): RapidObservationSet {
   const preview = buildObservationPreview(draft);
   const routine = preview.responseLevel === "Routine";
   return {
@@ -5263,7 +7511,11 @@ function buildObservationFromDraft(draft: ObservationDraft, observationId?: stri
   };
 }
 
-function buildNurseUpdatedObservationFromDraft(draft: ObservationDraft, original: RapidObservationSet, wasDoctorReviewed: boolean): RapidObservationSet {
+function buildNurseUpdatedObservationFromDraft(
+  draft: ObservationDraft,
+  original: RapidObservationSet,
+  wasDoctorReviewed: boolean,
+): RapidObservationSet {
   const updated = buildObservationFromDraft(draft, original.id);
   if (!wasDoctorReviewed) return updated;
 
@@ -5299,8 +7551,12 @@ function createNurseObservationAuditItem(
     performedBy: options.performedBy,
     reason: options.reason,
     summary: options.summary,
-    previousSummary: options.previousObservation ? nurseObservationAuditSummary(options.previousObservation) : undefined,
-    newSummary: options.newObservation ? nurseObservationAuditSummary(options.newObservation) : undefined,
+    previousSummary: options.previousObservation
+      ? nurseObservationAuditSummary(options.previousObservation)
+      : undefined,
+    newSummary: options.newObservation
+      ? nurseObservationAuditSummary(options.newObservation)
+      : undefined,
   };
 }
 
@@ -5316,7 +7572,8 @@ function nurseObservationStatus(
 ): NurseObservationStatus {
   if (voidedObservations[observation.id]) return "Voided";
   if (editedObservationIds.has(observation.id)) return "Edited";
-  if (observationReviewStatus(observation, reviews) !== "Pending doctor review") return "Doctor reviewed";
+  if (observationReviewStatus(observation, reviews) !== "Pending doctor review")
+    return "Doctor reviewed";
   return "Active";
 }
 
@@ -5354,7 +7611,10 @@ function parsePercentValue(value: string | number | undefined) {
 const zoneRank: Record<RapidZone, number> = { Safe: 1, Yellow: 2, Red: 3, Purple: 4 };
 
 function maxZone(zones: RapidZone[]) {
-  return zones.reduce<RapidZone>((highest, zone) => (zoneRank[zone] > zoneRank[highest] ? zone : highest), "Safe");
+  return zones.reduce<RapidZone>(
+    (highest, zone) => (zoneRank[zone] > zoneRank[highest] ? zone : highest),
+    "Safe",
+  );
 }
 
 function responseFromZone(zone: RapidZone): RapidResponseLevel {
@@ -5451,16 +7711,35 @@ function uniqueValues(values: string[]) {
 }
 
 function patientTimelineObservations(patient: RapidReviewPatient) {
-  return [...patient.observationHistory].sort((a, b) => observationDateTimeSortValue(a).localeCompare(observationDateTimeSortValue(b)));
+  return [...patient.observationHistory].sort((a, b) =>
+    observationDateTimeSortValue(a).localeCompare(observationDateTimeSortValue(b)),
+  );
 }
 
-function patientTimelineSummary(patient: RapidReviewPatient, reviews: Record<string, ObservationReviewUpdate>): PatientTimelineSummary {
+function patientTimelineSummary(
+  patient: RapidReviewPatient,
+  reviews: Record<string, ObservationReviewUpdate>,
+): PatientTimelineSummary {
   const observations = patientTimelineObservations(patient);
   const latest = observations.at(-1);
-  const firstWarning = observations.find((observation) => observation.responseLevel !== "Routine" || observation.dominantZone !== "Safe");
-  const firstHighRisk = observations.find((observation) => observation.responseLevel === "MDT Review" || observation.responseLevel === "MER Call" || observation.dominantZone === "Red" || observation.dominantZone === "Purple");
-  const peak = [...observations].sort((a, b) => observationRiskRank(b) - observationRiskRank(a) || observationDateTimeSortValue(b).localeCompare(observationDateTimeSortValue(a)))[0];
-  const pendingCount = observations.filter((observation) => observationReviewStatus(observation, reviews) === "Pending doctor review").length;
+  const firstWarning = observations.find(
+    (observation) => observation.responseLevel !== "Routine" || observation.dominantZone !== "Safe",
+  );
+  const firstHighRisk = observations.find(
+    (observation) =>
+      observation.responseLevel === "MDT Review" ||
+      observation.responseLevel === "MER Call" ||
+      observation.dominantZone === "Red" ||
+      observation.dominantZone === "Purple",
+  );
+  const peak = [...observations].sort(
+    (a, b) =>
+      observationRiskRank(b) - observationRiskRank(a) ||
+      observationDateTimeSortValue(b).localeCompare(observationDateTimeSortValue(a)),
+  )[0];
+  const pendingCount = observations.filter(
+    (observation) => observationReviewStatus(observation, reviews) === "Pending doctor review",
+  ).length;
 
   return {
     latest,
@@ -5482,7 +7761,9 @@ function timelineChangeLabel(observation: RapidObservationSet, previous?: RapidO
 }
 
 function observationRiskRank(observation: RapidObservationSet) {
-  return rapidPriorityRank(observation.responseLevel) * 10 + zoneSeverityRank(observation.dominantZone);
+  return (
+    rapidPriorityRank(observation.responseLevel) * 10 + zoneSeverityRank(observation.dominantZone)
+  );
 }
 
 function zoneSeverityRank(zone: RapidZone) {
@@ -5516,10 +7797,23 @@ function observationMatchesDateFilter(
   dateTo: string,
   latestDataDate: string,
 ) {
-  return observationMatchesDateValue(observationDateValue(observation), mode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate);
+  return observationMatchesDateValue(
+    observationDateValue(observation),
+    mode,
+    selectedDates,
+    singleDate,
+    dateFrom,
+    dateTo,
+    latestDataDate,
+  );
 }
 
-function observationMatchesTimeFilter(observation: RapidObservationSet, mode: string, timeFrom: string, timeTo: string) {
+function observationMatchesTimeFilter(
+  observation: RapidObservationSet,
+  mode: string,
+  timeFrom: string,
+  timeTo: string,
+) {
   const minutes = observationTimeMinutes(observation);
   if (minutes === null) return true;
   if (mode === "All times") return true;
@@ -5559,9 +7853,19 @@ function observationMatchesDateValue(
   if (mode === "Last 7 days") return dateWithinRange(date, addDaysToDateValue(today, -6), today);
   if (mode === "Last 30 days") return dateWithinRange(date, addDaysToDateValue(today, -29), today);
   if (mode === "This week") return dateWithinRange(date, startOfWeekDateValue(today), today);
-  if (mode === "Last week") return dateWithinRange(date, addDaysToDateValue(startOfWeekDateValue(today), -7), addDaysToDateValue(startOfWeekDateValue(today), -1));
+  if (mode === "Last week")
+    return dateWithinRange(
+      date,
+      addDaysToDateValue(startOfWeekDateValue(today), -7),
+      addDaysToDateValue(startOfWeekDateValue(today), -1),
+    );
   if (mode === "This month") return dateWithinRange(date, startOfMonthDateValue(today), today);
-  if (mode === "Last month") return dateWithinRange(date, startOfPreviousMonthDateValue(today), endOfPreviousMonthDateValue(today));
+  if (mode === "Last month")
+    return dateWithinRange(
+      date,
+      startOfPreviousMonthDateValue(today),
+      endOfPreviousMonthDateValue(today),
+    );
   if (mode === "Single date") return singleDate ? date === singleDate : true;
   if (mode === "Specific dates") return selectedDates.length === 0 || selectedDates.includes(date);
   if (mode === "Custom range") {
@@ -5573,10 +7877,19 @@ function observationMatchesDateValue(
   return true;
 }
 
-function dateFilterSummary(mode: string, selectedDates: string[], singleDate: string, dateFrom: string, dateTo: string, latestDataDate: string) {
-  if (mode === "Latest record date") return latestDataDate ? formatDateLabel(latestDataDate) : "Latest record date";
+function dateFilterSummary(
+  mode: string,
+  selectedDates: string[],
+  singleDate: string,
+  dateFrom: string,
+  dateTo: string,
+  latestDataDate: string,
+) {
+  if (mode === "Latest record date")
+    return latestDataDate ? formatDateLabel(latestDataDate) : "Latest record date";
   if (mode === "Single date") return singleDate ? formatDateLabel(singleDate) : "Single date";
-  if (mode === "Specific dates") return selectedDates.length ? `${selectedDates.length} specific dates` : "All specific dates";
+  if (mode === "Specific dates")
+    return selectedDates.length ? `${selectedDates.length} specific dates` : "All specific dates";
   if (mode === "Custom range") {
     if (dateFrom && dateTo && dateFrom > dateTo) return "Invalid date range";
     if (dateFrom && dateTo) return `${formatDateLabel(dateFrom)} to ${formatDateLabel(dateTo)}`;
@@ -5614,7 +7927,8 @@ function timeToMinutes(value: string) {
   if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours > 23 || minutes > 59) return null;
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours > 23 || minutes > 59)
+    return null;
   return hours * 60 + minutes;
 }
 
@@ -5666,7 +7980,10 @@ function dateToValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function observationLogSearchText(row: ObservationLogRow, review: ReturnType<typeof observationReviewDetails>) {
+function observationLogSearchText(
+  row: ObservationLogRow,
+  review: ReturnType<typeof observationReviewDetails>,
+) {
   return [
     row.patient.patientName,
     row.patient.uhid,
@@ -5704,24 +8021,48 @@ function compareObservationLogRows(
   reviews: Record<string, ObservationReviewUpdate>,
   sortBy: string,
 ) {
-  if (sortBy === "Oldest first") return observationDateTimeSortValue(a.observation).localeCompare(observationDateTimeSortValue(b.observation));
+  if (sortBy === "Oldest first")
+    return observationDateTimeSortValue(a.observation).localeCompare(
+      observationDateTimeSortValue(b.observation),
+    );
   if (sortBy === "Clinical priority") {
-    return rapidPriorityRank(b.observation.responseLevel) - rapidPriorityRank(a.observation.responseLevel)
-      || observationDateTimeSortValue(b.observation).localeCompare(observationDateTimeSortValue(a.observation));
+    return (
+      rapidPriorityRank(b.observation.responseLevel) -
+        rapidPriorityRank(a.observation.responseLevel) ||
+      observationDateTimeSortValue(b.observation).localeCompare(
+        observationDateTimeSortValue(a.observation),
+      )
+    );
   }
   if (sortBy === "Patient name") {
-    return a.patient.patientName.localeCompare(b.patient.patientName)
-      || observationDateTimeSortValue(b.observation).localeCompare(observationDateTimeSortValue(a.observation));
+    return (
+      a.patient.patientName.localeCompare(b.patient.patientName) ||
+      observationDateTimeSortValue(b.observation).localeCompare(
+        observationDateTimeSortValue(a.observation),
+      )
+    );
   }
   if (sortBy === "Review status") {
-    return observationReviewStatus(a.observation, reviews).localeCompare(observationReviewStatus(b.observation, reviews))
-      || observationDateTimeSortValue(b.observation).localeCompare(observationDateTimeSortValue(a.observation));
+    return (
+      observationReviewStatus(a.observation, reviews).localeCompare(
+        observationReviewStatus(b.observation, reviews),
+      ) ||
+      observationDateTimeSortValue(b.observation).localeCompare(
+        observationDateTimeSortValue(a.observation),
+      )
+    );
   }
   if (sortBy === "Entered by") {
-    return a.observation.recordedBy.localeCompare(b.observation.recordedBy)
-      || observationDateTimeSortValue(b.observation).localeCompare(observationDateTimeSortValue(a.observation));
+    return (
+      a.observation.recordedBy.localeCompare(b.observation.recordedBy) ||
+      observationDateTimeSortValue(b.observation).localeCompare(
+        observationDateTimeSortValue(a.observation),
+      )
+    );
   }
-  return observationDateTimeSortValue(b.observation).localeCompare(observationDateTimeSortValue(a.observation));
+  return observationDateTimeSortValue(b.observation).localeCompare(
+    observationDateTimeSortValue(a.observation),
+  );
 }
 
 function observationDateTimeSortValue(observation: RapidObservationSet) {
@@ -5730,12 +8071,20 @@ function observationDateTimeSortValue(observation: RapidObservationSet) {
 
 function flattenObservationRows(patients: RapidReviewPatient[]): ObservationLogRow[] {
   return patients
-    .flatMap((patient) => patient.observationHistory.map((observation) => ({ patient, observation })))
-    .sort((a, b) => `${observationDateValue(b.observation)} ${observationTimeLabel(b.observation)}`.localeCompare(`${observationDateValue(a.observation)} ${observationTimeLabel(a.observation)}`));
+    .flatMap((patient) =>
+      patient.observationHistory.map((observation) => ({ patient, observation })),
+    )
+    .sort((a, b) =>
+      `${observationDateValue(b.observation)} ${observationTimeLabel(b.observation)}`.localeCompare(
+        `${observationDateValue(a.observation)} ${observationTimeLabel(a.observation)}`,
+      ),
+    );
 }
 
 function uniqueObservationDates(patients: RapidReviewPatient[]) {
-  return Array.from(new Set(flattenObservationRows(patients).map((row) => observationDateValue(row.observation))));
+  return Array.from(
+    new Set(flattenObservationRows(patients).map((row) => observationDateValue(row.observation))),
+  );
 }
 
 function observationDateValue(observation: RapidObservationSet) {
@@ -5750,22 +8099,52 @@ function observationTimeLabel(observation: RapidObservationSet) {
 function formatDateLabel(value: string) {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return value;
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const monthIndex = Number(match[2]) - 1;
   return `${Number(match[3])} ${monthNames[monthIndex] ?? match[2]} ${match[1]}`;
 }
 
-function observationReviewStatus(observation: RapidObservationSet, reviews: Record<string, ObservationReviewUpdate>) {
-  return reviews[observation.id]?.reviewStatus ?? observation.reviewStatus ?? (observation.responseLevel === "Routine" ? "Reviewed" : "Pending doctor review");
+function observationReviewStatus(
+  observation: RapidObservationSet,
+  reviews: Record<string, ObservationReviewUpdate>,
+) {
+  return (
+    reviews[observation.id]?.reviewStatus ??
+    observation.reviewStatus ??
+    (observation.responseLevel === "Routine" ? "Reviewed" : "Pending doctor review")
+  );
 }
 
-function observationReviewDetails(observation: RapidObservationSet, reviews: Record<string, ObservationReviewUpdate>) {
+function observationReviewDetails(
+  observation: RapidObservationSet,
+  reviews: Record<string, ObservationReviewUpdate>,
+) {
   const update = reviews[observation.id];
   return {
     reviewStatus: observationReviewStatus(observation, reviews),
-    reviewedBy: update?.reviewedBy ?? observation.reviewedBy ?? (observation.responseLevel === "Routine" ? "Auto screening" : "Pending"),
-    reviewedAt: update?.reviewedAt ?? observation.reviewedAt ?? (observation.responseLevel === "Routine" ? "Same time" : "Not reviewed"),
-    doctorAction: update?.doctorAction ?? observation.doctorAction ?? defaultDoctorAction(observation),
+    reviewedBy:
+      update?.reviewedBy ??
+      observation.reviewedBy ??
+      (observation.responseLevel === "Routine" ? "Auto screening" : "Pending"),
+    reviewedAt:
+      update?.reviewedAt ??
+      observation.reviewedAt ??
+      (observation.responseLevel === "Routine" ? "Same time" : "Not reviewed"),
+    doctorAction:
+      update?.doctorAction ?? observation.doctorAction ?? defaultDoctorAction(observation),
     ecgRhythm: update?.ecgRhythm ?? "Not confirmed",
     rhythmPlan: update?.rhythmPlan ?? defaultPulseRhythmPlan(observation),
     note: update?.note ?? observation.note,
@@ -5793,19 +8172,33 @@ function defaultPulseRhythmPlan(observation: RapidObservationSet) {
   const rhythmRisk = pulseRhythmRiskLevel(pulseRhythmLabel(observation));
   const qualityRisk = pulseQualityRiskLevel(pulseQualityLabel(observation));
   const deficitRisk = pulseDeficitRiskLevel(monitorHeartRateValue(observation), observation.pulse);
-  if (rhythmRisk === "critical") return "Emergency rhythm review, ECG now, prepare resuscitation support";
-  if (qualityRisk === "critical") return "Confirm central pulse, call emergency team, start resuscitation pathway";
-  if (deficitRisk === "highRisk") return "Check apical-radial pulse deficit, ECG now, review perfusion and electrolytes";
-  if (rhythmRisk === "highRisk") return "Order ECG, check electrolytes, repeat vitals in 15 minutes";
-  if (qualityRisk === "highRisk") return "Assess peripheral perfusion, capillary refill, BP trend, and repeat pulse manually";
-  if (deficitRisk === "warning") return "Repeat manual pulse count and compare with monitor heart rate";
+  if (rhythmRisk === "critical")
+    return "Emergency rhythm review, ECG now, prepare resuscitation support";
+  if (qualityRisk === "critical")
+    return "Confirm central pulse, call emergency team, start resuscitation pathway";
+  if (deficitRisk === "highRisk")
+    return "Check apical-radial pulse deficit, ECG now, review perfusion and electrolytes";
+  if (rhythmRisk === "highRisk")
+    return "Order ECG, check electrolytes, repeat vitals in 15 minutes";
+  if (qualityRisk === "highRisk")
+    return "Assess peripheral perfusion, capillary refill, BP trend, and repeat pulse manually";
+  if (deficitRisk === "warning")
+    return "Repeat manual pulse count and compare with monitor heart rate";
   if (rhythmRisk === "warning") return "Repeat pulse rhythm check and monitor for symptoms";
   return "Continue routine rhythm monitoring";
 }
 
-function buildAdultObservationData(observations: RapidObservationSet[], reviews: Record<string, ObservationReviewUpdate>): AdultObservationDataRow[] {
-  const chartRows: AdultObservationDataRow[] = adultObservationChartRows.map((row) => ({ ...row, values: {} }));
-  const rowMap = new Map<AdultObservationVitalType, AdultObservationDataRow>(chartRows.map((row) => [row.vitalType, row]));
+function buildAdultObservationData(
+  observations: RapidObservationSet[],
+  reviews: Record<string, ObservationReviewUpdate>,
+): AdultObservationDataRow[] {
+  const chartRows: AdultObservationDataRow[] = adultObservationChartRows.map((row) => ({
+    ...row,
+    values: {},
+  }));
+  const rowMap = new Map<AdultObservationVitalType, AdultObservationDataRow>(
+    chartRows.map((row) => [row.vitalType, row]),
+  );
 
   observations.forEach((observation) => {
     const hour = observationHourKey(observation);
@@ -5822,9 +8215,19 @@ function buildAdultObservationData(observations: RapidObservationSet[], reviews:
     setAdultObservationValue(rowMap, "pulseQuality", hour, pulseQualityLabel(observation));
     setAdultObservationValue(rowMap, "pulseSite", hour, pulseSiteLabel(observation));
     setAdultObservationValue(rowMap, "temperature", hour, observation.temperature);
-    setAdultObservationValue(rowMap, "consciousnessSedation", hour, gcsScoreLabel(observation.consciousness));
+    setAdultObservationValue(
+      rowMap,
+      "consciousnessSedation",
+      hour,
+      gcsScoreLabel(observation.consciousness),
+    );
     setAdultObservationValue(rowMap, "painScore", hour, observation.painScore);
-    setAdultObservationValue(rowMap, "intervention", hour, observationReviewDetails(observation, reviews).doctorAction);
+    setAdultObservationValue(
+      rowMap,
+      "intervention",
+      hour,
+      observationReviewDetails(observation, reviews).doctorAction,
+    );
   });
 
   return chartRows;
@@ -5854,7 +8257,10 @@ function oxygenFlowChartValue(observation: RapidObservationSet) {
 }
 
 function fio2Value(observation: RapidObservationSet) {
-  return observation.fio2 ?? inferFio2FromOxygenSupport(observation.oxygenFlow, observation.deliveryMethod);
+  return (
+    observation.fio2 ??
+    inferFio2FromOxygenSupport(observation.oxygenFlow, observation.deliveryMethod)
+  );
 }
 
 function fio2ChartValue(observation: RapidObservationSet) {

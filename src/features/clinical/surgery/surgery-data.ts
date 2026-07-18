@@ -1,5 +1,7 @@
-export type SurgeryRequestStatus = "Requested" | "Accepted" | "Scheduled" | "In OT" | "Completed" | "Deferred" | "Stopped";
-export type SlotStatus = "Available" | "Scheduled" | "Wheeled in" | "Wheeled out" | "Completed" | "Stopped" | "Differed";
+export type SurgeryRequestStatus =
+  "Requested" | "Accepted" | "Scheduled" | "In OT" | "Completed" | "Deferred" | "Stopped";
+export type SlotStatus =
+  "Available" | "Scheduled" | "Wheeled in" | "Wheeled out" | "Completed" | "Stopped" | "Differed";
 
 export type SurgeryRequest = {
   id: string;
@@ -21,7 +23,17 @@ export type SurgeryRequest = {
 
 export type SurgeryFilter = {
   id: string;
-  criteria: keyof Pick<SurgeryRequest, "patientName" | "mrn" | "requestedBy" | "chiefSurgeon" | "anesthetist" | "surgeryName" | "surgeryDate" | "status">;
+  criteria: keyof Pick<
+    SurgeryRequest,
+    | "patientName"
+    | "mrn"
+    | "requestedBy"
+    | "chiefSurgeon"
+    | "anesthetist"
+    | "surgeryName"
+    | "surgeryDate"
+    | "status"
+  >;
   value: string;
 };
 

@@ -1816,7 +1816,7 @@ type IcuInvestigationTrendRow = {
   action: string;
 };
 
-const icuInvestigationTrendColumns = [
+const _icuInvestigationTrendColumns = [
   "Latest",
   "Previous 1",
   "Previous 2",
@@ -3508,30 +3508,24 @@ function IcuDailyNursingRecordTable({
   instructions: typeof doctorInstructions;
 }) {
   const rows = [
-    ...vitals
-      .slice(-4)
-      .map((row) => ({
-        id: row.id,
-        dateTime: row.time,
-        observation: `Vitals: SpO2 ${row.spo2}%, BP ${row.bp}, GCS ${row.gcs}`,
-        implementation: row.note,
-      })),
-    ...tasks
-      .slice(0, 3)
-      .map((row) => ({
-        id: row.id,
-        dateTime: row.dueTime,
-        observation: row.title,
-        implementation: `${row.status} | ${row.assignedTo} | ${row.remarks}`,
-      })),
-    ...instructions
-      .slice(0, 3)
-      .map((row) => ({
-        id: row.id,
-        dateTime: row.dueTime,
-        observation: row.instructionType,
-        implementation: `${row.instruction} | ${row.assignedNurse}`,
-      })),
+    ...vitals.slice(-4).map((row) => ({
+      id: row.id,
+      dateTime: row.time,
+      observation: `Vitals: SpO2 ${row.spo2}%, BP ${row.bp}, GCS ${row.gcs}`,
+      implementation: row.note,
+    })),
+    ...tasks.slice(0, 3).map((row) => ({
+      id: row.id,
+      dateTime: row.dueTime,
+      observation: row.title,
+      implementation: `${row.status} | ${row.assignedTo} | ${row.remarks}`,
+    })),
+    ...instructions.slice(0, 3).map((row) => ({
+      id: row.id,
+      dateTime: row.dueTime,
+      observation: row.instructionType,
+      implementation: `${row.instruction} | ${row.assignedNurse}`,
+    })),
   ].slice(0, 8);
 
   return (
@@ -3683,11 +3677,11 @@ function FilterPanel({
   setStatus,
 }: {
   search: string;
-  setSearch: (value: string) => void;
+  setSearch: (_value: string) => void;
   unit: string;
-  setUnit: (value: string) => void;
+  setUnit: (_value: string) => void;
   status: string;
-  setStatus: (value: string) => void;
+  setStatus: (_value: string) => void;
 }) {
   return (
     <Card className="min-w-0 max-w-full overflow-hidden">
@@ -4056,10 +4050,10 @@ function ExecutiveDashboard() {
 
 function ExecutiveDashboardMatrix({
   rows,
-  onAction,
+  onAction: _onAction,
 }: {
   rows: ExecutiveDashboardRow[];
-  onAction: (action: ExecutiveDashboardAction) => void;
+  onAction: (_action: ExecutiveDashboardAction) => void;
 }) {
   const pagination = useIcuCommandPagination(rows);
   const columns = [
@@ -4277,8 +4271,8 @@ function ExecutiveDashboardActionDialog({
   onOpenChange,
 }: {
   action: ExecutiveDashboardAction | null;
-  onComplete: (action: ExecutiveDashboardAction, note: string) => void;
-  onOpenChange: (open: boolean) => void;
+  onComplete: (_action: ExecutiveDashboardAction, _note: string) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -4298,7 +4292,7 @@ function ExecutiveDashboardActionDialogContent({
   onComplete,
 }: {
   action: ExecutiveDashboardAction;
-  onComplete: (action: ExecutiveDashboardAction, note: string) => void;
+  onComplete: (_action: ExecutiveDashboardAction, _note: string) => void;
 }) {
   const copy = executiveActionCopy(action);
   const [selectedAction, setSelectedAction] = React.useState(copy.defaultAction);
@@ -4623,7 +4617,7 @@ function NotificationsTasksMatrix({
   onAction,
 }: {
   rows: NotificationCommandRow[];
-  onAction: (action: NotificationWorkflowAction) => void;
+  onAction: (_action: NotificationWorkflowAction) => void;
 }) {
   const pagination = useIcuCommandPagination(rows);
   const columns = ["Source", "SLA", "Assigned To", "Status", "Action"];
@@ -4780,8 +4774,8 @@ function NotificationWorkflowActionDialog({
   onOpenChange,
 }: {
   action: NotificationWorkflowAction | null;
-  onComplete: (action: NotificationWorkflowAction, note: string) => void;
-  onOpenChange: (open: boolean) => void;
+  onComplete: (_action: NotificationWorkflowAction, _note: string) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -4801,7 +4795,7 @@ function NotificationWorkflowActionDialogContent({
   onComplete,
 }: {
   action: NotificationWorkflowAction;
-  onComplete: (action: NotificationWorkflowAction, note: string) => void;
+  onComplete: (_action: NotificationWorkflowAction, _note: string) => void;
 }) {
   const copy = notificationActionCopy(action);
   const [selectedAction, setSelectedAction] = React.useState(copy.defaultAction);
@@ -5728,7 +5722,7 @@ function executiveDrilldownLabel(focus: ExecutiveDashboardDrilldownFocus) {
   return labels[focus];
 }
 
-function executiveDrilldownDescription(focus: ExecutiveDashboardDrilldownFocus) {
+function _executiveDrilldownDescription(focus: ExecutiveDashboardDrilldownFocus) {
   const descriptions: Record<ExecutiveDashboardDrilldownFocus, string> = {
     unit: "Shows only the selected ICU unit with every executive signal visible in one row.",
     occupancy:
@@ -5759,7 +5753,7 @@ function executiveDrilldownColumnClass(
   );
 }
 
-function executiveDrilldownInsight(
+function _executiveDrilldownInsight(
   row: ExecutiveDashboardRow,
   focus: ExecutiveDashboardDrilldownFocus,
 ): { title: string; detail: string; tone: DashboardCellTone } {
@@ -6345,7 +6339,7 @@ function executiveOccupancyTone(row: ExecutiveDashboardRow): DashboardCellTone {
   return "success";
 }
 
-function executiveRowRank(row: ExecutiveDashboardRow) {
+function _executiveRowRank(row: ExecutiveDashboardRow) {
   return (
     row.critical * 20 +
     row.openAlerts * 10 +
@@ -8071,8 +8065,8 @@ function SmartBedActionDialog({
 }: {
   actionKind: SmartBedCellKind;
   bed: SmartBedInventoryRow | null;
-  onOpenChange: (open: boolean) => void;
-  onUpdateStatus: (bedNo: string, status: SmartBedStatus) => void;
+  onOpenChange: (_open: boolean) => void;
+  onUpdateStatus: (_bedNo: string, _status: SmartBedStatus) => void;
 }) {
   const [request, setRequest] = React.useState(smartBedWaitingAdmissions[0]);
   const [owner, setOwner] = React.useState(
@@ -9030,7 +9024,7 @@ function IcuOperationsFilterSelect({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   options: string[];
 }) {
   return (
@@ -9660,7 +9654,7 @@ function IcuOperationsQueuePanel({
   title: string;
   description?: string;
   rows: Array<{ id: string; title: string; detail: string; meta: string; tone: DashboardCellTone }>;
-  onOpen: (id: string) => void;
+  onOpen: (_id: string) => void;
 }) {
   return (
     <div className="rounded-md border border-slate-200 bg-white shadow-sm">
@@ -9721,8 +9715,8 @@ function IcuOperationsActionDialog({
   onComplete,
 }: {
   action: IcuOperationActiveAction | null;
-  onOpenChange: (open: boolean) => void;
-  onComplete: (row: IcuOperationRow, action: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onComplete: (_row: IcuOperationRow, _action: string) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -9750,7 +9744,7 @@ function IcuOperationsActionDialogContent({
 }: {
   row: IcuOperationRow;
   kind: IcuOperationActionKind;
-  onComplete: (row: IcuOperationRow, action: string) => void;
+  onComplete: (_row: IcuOperationRow, _action: string) => void;
 }) {
   const copy = icuOperationsModalCopy(row, kind);
   const [selectedAction, setSelectedAction] = React.useState(copy.defaultAction);
@@ -11137,8 +11131,8 @@ export function ClinicalAlertActionDialog({
   onComplete,
 }: {
   action: ClinicalAlertCellAction | null;
-  onOpenChange: (open: boolean) => void;
-  onComplete: (row: ClinicalAlertRow, action: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onComplete: (_row: ClinicalAlertRow, _action: string) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -11163,7 +11157,7 @@ function ClinicalAlertActionDialogContent({
   onComplete,
 }: {
   action: ClinicalAlertCellAction;
-  onComplete: (row: ClinicalAlertRow, action: string) => void;
+  onComplete: (_row: ClinicalAlertRow, _action: string) => void;
 }) {
   const row = action.row;
   const copy = clinicalAlertModalCopy(action);
@@ -12352,7 +12346,7 @@ function EscalationActionDialog({
   onOpenChange,
 }: {
   action: EscalationCellAction | null;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   if (!action) {
     return <Dialog.Root open={false} onOpenChange={onOpenChange} />;
@@ -12372,7 +12366,7 @@ function EscalationActionDialogContent({
   onOpenChange,
 }: {
   action: EscalationCellAction;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   const { row } = action;
   const copy = escalationDialogCopy(action);
@@ -12666,15 +12660,13 @@ function PatientOverviewDetailCommand({ patients }: { patients: IcuPatient[] }) 
     },
   ];
   const timeline = [
-    ...patientVitals
-      .slice(-3)
-      .map((row) => ({
-        id: `vital-${row.id}`,
-        type: "Vitals",
-        title: `${row.time} - SpO2 ${row.spo2}%, BP ${row.bp}`,
-        detail: row.note,
-        tone: row.abnormal ? ("danger" as StatusTone) : ("success" as StatusTone),
-      })),
+    ...patientVitals.slice(-3).map((row) => ({
+      id: `vital-${row.id}`,
+      type: "Vitals",
+      title: `${row.time} - SpO2 ${row.spo2}%, BP ${row.bp}`,
+      detail: row.note,
+      tone: row.abnormal ? ("danger" as StatusTone) : ("success" as StatusTone),
+    })),
     ...activeAlerts.map((row) => ({
       id: `alert-${row.id}`,
       type: "Alert",
@@ -12689,15 +12681,13 @@ function PatientOverviewDetailCommand({ patients }: { patients: IcuPatient[] }) 
       detail: `${row.status}: ${row.reason}`,
       tone: toneForStatus(row.status),
     })),
-    ...patientInstructions
-      .slice(0, 3)
-      .map((row) => ({
-        id: `order-${row.id}`,
-        type: "Order",
-        title: `${row.dueTime} - ${row.instructionType}`,
-        detail: row.instruction,
-        tone: toneForPriority(row.priority),
-      })),
+    ...patientInstructions.slice(0, 3).map((row) => ({
+      id: `order-${row.id}`,
+      type: "Order",
+      title: `${row.dueTime} - ${row.instructionType}`,
+      detail: row.instruction,
+      tone: toneForPriority(row.priority),
+    })),
   ].slice(0, 8);
   const statusTone: StatusTone =
     patient?.currentStatus === "Critical"
@@ -13047,7 +13037,7 @@ function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[]
   );
   const seededUnverifiedPatientIds = React.useMemo(
     () => new Set(assignedPatients.slice(0, 3).map((patient) => patient.id)),
-    [activeWardNurse, assignedPatients.length],
+    [assignedPatients],
   );
   const verificationStorageKey = React.useMemo(
     () => `ward-nurse-session-verification:${activeWardNurse}`,
@@ -13649,8 +13639,8 @@ function WardNursePatientVerificationDialog({
   row,
 }: {
   activeWardNurse: string;
-  onOpenChange: (open: boolean) => void;
-  onVerify: (patientId: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onVerify: (_patientId: string) => void;
   row: WardNursePatientWorkRow | null;
 }) {
   if (!row) return <Dialog.Root open={false} onOpenChange={onOpenChange} />;
@@ -14463,7 +14453,13 @@ function OrdersCarePlansCommand() {
     return orderFilter === "All orders"
       ? rows
       : rows.filter((row) => row.orderType === orderFilter);
-  }, [orderFilter, orderStatusOverrides, patient.assignedWardNurse, patientId]);
+  }, [
+    orderFilter,
+    orderStatusOverrides,
+    patient.admittingDoctor,
+    patient.assignedWardNurse,
+    patientId,
+  ]);
 
   const patientTaskRows = React.useMemo(() => {
     const baseTasks: CarePlanTaskRow[] = icuTasks
@@ -15204,7 +15200,7 @@ function CarePlanSheetMatrix({
   goal: string;
   intervention: string;
   outcome: string;
-  onChange: (key: "goal" | "actionPlan" | "intervention" | "outcome", value: string) => void;
+  onChange: (_key: "goal" | "actionPlan" | "intervention" | "outcome", _value: string) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-md border border-border bg-white">
@@ -15251,7 +15247,7 @@ function CarePlanSheetCell({
 }: {
   help: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
 }) {
   return (
     <label className="min-h-[260px] border-b border-border p-3 text-sm md:border-b-0 md:border-r md:last:border-r-0">
@@ -15275,8 +15271,8 @@ function ClinicalActionModal({
   actionType: ClinicalActionType | null;
   open: boolean;
   patient: IcuPatient;
-  onOpenChange: (open: boolean) => void;
-  onSave: (payload: ClinicalActionModalPayload) => void;
+  onOpenChange: (_open: boolean) => void;
+  onSave: (_payload: ClinicalActionModalPayload) => void;
 }) {
   const config = getClinicalActionConfig(actionType ?? "Care Plan", patient);
   const [scenario, setScenario] = React.useState(config.scenarios[0]);
@@ -15602,8 +15598,8 @@ function CarePlanActionDialog({
   request: CarePlanActionRequest | null;
   open: boolean;
   patient: IcuPatient;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (payload: CarePlanActionPayload) => void;
+  onOpenChange: (_open: boolean) => void;
+  onConfirm: (_payload: CarePlanActionPayload) => void;
 }) {
   const [reason, setReason] = React.useState("Select reason");
   const [actionTime, setActionTime] = React.useState("Now");
@@ -16249,7 +16245,7 @@ function CarePlanTextArea({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
 }) {
   return (
     <label className="space-y-1 text-sm">
@@ -16626,7 +16622,7 @@ function RemoteCommandMatrix({
   onAction,
 }: {
   rows: RemoteCommandRow[];
-  onAction: (action: RemoteCommandActiveAction) => void;
+  onAction: (_action: RemoteCommandActiveAction) => void;
 }) {
   const pagination = useIcuCommandPagination(rows);
   const columns = [
@@ -16844,7 +16840,6 @@ function RemoteMatrixCell({
 }
 
 function RemoteCircleCell({
-  detail,
   href,
   icon: Icon,
   onClick,
@@ -16902,7 +16897,7 @@ function RemoteActionButtons({
   onAction,
 }: {
   row: RemoteCommandRow;
-  onAction: (action: RemoteCommandActiveAction) => void;
+  onAction: (_action: RemoteCommandActiveAction) => void;
 }) {
   return (
     <div className="flex items-center justify-center gap-1.5">
@@ -16951,8 +16946,8 @@ function RemoteCommandActionDialog({
   onOpenChange,
 }: {
   action: RemoteCommandActiveAction | null;
-  onConfirm: (action: RemoteCommandActiveAction, note: string) => void;
-  onOpenChange: (open: boolean) => void;
+  onConfirm: (_action: RemoteCommandActiveAction, _note: string) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -16972,7 +16967,7 @@ function RemoteCommandActionDialogContent({
   onConfirm,
 }: {
   action: RemoteCommandActiveAction;
-  onConfirm: (action: RemoteCommandActiveAction, note: string) => void;
+  onConfirm: (_action: RemoteCommandActiveAction, _note: string) => void;
 }) {
   const [note, setNote] = React.useState(remoteDefaultActionNote(action));
   const [nextReview, setNextReview] = React.useState(
@@ -18218,8 +18213,8 @@ function RemoteConsultationMatrix({
   rows,
 }: {
   rows: RemoteConsultationRow[];
-  onAction: (action: RemoteConsultationActiveAction) => void;
-  onCell: (action: RemoteConsultationCellAction) => void;
+  onAction: (_action: RemoteConsultationActiveAction) => void;
+  onCell: (_action: RemoteConsultationCellAction) => void;
 }) {
   const pagination = useIcuCommandPagination(rows);
   const columns = [
@@ -18383,7 +18378,7 @@ function RemoteConsultActionButtons({
   onAction,
 }: {
   row: RemoteConsultationRow;
-  onAction: (action: RemoteConsultationActiveAction) => void;
+  onAction: (_action: RemoteConsultationActiveAction) => void;
 }) {
   const closed = row.status === "Closed";
   return (
@@ -18437,7 +18432,7 @@ function RemoteConsultationCellDialog({
   onOpenChange,
 }: {
   cell: RemoteConsultationCellAction | null;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(cell)} onOpenChange={onOpenChange}>
@@ -18539,8 +18534,8 @@ function RemoteConsultationActionDialog({
   onOpenChange,
 }: {
   action: RemoteConsultationActiveAction | null;
-  onConfirm: (action: RemoteConsultationActiveAction, note: string) => void;
-  onOpenChange: (open: boolean) => void;
+  onConfirm: (_action: RemoteConsultationActiveAction, _note: string) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -18560,7 +18555,7 @@ function RemoteConsultationActionDialogContent({
   onConfirm,
 }: {
   action: RemoteConsultationActiveAction;
-  onConfirm: (action: RemoteConsultationActiveAction, note: string) => void;
+  onConfirm: (_action: RemoteConsultationActiveAction, _note: string) => void;
 }) {
   const [note, setNote] = React.useState(remoteConsultDefaultActionNote(action));
   const [nextStep, setNextStep] = React.useState(
@@ -19355,7 +19350,7 @@ function EscalatedCasesCommand() {
         </div>
       </CollapsibleCommandPanel>
 
-      <EscalatedCasesMatrix rows={visibleRows} onAction={setActiveAction} onCell={setActiveCell} />
+      <EscalatedCasesMatrix rows={visibleRows} onAction={setActiveAction} />
 
       <EscalatedCaseCellDialog
         cell={activeCell}
@@ -19412,13 +19407,11 @@ type EscalatedCaseCellAction = {
 };
 
 function EscalatedCasesMatrix({
-  onAction,
-  onCell,
   rows,
+  onAction,
 }: {
   rows: EscalatedCaseRow[];
-  onAction: (action: EscalatedCaseAction) => void;
-  onCell: (action: EscalatedCaseCellAction) => void;
+  onAction: (_action: EscalatedCaseAction) => void;
 }) {
   const pagination = useIcuCommandPagination(rows);
   const columns = [
@@ -19582,7 +19575,7 @@ function EscalatedCaseActionButtons({
   onAction,
 }: {
   row: EscalatedCaseRow;
-  onAction: (action: EscalatedCaseAction) => void;
+  onAction: (_action: EscalatedCaseAction) => void;
 }) {
   const closed = row.status === "Closed";
   return (
@@ -19649,7 +19642,7 @@ function EscalatedCaseCellDialog({
   onOpenChange,
 }: {
   cell: EscalatedCaseCellAction | null;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(cell)} onOpenChange={onOpenChange}>
@@ -19751,8 +19744,8 @@ function EscalatedCaseActionDialog({
   onOpenChange,
 }: {
   action: EscalatedCaseAction | null;
-  onConfirm: (action: EscalatedCaseAction, note: string) => void;
-  onOpenChange: (open: boolean) => void;
+  onConfirm: (_action: EscalatedCaseAction, _note: string) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -19772,7 +19765,7 @@ function EscalatedCaseActionDialogContent({
   onConfirm,
 }: {
   action: EscalatedCaseAction;
-  onConfirm: (action: EscalatedCaseAction, note: string) => void;
+  onConfirm: (_action: EscalatedCaseAction, _note: string) => void;
 }) {
   const [note, setNote] = React.useState(escalatedCaseDefaultActionNote(action));
   const [owner, setOwner] = React.useState(action.row.primaryOwner);
@@ -21301,8 +21294,8 @@ function DeviceMonitoringActionDialog({
   onComplete,
 }: {
   action: DeviceMonitoringActiveAction | null;
-  onOpenChange: (open: boolean) => void;
-  onComplete: (row: DeviceMonitoringRow, action: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onComplete: (_row: DeviceMonitoringRow, _action: string) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -21330,7 +21323,7 @@ function DeviceMonitoringActionDialogContent({
 }: {
   row: DeviceMonitoringRow;
   kind: DeviceMonitoringActionKind;
-  onComplete: (row: DeviceMonitoringRow, action: string) => void;
+  onComplete: (_row: DeviceMonitoringRow, _action: string) => void;
 }) {
   const copy = deviceMonitoringModalCopy(row, kind);
   const [action, setAction] = React.useState(copy.defaultAction);
@@ -21877,9 +21870,9 @@ type DeviceOpsActiveAction = {
 };
 
 type DeviceOpsActionHandler = (
-  kind: DeviceOpsActionKind,
-  row: DeviceOpsRow,
-  target?: DeviceOpsActionTarget,
+  _kind: DeviceOpsActionKind,
+  _row: DeviceOpsRow,
+  _target?: DeviceOpsActionTarget,
 ) => void;
 type DeviceOpsAuxPanel = "service-queue" | "gateway-watch";
 
@@ -22046,7 +22039,7 @@ function DeviceOpsPanelDialog({
   rows: DeviceOpsRow[];
   gatewayRows: ReturnType<typeof buildGatewayHealthRows>;
   onAction: DeviceOpsActionHandler;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(activePanel)} onOpenChange={onOpenChange}>
@@ -22146,7 +22139,7 @@ function DeviceOpsMatrix({
   mode: DeviceOperationsMode;
   rows: DeviceOpsRow[];
   onAction: DeviceOpsActionHandler;
-  onPanelChange: (panel: DeviceOpsAuxPanel) => void;
+  onPanelChange: (_panel: DeviceOpsAuxPanel) => void;
 }) {
   const pagination = useIcuCommandPagination(rows);
   const config = deviceOpsModeConfig(mode);
@@ -22699,8 +22692,8 @@ function DeviceOpsActionDialog({
   onOpenChange,
 }: {
   action: DeviceOpsActiveAction | null;
-  onComplete: (action: DeviceOpsActiveAction, note: string) => void;
-  onOpenChange: (open: boolean) => void;
+  onComplete: (_action: DeviceOpsActiveAction, _note: string) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -22720,7 +22713,7 @@ function DeviceOpsActionDialogContent({
   onComplete,
 }: {
   action: DeviceOpsActiveAction;
-  onComplete: (action: DeviceOpsActiveAction, note: string) => void;
+  onComplete: (_action: DeviceOpsActiveAction, _note: string) => void;
 }) {
   const copy = deviceOpsActionCopy(action);
   const [selectedAction, setSelectedAction] = React.useState(copy.defaultAction);
@@ -24092,7 +24085,7 @@ function RiskCommandMatrix({
   mode: RiskCommandMode;
   rows: PatientRiskRow[];
   reviewed: Set<string>;
-  onAction: (kind: RiskActionKind, row: PatientRiskRow) => void;
+  onAction: (_kind: RiskActionKind, _row: PatientRiskRow) => void;
 }) {
   const pagination = useIcuCommandPagination(rows);
   const config = riskCommandConfig(mode);
@@ -24208,7 +24201,7 @@ function RiskPatientCell({
 
 function riskCells(
   row: PatientRiskRow,
-  onAction: (kind: RiskActionKind, row: PatientRiskRow) => void,
+  _onAction: (_kind: RiskActionKind, _row: PatientRiskRow) => void,
 ) {
   return (
     <>
@@ -24289,7 +24282,7 @@ function riskCells(
 function ewsCells(
   row: PatientRiskRow,
   reviewed: Set<string>,
-  onAction: (kind: RiskActionKind, row: PatientRiskRow) => void,
+  onAction: (_kind: RiskActionKind, _row: PatientRiskRow) => void,
 ) {
   const acknowledged = reviewed.has(`ews-${row.id}-acknowledge`);
   return (
@@ -24365,7 +24358,7 @@ function RiskActionButtons({
 }: {
   mode: RiskCommandMode;
   row: PatientRiskRow;
-  onAction: (kind: RiskActionKind, row: PatientRiskRow) => void;
+  onAction: (_kind: RiskActionKind, _row: PatientRiskRow) => void;
 }) {
   const actions =
     mode === "ews"
@@ -25322,8 +25315,8 @@ function RiskWorkflowActionDialog({
   onOpenChange,
 }: {
   action: RiskWorkflowAction | null;
-  onComplete: (action: RiskWorkflowAction, note: string) => void;
-  onOpenChange: (open: boolean) => void;
+  onComplete: (_action: RiskWorkflowAction, _note: string) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(action)} onOpenChange={onOpenChange}>
@@ -25343,7 +25336,7 @@ function RiskWorkflowActionDialogContent({
   onComplete,
 }: {
   action: RiskWorkflowAction;
-  onComplete: (action: RiskWorkflowAction, note: string) => void;
+  onComplete: (_action: RiskWorkflowAction, _note: string) => void;
 }) {
   const copy = riskActionCopy(action);
   const [selectedAction, setSelectedAction] = React.useState(copy.defaultAction);
@@ -26887,7 +26880,7 @@ function PatientSelect({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   patients: IcuPatient[];
 }) {
   return (
@@ -26944,7 +26937,7 @@ function WardNursePatientContextSelector({
   value,
 }: {
   label: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   patients: IcuPatient[];
   value: string;
 }) {
@@ -28133,7 +28126,7 @@ function IcuPatientCommandProfile({
   );
   const patientIoRows = intakeOutputRows.filter((row) => row.patientId === patient.id);
   const patientInfusions = infusionRows.filter((row) => row.patientId === patient.id);
-  const patientTransfusions = transfusionRows.filter((row) => row.patientId === patient.id);
+  const _patientTransfusions = transfusionRows.filter((row) => row.patientId === patient.id);
   const patientInstructions = doctorInstructions.filter((row) => row.patientId === patient.id);
   const patientDevice = getCommandDeviceRows().find(
     (row) => row.bedNo === patient.bedNo || row.patient === patient.patientName,
@@ -28343,7 +28336,6 @@ function IcuPatientCommandProfile({
           <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="results">
             <IcuPatientResultsWorkspace
               initialType={initialResultType}
-              patient={patient}
               rows={resultRows}
               onDownload={downloadIcuPatientResult}
               onPreview={setPreviewResultId}
@@ -28351,7 +28343,7 @@ function IcuPatientCommandProfile({
           </TabsContent>
 
           <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="graph">
-            <IcuPatientVitalGraph patient={patient} intakeOutput={patientIoRows} vitals={vitals} />
+            <IcuPatientVitalGraph intakeOutput={patientIoRows} vitals={vitals} />
           </TabsContent>
 
           <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="orders">
@@ -29009,7 +29001,6 @@ function IcuPatientDeviceStatusTable({
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _buildIcuRapidReviewPatient(
   patient: IcuPatient,
   vitals: IcuVital[],
@@ -29475,16 +29466,14 @@ type IcuPatientResultRow = {
 
 function IcuPatientResultsWorkspace({
   initialType,
-  patient,
   rows,
   onPreview,
   onDownload,
 }: {
   initialType?: string;
-  patient: IcuPatient;
   rows: IcuPatientResultRow[];
-  onPreview: (resultId: string) => void;
-  onDownload: (result: IcuPatientResultRow) => void;
+  onPreview: (_resultId: string) => void;
+  onDownload: (_result: IcuPatientResultRow) => void;
 }) {
   const [query, setQuery] = React.useState("");
   const initialCategory = normalizeIcuPatientResultCategory(initialType);
@@ -29693,7 +29682,7 @@ function IcuPatientResultPreviewDialog({
 }: {
   result: IcuPatientResultRow | null;
   onClose: () => void;
-  onDownload: (result: IcuPatientResultRow) => void;
+  onDownload: (_result: IcuPatientResultRow) => void;
 }) {
   return (
     <Dialog.Root
@@ -29814,7 +29803,7 @@ function IcuPatientEventsWorkspace({
   hideEventFilterBar?: boolean;
   hidePatientSelector?: boolean;
   initialFocus: IcuEventFocus;
-  onEventTypeFilterChange?: (value: string) => void;
+  onEventTypeFilterChange?: (_value: string) => void;
   patient: IcuPatient;
   results: IcuPatientResultRow[];
 }) {
@@ -29836,10 +29825,11 @@ function IcuPatientEventsWorkspace({
     [events, typeFilter],
   );
   const pagination = useIcuCommandPagination(filteredEvents);
+  const { setPage } = pagination;
 
   React.useEffect(() => {
-    pagination.setPage(1);
-  }, [activePatient.id, pagination.setPage, typeFilter]);
+    setPage(1);
+  }, [activePatient.id, setPage, typeFilter]);
 
   return (
     <div className="space-y-4">
@@ -31629,11 +31619,9 @@ const icuAllVitalsGraphSections: IcuAllVitalsGraphSection[] = [
 ];
 
 function IcuPatientVitalGraph({
-  patient,
   vitals,
   intakeOutput,
 }: {
-  patient: IcuPatient;
   vitals: typeof icuVitals;
   intakeOutput: typeof intakeOutputRows;
 }) {
@@ -33512,13 +33500,13 @@ function IcuPatientMedicineChartTab({ patient }: { patient: IcuPatient }) {
       (first, second) =>
         medicineChartTimestamp(second).getTime() - medicineChartTimestamp(first).getTime(),
     );
-  const addedRows = filteredRows.filter((row) => row.scenario === "Added");
-  const changedRows = filteredRows.filter((row) => row.scenario === "Changed");
-  const givenRows = filteredRows.filter((row) => row.status === "Given");
-  const issueRows = filteredRows.filter((row) =>
+  const _addedRows = filteredRows.filter((row) => row.scenario === "Added");
+  const _changedRows = filteredRows.filter((row) => row.scenario === "Changed");
+  const _givenRows = filteredRows.filter((row) => row.status === "Given");
+  const _issueRows = filteredRows.filter((row) =>
     ["Held", "Missed", "Refused"].includes(row.status),
   );
-  const highAlertRows = filteredRows.filter((row) => row.highAlert);
+  const _highAlertRows = filteredRows.filter((row) => row.highAlert);
   const tableLines = buildMedicineChartTableLines(filteredRows);
 
   return (
@@ -33848,7 +33836,7 @@ function medicineChartFallbackTime(index: number) {
   return fallbackTimes[index % fallbackTimes.length];
 }
 
-function medicineChartScenarioTone(scenario: MedicineChartHistoryScenario): DashboardCellTone {
+function _medicineChartScenarioTone(scenario: MedicineChartHistoryScenario): DashboardCellTone {
   if (scenario === "Administered") return "success";
   if (scenario === "Added") return "info";
   if (scenario === "Changed" || scenario === "Scheduled / Due") return "warning";
@@ -33856,7 +33844,7 @@ function medicineChartScenarioTone(scenario: MedicineChartHistoryScenario): Dash
   return "danger";
 }
 
-function buildPatientMedicationChartLines(
+function _buildPatientMedicationChartLines(
   weekDays: Array<{ value: string; label: string; shortDate: string }>,
   rows: PatientMedicationChartRow[],
   dayFilter: string,
@@ -33901,9 +33889,9 @@ function IcuPatientMedicineChartLineRow({
   onUpdateRow,
 }: {
   line: PatientMedicationChartLine;
-  onAddSlotRow: (date: string, slot: string) => void;
-  onMarkGiven: (row: PatientMedicationChartRow) => void;
-  onUpdateRow: (rowId: string, patch: Partial<PatientMedicationChartRow>) => void;
+  onAddSlotRow: (_date: string, _slot: string) => void;
+  onMarkGiven: (_row: PatientMedicationChartRow) => void;
+  onUpdateRow: (_rowId: string, _patch: Partial<PatientMedicationChartRow>) => void;
 }) {
   const row = line.row;
 
@@ -34096,7 +34084,7 @@ function IcuPatientMedicineChartLineRow({
   );
 }
 
-function patientMedicationDefaultTime(slot: string) {
+function _patientMedicationDefaultTime(slot: string) {
   if (slot === "Morning") return "08:00";
   if (slot === "Noon") return "12:00";
   if (slot === "Evening") return "18:00";
@@ -34119,12 +34107,10 @@ function patientMedicationDayClass(index: number) {
 
 function IcuPatientMedicineReferenceWorkspace({
   onSelectReference,
-  patient,
   patientMeds,
   selectedReferenceId,
 }: {
-  onSelectReference: (id: string | null) => void;
-  patient: IcuPatient;
+  onSelectReference: (_id: string | null) => void;
   patientMeds: IcuMedication[];
   selectedReferenceId: string | null;
 }) {
@@ -34405,7 +34391,7 @@ function medicineReferenceMatchesMedication(
   );
 }
 
-function medicineReferenceIdForMedication(row: IcuMedication) {
+function _medicineReferenceIdForMedication(row: IcuMedication) {
   return (
     medicineReferenceCatalog.find((item) => medicineReferenceMatchesMedication(item, row))?.id ??
     null
@@ -34421,7 +34407,7 @@ function DashboardMatrixCell({
   cell: DashboardCell;
   column: string;
   patient: IcuPatient;
-  onOpenRiskReference?: (patient: IcuPatient) => void;
+  onOpenRiskReference?: (_patient: IcuPatient) => void;
 }) {
   const Icon = cell.icon;
   const isAction = ["Medication", "Lab", "Radiology", "Shift", "Events", "Collaborate"].includes(
@@ -34478,7 +34464,7 @@ function IcuCommandSepsisReferenceDialog({
   onOpenChange,
 }: {
   patient: IcuPatient | null;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   const row = React.useMemo(
     () =>
@@ -34665,7 +34651,7 @@ function buildDashboardCells(patient: IcuPatient): Record<string, DashboardCell>
   const alerts = icuAlerts.filter(
     (alert) => alert.patientId === patient.id && alert.status !== "Resolved",
   );
-  const tasks = icuTasks.filter(
+  const _tasks = icuTasks.filter(
     (task) => task.patientId === patient.id && task.status !== "Completed",
   );
   const balance = intakeOutputRows
@@ -35109,7 +35095,7 @@ function DateTimeFilterPanel({
   embedded?: boolean;
   hideHeader?: boolean;
   value?: DateTimeFilterState;
-  onChange?: (value: DateTimeFilterState) => void;
+  onChange?: (_value: DateTimeFilterState) => void;
   resultCount?: number;
 }) {
   const [localValue, setLocalValue] = React.useState<DateTimeFilterState>(defaultDateTimeFilter);
@@ -36047,7 +36033,7 @@ function NurseEntrySelect({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   options: string[];
 }) {
   return (
@@ -36075,7 +36061,7 @@ function VitalNumberInput({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   suffix: string;
 }) {
   return (
@@ -36104,8 +36090,8 @@ function BloodPressureInput({
 }: {
   sys: string;
   dia: string;
-  setSys: (value: string) => void;
-  setDia: (value: string) => void;
+  setSys: (_value: string) => void;
+  setDia: (_value: string) => void;
 }) {
   return (
     <label className="min-h-[66px] space-y-1 text-sm">
@@ -36178,7 +36164,7 @@ function NurseReviewTable({
   onAction,
 }: {
   records: NurseReviewRecord[];
-  onAction: (action: { mode: "View" | "Edit" | "Delete"; record: NurseReviewRecord }) => void;
+  onAction: (_action: { mode: "View" | "Edit" | "Delete"; record: NurseReviewRecord }) => void;
 }) {
   return (
     <Card className="min-w-0 max-w-full overflow-hidden">
@@ -36313,9 +36299,9 @@ function NurseReviewDialog({
   onDelete,
 }: {
   activeAction: { mode: "View" | "Edit" | "Delete"; record: NurseReviewRecord } | null;
-  onOpenChange: (open: boolean) => void;
-  onUpdate: (record: NurseReviewRecord) => void;
-  onDelete: (recordId: string) => void;
+  onOpenChange: (_open: boolean) => void;
+  onUpdate: (_record: NurseReviewRecord) => void;
+  onDelete: (_recordId: string) => void;
 }) {
   const mode = activeAction?.mode;
   const record = activeAction?.record;
@@ -36546,7 +36532,7 @@ function ReviewTextField({
 }: {
   label: string;
   value: string;
-  onChange?: (value: string) => void;
+  onChange?: (_value: string) => void;
   readOnly?: boolean;
   type?: string;
 }) {
@@ -36572,7 +36558,7 @@ function ReviewNumberField({
 }: {
   label: string;
   value: number;
-  onChange: (value: number) => void;
+  onChange: (_value: number) => void;
   readOnly?: boolean;
   suffix: string;
 }) {
@@ -36607,7 +36593,7 @@ function ReviewSelectField({
   label: string;
   value: string;
   options: string[];
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   readOnly?: boolean;
 }) {
   if (readOnly) return <ReviewTextField label={label} readOnly value={value} />;
@@ -38358,7 +38344,7 @@ function IcuRound2Dialog({
   dialog: IcuRound2DialogState;
   signedNotes: IcuRound2SignedNote[];
   onClose: () => void;
-  onSign: (note: IcuRound2SignedNote) => void;
+  onSign: (_note: IcuRound2SignedNote) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(dialog)} onOpenChange={(open) => !open && onClose()}>
@@ -39298,7 +39284,7 @@ function IcuRound2NoteSign({
 }: {
   existing?: IcuRound2SignedNote;
   patient: IcuPatient;
-  onSign: (note: IcuRound2SignedNote) => void;
+  onSign: (_note: IcuRound2SignedNote) => void;
 }) {
   const latestVital = [...icuVitals].reverse().find((row) => row.patientId === patient.id);
   const [decision, setDecision] = React.useState(
@@ -39505,17 +39491,17 @@ function DoctorRounds() {
   const blockingCount = roundScenarios.filter((scenario) => scenario.blocking).length;
   const generatedGoals = buildDoctorRoundGoals(draft, selectedPatient);
   const selectedPatientVisible = doctorPatients.some((patient) => patient.id === patientId);
-  const roundCriticalCount = doctorPatients.filter(
+  const _roundCriticalCount = doctorPatients.filter(
     (patient) => patient.criticalityScore >= 8 || patient.currentStatus === "Critical",
   ).length;
-  const roundOpenAlerts = doctorPatients.reduce(
+  const _roundOpenAlerts = doctorPatients.reduce(
     (sum, patient) =>
       sum +
       icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved")
         .length,
     0,
   );
-  const roundDueMeds = doctorPatients.reduce(
+  const _roundDueMeds = doctorPatients.reduce(
     (sum, patient) =>
       sum +
       medicationRows.filter(
@@ -39523,10 +39509,10 @@ function DoctorRounds() {
       ).length,
     0,
   );
-  const roundPendingSign = doctorPatients.filter(
+  const _roundPendingSign = doctorPatients.filter(
     (patient) => !savedRounds.some((round) => doctorRoundSavedForPatient(round, patient)),
   ).length;
-  const roundSignedCount = doctorPatients.filter((patient) =>
+  const _roundSignedCount = doctorPatients.filter((patient) =>
     savedRounds.some((round) => doctorRoundSavedForPatient(round, patient)),
   ).length;
 
@@ -39796,9 +39782,9 @@ function DoctorRoundPanelDialog({
   savedRounds: DoctorRoundSavedRound[];
   scenarios: DoctorRoundScenario[];
   tasks: typeof icuTasks;
-  updateDraft: (key: keyof DoctorRoundDraft, value: string) => void;
+  updateDraft: (_key: keyof DoctorRoundDraft, _value: string) => void;
   onCreateInstruction: () => void;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   onSignRound: () => void;
 }) {
   const copy = panel ? doctorRoundPanelCopy(panel, mode) : null;
@@ -40160,7 +40146,7 @@ function AdmittingDoctorWorkspace({
 }: {
   draft: DoctorRoundDraft;
   selectedPatient?: IcuPatient;
-  updateDraft: (key: keyof DoctorRoundDraft, value: string) => void;
+  updateDraft: (_key: keyof DoctorRoundDraft, _value: string) => void;
 }) {
   return (
     <div className="rounded-md border border-sky-200 bg-white p-4 shadow-sm">
@@ -40254,7 +40240,7 @@ function DailyRoundWorkspace({
 }: {
   draft: DoctorRoundDraft;
   selectedPatient?: IcuPatient;
-  updateDraft: (key: keyof DoctorRoundDraft, value: string) => void;
+  updateDraft: (_key: keyof DoctorRoundDraft, _value: string) => void;
 }) {
   return (
     <div className="rounded-md border border-sky-200 bg-white p-4 shadow-sm">
@@ -40680,11 +40666,11 @@ function DoctorRoundQueuePanel({
   patients: IcuPatient[];
   savedRounds: DoctorRoundSavedRound[];
   selectedDoctor: string;
-  onFocusChange: (focus: DoctorRoundFocusFilter) => void;
-  onOpenPanel: (patientId: string, panel: DoctorRoundPanelKind) => void;
-  onOpenReview: (review: DoctorRoundReviewContext) => void;
-  onSelectDoctor: (doctor: string) => void;
-  onSelectPatient: (patientId: string) => void;
+  onFocusChange: (_focus: DoctorRoundFocusFilter) => void;
+  onOpenPanel: (_patientId: string, _panel: DoctorRoundPanelKind) => void;
+  onOpenReview: (_review: DoctorRoundReviewContext) => void;
+  onSelectDoctor: (_doctor: string) => void;
+  onSelectPatient: (_patientId: string) => void;
 }) {
   const [query, setQuery] = React.useState("");
   const [unit, setUnit] = React.useState("All ICU units");
@@ -40701,7 +40687,7 @@ function DoctorRoundQueuePanel({
     ],
     [roundQueue],
   );
-  const focusCounts = React.useMemo(
+  const _focusCounts = React.useMemo(
     () => doctorRoundFocusCounts(roundQueue, savedRounds),
     [roundQueue, savedRounds],
   );
@@ -41247,7 +41233,7 @@ function doctorRoundMatchesFocus(
   return true;
 }
 
-function doctorRoundFocusTone(focus: DoctorRoundFocusFilter): DashboardCellTone {
+function _doctorRoundFocusTone(focus: DoctorRoundFocusFilter): DashboardCellTone {
   if (focus === "Critical risk") return "critical";
   if (
     focus === "Abnormal vitals" ||
@@ -41262,7 +41248,7 @@ function doctorRoundFocusTone(focus: DoctorRoundFocusFilter): DashboardCellTone 
   return "info";
 }
 
-function doctorRoundFocusHint(focus: DoctorRoundFocusFilter) {
+function _doctorRoundFocusHint(focus: DoctorRoundFocusFilter) {
   if (focus === "Critical risk") return "Score high / critical patient";
   if (focus === "Abnormal vitals") return "Vitals trend abnormal";
   if (focus === "Ventilator / device") return "Respiratory device support";
@@ -41300,7 +41286,7 @@ function DoctorRoundReviewDialog({
 }: {
   review: DoctorRoundReviewContext | null;
   onCreateInstruction: () => void;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   onSignRound: () => void;
 }) {
   return (
@@ -41686,7 +41672,7 @@ function buildDoctorRoundQueue(mode: DoctorRoundMode, queuePatients: IcuPatient[
     "Fever spike",
   ];
   const pendingLabs = ["Lactate", "ABG", "CBC", "Culture", "Electrolytes", "None"];
-  const pendingOrders = [
+  const _pendingOrders = [
     "Medication review",
     "Ventilator order",
     "Fluid plan",
@@ -41885,7 +41871,7 @@ function RoundTextField({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   tone: ClinicalTone;
 }) {
   return (
@@ -41909,7 +41895,7 @@ function RoundTextArea({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   tone: ClinicalTone;
   suggestions?: string[];
 }) {
@@ -42516,9 +42502,9 @@ function NursingStationCommandCenter({
   nurseOptions: string[];
   notes: SupervisionNote[];
   noteDraft: { type: string; patientId: string; nurse: string; source: string; note: string };
-  onAcknowledge: (item: SupervisionItem) => void;
-  onComplete: (item: SupervisionItem) => void;
-  onEscalate: (item: SupervisionItem) => void;
+  onAcknowledge: (_item: SupervisionItem) => void;
+  onComplete: (_item: SupervisionItem) => void;
+  onEscalate: (_item: SupervisionItem) => void;
   onNoteChange: React.Dispatch<
     React.SetStateAction<{
       type: string;
@@ -42528,14 +42514,14 @@ function NursingStationCommandCenter({
       note: string;
     }>
   >;
-  onNurse: (value: string) => void;
-  onPriority: (value: string) => void;
-  onReassign: (item: SupervisionItem) => void;
+  onNurse: (_value: string) => void;
+  onPriority: (_value: string) => void;
+  onReassign: (_item: SupervisionItem) => void;
   onSaveNote: () => void;
-  onSearch: (value: string) => void;
-  onShift: (value: string) => void;
-  onSource: (value: string) => void;
-  onStatus: (value: string) => void;
+  onSearch: (_value: string) => void;
+  onShift: (_value: string) => void;
+  onSource: (_value: string) => void;
+  onStatus: (_value: string) => void;
   priority: string;
   search: string;
   selectedPatient?: IcuPatient;
@@ -43080,7 +43066,7 @@ function NursingStationSourceCell({
   emptyTitle: string;
   icon: typeof Activity;
   item?: SupervisionItem;
-  onOpen: (item: SupervisionItem) => void;
+  onOpen: (_item: SupervisionItem) => void;
 }) {
   return (
     <IcuOpsMatrixCell
@@ -43493,8 +43479,8 @@ function NursingStationMedicationDialog({
 }: {
   patient: IcuPatient | null;
   statusOverrides: Record<string, string>;
-  onAction: (medicine: (typeof medicationRows)[number], status: string) => void;
-  onOpenChange: (open: boolean) => void;
+  onAction: (_medicine: (typeof medicationRows)[number], _status: string) => void;
+  onOpenChange: (_open: boolean) => void;
 }) {
   const [view, setView] = React.useState("Due Now");
   const [shiftView, setShiftView] = React.useState("All shifts");
@@ -43807,10 +43793,10 @@ function NursingMedicationHistoryPanel({
   status: string;
   date: string;
   search: string;
-  onSectionChange: (value: string) => void;
-  onStatusChange: (value: string) => void;
-  onDateChange: (value: string) => void;
-  onSearchChange: (value: string) => void;
+  onSectionChange: (_value: string) => void;
+  onStatusChange: (_value: string) => void;
+  onDateChange: (_value: string) => void;
+  onSearchChange: (_value: string) => void;
 }) {
   const query = search.trim().toLowerCase();
   const admissionHistory = nursingMedicationHistoryRows.filter((row) => {
@@ -44039,11 +44025,11 @@ function NursingStationActionDialog({
 }: {
   item: SupervisionItem | null;
   nurseOptions: string[];
-  onAcknowledge: (item: SupervisionItem) => void;
-  onComplete: (item: SupervisionItem) => void;
-  onEscalate: (item: SupervisionItem) => void;
-  onOpenChange: (open: boolean) => void;
-  onReassign: (item: SupervisionItem) => void;
+  onAcknowledge: (_item: SupervisionItem) => void;
+  onComplete: (_item: SupervisionItem) => void;
+  onEscalate: (_item: SupervisionItem) => void;
+  onOpenChange: (_open: boolean) => void;
+  onReassign: (_item: SupervisionItem) => void;
 }) {
   if (!item) {
     return <Dialog.Root open={false} onOpenChange={onOpenChange} />;
@@ -44073,11 +44059,11 @@ function NursingStationActionDialogContent({
 }: {
   item: SupervisionItem;
   nurseOptions: string[];
-  onAcknowledge: (item: SupervisionItem) => void;
-  onComplete: (item: SupervisionItem) => void;
-  onEscalate: (item: SupervisionItem) => void;
-  onOpenChange: (open: boolean) => void;
-  onReassign: (item: SupervisionItem) => void;
+  onAcknowledge: (_item: SupervisionItem) => void;
+  onComplete: (_item: SupervisionItem) => void;
+  onEscalate: (_item: SupervisionItem) => void;
+  onOpenChange: (_open: boolean) => void;
+  onReassign: (_item: SupervisionItem) => void;
 }) {
   const patient = getPatientForSupervision(item.patientId, item.bedNo);
   const [owner, setOwner] = React.useState(item.nurse);
@@ -44284,19 +44270,19 @@ function SupervisionFilterBar({
   onStatus,
 }: {
   search: string;
-  onSearch: (value: string) => void;
+  onSearch: (_value: string) => void;
   nurse: string;
-  onNurse: (value: string) => void;
+  onNurse: (_value: string) => void;
   nurseOptions: string[];
   source: string;
-  onSource: (value: string) => void;
+  onSource: (_value: string) => void;
   sourceOptions: string[];
   priority: string;
-  onPriority: (value: string) => void;
+  onPriority: (_value: string) => void;
   shift: string;
-  onShift: (value: string) => void;
+  onShift: (_value: string) => void;
   status: string;
-  onStatus: (value: string) => void;
+  onStatus: (_value: string) => void;
 }) {
   return (
     <Card>
@@ -44452,10 +44438,10 @@ function SupervisionWorkQueue({
   onReassign,
 }: {
   items: SupervisionItem[];
-  onAcknowledge: (item: SupervisionItem) => void;
-  onComplete: (item: SupervisionItem) => void;
-  onEscalate: (item: SupervisionItem) => void;
-  onReassign: (item: SupervisionItem) => void;
+  onAcknowledge: (_item: SupervisionItem) => void;
+  onComplete: (_item: SupervisionItem) => void;
+  onEscalate: (_item: SupervisionItem) => void;
+  onReassign: (_item: SupervisionItem) => void;
 }) {
   return (
     <Card>
@@ -44551,7 +44537,7 @@ function NurseWorkloadPanel({
     status: string;
   }>;
   selectedNurse: string;
-  onSelectNurse: (value: string) => void;
+  onSelectNurse: (_value: string) => void;
   allOption: string;
 }) {
   return (
@@ -44650,7 +44636,7 @@ function SupervisionChecklist({
   onMarkReady,
 }: {
   checkedItems: Record<string, boolean>;
-  onToggle: (id: string) => void;
+  onToggle: (_id: string) => void;
   onMarkReady: () => void;
 }) {
   const total = supervisionChecklistGroups.reduce((sum, group) => sum + group.items.length, 0);
@@ -45243,7 +45229,7 @@ export function PendingUnitMonitoringQueueDialog({
   onOpenChange,
   patient,
 }: {
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   patient: IcuPatient | null;
 }) {
   const items = React.useMemo(
@@ -46186,8 +46172,8 @@ function IcuDischargeWorkflowDialog({
 }: {
   row: IcuDischargeWorkflowRow | null;
   initialTab: IcuDischargeDialogTab;
-  onOpenChange: (open: boolean) => void;
-  onComplete: (row: IcuDischargeWorkflowRow) => void;
+  onOpenChange: (_open: boolean) => void;
+  onComplete: (_row: IcuDischargeWorkflowRow) => void;
 }) {
   return (
     <Dialog.Root open={Boolean(row)} onOpenChange={onOpenChange}>
@@ -46217,8 +46203,8 @@ function IcuDischargeWorkflowContent({
 }: {
   row: IcuDischargeWorkflowRow;
   initialTab: IcuDischargeDialogTab;
-  onOpenChange: (open: boolean) => void;
-  onComplete: (row: IcuDischargeWorkflowRow) => void;
+  onOpenChange: (_open: boolean) => void;
+  onComplete: (_row: IcuDischargeWorkflowRow) => void;
 }) {
   const [activeTab, setActiveTab] = React.useState<IcuDischargeDialogTab>(initialTab);
   const [destination, setDestination] = React.useState<IcuDischargeDestination>(
@@ -46877,7 +46863,7 @@ function IcuClinicalFindingsEditor({
   onChange,
 }: {
   findings: string[];
-  onChange: (findings: string[]) => void;
+  onChange: (_findings: string[]) => void;
 }) {
   return (
     <div className="rounded-lg border border-border bg-background p-3">
@@ -47787,7 +47773,7 @@ function dischargePatientTone(row: IcuDischargeWorkflowRow): DashboardCellTone {
   return "info";
 }
 
-function dischargeStatusDashboardTone(status: IcuDischargeStatus): DashboardCellTone {
+function _dischargeStatusDashboardTone(status: IcuDischargeStatus): DashboardCellTone {
   if (status === "Ready" || status === "Ordered") return "success";
   if (status === "In progress") return "warning";
   if (status === "Blocked") return "danger";
@@ -48337,9 +48323,9 @@ function QuickAddDialog({
   onSaved,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   pageTitle: string;
-  onSaved: (message: string) => void;
+  onSaved: (_message: string) => void;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -48420,8 +48406,8 @@ function TableActionDialog({
 }: {
   title: string;
   activeRow: { mode: "View" | "Update"; row: Record<string, unknown> } | null;
-  onOpenChange: (open: boolean) => void;
-  onComplete: (mode: "View" | "Update", row: Record<string, unknown>) => void;
+  onOpenChange: (_open: boolean) => void;
+  onComplete: (_mode: "View" | "Update", _row: Record<string, unknown>) => void;
 }) {
   const mode = activeRow?.mode;
   const row = activeRow?.row;

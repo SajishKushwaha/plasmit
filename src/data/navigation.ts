@@ -535,15 +535,15 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
 
   if (role === "ICU") {
     return [
-      {
-        id: "icu-admin-patient-details",
-        label: "Patient Details",
-        icon: Users,
-        route: "/patient-details",
-        group: "Patient Management",
-        allowedRoles: ["ICU"],
-        status: "ready",
-      },
+      // {
+      //   id: "icu-admin-patient-details",
+      //   label: "Patient Details",
+      //   icon: Users,
+      //   route: "/patient-details",
+      //   group: "Patient Management",
+      //   allowedRoles: ["ICU"],
+      //   status: "ready",
+      // },
       {
         id: "icu-admin-dashboard",
         label: "Dashboard",

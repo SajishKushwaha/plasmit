@@ -302,7 +302,7 @@ export const roleModuleAccess: Record<Role, {
   },
   ICU: {
     allowed: [
-      "/patient-details",
+      // "/patient-details",
       "/icu-command-center/patients/search",
       "/icu-command-center/patients/admissions",
       "/icu-command-center/patients/discharges",

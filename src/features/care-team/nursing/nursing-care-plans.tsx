@@ -7,10 +7,7 @@ import { Check, ChevronDown, Edit3, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  createCarePlanWorklistTaskId,
-  upsertCarePlanWorklistTask,
-} from "@/components/worklist/worklist-storage";
+import { createCarePlanWorklistTaskId, upsertCarePlanWorklistTask } from "@/components/worklist/worklist-storage";
 import { cn } from "@/lib/utils";
 import { NursingPatientStrip, NursingShell } from "@/features/care-team/nursing/nursing-shared";
 
@@ -145,9 +142,7 @@ type InterventionNoteTarget = {
   text?: string;
 };
 
-type NoteDetailsTarget = Required<
-  Pick<NoteTarget, "planId" | "problemId" | "goalId" | "carePlan" | "goal" | "text">
-> & {
+type NoteDetailsTarget = Required<Pick<NoteTarget, "planId" | "problemId" | "goalId" | "carePlan" | "goal" | "text">> & {
   time?: string;
 };
 
@@ -509,10 +504,7 @@ const initialTemplates: CarePlanTemplate[] = [
             id: "seg-1",
             name: "Sepsis signs will be detected early",
             interventions: [
-              {
-                id: "sei-1",
-                name: "Monitor temperature, pulse, respiratory rate, and blood pressure",
-              },
+              { id: "sei-1", name: "Monitor temperature, pulse, respiratory rate, and blood pressure" },
               { id: "sei-2", name: "Report hypotension or altered sensorium immediately" },
               { id: "sei-3", name: "Collect cultures as ordered before antibiotics" },
             ],
@@ -815,10 +807,7 @@ function Cell({
   return (
     <td
       colSpan={colSpan}
-      className={cn(
-        "h-9 border border-border px-3 py-2 align-top text-sm leading-snug text-foreground",
-        className,
-      )}
+      className={cn("h-9 border border-border px-3 py-2 align-top text-sm leading-snug text-foreground", className)}
     >
       {children}
     </td>
@@ -838,10 +827,7 @@ function SheetButton({
 }) {
   return (
     <button
-      className={cn(
-        "h-full w-full text-left text-sm leading-snug text-foreground outline-none hover:text-primary",
-        className,
-      )}
+      className={cn("h-full w-full text-left text-sm leading-snug text-foreground outline-none hover:text-primary", className)}
       type="button"
       onClick={onClick}
       onDoubleClick={onDoubleClick}
@@ -860,7 +846,7 @@ function SheetSelect({
   className,
 }: {
   value: string;
-  onChange: (_value: string) => void;
+  onChange: (value: string) => void;
   options: string[];
   placeholder?: string;
   placeholderForValue?: string;
@@ -890,7 +876,7 @@ function CenterModal({
   children,
 }: {
   open: boolean;
-  onOpenChange: (_open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
   title: string;
   children: React.ReactNode;
 }) {
@@ -903,12 +889,7 @@ function CenterModal({
           <div className="flex items-center justify-between border-b border-[#000] bg-[#4472c4] px-3 py-2 text-sm font-semibold text-white">
             <Dialog.Title>{title}</Dialog.Title>
             <Dialog.Close asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 text-white hover:bg-white/15"
-                aria-label="Close"
-              >
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-white/15" aria-label="Close">
                 <X className="h-4 w-4" />
               </Button>
             </Dialog.Close>
@@ -928,38 +909,24 @@ function WorklistModal({
 }: {
   target: WorklistTarget | null;
   onClose: () => void;
-  onTargetChange: (_updates: Partial<WorklistDetails>) => void;
-  onSave: (_target: WorklistTarget) => void;
+  onTargetChange: (updates: Partial<WorklistDetails>) => void;
+  onSave: (target: WorklistTarget) => void;
 }) {
   const [frequencyDropdownOpen, setFrequencyDropdownOpen] = React.useState(false);
   const frequencySearch = target?.frequency.trim().toLowerCase() ?? "";
-  const displayedFrequencyOptions = frequencyOptions.filter((option) =>
-    option.toLowerCase().includes(frequencySearch),
-  );
+  const displayedFrequencyOptions = frequencyOptions.filter((option) => option.toLowerCase().includes(frequencySearch));
 
   return (
-    <CenterModal
-      open={Boolean(target)}
-      onOpenChange={(open) => !open && onClose()}
-      title="Add to work list"
-    >
+    <CenterModal open={Boolean(target)} onOpenChange={(open) => !open && onClose()} title="Add to work list">
       {target ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-semibold">
             Task name
-            <Input
-              className="mt-1"
-              value={target.taskName}
-              onChange={(event) => onTargetChange({ taskName: event.target.value })}
-            />
+            <Input className="mt-1" value={target.taskName} onChange={(event) => onTargetChange({ taskName: event.target.value })} />
           </label>
           <label className="text-xs font-semibold">
             Category
-            <select
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-              value={target.category}
-              onChange={(event) => onTargetChange({ category: event.target.value })}
-            >
+            <select className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={target.category} onChange={(event) => onTargetChange({ category: event.target.value })}>
               <option>Nursing intervention</option>
               <option>Medication</option>
               <option>Vitals</option>
@@ -967,11 +934,7 @@ function WorklistModal({
           </label>
           <label className="text-xs font-semibold">
             Priority
-            <select
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-              value={target.priority}
-              onChange={(event) => onTargetChange({ priority: event.target.value })}
-            >
+            <select className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={target.priority} onChange={(event) => onTargetChange({ priority: event.target.value })}>
               <option>Routine</option>
               <option>High</option>
               <option>Stat</option>
@@ -1019,9 +982,7 @@ function WorklistModal({
                     </button>
                   ))}
                   {displayedFrequencyOptions.length === 0 ? (
-                    <div className="px-2 py-2 text-sm text-muted-foreground">
-                      No frequency found
-                    </div>
+                    <div className="px-2 py-2 text-sm text-muted-foreground">No frequency found</div>
                   ) : null}
                 </div>
               ) : null}
@@ -1029,12 +990,7 @@ function WorklistModal({
           </div>
           <label className="text-xs font-semibold">
             Start date
-            <Input
-              className="mt-1"
-              type="date"
-              value={target.startDate}
-              onChange={(event) => onTargetChange({ startDate: event.target.value })}
-            />
+            <Input className="mt-1" type="date" value={target.startDate} onChange={(event) => onTargetChange({ startDate: event.target.value })} />
           </label>
           <label className="text-xs font-semibold">
             Start time
@@ -1050,21 +1006,11 @@ function WorklistModal({
           </label>
           <label className="text-xs font-semibold">
             End date
-            <Input
-              className="mt-1"
-              type="date"
-              value={target.endDate}
-              onChange={(event) => onTargetChange({ endDate: event.target.value })}
-            />
+            <Input className="mt-1" type="date" value={target.endDate} onChange={(event) => onTargetChange({ endDate: event.target.value })} />
           </label>
           <label className="text-xs font-semibold">
             End time
-            <Input
-              className="mt-1"
-              type="time"
-              value={target.endTime}
-              onChange={(event) => onTargetChange({ endTime: event.target.value })}
-            />
+            <Input className="mt-1" type="time" value={target.endTime} onChange={(event) => onTargetChange({ endTime: event.target.value })} />
           </label>
           <label className="text-xs font-semibold sm:col-span-2">
             Order / notes
@@ -1075,13 +1021,8 @@ function WorklistModal({
             />
           </label>
           <div className="flex justify-end gap-2 sm:col-span-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={() => onSave(target)}>
-              <Check className="h-4 w-4" />
-              Save
-            </Button>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={() => onSave(target)}><Check className="h-4 w-4" />Save</Button>
           </div>
         </div>
       ) : null}
@@ -1096,68 +1037,24 @@ function WorklistDetailsModal({
 }: {
   target: WorklistDetailsTarget | null;
   onClose: () => void;
-  onEdit: (_target: WorklistDetailsTarget) => void;
+  onEdit: (target: WorklistDetailsTarget) => void;
 }) {
   return (
-    <CenterModal
-      open={Boolean(target)}
-      onOpenChange={(open) => !open && onClose()}
-      title="Work list details"
-    >
+    <CenterModal open={Boolean(target)} onOpenChange={(open) => !open && onClose()} title="Work list details">
       {target ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-md border border-border p-2 text-sm">
-            <b>Task name</b>
-            <br />
-            {target.details.taskName}
-          </div>
-          <div className="rounded-md border border-border p-2 text-sm">
-            <b>Category</b>
-            <br />
-            {target.details.category}
-          </div>
-          <div className="rounded-md border border-border p-2 text-sm">
-            <b>Priority</b>
-            <br />
-            {target.details.priority}
-          </div>
-          <div className="rounded-md border border-border p-2 text-sm">
-            <b>Frequency</b>
-            <br />
-            {target.details.frequency}
-          </div>
-          <div className="rounded-md border border-border p-2 text-sm">
-            <b>Start date</b>
-            <br />
-            {target.details.startDate || "-"}
-          </div>
-          <div className="rounded-md border border-border p-2 text-sm">
-            <b>Start time</b>
-            <br />
-            {target.details.startTime || "-"}
-          </div>
-          <div className="rounded-md border border-border p-2 text-sm">
-            <b>End date</b>
-            <br />
-            {target.details.endDate || "-"}
-          </div>
-          <div className="rounded-md border border-border p-2 text-sm">
-            <b>End time</b>
-            <br />
-            {target.details.endTime || "-"}
-          </div>
-          <div className="rounded-md border border-border p-2 text-sm sm:col-span-2">
-            <b>Order / notes</b>
-            <br />
-            {target.details.notes || "-"}
-          </div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>Task name</b><br />{target.details.taskName}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>Category</b><br />{target.details.category}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>Priority</b><br />{target.details.priority}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>Frequency</b><br />{target.details.frequency}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>Start date</b><br />{target.details.startDate || "-"}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>Start time</b><br />{target.details.startTime || "-"}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>End date</b><br />{target.details.endDate || "-"}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>End time</b><br />{target.details.endTime || "-"}</div>
+          <div className="rounded-md border border-border p-2 text-sm sm:col-span-2"><b>Order / notes</b><br />{target.details.notes || "-"}</div>
           <div className="flex justify-end gap-2 sm:col-span-2">
-            <Button type="button" variant="outline" onClick={() => onEdit(target)}>
-              Edit
-            </Button>
-            <Button type="button" onClick={onClose}>
-              Close
-            </Button>
+            <Button type="button" variant="outline" onClick={() => onEdit(target)}>Edit</Button>
+            <Button type="button" onClick={onClose}>Close</Button>
           </div>
         </div>
       ) : null}
@@ -1172,38 +1069,20 @@ function NoteDetailsModal({
 }: {
   target: NoteDetailsTarget | null;
   onClose: () => void;
-  onEdit: (_target: NoteDetailsTarget) => void;
+  onEdit: (target: NoteDetailsTarget) => void;
 }) {
   return (
-    <CenterModal
-      open={Boolean(target)}
-      onOpenChange={(open) => !open && onClose()}
-      title="Progress notes"
-    >
+    <CenterModal open={Boolean(target)} onOpenChange={(open) => !open && onClose()} title="Progress notes">
       {target ? (
         <div className="space-y-4">
           <div className="grid gap-2 text-xs sm:grid-cols-2">
-            <div className="border border-[#000] p-2">
-              <b>Time</b>
-              <br />
-              {target.time || "-"}
-            </div>
-            <div className="border border-[#000] p-2">
-              <b>Goal name</b>
-              <br />
-              {target.goal}
-            </div>
+            <div className="border border-[#000] p-2"><b>Time</b><br />{target.time || "-"}</div>
+            <div className="border border-[#000] p-2"><b>Goal name</b><br />{target.goal}</div>
           </div>
-          <div className="min-h-32 rounded-md border border-input bg-background p-3 text-sm">
-            {target.text}
-          </div>
+          <div className="min-h-32 rounded-md border border-input bg-background p-3 text-sm">{target.text}</div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onEdit(target)}>
-              Edit
-            </Button>
-            <Button type="button" onClick={onClose}>
-              Close
-            </Button>
+            <Button type="button" variant="outline" onClick={() => onEdit(target)}>Edit</Button>
+            <Button type="button" onClick={onClose}>Close</Button>
           </div>
         </div>
       ) : null}
@@ -1260,64 +1139,39 @@ function CustomCarePlanModal({
   draft: CarePlanTemplate | null;
   onDraftChange: React.Dispatch<React.SetStateAction<CarePlanTemplate | null>>;
   onClose: () => void;
-  onSave: (_template: CarePlanTemplate) => void;
+  onSave: (template: CarePlanTemplate) => void;
 }) {
-  function updateDraft(update: (_current: CarePlanTemplate) => CarePlanTemplate) {
+  function updateDraft(update: (current: CarePlanTemplate) => CarePlanTemplate) {
     onDraftChange((current) => (current ? update(current) : current));
   }
 
   function updateProblem(problemId: string, value: string) {
     updateDraft((current) => ({
       ...current,
-      problems: current.problems.map((problem) =>
-        problem.id === problemId ? { ...problem, name: value } : problem,
-      ),
+      problems: current.problems.map((problem) => (problem.id === problemId ? { ...problem, name: value } : problem)),
     }));
   }
 
   function updateGoal(problemId: string, goalId: string, value: string) {
     updateDraft((current) => ({
       ...current,
-      problems: current.problems.map((problem) =>
-        problem.id === problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === goalId ? { ...goal, name: value } : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: current.problems.map((problem) => problem.id === problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => (goal.id === goalId ? { ...goal, name: value } : goal)),
+      } : problem),
     }));
   }
 
-  function updateIntervention(
-    problemId: string,
-    goalId: string,
-    interventionId: string,
-    value: string,
-  ) {
+  function updateIntervention(problemId: string, goalId: string, interventionId: string, value: string) {
     updateDraft((current) => ({
       ...current,
-      problems: current.problems.map((problem) =>
-        problem.id === problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === goalId
-                  ? {
-                      ...goal,
-                      interventions: goal.interventions.map((intervention) =>
-                        intervention.id === interventionId
-                          ? { ...intervention, name: value }
-                          : intervention,
-                      ),
-                    }
-                  : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: current.problems.map((problem) => problem.id === problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => goal.id === goalId ? {
+          ...goal,
+          interventions: goal.interventions.map((intervention) => (intervention.id === interventionId ? { ...intervention, name: value } : intervention)),
+        } : goal),
+      } : problem),
     }));
   }
 
@@ -1330,13 +1184,7 @@ function CustomCarePlanModal({
         {
           id: `custom-problem-${suffix}`,
           name: "New problem",
-          goals: [
-            {
-              id: `custom-goal-${suffix}`,
-              name: "New goal",
-              interventions: [{ id: `custom-intervention-${suffix}`, name: "New intervention" }],
-            },
-          ],
+          goals: [{ id: `custom-goal-${suffix}`, name: "New goal", interventions: [{ id: `custom-intervention-${suffix}`, name: "New intervention" }] }],
         },
       ],
     }));
@@ -1346,23 +1194,10 @@ function CustomCarePlanModal({
     const suffix = Date.now();
     updateDraft((current) => ({
       ...current,
-      problems: current.problems.map((problem) =>
-        problem.id === problemId
-          ? {
-              ...problem,
-              goals: [
-                ...problem.goals,
-                {
-                  id: `custom-goal-${suffix}`,
-                  name: "New goal",
-                  interventions: [
-                    { id: `custom-intervention-${suffix}`, name: "New intervention" },
-                  ],
-                },
-              ],
-            }
-          : problem,
-      ),
+      problems: current.problems.map((problem) => problem.id === problemId ? {
+        ...problem,
+        goals: [...problem.goals, { id: `custom-goal-${suffix}`, name: "New goal", interventions: [{ id: `custom-intervention-${suffix}`, name: "New intervention" }] }],
+      } : problem),
     }));
   }
 
@@ -1370,77 +1205,45 @@ function CustomCarePlanModal({
     const suffix = Date.now();
     updateDraft((current) => ({
       ...current,
-      problems: current.problems.map((problem) =>
-        problem.id === problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === goalId
-                  ? {
-                      ...goal,
-                      interventions: [
-                        ...goal.interventions,
-                        { id: `custom-intervention-${suffix}`, name: "New intervention" },
-                      ],
-                    }
-                  : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: current.problems.map((problem) => problem.id === problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => goal.id === goalId ? {
+          ...goal,
+          interventions: [...goal.interventions, { id: `custom-intervention-${suffix}`, name: "New intervention" }],
+        } : goal),
+      } : problem),
     }));
   }
 
   function removeProblem(problemId: string) {
-    updateDraft((current) => ({
-      ...current,
-      problems: current.problems.filter((problem) => problem.id !== problemId),
-    }));
+    updateDraft((current) => ({ ...current, problems: current.problems.filter((problem) => problem.id !== problemId) }));
   }
 
   function removeGoal(problemId: string, goalId: string) {
     updateDraft((current) => ({
       ...current,
-      problems: current.problems.map((problem) =>
-        problem.id === problemId
-          ? {
-              ...problem,
-              goals: problem.goals.filter((goal) => goal.id !== goalId),
-            }
-          : problem,
-      ),
+      problems: current.problems.map((problem) => problem.id === problemId ? {
+        ...problem,
+        goals: problem.goals.filter((goal) => goal.id !== goalId),
+      } : problem),
     }));
   }
 
   function removeIntervention(problemId: string, goalId: string, interventionId: string) {
     updateDraft((current) => ({
       ...current,
-      problems: current.problems.map((problem) =>
-        problem.id === problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === goalId
-                  ? {
-                      ...goal,
-                      interventions: goal.interventions.filter(
-                        (intervention) => intervention.id !== interventionId,
-                      ),
-                    }
-                  : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: current.problems.map((problem) => problem.id === problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => goal.id === goalId ? {
+          ...goal,
+          interventions: goal.interventions.filter((intervention) => intervention.id !== interventionId),
+        } : goal),
+      } : problem),
     }));
   }
 
   return (
-    <CenterModal
-      open={Boolean(draft)}
-      onOpenChange={(open) => !open && onClose()}
-      title="Add care plan"
-    >
+    <CenterModal open={Boolean(draft)} onOpenChange={(open) => !open && onClose()} title="Add care plan">
       {draft ? (
         <form
           className="space-y-4"
@@ -1451,31 +1254,14 @@ function CustomCarePlanModal({
         >
           <label className="block text-xs font-semibold">
             Name of care plan
-            <Input
-              className="mt-1"
-              value={draft.name}
-              onChange={(event) =>
-                updateDraft((current) => ({ ...current, name: event.target.value }))
-              }
-              autoFocus
-            />
+            <Input className="mt-1" value={draft.name} onChange={(event) => updateDraft((current) => ({ ...current, name: event.target.value }))} autoFocus />
           </label>
           <div className="space-y-3">
             {draft.problems.map((problem, problemIndex) => (
               <div className="border border-border p-3" key={problem.id}>
                 <div className="flex items-center gap-2">
-                  <Input
-                    value={problem.name}
-                    onChange={(event) => updateProblem(problem.id, event.target.value)}
-                    placeholder={`Problem ${problemIndex + 1}`}
-                  />
-                  <Button
-                    size="icon"
-                    type="button"
-                    variant="ghost"
-                    onClick={() => removeProblem(problem.id)}
-                    aria-label="Remove problem"
-                  >
+                  <Input value={problem.name} onChange={(event) => updateProblem(problem.id, event.target.value)} placeholder={`Problem ${problemIndex + 1}`} />
+                  <Button size="icon" type="button" variant="ghost" onClick={() => removeProblem(problem.id)} aria-label="Remove problem">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1483,18 +1269,8 @@ function CustomCarePlanModal({
                   {problem.goals.map((goal, goalIndex) => (
                     <div className="space-y-2 border-l border-border pl-3" key={goal.id}>
                       <div className="flex items-center gap-2">
-                        <Input
-                          value={goal.name}
-                          onChange={(event) => updateGoal(problem.id, goal.id, event.target.value)}
-                          placeholder={`Goal ${goalIndex + 1}`}
-                        />
-                        <Button
-                          size="icon"
-                          type="button"
-                          variant="ghost"
-                          onClick={() => removeGoal(problem.id, goal.id)}
-                          aria-label="Remove goal"
-                        >
+                        <Input value={goal.name} onChange={(event) => updateGoal(problem.id, goal.id, event.target.value)} placeholder={`Goal ${goalIndex + 1}`} />
+                        <Button size="icon" type="button" variant="ghost" onClick={() => removeGoal(problem.id, goal.id)} aria-label="Remove goal">
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -1503,49 +1279,28 @@ function CustomCarePlanModal({
                           <div className="flex items-center gap-2" key={intervention.id}>
                             <Input
                               value={intervention.name}
-                              onChange={(event) =>
-                                updateIntervention(
-                                  problem.id,
-                                  goal.id,
-                                  intervention.id,
-                                  event.target.value,
-                                )
-                              }
+                              onChange={(event) => updateIntervention(problem.id, goal.id, intervention.id, event.target.value)}
                               placeholder={`Intervention ${interventionIndex + 1}`}
                             />
                             <Button
                               size="icon"
                               type="button"
                               variant="ghost"
-                              onClick={() =>
-                                removeIntervention(problem.id, goal.id, intervention.id)
-                              }
+                              onClick={() => removeIntervention(problem.id, goal.id, intervention.id)}
                               aria-label="Remove intervention"
                             >
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
                         ))}
-                        <Button
-                          size="sm"
-                          type="button"
-                          variant="outline"
-                          onClick={() => addIntervention(problem.id, goal.id)}
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add intervention
+                        <Button size="sm" type="button" variant="outline" onClick={() => addIntervention(problem.id, goal.id)}>
+                          <Plus className="h-4 w-4" />Add intervention
                         </Button>
                       </div>
                     </div>
                   ))}
-                  <Button
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                    onClick={() => addGoal(problem.id)}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add goal
+                  <Button size="sm" type="button" variant="outline" onClick={() => addGoal(problem.id)}>
+                    <Plus className="h-4 w-4" />Add goal
                   </Button>
                 </div>
               </div>
@@ -1553,17 +1308,11 @@ function CustomCarePlanModal({
           </div>
           <div className="flex flex-wrap justify-between gap-2">
             <Button type="button" variant="outline" onClick={addProblem}>
-              <Plus className="h-4 w-4" />
-              Add problem
+              <Plus className="h-4 w-4" />Add problem
             </Button>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                <Check className="h-4 w-4" />
-                Save care plan
-              </Button>
+              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="submit"><Check className="h-4 w-4" />Save care plan</Button>
             </div>
           </div>
         </form>
@@ -1585,9 +1334,7 @@ function buildSelectedCarePlanTemplate({
 }): CarePlanSelectionTemplate | null {
   const selectedProblems = template.problems.flatMap((problem) => {
     const selectedGoals = problem.goals.flatMap((goal) => {
-      const selectedInterventions = goal.interventions.filter((intervention) =>
-        selectedInterventionIds.has(intervention.id),
-      );
+      const selectedInterventions = goal.interventions.filter((intervention) => selectedInterventionIds.has(intervention.id));
       if (!selectedGoalIds.has(goal.id) && !selectedInterventions.length) return [];
       return [{ ...goal, interventions: selectedInterventions }];
     });
@@ -1611,13 +1358,11 @@ function CarePlanSelectionModal({
 }: {
   template: CarePlanTemplate | null;
   onClose: () => void;
-  onSelect: (_template: CarePlanTemplate) => void;
+  onSelect: (template: CarePlanTemplate) => void;
 }) {
   const [selectedProblemIds, setSelectedProblemIds] = React.useState<Set<string>>(new Set());
   const [selectedGoalIds, setSelectedGoalIds] = React.useState<Set<string>>(new Set());
-  const [selectedInterventionIds, setSelectedInterventionIds] = React.useState<Set<string>>(
-    new Set(),
-  );
+  const [selectedInterventionIds, setSelectedInterventionIds] = React.useState<Set<string>>(new Set());
 
   function toggleSet(setter: React.Dispatch<React.SetStateAction<Set<string>>>, id: string) {
     setter((current) => {
@@ -1642,26 +1387,15 @@ function CarePlanSelectionModal({
 
   function selectCarePlan() {
     if (!template) return;
-    const selectedTemplate = buildSelectedCarePlanTemplate({
-      template,
-      selectedProblemIds,
-      selectedGoalIds,
-      selectedInterventionIds,
-    });
+    const selectedTemplate = buildSelectedCarePlanTemplate({ template, selectedProblemIds, selectedGoalIds, selectedInterventionIds });
     if (!selectedTemplate) return;
     onSelect(selectedTemplate);
   }
 
-  const hasSelection = Boolean(
-    selectedProblemIds.size || selectedGoalIds.size || selectedInterventionIds.size,
-  );
+  const hasSelection = Boolean(selectedProblemIds.size || selectedGoalIds.size || selectedInterventionIds.size);
 
   return (
-    <CenterModal
-      open={Boolean(template)}
-      onOpenChange={(open) => !open && onClose()}
-      title="Select care plan"
-    >
+    <CenterModal open={Boolean(template)} onOpenChange={(open) => !open && onClose()} title="Select care plan">
       {template ? (
         <div className="space-y-4">
           <div>
@@ -1669,59 +1403,52 @@ function CarePlanSelectionModal({
           </div>
           <div className="space-y-3">
             {template.problems.map((problem, problemIndex) => (
-              <div className="border border-border p-3" key={problem.id}>
-                <label className="flex items-start gap-2 text-sm font-semibold">
-                  <input
-                    className="mt-1 accent-primary"
-                    type="checkbox"
-                    checked={selectedProblemIds.has(problem.id)}
-                    onChange={() => toggleProblem(problem.id)}
-                  />
-                  <span>
-                    Problem {problemIndex + 1}: {problem.name}
-                  </span>
-                </label>
-                <div className="mt-3 space-y-3 pl-6">
-                  {problem.goals.map((goal, goalIndex) => (
-                    <div className="space-y-2 border-l border-border pl-3" key={goal.id}>
-                      <label className="flex items-start gap-2 text-sm font-medium">
-                        <input
-                          className="mt-1 accent-primary"
-                          type="checkbox"
-                          checked={selectedGoalIds.has(goal.id)}
-                          onChange={() => toggleGoal(goal.id)}
-                        />
-                        <span>
-                          Goal {goalIndex + 1}: {goal.name}
-                        </span>
-                      </label>
-                      <div className="space-y-2 pl-6">
-                        {goal.interventions.map((intervention) => (
-                          <label className="flex items-start gap-2 text-sm" key={intervention.id}>
+                <div className="border border-border p-3" key={problem.id}>
+                  <label className="flex items-start gap-2 text-sm font-semibold">
+                    <input
+                      className="mt-1 accent-primary"
+                      type="checkbox"
+                      checked={selectedProblemIds.has(problem.id)}
+                      onChange={() => toggleProblem(problem.id)}
+                    />
+                    <span>Problem {problemIndex + 1}: {problem.name}</span>
+                  </label>
+                  <div className="mt-3 space-y-3 pl-6">
+                    {problem.goals.map((goal, goalIndex) => (
+                        <div className="space-y-2 border-l border-border pl-3" key={goal.id}>
+                          <label className="flex items-start gap-2 text-sm font-medium">
                             <input
                               className="mt-1 accent-primary"
                               type="checkbox"
-                              checked={selectedInterventionIds.has(intervention.id)}
-                              onChange={() => toggleIntervention(intervention.id)}
+                              checked={selectedGoalIds.has(goal.id)}
+                              onChange={() => toggleGoal(goal.id)}
                             />
-                            <span>{intervention.name}</span>
+                            <span>Goal {goalIndex + 1}: {goal.name}</span>
                           </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                          <div className="space-y-2 pl-6">
+                            {goal.interventions.map((intervention) => (
+                              <label className="flex items-start gap-2 text-sm" key={intervention.id}>
+                                <input
+                                  className="mt-1 accent-primary"
+                                  type="checkbox"
+                                  checked={selectedInterventionIds.has(intervention.id)}
+                                  onChange={() => toggleIntervention(intervention.id)}
+                                />
+                                <span>{intervention.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
             ))}
           </div>
           <div className="flex justify-between gap-2">
             <Button type="button" disabled={!hasSelection} onClick={selectCarePlan}>
-              <Check className="h-4 w-4" />
-              Select
+              <Check className="h-4 w-4" />Select
             </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           </div>
         </div>
       ) : null}
@@ -1747,36 +1474,24 @@ function DocumentCarePlanTable({
   plans: DocumentCarePlan[];
   templates: CarePlanTemplate[];
   selectedInterventions: Set<string>;
-  onAddCarePlan: (_template: CarePlanTemplate) => void;
-  onRemoveCarePlan: (_planId: string) => void;
-  onResolveProblem: (_planId: string, _problemId: string, _status: ProblemStatus) => void;
-  onProgress: (
-    _planId: string,
-    _problemId: string,
-    _goalId: string,
-    _progress: GoalProgress,
-  ) => void;
-  onGoalNote: (_target: NoteTarget) => void;
-  onAddTarget: (_target: AddTarget) => void;
-  onWorklist: (_target: WorklistTarget) => void;
-  onToggleIntervention: (_id: string) => void;
-  onClearInterventionCheckbox: (_target: CheckboxClearTarget) => void;
+  onAddCarePlan: (template: CarePlanTemplate) => void;
+  onRemoveCarePlan: (planId: string) => void;
+  onResolveProblem: (planId: string, problemId: string, status: ProblemStatus) => void;
+  onProgress: (planId: string, problemId: string, goalId: string, progress: GoalProgress) => void;
+  onGoalNote: (target: NoteTarget) => void;
+  onAddTarget: (target: AddTarget) => void;
+  onWorklist: (target: WorklistTarget) => void;
+  onToggleIntervention: (id: string) => void;
+  onClearInterventionCheckbox: (target: CheckboxClearTarget) => void;
   onCompleteSelected: () => void;
 }) {
   const [carePlanSearch, setCarePlanSearch] = React.useState("");
-  const [carePlanDropdownMode, setCarePlanDropdownMode] = React.useState<
-    "closed" | "search" | "all"
-  >("closed");
-  const [customCarePlanDraft, setCustomCarePlanDraft] = React.useState<CarePlanTemplate | null>(
-    null,
-  );
+  const [carePlanDropdownMode, setCarePlanDropdownMode] = React.useState<"closed" | "search" | "all">("closed");
+  const [customCarePlanDraft, setCustomCarePlanDraft] = React.useState<CarePlanTemplate | null>(null);
   const [selectionTemplate, setSelectionTemplate] = React.useState<CarePlanTemplate | null>(null);
   const [removeTarget, setRemoveTarget] = React.useState<DocumentCarePlan | null>(null);
-  const [checkboxClearTarget, setCheckboxClearTarget] = React.useState<CheckboxClearTarget | null>(
-    null,
-  );
-  const [worklistDetailsTarget, setWorklistDetailsTarget] =
-    React.useState<WorklistDetailsTarget | null>(null);
+  const [checkboxClearTarget, setCheckboxClearTarget] = React.useState<CheckboxClearTarget | null>(null);
+  const [worklistDetailsTarget, setWorklistDetailsTarget] = React.useState<WorklistDetailsTarget | null>(null);
   const [noteDetailsTarget, setNoteDetailsTarget] = React.useState<NoteDetailsTarget | null>(null);
   const searchTerm = carePlanSearch.trim().toLowerCase();
   const openCarePlanSelection = (template: CarePlanTemplate) => {
@@ -1831,15 +1546,11 @@ function DocumentCarePlanTable({
       template.name,
       ...template.problems.flatMap((problem) => [
         problem.name,
-        ...problem.goals.flatMap((goal) => [
-          goal.name,
-          ...goal.interventions.map((intervention) => intervention.name),
-        ]),
+        ...problem.goals.flatMap((goal) => [goal.name, ...goal.interventions.map((intervention) => intervention.name)]),
       ]),
     ].some((value) => value.toLowerCase().includes(searchTerm));
   });
-  const displayedTemplates =
-    carePlanDropdownMode === "search" ? searchedTemplates : preservedTemplates;
+  const displayedTemplates = carePlanDropdownMode === "search" ? searchedTemplates : preservedTemplates;
   const showCarePlanDropdown = carePlanDropdownMode !== "closed";
 
   return (
@@ -1847,334 +1558,268 @@ function DocumentCarePlanTable({
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold text-foreground">Nursing care plan</div>
-          <div className="text-xs text-muted-foreground">
-            Document active problems, goals, interventions, worklist tasks, and completion status.
-          </div>
+          <div className="text-xs text-muted-foreground">Document active problems, goals, interventions, worklist tasks, and completion status.</div>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Button
-            size="sm"
-            type="button"
-            onClick={() => setCustomCarePlanDraft(createCustomCarePlanDraft())}
-          >
-            <Plus className="h-4 w-4" />
-            Add new care plan
+          <Button size="sm" type="button" onClick={() => setCustomCarePlanDraft(createCustomCarePlanDraft())}>
+            <Plus className="h-4 w-4" />Add new care plan
           </Button>
-          <span className="rounded-md border border-border bg-background px-2 py-1">
-            {plans.length} care plans
-          </span>
+          <span className="rounded-md border border-border bg-background px-2 py-1">{plans.length} care plans</span>
         </div>
       </div>
       <div className="min-h-[720px] overflow-auto rounded-md border border-border bg-white p-4">
         <div className="min-h-[680px] min-w-[1120px]">
           <div>
             <table className="w-[1120px] border-collapse bg-white shadow-sm [&_td]:border-l-0 [&_td]:border-r-0">
-              <tbody>
-                <tr>
-                  <Cell colSpan={2}>
-                    <div className="relative w-64">
-                      <Input
-                        className="h-9 w-64 pr-10 text-sm"
-                        value={carePlanSearch}
-                        onChange={(event) => {
-                          const nextValue = event.target.value;
-                          setCarePlanSearch(nextValue);
-                          setCarePlanDropdownMode(nextValue.trim() ? "search" : "closed");
-                        }}
-                        onFocus={() => {
-                          if (searchTerm) setCarePlanDropdownMode("search");
-                        }}
-                        onClick={() => {
-                          if (searchTerm) setCarePlanDropdownMode("search");
-                        }}
-                        onBlur={() => {
-                          if (carePlanDropdownMode === "search") setCarePlanDropdownMode("closed");
-                        }}
-                        placeholder="Search care plan"
-                      />
-                      <button
-                        aria-label="Open care plan dropdown"
-                        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-surface-muted hover:text-foreground"
-                        type="button"
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          setCarePlanDropdownMode((current) =>
-                            current === "all" ? "closed" : "all",
-                          );
-                        }}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </button>
-                      {showCarePlanDropdown ? (
-                        <div className="absolute left-0 top-10 z-30 max-h-64 w-64 overflow-auto rounded-md border border-border bg-surface p-1 shadow-soft">
-                          {displayedTemplates.map((template) => (
-                            <button
-                              className="block w-full rounded px-2 py-2 text-left text-sm text-foreground hover:bg-surface-muted"
-                              key={template.id}
-                              type="button"
-                              onMouseDown={(event) => {
-                                event.preventDefault();
-                                openCarePlanSelection(template);
-                              }}
-                              onClick={(event) => {
-                                if (event.detail === 0) openCarePlanSelection(template);
-                              }}
-                            >
-                              {template.name}
-                            </button>
-                          ))}
-                          {displayedTemplates.length === 0 ? (
-                            <div className="px-2 py-2 text-sm text-muted-foreground">
-                              No care plan found
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  </Cell>
-                  <Cell className="text-center font-semibold">
-                    <Button size="sm" type="button" onClick={onCompleteSelected}>
-                      Complete
-                    </Button>
-                  </Cell>
-                  <Cell>Selected: {selectedInterventions.size}</Cell>
-                </tr>
-                {plans.map((plan) => {
-                  const activeProblems = plan.problems.filter(
-                    (problem) => problem.status === "Active",
-                  );
-                  const lastProblem = activeProblems.at(-1);
-
-                  if (!activeProblems.length) return null;
-
-                  return (
-                    <React.Fragment key={plan.id}>
-                      <tr>
-                        <Cell
-                          className="cursor-pointer font-semibold hover:bg-surface-muted"
-                          colSpan={4}
-                        >
+            <tbody>
+              <tr>
+                <Cell colSpan={2}>
+                  <div className="relative w-64">
+                    <Input
+                      className="h-9 w-64 pr-10 text-sm"
+                      value={carePlanSearch}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setCarePlanSearch(nextValue);
+                        setCarePlanDropdownMode(nextValue.trim() ? "search" : "closed");
+                      }}
+                      onFocus={() => {
+                        if (searchTerm) setCarePlanDropdownMode("search");
+                      }}
+                      onClick={() => {
+                        if (searchTerm) setCarePlanDropdownMode("search");
+                      }}
+                      onBlur={() => {
+                        if (carePlanDropdownMode === "search") setCarePlanDropdownMode("closed");
+                      }}
+                      placeholder="Search care plan"
+                    />
+                    <button
+                      aria-label="Open care plan dropdown"
+                      className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+                      type="button"
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        setCarePlanDropdownMode((current) => (current === "all" ? "closed" : "all"));
+                      }}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    {showCarePlanDropdown ? (
+                      <div className="absolute left-0 top-10 z-30 max-h-64 w-64 overflow-auto rounded-md border border-border bg-surface p-1 shadow-soft">
+                        {displayedTemplates.map((template) => (
                           <button
-                            className="block w-full text-left"
+                            className="block w-full rounded px-2 py-2 text-left text-sm text-foreground hover:bg-surface-muted"
+                            key={template.id}
                             type="button"
-                            onDoubleClick={() => setRemoveTarget(plan)}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              openCarePlanSelection(template);
+                            }}
+                            onClick={(event) => {
+                              if (event.detail === 0) openCarePlanSelection(template);
+                            }}
                           >
-                            Care plan: {plan.name}
+                            {template.name}
                           </button>
-                        </Cell>
-                      </tr>
-                      {activeProblems.map((problem, problemIndex) => {
-                        return (
-                          <React.Fragment key={problem.id}>
-                            <tr>
-                              <Cell className="bg-surface-muted font-semibold text-foreground">
-                                Problem {problemIndex + 1}: {problem.name}
-                              </Cell>
-                              <Cell className="bg-surface-muted">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-semibold text-muted-foreground">
-                                    Status
-                                  </span>
-                                  <SheetSelect
-                                    value={problem.status}
-                                    onChange={(value) =>
-                                      onResolveProblem(plan.id, problem.id, value as ProblemStatus)
-                                    }
-                                    options={["Active", "Adequate for discharge", "Resolved"]}
-                                    placeholderForValue="Active"
-                                  />
-                                </div>
-                              </Cell>
-                              <Cell className="bg-surface-muted" colSpan={2} />
-                            </tr>
-                            {problem.goals.map((goal, goalIndex) => {
-                              return (
-                                <React.Fragment key={goal.id}>
-                                  <tr>
-                                    <Cell className="font-semibold text-foreground">
-                                      Goal {goalIndex + 1}: {goal.name}
-                                    </Cell>
-                                    <Cell>
-                                      <SheetSelect
-                                        value={goal.progress}
-                                        onChange={(value) =>
-                                          onProgress(
-                                            plan.id,
-                                            problem.id,
-                                            goal.id,
-                                            value as GoalProgress,
-                                          )
-                                        }
-                                        options={[
-                                          "Achieved",
-                                          "Partially achieved",
-                                          "Achieved and completed",
-                                        ]}
-                                        placeholder="Progress"
-                                        placeholderForValue="Pending"
-                                      />
-                                    </Cell>
-                                    <Cell>
-                                      <Button
-                                        aria-disabled={Boolean(goal.recentNote)}
-                                        className={cn(
-                                          goal.recentNote && "cursor-not-allowed opacity-60",
-                                        )}
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                          if (goal.recentNote) return;
-                                          onGoalNote({
-                                            planId: plan.id,
-                                            problemId: problem.id,
-                                            goalId: goal.id,
-                                            carePlan: plan.name,
-                                            goal: goal.name,
-                                            interventions: goal.interventions,
-                                          });
-                                        }}
-                                        onDoubleClick={() => {
-                                          if (!goal.recentNote) return;
-                                          setNoteDetailsTarget({
-                                            planId: plan.id,
-                                            problemId: problem.id,
-                                            goalId: goal.id,
-                                            carePlan: plan.name,
-                                            goal: goal.name,
-                                            text: goal.recentNote,
-                                            time: goal.recentNoteTime,
-                                          });
-                                        }}
-                                      >
-                                        Notes
-                                      </Button>
-                                    </Cell>
-                                    <Cell>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                          onAddTarget({
-                                            type: "intervention",
-                                            planId: plan.id,
-                                            problemId: problem.id,
-                                            goalId: goal.id,
-                                          })
-                                        }
-                                      >
-                                        <Plus className="h-4 w-4" />
-                                        Add intervention
-                                      </Button>
-                                    </Cell>
-                                  </tr>
-                                  {goal.interventions.map((intervention) => {
-                                    const checked =
-                                      Boolean(intervention.completedAt) ||
-                                      selectedInterventions.has(intervention.id);
-                                    return (
-                                      <tr key={intervention.id}>
-                                        <Cell>{intervention.name}</Cell>
-                                        <Cell>
-                                          <SheetButton
-                                            onClick={() => {
-                                              if (!intervention.worklist) {
-                                                onWorklist({
-                                                  planId: plan.id,
-                                                  problemId: problem.id,
-                                                  goalId: goal.id,
-                                                  interventionId: intervention.id,
-                                                  ...createWorklistDetails(intervention.name),
-                                                });
-                                              }
-                                            }}
-                                            onDoubleClick={() => {
-                                              if (!intervention.worklist) return;
-                                              setWorklistDetailsTarget({
+                        ))}
+                        {displayedTemplates.length === 0 ? (
+                          <div className="px-2 py-2 text-sm text-muted-foreground">No care plan found</div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </Cell>
+                <Cell className="text-center font-semibold">
+                  <Button size="sm" type="button" onClick={onCompleteSelected}>Complete</Button>
+                </Cell>
+                <Cell>Selected: {selectedInterventions.size}</Cell>
+              </tr>
+              {plans.map((plan) => {
+                const activeProblems = plan.problems.filter((problem) => problem.status === "Active");
+                const lastProblem = activeProblems.at(-1);
+
+                if (!activeProblems.length) return null;
+
+                return (
+                  <React.Fragment key={plan.id}>
+                    <tr>
+                      <Cell
+                        className="cursor-pointer font-semibold hover:bg-surface-muted"
+                        colSpan={4}
+                      >
+                        <button
+                          className="block w-full text-left"
+                          type="button"
+                          onDoubleClick={() => setRemoveTarget(plan)}
+                        >
+                          Care plan: {plan.name}
+                        </button>
+                      </Cell>
+                    </tr>
+                    {activeProblems.map((problem, problemIndex) => {
+                      return (
+                        <React.Fragment key={problem.id}>
+                          <tr>
+                            <Cell className="bg-surface-muted font-semibold text-foreground">Problem {problemIndex + 1}: {problem.name}</Cell>
+                            <Cell className="bg-surface-muted">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-muted-foreground">Status</span>
+                                <SheetSelect
+                                  value={problem.status}
+                                  onChange={(value) => onResolveProblem(plan.id, problem.id, value as ProblemStatus)}
+                                  options={["Active", "Adequate for discharge", "Resolved"]}
+                                  placeholderForValue="Active"
+                                />
+                              </div>
+                            </Cell>
+                            <Cell className="bg-surface-muted" colSpan={2} />
+                          </tr>
+                          {problem.goals.map((goal, goalIndex) => {
+                            return (
+                              <React.Fragment key={goal.id}>
+                                <tr>
+                                  <Cell className="font-semibold text-foreground">Goal {goalIndex + 1}: {goal.name}</Cell>
+                                  <Cell>
+                                    <SheetSelect
+                                      value={goal.progress}
+                                      onChange={(value) => onProgress(plan.id, problem.id, goal.id, value as GoalProgress)}
+                                      options={["Achieved", "Partially achieved", "Achieved and completed"]}
+                                      placeholder="Progress"
+                                      placeholderForValue="Pending"
+                                    />
+                                  </Cell>
+                                  <Cell>
+                                    <Button
+                                      aria-disabled={Boolean(goal.recentNote)}
+                                      className={cn(goal.recentNote && "cursor-not-allowed opacity-60")}
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        if (goal.recentNote) return;
+                                        onGoalNote({ planId: plan.id, problemId: problem.id, goalId: goal.id, carePlan: plan.name, goal: goal.name, interventions: goal.interventions });
+                                      }}
+                                      onDoubleClick={() => {
+                                        if (!goal.recentNote) return;
+                                        setNoteDetailsTarget({
+                                          planId: plan.id,
+                                          problemId: problem.id,
+                                          goalId: goal.id,
+                                          carePlan: plan.name,
+                                          goal: goal.name,
+                                          text: goal.recentNote,
+                                          time: goal.recentNoteTime,
+                                        });
+                                      }}
+                                    >
+                                      Notes
+                                    </Button>
+                                  </Cell>
+                                  <Cell>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => onAddTarget({ type: "intervention", planId: plan.id, problemId: problem.id, goalId: goal.id })}
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                      Add intervention
+                                    </Button>
+                                  </Cell>
+                                </tr>
+                                {goal.interventions.map((intervention) => {
+                                  const checked = Boolean(intervention.completedAt) || selectedInterventions.has(intervention.id);
+                                  return (
+                                    <tr key={intervention.id}>
+                                      <Cell>{intervention.name}</Cell>
+                                      <Cell>
+                                        <SheetButton
+                                          onClick={() => {
+                                            if (!intervention.worklist) {
+                                              onWorklist({
                                                 planId: plan.id,
                                                 problemId: problem.id,
                                                 goalId: goal.id,
                                                 interventionId: intervention.id,
-                                                interventionName: intervention.name,
-                                                details:
-                                                  intervention.worklistDetails ??
-                                                  createWorklistDetails(intervention.name),
+                                                ...createWorklistDetails(intervention.name),
                                               });
+                                            }
+                                          }}
+                                          onDoubleClick={() => {
+                                            if (!intervention.worklist) return;
+                                            setWorklistDetailsTarget({
+                                              planId: plan.id,
+                                              problemId: problem.id,
+                                              goalId: goal.id,
+                                              interventionId: intervention.id,
+                                              interventionName: intervention.name,
+                                              details: intervention.worklistDetails ?? createWorklistDetails(intervention.name),
+                                            });
+                                          }}
+                                        >
+                                          {intervention.worklist ? "Added" : "Add to worklist"}
+                                        </SheetButton>
+                                      </Cell>
+                                      <Cell>
+                                        <label
+                                          className="flex h-full items-center gap-2 text-sm"
+                                          onDoubleClickCapture={(event) => {
+                                            if (!checked) return;
+                                            event.preventDefault();
+                                            setCheckboxClearTarget({
+                                              planId: plan.id,
+                                              problemId: problem.id,
+                                              goalId: goal.id,
+                                              interventionId: intervention.id,
+                                              interventionName: intervention.name,
+                                            });
+                                          }}
+                                        >
+                                          <input
+                                            className="accent-primary"
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={() => {
+                                              if (!intervention.completedAt) onToggleIntervention(intervention.id);
                                             }}
-                                          >
-                                            {intervention.worklist ? "Added" : "Add to worklist"}
-                                          </SheetButton>
-                                        </Cell>
-                                        <Cell>
-                                          <label
-                                            className="flex h-full items-center gap-2 text-sm"
-                                            onDoubleClickCapture={(event) => {
-                                              if (!checked) return;
-                                              event.preventDefault();
-                                              setCheckboxClearTarget({
-                                                planId: plan.id,
-                                                problemId: problem.id,
-                                                goalId: goal.id,
-                                                interventionId: intervention.id,
-                                                interventionName: intervention.name,
-                                              });
-                                            }}
-                                          >
-                                            <input
-                                              className="accent-primary"
-                                              type="checkbox"
-                                              checked={checked}
-                                              onChange={() => {
-                                                if (!intervention.completedAt)
-                                                  onToggleIntervention(intervention.id);
-                                              }}
-                                            />
-                                            Check box
-                                          </label>
-                                        </Cell>
-                                        <Cell>{intervention.completedAt ? "Completed" : ""}</Cell>
-                                      </tr>
-                                    );
-                                  })}
-                                </React.Fragment>
-                              );
-                            })}
-                          </React.Fragment>
-                        );
-                      })}
-                      <tr>
-                        <Cell colSpan={4}>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={!lastProblem}
-                              onClick={() => {
-                                if (lastProblem)
-                                  onAddTarget({
-                                    type: "goal",
-                                    planId: plan.id,
-                                    problemId: lastProblem.id,
-                                  });
-                              }}
-                            >
-                              <Plus className="h-4 w-4" />
-                              Add goal
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => onAddTarget({ type: "problem", planId: plan.id })}
-                            >
-                              <Plus className="h-4 w-4" />
-                              Add problem
-                            </Button>
-                          </div>
-                        </Cell>
-                      </tr>
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
+                                          />
+                                          Check box
+                                        </label>
+                                      </Cell>
+                                      <Cell>{intervention.completedAt ? "Completed" : ""}</Cell>
+                                    </tr>
+                                  );
+                                })}
+                              </React.Fragment>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    })}
+                    <tr>
+                      <Cell colSpan={4}>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!lastProblem}
+                            onClick={() => {
+                              if (lastProblem) onAddTarget({ type: "goal", planId: plan.id, problemId: lastProblem.id });
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add goal
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => onAddTarget({ type: "problem", planId: plan.id })}>
+                            <Plus className="h-4 w-4" />
+                            Add problem
+                          </Button>
+                        </div>
+                      </Cell>
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
             </table>
           </div>
         </div>
@@ -2191,56 +1836,30 @@ function DocumentCarePlanTable({
         onClose={() => setSelectionTemplate(null)}
         onSelect={selectCarePlanFromDropdown}
       />
-      <CenterModal
-        open={Boolean(removeTarget)}
-        onOpenChange={(open) => !open && setRemoveTarget(null)}
-        title="Remove care plan"
-      >
+      <CenterModal open={Boolean(removeTarget)} onOpenChange={(open) => !open && setRemoveTarget(null)} title="Remove care plan">
         <div className="space-y-4">
           <div className="text-sm text-foreground">
-            Are you sure you want to remove{" "}
-            <span className="font-semibold">{removeTarget?.name}</span> from this care plan list?
+            Are you sure you want to remove <span className="font-semibold">{removeTarget?.name}</span> from this care plan list?
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setRemoveTarget(null)}>
-              Cancel
-            </Button>
-            <Button type="button" variant="danger" onClick={removeCarePlan}>
-              Remove
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setRemoveTarget(null)}>Cancel</Button>
+            <Button type="button" variant="danger" onClick={removeCarePlan}>Remove</Button>
           </div>
         </div>
       </CenterModal>
-      <CenterModal
-        open={Boolean(checkboxClearTarget)}
-        onOpenChange={(open) => !open && setCheckboxClearTarget(null)}
-        title="Blank checkbox"
-      >
+      <CenterModal open={Boolean(checkboxClearTarget)} onOpenChange={(open) => !open && setCheckboxClearTarget(null)} title="Blank checkbox">
         <div className="space-y-4">
           <div className="text-sm text-foreground">
-            Are you sure you want to blank the checkbox for{" "}
-            <span className="font-semibold">{checkboxClearTarget?.interventionName}</span>?
+            Are you sure you want to blank the checkbox for <span className="font-semibold">{checkboxClearTarget?.interventionName}</span>?
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setCheckboxClearTarget(null)}>
-              Cancel
-            </Button>
-            <Button type="button" variant="danger" onClick={clearInterventionCheckbox}>
-              Blank
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setCheckboxClearTarget(null)}>Cancel</Button>
+            <Button type="button" variant="danger" onClick={clearInterventionCheckbox}>Blank</Button>
           </div>
         </div>
       </CenterModal>
-      <WorklistDetailsModal
-        target={worklistDetailsTarget}
-        onClose={() => setWorklistDetailsTarget(null)}
-        onEdit={editWorklistDetails}
-      />
-      <NoteDetailsModal
-        target={noteDetailsTarget}
-        onClose={() => setNoteDetailsTarget(null)}
-        onEdit={editNoteDetails}
-      />
+      <WorklistDetailsModal target={worklistDetailsTarget} onClose={() => setWorklistDetailsTarget(null)} onEdit={editWorklistDetails} />
+      <NoteDetailsModal target={noteDetailsTarget} onClose={() => setNoteDetailsTarget(null)} onEdit={editNoteDetails} />
     </div>
   );
 }
@@ -2251,41 +1870,27 @@ function parseNoteTime(value: string) {
 }
 
 function getProgressNoteRows(plans: DocumentCarePlan[]): ProgressNoteRow[] {
-  return plans.flatMap((plan, planIndex) =>
-    plan.problems.flatMap((problem, problemIndex) =>
-      problem.goals.flatMap((goal, goalIndex) => {
-        const goalRows: ProgressNoteRow[] = goal.recentNote
-          ? [
-              {
-                id: `${goal.id}-goal-note`,
-                time: goal.recentNoteTime || "",
-                carePlan: `Care plan ${planIndex + 1}: ${plan.name}`,
-                problem: `Problem ${problemIndex + 1}: ${problem.name}`,
-                goal: `Goal ${goalIndex + 1}: ${goal.name}`,
-                intervention: "",
-                text: goal.recentNote,
-              },
-            ]
-          : [];
-        const interventionRows = goal.interventions.flatMap((intervention) =>
-          intervention.completedAt
-            ? [
-                {
-                  id: `${intervention.id}-completion-note`,
-                  time: intervention.completedAt,
-                  carePlan: `Care plan ${planIndex + 1}: ${plan.name}`,
-                  problem: `Problem ${problemIndex + 1}: ${problem.name}`,
-                  goal: `Goal ${goalIndex + 1}: ${goal.name}`,
-                  intervention: intervention.name,
-                  text: intervention.completionNote || "Intervention completed.",
-                },
-              ]
-            : [],
-        );
-        return [...goalRows, ...interventionRows];
-      }),
-    ),
-  );
+  return plans.flatMap((plan, planIndex) => plan.problems.flatMap((problem, problemIndex) => problem.goals.flatMap((goal, goalIndex) => {
+    const goalRows: ProgressNoteRow[] = goal.recentNote ? [{
+      id: `${goal.id}-goal-note`,
+      time: goal.recentNoteTime || "",
+      carePlan: `Care plan ${planIndex + 1}: ${plan.name}`,
+      problem: `Problem ${problemIndex + 1}: ${problem.name}`,
+      goal: `Goal ${goalIndex + 1}: ${goal.name}`,
+      intervention: "",
+      text: goal.recentNote,
+    }] : [];
+    const interventionRows = goal.interventions.flatMap((intervention) => intervention.completedAt ? [{
+      id: `${intervention.id}-completion-note`,
+      time: intervention.completedAt,
+      carePlan: `Care plan ${planIndex + 1}: ${plan.name}`,
+      problem: `Problem ${problemIndex + 1}: ${problem.name}`,
+      goal: `Goal ${goalIndex + 1}: ${goal.name}`,
+      intervention: intervention.name,
+      text: intervention.completionNote || "Intervention completed.",
+    }] : []);
+    return [...goalRows, ...interventionRows];
+  })));
 }
 
 function getProblemStatus(problem: DocumentProblem) {
@@ -2315,18 +1920,8 @@ function ProgressNotesTable({ plans }: { plans: DocumentCarePlan[] }) {
               <Cell colSpan={5}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm">Filter by date and time range</span>
-                  <Input
-                    className="h-9 w-56 text-sm"
-                    type="datetime-local"
-                    value={fromDateTime}
-                    onChange={(event) => setFromDateTime(event.target.value)}
-                  />
-                  <Input
-                    className="h-9 w-56 text-sm"
-                    type="datetime-local"
-                    value={toDateTime}
-                    onChange={(event) => setToDateTime(event.target.value)}
-                  />
+                  <Input className="h-9 w-56 text-sm" type="datetime-local" value={fromDateTime} onChange={(event) => setFromDateTime(event.target.value)} />
+                  <Input className="h-9 w-56 text-sm" type="datetime-local" value={toDateTime} onChange={(event) => setToDateTime(event.target.value)} />
                 </div>
               </Cell>
             </tr>
@@ -2370,24 +1965,14 @@ function OverviewTable({ plans }: { plans: DocumentCarePlan[] }) {
   } | null>(null);
 
   function recentGoalProgress(goal: DocumentGoal) {
-    if (goal.recentNote)
-      return `${goal.recentNoteTime || "Time not recorded"} - ${goal.recentNote}`;
+    if (goal.recentNote) return `${goal.recentNoteTime || "Time not recorded"} - ${goal.recentNote}`;
     if (goal.progress !== "Pending") return goal.progress;
     return "No recent progress documented";
   }
 
   function interventionDocumentation(intervention: DocumentIntervention) {
-    const time =
-      intervention.documentationNoteTime ||
-      intervention.completedAt ||
-      [intervention.worklistDetails?.startDate, intervention.worklistDetails?.startTime]
-        .filter(Boolean)
-        .join(" ");
-    const text =
-      intervention.documentationNote ||
-      intervention.completionNote ||
-      intervention.worklistDetails?.notes ||
-      "No documentation recorded.";
+    const time = intervention.documentationNoteTime || intervention.completedAt || [intervention.worklistDetails?.startDate, intervention.worklistDetails?.startTime].filter(Boolean).join(" ");
+    const text = intervention.documentationNote || intervention.completionNote || intervention.worklistDetails?.notes || "No documentation recorded.";
     return { time: time || "-", text };
   }
 
@@ -2417,75 +2002,49 @@ function OverviewTable({ plans }: { plans: DocumentCarePlan[] }) {
                 </tr>
                 {plan.problems.map((problem, problemIndex) => (
                   <React.Fragment key={problem.id}>
-                    {problem.goals.length ? (
-                      problem.goals.map((goal, goalIndex) => (
-                        <tr key={goal.id}>
-                          <Cell>{plan.name}</Cell>
-                          <Cell>
-                            <div className="font-medium">
-                              Problem {problemIndex + 1}: {problem.name}
-                            </div>
-                            <div
-                              className={cn(
-                                "mt-1 inline-flex rounded-md px-2 py-0.5 text-xs font-semibold",
-                                problem.status === "Active"
-                                  ? "bg-blue-50 text-blue-700"
-                                  : "bg-green-50 text-green-700",
-                              )}
-                            >
-                              {getProblemStatus(problem)}
-                            </div>
-                          </Cell>
-                          <Cell>
-                            Goal {goalIndex + 1}: {goal.name}
-                          </Cell>
-                          <Cell>{recentGoalProgress(goal)}</Cell>
-                          <Cell>
-                            <div className="space-y-1">
-                              {goal.interventions.map((intervention) => {
-                                const documentation = interventionDocumentation(intervention);
-                                return (
-                                  <button
-                                    className="block text-left text-sm text-primary hover:underline"
-                                    key={intervention.id}
-                                    type="button"
-                                    onClick={() =>
-                                      setDocumentationTarget({
-                                        carePlan: plan.name,
-                                        goal: goal.name,
-                                        intervention: intervention.name,
-                                        ...documentation,
-                                      })
-                                    }
-                                  >
-                                    {intervention.name}
-                                  </button>
-                                );
-                              })}
-                              {goal.interventions.length === 0 ? (
-                                <span className="text-sm text-muted-foreground">
-                                  No interventions added
-                                </span>
-                              ) : null}
-                            </div>
-                          </Cell>
-                        </tr>
-                      ))
-                    ) : (
+                    {problem.goals.length ? problem.goals.map((goal, goalIndex) => (
+                      <tr key={goal.id}>
+                        <Cell>{plan.name}</Cell>
+                        <Cell>
+                          <div className="font-medium">Problem {problemIndex + 1}: {problem.name}</div>
+                          <div className={cn("mt-1 inline-flex rounded-md px-2 py-0.5 text-xs font-semibold", problem.status === "Active" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700")}>
+                            {getProblemStatus(problem)}
+                          </div>
+                        </Cell>
+                        <Cell>Goal {goalIndex + 1}: {goal.name}</Cell>
+                        <Cell>{recentGoalProgress(goal)}</Cell>
+                        <Cell>
+                          <div className="space-y-1">
+                            {goal.interventions.map((intervention) => {
+                              const documentation = interventionDocumentation(intervention);
+                              return (
+                                <button
+                                  className="block text-left text-sm text-primary hover:underline"
+                                  key={intervention.id}
+                                  type="button"
+                                  onClick={() => setDocumentationTarget({
+                                    carePlan: plan.name,
+                                    goal: goal.name,
+                                    intervention: intervention.name,
+                                    ...documentation,
+                                  })}
+                                >
+                                  {intervention.name}
+                                </button>
+                              );
+                            })}
+                            {goal.interventions.length === 0 ? (
+                              <span className="text-sm text-muted-foreground">No interventions added</span>
+                            ) : null}
+                          </div>
+                        </Cell>
+                      </tr>
+                    )) : (
                       <tr>
                         <Cell>{plan.name}</Cell>
                         <Cell>
-                          <div className="font-medium">
-                            Problem {problemIndex + 1}: {problem.name}
-                          </div>
-                          <div
-                            className={cn(
-                              "mt-1 inline-flex rounded-md px-2 py-0.5 text-xs font-semibold",
-                              problem.status === "Active"
-                                ? "bg-blue-50 text-blue-700"
-                                : "bg-green-50 text-green-700",
-                            )}
-                          >
+                          <div className="font-medium">Problem {problemIndex + 1}: {problem.name}</div>
+                          <div className={cn("mt-1 inline-flex rounded-md px-2 py-0.5 text-xs font-semibold", problem.status === "Active" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700")}>
                             {getProblemStatus(problem)}
                           </div>
                         </Cell>
@@ -2512,42 +2071,18 @@ function OverviewTable({ plans }: { plans: DocumentCarePlan[] }) {
           </tbody>
         </table>
       </div>
-      <CenterModal
-        open={Boolean(documentationTarget)}
-        onOpenChange={(open) => !open && setDocumentationTarget(null)}
-        title="Intervention documentation"
-      >
+      <CenterModal open={Boolean(documentationTarget)} onOpenChange={(open) => !open && setDocumentationTarget(null)} title="Intervention documentation">
         {documentationTarget ? (
           <div className="space-y-3">
             <div className="grid gap-2 text-xs sm:grid-cols-2">
-              <div className="border border-[#000] p-2">
-                <b>Care plan</b>
-                <br />
-                {documentationTarget.carePlan}
-              </div>
-              <div className="border border-[#000] p-2">
-                <b>Goal</b>
-                <br />
-                {documentationTarget.goal}
-              </div>
-              <div className="border border-[#000] p-2">
-                <b>Intervention</b>
-                <br />
-                {documentationTarget.intervention}
-              </div>
-              <div className="border border-[#000] p-2">
-                <b>Time</b>
-                <br />
-                {documentationTarget.time}
-              </div>
+              <div className="border border-[#000] p-2"><b>Care plan</b><br />{documentationTarget.carePlan}</div>
+              <div className="border border-[#000] p-2"><b>Goal</b><br />{documentationTarget.goal}</div>
+              <div className="border border-[#000] p-2"><b>Intervention</b><br />{documentationTarget.intervention}</div>
+              <div className="border border-[#000] p-2"><b>Time</b><br />{documentationTarget.time}</div>
             </div>
-            <div className="min-h-24 rounded-md border border-input bg-background p-3 text-sm">
-              {documentationTarget.text}
-            </div>
+            <div className="min-h-24 rounded-md border border-input bg-background p-3 text-sm">{documentationTarget.text}</div>
             <div className="flex justify-end">
-              <Button type="button" onClick={() => setDocumentationTarget(null)}>
-                Close
-              </Button>
+              <Button type="button" onClick={() => setDocumentationTarget(null)}>Close</Button>
             </div>
           </div>
         ) : null}
@@ -2557,16 +2092,12 @@ function OverviewTable({ plans }: { plans: DocumentCarePlan[] }) {
 }
 
 export function NursingCarePlansPage() {
-  const [plans, setPlans] = React.useState<DocumentCarePlan[]>([
-    toDocumentPlan(initialTemplates[0]),
-    toDocumentPlan(initialTemplates[1]),
-  ]);
+  const [plans, setPlans] = React.useState<DocumentCarePlan[]>([toDocumentPlan(initialTemplates[0]), toDocumentPlan(initialTemplates[1])]);
   const [addTarget, setAddTarget] = React.useState<AddTarget | null>(null);
   const [addValue, setAddValue] = React.useState("");
   const [noteTarget, setNoteTarget] = React.useState<NoteTarget | null>(null);
   const [noteText, setNoteText] = React.useState("");
-  const [interventionNoteTarget, setInterventionNoteTarget] =
-    React.useState<InterventionNoteTarget | null>(null);
+  const [interventionNoteTarget, setInterventionNoteTarget] = React.useState<InterventionNoteTarget | null>(null);
   const [interventionNoteText, setInterventionNoteText] = React.useState("");
   const [worklistTarget, setWorklistTarget] = React.useState<WorklistTarget | null>(null);
   const [selectedInterventions, setSelectedInterventions] = React.useState<Set<string>>(new Set());
@@ -2574,58 +2105,35 @@ export function NursingCarePlansPage() {
   const [completionTime, setCompletionTime] = React.useState("");
   const [completionNote, setCompletionNote] = React.useState("");
 
-  function updatePlan(planId: string, update: (_plan: DocumentCarePlan) => DocumentCarePlan) {
+  function updatePlan(planId: string, update: (plan: DocumentCarePlan) => DocumentCarePlan) {
     setPlans((current) => current.map((plan) => (plan.id === planId ? update(plan) : plan)));
   }
 
   function resolveProblem(planId: string, problemId: string, status: ProblemStatus) {
     if (status !== "Active") {
-      const resolvedProblem = plans
-        .find((plan) => plan.id === planId)
-        ?.problems.find((problem) => problem.id === problemId);
-      const resolvedInterventionIds = new Set(
-        resolvedProblem?.goals.flatMap((goal) =>
-          goal.interventions.map((intervention) => intervention.id),
-        ) ?? [],
-      );
-      setSelectedInterventions(
-        (current) => new Set([...current].filter((id) => !resolvedInterventionIds.has(id))),
-      );
+      const resolvedProblem = plans.find((plan) => plan.id === planId)?.problems.find((problem) => problem.id === problemId);
+      const resolvedInterventionIds = new Set(resolvedProblem?.goals.flatMap((goal) => goal.interventions.map((intervention) => intervention.id)) ?? []);
+      setSelectedInterventions((current) => new Set([...current].filter((id) => !resolvedInterventionIds.has(id))));
     }
     updatePlan(planId, (plan) => ({
       ...plan,
-      problems: plan.problems.map((problem) =>
-        problem.id === problemId ? { ...problem, status } : problem,
-      ),
+      problems: plan.problems.map((problem) => (problem.id === problemId ? { ...problem, status } : problem)),
     }));
   }
 
-  function updateProgress(
-    planId: string,
-    problemId: string,
-    goalId: string,
-    progress: GoalProgress,
-  ) {
+  function updateProgress(planId: string, problemId: string, goalId: string, progress: GoalProgress) {
     const time = nowStamp();
     updatePlan(planId, (plan) => ({
       ...plan,
-      problems: plan.problems.map((problem) =>
-        problem.id === problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === goalId
-                  ? {
-                      ...goal,
-                      progress,
-                      recentNote: `Progress updated to ${progress}`,
-                      recentNoteTime: time,
-                    }
-                  : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: plan.problems.map((problem) => problem.id === problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => goal.id === goalId ? {
+          ...goal,
+          progress,
+          recentNote: `Progress updated to ${progress}`,
+          recentNoteTime: time,
+        } : goal),
+      } : problem),
     }));
   }
 
@@ -2634,45 +2142,21 @@ export function NursingCarePlansPage() {
     if (!addTarget || !value) return;
     updatePlan(addTarget.planId, (plan) => {
       if (addTarget.type === "problem") {
-        return {
-          ...plan,
-          problems: [
-            ...plan.problems,
-            { id: `custom-problem-${Date.now()}`, name: value, status: "Active", goals: [] },
-          ],
-        };
+        return { ...plan, problems: [...plan.problems, { id: `custom-problem-${Date.now()}`, name: value, status: "Active", goals: [] }] };
       }
       return {
         ...plan,
         problems: plan.problems.map((problem) => {
           if (problem.id !== addTarget.problemId) return problem;
           if (addTarget.type === "goal") {
-            return {
-              ...problem,
-              goals: [
-                ...problem.goals,
-                {
-                  id: `custom-goal-${Date.now()}`,
-                  name: value,
-                  progress: "Pending",
-                  interventions: [],
-                },
-              ],
-            };
+            return { ...problem, goals: [...problem.goals, { id: `custom-goal-${Date.now()}`, name: value, progress: "Pending", interventions: [] }] };
           }
           return {
             ...problem,
-            goals: problem.goals.map((goal) =>
-              goal.id === addTarget.goalId
-                ? {
-                    ...goal,
-                    interventions: [
-                      ...goal.interventions,
-                      { id: `custom-intervention-${Date.now()}`, name: value, worklist: false },
-                    ],
-                  }
-                : goal,
-            ),
+            goals: problem.goals.map((goal) => goal.id === addTarget.goalId ? {
+              ...goal,
+              interventions: [...goal.interventions, { id: `custom-intervention-${Date.now()}`, name: value, worklist: false }],
+            } : goal),
           };
         }),
       };
@@ -2688,18 +2172,10 @@ export function NursingCarePlansPage() {
     const time = nowStamp();
     updatePlan(noteTarget.planId, (plan) => ({
       ...plan,
-      problems: plan.problems.map((problem) =>
-        problem.id === noteTarget.problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === noteTarget.goalId
-                  ? { ...goal, recentNote: text, recentNoteTime: time }
-                  : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: plan.problems.map((problem) => problem.id === noteTarget.problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => goal.id === noteTarget.goalId ? { ...goal, recentNote: text, recentNoteTime: time } : goal),
+      } : problem),
     }));
     setNoteTarget(null);
     setNoteText("");
@@ -2717,29 +2193,17 @@ export function NursingCarePlansPage() {
     const time = nowStamp();
     updatePlan(interventionNoteTarget.planId, (plan) => ({
       ...plan,
-      problems: plan.problems.map((problem) =>
-        problem.id === interventionNoteTarget.problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === interventionNoteTarget.goalId
-                  ? {
-                      ...goal,
-                      interventions: goal.interventions.map((intervention) =>
-                        intervention.id === interventionNoteTarget.interventionId
-                          ? {
-                              ...intervention,
-                              documentationNote: text,
-                              documentationNoteTime: time,
-                            }
-                          : intervention,
-                      ),
-                    }
-                  : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: plan.problems.map((problem) => problem.id === interventionNoteTarget.problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => goal.id === interventionNoteTarget.goalId ? {
+          ...goal,
+          interventions: goal.interventions.map((intervention) => intervention.id === interventionNoteTarget.interventionId ? {
+            ...intervention,
+            documentationNote: text,
+            documentationNoteTime: time,
+          } : intervention),
+        } : goal),
+      } : problem),
     }));
     setInterventionNoteTarget(null);
     setInterventionNoteText("");
@@ -2769,30 +2233,18 @@ export function NursingCarePlansPage() {
     });
     updatePlan(target.planId, (plan) => ({
       ...plan,
-      problems: plan.problems.map((problem) =>
-        problem.id === target.problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === target.goalId
-                  ? {
-                      ...goal,
-                      interventions: goal.interventions.map((intervention) =>
-                        intervention.id === target.interventionId
-                          ? {
-                              ...intervention,
-                              worklist: true,
-                              name: details.taskName,
-                              worklistDetails: details,
-                            }
-                          : intervention,
-                      ),
-                    }
-                  : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: plan.problems.map((problem) => problem.id === target.problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => goal.id === target.goalId ? {
+          ...goal,
+          interventions: goal.interventions.map((intervention) => intervention.id === target.interventionId ? {
+            ...intervention,
+            worklist: true,
+            name: details.taskName,
+            worklistDetails: details,
+          } : intervention),
+        } : goal),
+      } : problem),
     }));
     setWorklistTarget(null);
   }
@@ -2809,29 +2261,17 @@ export function NursingCarePlansPage() {
   function clearInterventionCheckbox(target: CheckboxClearTarget) {
     updatePlan(target.planId, (plan) => ({
       ...plan,
-      problems: plan.problems.map((problem) =>
-        problem.id === target.problemId
-          ? {
-              ...problem,
-              goals: problem.goals.map((goal) =>
-                goal.id === target.goalId
-                  ? {
-                      ...goal,
-                      interventions: goal.interventions.map((intervention) =>
-                        intervention.id === target.interventionId
-                          ? {
-                              ...intervention,
-                              completedAt: undefined,
-                              completionNote: undefined,
-                            }
-                          : intervention,
-                      ),
-                    }
-                  : goal,
-              ),
-            }
-          : problem,
-      ),
+      problems: plan.problems.map((problem) => problem.id === target.problemId ? {
+        ...problem,
+        goals: problem.goals.map((goal) => goal.id === target.goalId ? {
+          ...goal,
+          interventions: goal.interventions.map((intervention) => intervention.id === target.interventionId ? {
+            ...intervention,
+            completedAt: undefined,
+            completionNote: undefined,
+          } : intervention),
+        } : goal),
+      } : problem),
     }));
     setSelectedInterventions((current) => {
       const next = new Set(current);
@@ -2844,16 +2284,8 @@ export function NursingCarePlansPage() {
     setPlans((currentPlans) => {
       const planToRemove = currentPlans.find((plan) => plan.id === planId);
       if (planToRemove) {
-        const interventionIds = new Set(
-          planToRemove.problems.flatMap((problem) =>
-            problem.goals.flatMap((goal) =>
-              goal.interventions.map((intervention) => intervention.id),
-            ),
-          ),
-        );
-        setSelectedInterventions(
-          (current) => new Set([...current].filter((id) => !interventionIds.has(id))),
-        );
+        const interventionIds = new Set(planToRemove.problems.flatMap((problem) => problem.goals.flatMap((goal) => goal.interventions.map((intervention) => intervention.id))));
+        setSelectedInterventions((current) => new Set([...current].filter((id) => !interventionIds.has(id))));
       }
       return currentPlans.filter((plan) => plan.id !== planId);
     });
@@ -2869,26 +2301,16 @@ export function NursingCarePlansPage() {
 
   function openCompleteSelected() {
     if (!selectedInterventions.size) return;
-    const targets = plans.flatMap((plan) =>
-      plan.problems.flatMap((problem) =>
-        problem.goals.flatMap((goal) =>
-          goal.interventions.flatMap((intervention) =>
-            selectedInterventions.has(intervention.id)
-              ? [
-                  {
-                    planId: plan.id,
-                    problemId: problem.id,
-                    goalId: goal.id,
-                    goal: goal.name,
-                    interventionId: intervention.id,
-                    intervention: intervention.name,
-                  },
-                ]
-              : [],
-          ),
-        ),
-      ),
-    );
+    const targets = plans.flatMap((plan) => plan.problems.flatMap((problem) => problem.goals.flatMap((goal) => (
+      goal.interventions.flatMap((intervention) => selectedInterventions.has(intervention.id) ? [{
+        planId: plan.id,
+        problemId: problem.id,
+        goalId: goal.id,
+        goal: goal.name,
+        interventionId: intervention.id,
+        intervention: intervention.name,
+      }] : [])
+    ))));
     if (!targets.length) return;
     setCompletionTargets(targets);
     setCompletionTime(nowStamp());
@@ -2900,21 +2322,19 @@ export function NursingCarePlansPage() {
     const completedIds = new Set(completionTargets.map((target) => target.interventionId));
     const time = completionTime.trim() || nowStamp();
     const note = completionNote.trim() || "Intervention completed.";
-    setPlans((currentPlans) =>
-      currentPlans.map((plan) => ({
-        ...plan,
-        problems: plan.problems.map((problem) => ({
-          ...problem,
-          goals: problem.goals.map((goal) => ({
-            ...goal,
-            interventions: goal.interventions.map((intervention) => {
-              if (!completedIds.has(intervention.id)) return intervention;
-              return { ...intervention, completedAt: time, completionNote: note };
-            }),
-          })),
+    setPlans((currentPlans) => currentPlans.map((plan) => ({
+      ...plan,
+      problems: plan.problems.map((problem) => ({
+        ...problem,
+        goals: problem.goals.map((goal) => ({
+          ...goal,
+          interventions: goal.interventions.map((intervention) => {
+            if (!completedIds.has(intervention.id)) return intervention;
+            return { ...intervention, completedAt: time, completionNote: note };
+          }),
         })),
       })),
-    );
+    })));
     setSelectedInterventions(new Set());
     setCompletionTargets([]);
     setCompletionTime("");
@@ -2922,10 +2342,7 @@ export function NursingCarePlansPage() {
   }
 
   return (
-    <NursingShell
-      title="Nursing Care Plan"
-      description="Document care plan, progress notes, and overview in the configured spreadsheet format."
-    >
+    <NursingShell title="Nursing Care Plan" description="Document care plan, progress notes, and overview in the configured spreadsheet format.">
       <NursingPatientStrip />
       <Tabs defaultValue="document">
         <TabsList className="bg-transparent p-0">
@@ -2971,19 +2388,11 @@ export function NursingCarePlansPage() {
             onCompleteSelected={openCompleteSelected}
           />
         </TabsContent>
-        <TabsContent value="notes">
-          <ProgressNotesTable plans={plans} />
-        </TabsContent>
-        <TabsContent value="overview">
-          <OverviewTable plans={plans} />
-        </TabsContent>
+        <TabsContent value="notes"><ProgressNotesTable plans={plans} /></TabsContent>
+        <TabsContent value="overview"><OverviewTable plans={plans} /></TabsContent>
       </Tabs>
 
-      <CenterModal
-        open={Boolean(addTarget)}
-        onOpenChange={(open) => !open && setAddTarget(null)}
-        title={`Add ${addTarget?.type ?? "item"}`}
-      >
+      <CenterModal open={Boolean(addTarget)} onOpenChange={(open) => !open && setAddTarget(null)} title={`Add ${addTarget?.type ?? "item"}`}>
         <form
           className="space-y-3"
           onSubmit={(event) => {
@@ -2991,23 +2400,11 @@ export function NursingCarePlansPage() {
             saveAddTarget();
           }}
         >
-          <Input
-            value={addValue}
-            onChange={(event) => setAddValue(event.target.value)}
-            placeholder={`Name of ${addTarget?.type ?? "item"}`}
-            autoFocus
-          />
-          <Button type="submit">
-            <Plus className="h-4 w-4" />
-            Add
-          </Button>
+          <Input value={addValue} onChange={(event) => setAddValue(event.target.value)} placeholder={`Name of ${addTarget?.type ?? "item"}`} autoFocus />
+          <Button type="submit"><Plus className="h-4 w-4" />Add</Button>
         </form>
       </CenterModal>
-      <CenterModal
-        open={Boolean(noteTarget)}
-        onOpenChange={(open) => !open && setNoteTarget(null)}
-        title="Progress notes"
-      >
+      <CenterModal open={Boolean(noteTarget)} onOpenChange={(open) => !open && setNoteTarget(null)} title="Progress notes">
         <form
           className="space-y-3"
           onSubmit={(event) => {
@@ -3016,57 +2413,38 @@ export function NursingCarePlansPage() {
           }}
         >
           <div className="grid gap-2 text-xs sm:grid-cols-2">
-            <div className="border border-[#000] p-2">
-              <b>Time</b>
-              <br />
-              {nowStamp()}
-            </div>
-            <div className="border border-[#000] p-2">
-              <b>Goal name</b>
-              <br />
-              {noteTarget?.goal}
-            </div>
+            <div className="border border-[#000] p-2"><b>Time</b><br />{nowStamp()}</div>
+            <div className="border border-[#000] p-2"><b>Goal name</b><br />{noteTarget?.goal}</div>
           </div>
           <div className="space-y-2">
             <div className="text-xs font-semibold text-foreground">Interventions</div>
             <div className="max-h-48 overflow-auto rounded-md border border-input bg-background p-2">
               {noteTarget?.interventions?.map((intervention) => (
-                <div
-                  className="flex items-center justify-between gap-2 border-b border-border py-2 last:border-b-0"
-                  key={intervention.id}
-                >
+                <div className="flex items-center justify-between gap-2 border-b border-border py-2 last:border-b-0" key={intervention.id}>
                   <span className="text-sm text-foreground">{intervention.name}</span>
                   <Button
                     aria-label={`Write note for ${intervention.name}`}
                     size="icon"
                     type="button"
                     variant="outline"
-                    onClick={() =>
-                      openInterventionNote({
-                        planId: noteTarget.planId,
-                        problemId: noteTarget.problemId,
-                        goalId: noteTarget.goalId,
-                        interventionId: intervention.id,
-                        carePlan: noteTarget.carePlan,
-                        goal: noteTarget.goal,
-                        intervention: intervention.name,
-                        time: intervention.documentationNoteTime || intervention.completedAt || "",
-                        text:
-                          intervention.documentationNote ||
-                          intervention.completionNote ||
-                          intervention.worklistDetails?.notes ||
-                          "",
-                      })
-                    }
+                    onClick={() => openInterventionNote({
+                      planId: noteTarget.planId,
+                      problemId: noteTarget.problemId,
+                      goalId: noteTarget.goalId,
+                      interventionId: intervention.id,
+                      carePlan: noteTarget.carePlan,
+                      goal: noteTarget.goal,
+                      intervention: intervention.name,
+                      time: intervention.documentationNoteTime || intervention.completedAt || "",
+                      text: intervention.documentationNote || intervention.completionNote || intervention.worklistDetails?.notes || "",
+                    })}
                   >
                     <Edit3 className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
               {noteTarget?.interventions?.length ? null : (
-                <div className="py-2 text-sm text-muted-foreground">
-                  No interventions added for this goal
-                </div>
+                <div className="py-2 text-sm text-muted-foreground">No interventions added for this goal</div>
               )}
             </div>
           </div>
@@ -3080,11 +2458,7 @@ export function NursingCarePlansPage() {
           <Button type="submit">Save note</Button>
         </form>
       </CenterModal>
-      <CenterModal
-        open={Boolean(interventionNoteTarget)}
-        onOpenChange={(open) => !open && setInterventionNoteTarget(null)}
-        title="Intervention note"
-      >
+      <CenterModal open={Boolean(interventionNoteTarget)} onOpenChange={(open) => !open && setInterventionNoteTarget(null)} title="Intervention note">
         <form
           className="space-y-3"
           onSubmit={(event) => {
@@ -3093,16 +2467,8 @@ export function NursingCarePlansPage() {
           }}
         >
           <div className="grid gap-2 text-xs sm:grid-cols-2">
-            <div className="border border-[#000] p-2">
-              <b>Time</b>
-              <br />
-              {interventionNoteTarget?.time || nowStamp()}
-            </div>
-            <div className="border border-[#000] p-2">
-              <b>Intervention</b>
-              <br />
-              {interventionNoteTarget?.intervention}
-            </div>
+            <div className="border border-[#000] p-2"><b>Time</b><br />{interventionNoteTarget?.time || nowStamp()}</div>
+            <div className="border border-[#000] p-2"><b>Intervention</b><br />{interventionNoteTarget?.intervention}</div>
           </div>
           <textarea
             className="min-h-32 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
@@ -3114,11 +2480,7 @@ export function NursingCarePlansPage() {
           <Button type="submit">Save intervention note</Button>
         </form>
       </CenterModal>
-      <CenterModal
-        open={Boolean(completionTargets.length)}
-        onOpenChange={(open) => !open && setCompletionTargets([])}
-        title="Complete"
-      >
+      <CenterModal open={Boolean(completionTargets.length)} onOpenChange={(open) => !open && setCompletionTargets([])} title="Complete">
         <form
           className="space-y-3"
           onSubmit={(event) => {
@@ -3127,9 +2489,7 @@ export function NursingCarePlansPage() {
           }}
         >
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-foreground" htmlFor="completion-time">
-              Time
-            </label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="completion-time">Time</label>
             <Input
               id="completion-time"
               value={completionTime}
@@ -3143,12 +2503,8 @@ export function NursingCarePlansPage() {
             <div className="max-h-48 space-y-2 overflow-auto rounded-md border border-input bg-background p-2 text-sm">
               {completionTargets.map((target) => (
                 <div className="rounded border border-border p-2" key={target.interventionId}>
-                  <div>
-                    <b>Goal:</b> {target.goal}
-                  </div>
-                  <div>
-                    <b>Intervention:</b> {target.intervention}
-                  </div>
+                  <div><b>Goal:</b> {target.goal}</div>
+                  <div><b>Intervention:</b> {target.intervention}</div>
                 </div>
               ))}
             </div>
@@ -3165,9 +2521,7 @@ export function NursingCarePlansPage() {
       <WorklistModal
         target={worklistTarget}
         onClose={() => setWorklistTarget(null)}
-        onTargetChange={(updates) =>
-          setWorklistTarget((current) => (current ? { ...current, ...updates } : current))
-        }
+        onTargetChange={(updates) => setWorklistTarget((current) => (current ? { ...current, ...updates } : current))}
         onSave={saveWorklist}
       />
     </NursingShell>

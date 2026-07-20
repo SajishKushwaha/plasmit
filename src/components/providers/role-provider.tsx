@@ -7,7 +7,7 @@ import type { Role } from "@/types";
 
 type RoleContextValue = {
   role: Role;
-  setRole: (_role: Role) => void;
+  setRole: (role: Role) => void;
   roles: Role[];
 };
 
@@ -19,11 +19,11 @@ const ICU_ROLE: Role = "ICU";
 const UNIT_NURSE_ROLE: Role = "Unit Nurse";
 const HEAD_NURSE_ROLE: Role = "Head Nurse";
 const WARD_NURSE_ROLE: Role = "Ward Nurse";
+const ER_NURSE_ROLE: Role = "ER Nurse";
 const RECEPTIONIST_ROLE: Role = "Receptionist";
 const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
-type AccessScope =
-  "doctor-ipd" | "icu" | "unit-nurse" | "head-nurse" | "ward-nurse" | "receptionist" | "admin";
+type AccessScope = "doctor-ipd" | "icu" | "unit-nurse" | "head-nurse" | "ward-nurse" | "er-nurse" | "receptionist" | "admin";
 
 function readAccessScope(): AccessScope {
   if (typeof window === "undefined") return "admin";
@@ -34,9 +34,9 @@ function readAccessScope(): AccessScope {
     savedScope === "unit-nurse" ||
     savedScope === "head-nurse" ||
     savedScope === "ward-nurse" ||
+    savedScope === "er-nurse" ||
     savedScope === "receptionist"
-  )
-    return savedScope;
+  ) return savedScope;
   return "admin";
 }
 
@@ -46,6 +46,7 @@ function getAllowedRoles(scope: AccessScope): Role[] {
   if (scope === "unit-nurse") return [UNIT_NURSE_ROLE];
   if (scope === "head-nurse") return [HEAD_NURSE_ROLE];
   if (scope === "ward-nurse") return [WARD_NURSE_ROLE];
+  if (scope === "er-nurse") return [ER_NURSE_ROLE];
   if (scope === "receptionist") return [RECEPTIONIST_ROLE];
   return allRoles;
 }
@@ -58,6 +59,7 @@ function readStoredRole(): Role {
   if (accessScope === "unit-nurse") return UNIT_NURSE_ROLE;
   if (accessScope === "head-nurse") return HEAD_NURSE_ROLE;
   if (accessScope === "ward-nurse") return WARD_NURSE_ROLE;
+  if (accessScope === "er-nurse") return ER_NURSE_ROLE;
   if (accessScope === "receptionist") return RECEPTIONIST_ROLE;
 
   const saved = window.localStorage.getItem("plasmit-role");
@@ -77,11 +79,7 @@ function subscribeRole(callback: () => void) {
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const role = React.useSyncExternalStore(subscribeRole, readStoredRole, () => DEFAULT_ROLE);
-  const accessScope = React.useSyncExternalStore<AccessScope>(
-    subscribeRole,
-    readAccessScope,
-    () => "admin",
-  );
+  const accessScope = React.useSyncExternalStore<AccessScope>(subscribeRole, readAccessScope, () => "admin");
   const allowedRoles = React.useMemo(() => getAllowedRoles(accessScope), [accessScope]);
 
   const setRole = React.useCallback((nextRole: Role) => {
@@ -97,9 +95,11 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
               ? HEAD_NURSE_ROLE
               : nextAccessScope === "ward-nurse"
                 ? WARD_NURSE_ROLE
-                : nextAccessScope === "receptionist"
-                  ? RECEPTIONIST_ROLE
-                  : nextRole;
+                : nextAccessScope === "er-nurse"
+                  ? ER_NURSE_ROLE
+                  : nextAccessScope === "receptionist"
+                    ? RECEPTIONIST_ROLE
+                    : nextRole;
     window.localStorage.setItem("plasmit-role", lockedRole);
     window.dispatchEvent(new Event(roleChangeEvent));
   }, []);

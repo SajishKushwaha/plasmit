@@ -112,78 +112,19 @@ function statusLabel(status: SlotStatus) {
 function defaultSlots(): Slot[] {
   const today = todayString();
   return [
-    {
-      id: "seed-0800",
-      date: today,
-      start: "08:00",
-      end: "08:15",
-      status: "available",
-      mode: "OPD",
-      branch: "Main Campus",
-      room: "Room 4B",
-    },
-    {
-      id: "seed-0915",
-      date: today,
-      start: "09:15",
-      end: "09:30",
-      status: "cancelled",
-      mode: "OPD",
-      branch: "Main Campus",
-      room: "Room 4B",
-      patient: "Elena Rodriguez",
-      note: "Cancelled by patient",
-    },
-    {
-      id: "seed-1045",
-      date: today,
-      start: "10:45",
-      end: "11:00",
-      status: "blocked",
-      mode: "OPD",
-      branch: "Main Campus",
-      room: "Room 4B",
-      note: "Emergency slot reserved",
-    },
-    {
-      id: "seed-1200",
-      date: today,
-      start: "12:00",
-      end: "13:00",
-      status: "break",
-      mode: "OPD",
-      branch: "Main Campus",
-      room: "Room 4B",
-      note: "Lunch break",
-    },
-    {
-      id: "seed-1330",
-      date: today,
-      start: "13:30",
-      end: "13:45",
-      status: "available",
-      mode: "Telemedicine",
-      branch: "Main Campus",
-      room: "Virtual",
-    },
-    {
-      id: "seed-1500",
-      date: today,
-      start: "15:00",
-      end: "15:15",
-      status: "blocked",
-      mode: "OPD",
-      branch: "Main Campus",
-      room: "Room 4B",
-      note: "Administrative work",
-    },
+    { id: "seed-0800", date: today, start: "08:00", end: "08:15", status: "available", mode: "OPD", branch: "Main Campus", room: "Room 4B" },
+    { id: "seed-0915", date: today, start: "09:15", end: "09:30", status: "cancelled", mode: "OPD", branch: "Main Campus", room: "Room 4B", patient: "Elena Rodriguez", note: "Cancelled by patient" },
+    { id: "seed-1045", date: today, start: "10:45", end: "11:00", status: "blocked", mode: "OPD", branch: "Main Campus", room: "Room 4B", note: "Emergency slot reserved" },
+    { id: "seed-1200", date: today, start: "12:00", end: "13:00", status: "break", mode: "OPD", branch: "Main Campus", room: "Room 4B", note: "Lunch break" },
+    { id: "seed-1330", date: today, start: "13:30", end: "13:45", status: "available", mode: "Telemedicine", branch: "Main Campus", room: "Virtual" },
+    { id: "seed-1500", date: today, start: "15:00", end: "15:15", status: "blocked", mode: "OPD", branch: "Main Campus", room: "Room 4B", note: "Administrative work" },
   ];
 }
 
 export function DoctorAvailabilitySlotManager({
   setActiveTab,
 }: {
-  setActiveTab: (_tab: "dashboard" | "availability") => void;
+  setActiveTab: (tab: "dashboard" | "availability") => void;
 }) {
   const { availStatus, setAvailStatus } = useDoctorContext();
   const today = todayString();
@@ -215,10 +156,7 @@ export function DoctorAvailabilitySlotManager({
   const generatedCount = generationDates.length * slotsPerDay;
   const selectedSlots = slots.filter((slot) => selectedIds.includes(slot.id));
   const visibleSlots = useMemo(
-    () =>
-      slots
-        .filter((slot) => slot.date === selectedDate)
-        .sort((a, b) => a.start.localeCompare(b.start)),
+    () => slots.filter((slot) => slot.date === selectedDate).sort((a, b) => a.start.localeCompare(b.start)),
     [selectedDate, slots],
   );
   const counts = useMemo(
@@ -230,9 +168,7 @@ export function DoctorAvailabilitySlotManager({
     }),
     [slots],
   );
-  const nextAvailable =
-    visibleSlots.find((slot) => slot.status === "available") ??
-    slots.find((slot) => slot.status === "available");
+  const nextAvailable = visibleSlots.find((slot) => slot.status === "available") ?? slots.find((slot) => slot.status === "available");
 
   function updateHashToDashboard() {
     window.history.replaceState(null, "", "/doctor-dashboard");
@@ -261,11 +197,7 @@ export function DoctorAvailabilitySlotManager({
 
     const nextSlots: Slot[] = [];
     for (const date of generationDates) {
-      for (
-        let cursor = toMinutes(shiftStart);
-        cursor + interval <= toMinutes(shiftEnd);
-        cursor += interval
-      ) {
+      for (let cursor = toMinutes(shiftStart); cursor + interval <= toMinutes(shiftEnd); cursor += interval) {
         const start = toTime(cursor);
         const end = toTime(cursor + interval);
         const isLunch = start >= "12:00" && start < "13:00";
@@ -284,13 +216,8 @@ export function DoctorAvailabilitySlotManager({
     }
 
     setSlots((current) => {
-      const existing = new Set(
-        current.map((slot) => `${slot.date}-${slot.start}-${slot.end}-${slot.branch}-${slot.mode}`),
-      );
-      const merged = nextSlots.filter(
-        (slot) =>
-          !existing.has(`${slot.date}-${slot.start}-${slot.end}-${slot.branch}-${slot.mode}`),
-      );
+      const existing = new Set(current.map((slot) => `${slot.date}-${slot.start}-${slot.end}-${slot.branch}-${slot.mode}`));
+      const merged = nextSlots.filter((slot) => !existing.has(`${slot.date}-${slot.start}-${slot.end}-${slot.branch}-${slot.mode}`));
       return [...current, ...merged];
     });
     setSelectedDate(generationDates[0] ?? today);
@@ -333,10 +260,7 @@ export function DoctorAvailabilitySlotManager({
           ? {
               ...slot,
               status,
-              patient:
-                status === "available" || status === "blocked" || status === "break"
-                  ? undefined
-                  : slot.patient,
+              patient: status === "available" || status === "blocked" || status === "break" ? undefined : slot.patient,
               note,
             }
           : slot,
@@ -361,7 +285,9 @@ export function DoctorAvailabilitySlotManager({
   function cancelBooking(slotId: string) {
     setSlots((current) =>
       current.map((slot) =>
-        slot.id === slotId ? { ...slot, status: "cancelled", note: "Cancelled by clinic" } : slot,
+        slot.id === slotId
+          ? { ...slot, status: "cancelled", note: "Cancelled by clinic" }
+          : slot,
       ),
     );
     toast.success("Booking cancelled");
@@ -393,10 +319,7 @@ export function DoctorAvailabilitySlotManager({
       <div className="grid min-h-[calc(100dvh-6rem)] lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden border-r border-[#c8d5e3] bg-[#e7eff8] p-4 lg:flex lg:flex-col">
           <div className="text-lg font-bold">MedSync Pro</div>
-          <button
-            className="mt-16 flex h-11 items-center gap-3 rounded-md bg-[#0b5cad] px-4 text-sm font-semibold text-white"
-            type="button"
-          >
+          <button className="mt-16 flex h-11 items-center gap-3 rounded-md bg-[#0b5cad] px-4 text-sm font-semibold text-white" type="button">
             <CalendarCheck className="h-4 w-4" />
             Availability
           </button>
@@ -409,23 +332,15 @@ export function DoctorAvailabilitySlotManager({
         <main className="min-w-0">
           <header className="flex min-h-16 items-center justify-between border-b border-[#c8d5e3] bg-[#f8fbff] px-5">
             <div>
-              <button
-                className="mb-1 flex items-center gap-1 text-xs font-semibold text-[#51657c]"
-                onClick={updateHashToDashboard}
-                type="button"
-              >
+              <button className="mb-1 flex items-center gap-1 text-xs font-semibold text-[#51657c]" onClick={updateHashToDashboard} type="button">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to doctor dashboard
               </button>
               <h1 className="text-xl font-bold">Availability Management</h1>
-              <p className="text-xs text-[#51657c]">
-                Generate slots, accept bookings, cancel bookings, and publish final availability.
-              </p>
+              <p className="text-xs text-[#51657c]">Generate slots, accept bookings, cancel bookings, and publish final availability.</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="rounded-full bg-[#d9e8ff] px-4 py-1 text-xs font-bold text-[#0a3d78]">
-                Active Session
-              </span>
+              <span className="rounded-full bg-[#d9e8ff] px-4 py-1 text-xs font-bold text-[#0a3d78]">Active Session</span>
               <Bell className="h-5 w-5 text-[#0b2447]" />
             </div>
           </header>
@@ -435,9 +350,7 @@ export function DoctorAvailabilitySlotManager({
               {(["schedule", "configure", "manage"] as Screen[]).map((item) => (
                 <button
                   className={`rounded-md border px-4 py-2 text-sm font-semibold capitalize ${
-                    screen === item
-                      ? "border-[#0b5cad] bg-[#dbeafe] text-[#063d7a]"
-                      : "border-[#c8d5e3] bg-white text-[#51657c]"
+                    screen === item ? "border-[#0b5cad] bg-[#dbeafe] text-[#063d7a]" : "border-[#c8d5e3] bg-white text-[#51657c]"
                   }`}
                   key={item}
                   onClick={() => setScreen(item)}
@@ -516,15 +429,7 @@ export function DoctorAvailabilitySlotManager({
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number | string;
-  tone: "green" | "blue" | "slate" | "red";
-}) {
+function MetricCard({ label, value, tone }: { label: string; value: number | string; tone: "green" | "blue" | "slate" | "red" }) {
   const toneClass = {
     green: "text-emerald-700",
     blue: "text-[#0b5cad]",
@@ -554,17 +459,17 @@ function ScheduleScreen({
   setSlotStatus,
   slots,
 }: {
-  acceptBooking: (_slotId: string) => void;
+  acceptBooking: (slotId: string) => void;
   bookingName: string;
-  cancelBooking: (_slotId: string) => void;
+  cancelBooking: (slotId: string) => void;
   counts: { available: number; booked: number; blocked: number; cancelled: number };
   nextAvailable?: Slot;
   publishedAt: string | null;
   selectedDate: string;
-  setBookingName: (_value: string) => void;
-  setScreen: (_screen: Screen) => void;
-  setSelectedDate: (_date: string) => void;
-  setSlotStatus: (_ids: string[], _status: SlotStatus, _note?: string) => void;
+  setBookingName: (value: string) => void;
+  setScreen: (screen: Screen) => void;
+  setSelectedDate: (date: string) => void;
+  setSlotStatus: (ids: string[], status: SlotStatus, note?: string) => void;
   slots: Slot[];
 }) {
   return (
@@ -584,77 +489,41 @@ function ScheduleScreen({
                 <CardTitle>Today&apos;s Schedule</CardTitle>
                 <CardDescription>{dateLabel(selectedDate)}</CardDescription>
               </div>
-              <input
-                className={inputClass}
-                type="date"
-                value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
-              />
+              <input className={inputClass} type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            {slots.length ? (
-              slots.map((slot) => (
-                <div
-                  className={`grid gap-3 rounded-md border p-3 md:grid-cols-[96px_minmax(0,1fr)_auto] ${slotClass(slot.status)}`}
-                  key={slot.id}
-                >
-                  <div className="font-bold tabular-nums">
-                    {slot.start}
-                    <br />
-                    {slot.end}
+            {slots.length ? slots.map((slot) => (
+              <div className={`grid gap-3 rounded-md border p-3 md:grid-cols-[96px_minmax(0,1fr)_auto] ${slotClass(slot.status)}`} key={slot.id}>
+                <div className="font-bold tabular-nums">{slot.start}<br />{slot.end}</div>
+                <div>
+                  <div className="font-bold">
+                    {slot.status === "available" ? "Open Slot" : slot.status === "booked" ? `Patient: ${slot.patient}` : slot.note ?? statusLabel(slot.status)}
                   </div>
-                  <div>
-                    <div className="font-bold">
-                      {slot.status === "available"
-                        ? "Open Slot"
-                        : slot.status === "booked"
-                          ? `Patient: ${slot.patient}`
-                          : (slot.note ?? statusLabel(slot.status))}
-                    </div>
-                    <div className="text-xs">
-                      {slot.mode} - {slot.branch} - {slot.room}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {slot.status === "available" ? (
-                      <>
-                        <input
-                          className="h-9 w-40 rounded-md border border-[#c8d5e3] bg-white px-2 text-xs"
-                          onChange={(event) => setBookingName(event.target.value)}
-                          placeholder="Patient name"
-                          value={bookingName}
-                        />
-                        <Button size="sm" onClick={() => acceptBooking(slot.id)}>
-                          Accept
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSlotStatus([slot.id], "blocked", "Blocked by clinic")}
-                        >
-                          Block
-                        </Button>
-                      </>
-                    ) : null}
-                    {slot.status === "booked" ? (
-                      <Button size="sm" variant="outline" onClick={() => cancelBooking(slot.id)}>
-                        Cancel Booking
-                      </Button>
-                    ) : null}
-                    {slot.status === "cancelled" || slot.status === "blocked" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSlotStatus([slot.id], "available")}
-                      >
-                        Re-open Slot
-                      </Button>
-                    ) : null}
-                  </div>
+                  <div className="text-xs">{slot.mode} - {slot.branch} - {slot.room}</div>
                 </div>
-              ))
-            ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  {slot.status === "available" ? (
+                    <>
+                      <input
+                        className="h-9 w-40 rounded-md border border-[#c8d5e3] bg-white px-2 text-xs"
+                        onChange={(event) => setBookingName(event.target.value)}
+                        placeholder="Patient name"
+                        value={bookingName}
+                      />
+                      <Button size="sm" onClick={() => acceptBooking(slot.id)}>Accept</Button>
+                      <Button size="sm" variant="outline" onClick={() => setSlotStatus([slot.id], "blocked", "Blocked by clinic")}>Block</Button>
+                    </>
+                  ) : null}
+                  {slot.status === "booked" ? (
+                    <Button size="sm" variant="outline" onClick={() => cancelBooking(slot.id)}>Cancel Booking</Button>
+                  ) : null}
+                  {slot.status === "cancelled" || slot.status === "blocked" ? (
+                    <Button size="sm" variant="outline" onClick={() => setSlotStatus([slot.id], "available")}>Re-open Slot</Button>
+                  ) : null}
+                </div>
+              </div>
+            )) : (
               <div className="rounded-md border border-dashed border-[#c8d5e3] p-8 text-center text-sm text-[#51657c]">
                 No slots for this date. Generate slots to begin.
               </div>
@@ -663,27 +532,15 @@ function ScheduleScreen({
         </Card>
 
         <div className="space-y-4">
-          <button
-            className="w-full rounded-md bg-[#0b5cad] p-4 text-left text-white shadow-sm"
-            onClick={() => setScreen("configure")}
-            type="button"
-          >
+          <button className="w-full rounded-md bg-[#0b5cad] p-4 text-left text-white shadow-sm" onClick={() => setScreen("configure")} type="button">
             <div className="text-xs uppercase">Next Available</div>
-            <div className="mt-2 text-2xl font-bold">
-              {nextAvailable ? nextAvailable.start : "--:--"}
-            </div>
-            <div className="mt-1 text-xs">
-              {nextAvailable
-                ? `${dateLabel(nextAvailable.date)}, ${nextAvailable.room}`
-                : "No open slot"}
-            </div>
+            <div className="mt-2 text-2xl font-bold">{nextAvailable ? nextAvailable.start : "--:--"}</div>
+            <div className="mt-1 text-xs">{nextAvailable ? `${dateLabel(nextAvailable.date)}, ${nextAvailable.room}` : "No open slot"}</div>
           </button>
           <Card>
             <CardHeader>
               <CardTitle>Publish Status</CardTitle>
-              <CardDescription>
-                {publishedAt ? `Saved at ${publishedAt}` : "Draft changes not yet published"}
-              </CardDescription>
+              <CardDescription>{publishedAt ? `Saved at ${publishedAt}` : "Draft changes not yet published"}</CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" onClick={() => setScreen("manage")}>
@@ -709,20 +566,20 @@ function ConfigureScreen(props: {
   mode: SlotMode;
   repeatDays: number[];
   room: string;
-  setAvailStatus: (_status: AvailStatus) => void;
-  setBranch: (_value: string) => void;
-  setEndDate: (_value: string) => void;
-  setInterval: (_value: number) => void;
-  setMode: (_value: SlotMode) => void;
-  setRoom: (_value: string) => void;
-  setShiftEnd: (_value: string) => void;
-  setShiftStart: (_value: string) => void;
-  setStartDate: (_value: string) => void;
+  setAvailStatus: (status: AvailStatus) => void;
+  setBranch: (value: string) => void;
+  setEndDate: (value: string) => void;
+  setInterval: (value: number) => void;
+  setMode: (value: SlotMode) => void;
+  setRoom: (value: string) => void;
+  setShiftEnd: (value: string) => void;
+  setShiftStart: (value: string) => void;
+  setStartDate: (value: string) => void;
   shiftEnd: string;
   shiftStart: string;
   startDate: string;
   statuses: AvailStatus[];
-  toggleRepeatDay: (_day: number) => void;
+  toggleRepeatDay: (day: number) => void;
 }) {
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -734,24 +591,8 @@ function ConfigureScreen(props: {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">
-                Start Date
-                <input
-                  className={inputClass}
-                  type="date"
-                  value={props.startDate}
-                  onChange={(event) => props.setStartDate(event.target.value)}
-                />
-              </label>
-              <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">
-                End Date
-                <input
-                  className={inputClass}
-                  type="date"
-                  value={props.endDate}
-                  onChange={(event) => props.setEndDate(event.target.value)}
-                />
-              </label>
+              <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">Start Date<input className={inputClass} type="date" value={props.startDate} onChange={(event) => props.setStartDate(event.target.value)} /></label>
+              <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">End Date<input className={inputClass} type="date" value={props.endDate} onChange={(event) => props.setEndDate(event.target.value)} /></label>
             </div>
             <div className="flex gap-2 rounded-md bg-[#e7eff8] p-2">
               {weekDays.map((day) => (
@@ -773,37 +614,9 @@ function ConfigureScreen(props: {
             <CardTitle>2. Shift & Duration</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
-            <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">
-              Start
-              <input
-                className={inputClass}
-                type="time"
-                value={props.shiftStart}
-                onChange={(event) => props.setShiftStart(event.target.value)}
-              />
-            </label>
-            <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">
-              End
-              <input
-                className={inputClass}
-                type="time"
-                value={props.shiftEnd}
-                onChange={(event) => props.setShiftEnd(event.target.value)}
-              />
-            </label>
-            <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">
-              Interval
-              <select
-                className={inputClass}
-                value={props.interval}
-                onChange={(event) => props.setInterval(Number(event.target.value))}
-              >
-                <option value={10}>10 mins</option>
-                <option value={15}>15 mins</option>
-                <option value={20}>20 mins</option>
-                <option value={30}>30 mins</option>
-              </select>
-            </label>
+            <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">Start<input className={inputClass} type="time" value={props.shiftStart} onChange={(event) => props.setShiftStart(event.target.value)} /></label>
+            <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">End<input className={inputClass} type="time" value={props.shiftEnd} onChange={(event) => props.setShiftEnd(event.target.value)} /></label>
+            <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">Interval<select className={inputClass} value={props.interval} onChange={(event) => props.setInterval(Number(event.target.value))}><option value={10}>10 mins</option><option value={15}>15 mins</option><option value={20}>20 mins</option><option value={30}>30 mins</option></select></label>
           </CardContent>
         </Card>
 
@@ -814,33 +627,12 @@ function ConfigureScreen(props: {
           <CardContent className="space-y-4">
             <div className="grid gap-3 md:grid-cols-3">
               {(["OPD", "Telemedicine", "Procedure"] as SlotMode[]).map((item) => (
-                <button
-                  className={`rounded-md border p-3 text-left font-bold ${props.mode === item ? "border-[#0b5cad] bg-[#edf5ff]" : "border-[#c8d5e3] bg-white"}`}
-                  key={item}
-                  onClick={() => props.setMode(item)}
-                  type="button"
-                >
-                  {item}
-                </button>
+                <button className={`rounded-md border p-3 text-left font-bold ${props.mode === item ? "border-[#0b5cad] bg-[#edf5ff]" : "border-[#c8d5e3] bg-white"}`} key={item} onClick={() => props.setMode(item)} type="button">{item}</button>
               ))}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">
-                Branch
-                <input
-                  className={inputClass}
-                  value={props.branch}
-                  onChange={(event) => props.setBranch(event.target.value)}
-                />
-              </label>
-              <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">
-                Room
-                <input
-                  className={inputClass}
-                  value={props.room}
-                  onChange={(event) => props.setRoom(event.target.value)}
-                />
-              </label>
+              <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">Branch<input className={inputClass} value={props.branch} onChange={(event) => props.setBranch(event.target.value)} /></label>
+              <label className="space-y-1 text-xs font-bold uppercase text-[#51657c]">Room<input className={inputClass} value={props.room} onChange={(event) => props.setRoom(event.target.value)} /></label>
             </div>
           </CardContent>
         </Card>
@@ -853,12 +645,7 @@ function ConfigureScreen(props: {
           </CardHeader>
           <CardContent className="grid gap-2">
             {props.statuses.map((status) => (
-              <button
-                className={`flex h-10 items-center justify-between rounded-md border px-3 text-sm font-bold ${props.availStatus === status ? "border-[#0b5cad] bg-[#dbeafe]" : "border-[#c8d5e3] bg-white"}`}
-                key={status}
-                onClick={() => props.setAvailStatus(status)}
-                type="button"
-              >
+              <button className={`flex h-10 items-center justify-between rounded-md border px-3 text-sm font-bold ${props.availStatus === status ? "border-[#0b5cad] bg-[#dbeafe]" : "border-[#c8d5e3] bg-white"}`} key={status} onClick={() => props.setAvailStatus(status)} type="button">
                 {status}
                 {props.availStatus === status ? <CheckCircle2 className="h-4 w-4" /> : null}
               </button>
@@ -871,14 +658,8 @@ function ConfigureScreen(props: {
               <span className="font-bold">Total New Slots</span>
               <span className="text-4xl font-bold text-[#0b5cad]">{props.generatedCount}</span>
             </div>
-            <Button className="w-full" onClick={props.generateSlots}>
-              Generate Slots
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button className="w-full" variant="outline" onClick={props.addCustomSlot}>
-              Add Custom Slot
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Button className="w-full" onClick={props.generateSlots}>Generate Slots<ChevronRight className="h-4 w-4" /></Button>
+            <Button className="w-full" variant="outline" onClick={props.addCustomSlot}>Add Custom Slot<Plus className="h-4 w-4" /></Button>
           </CardContent>
         </Card>
       </div>
@@ -904,18 +685,16 @@ function ManageScreen({
   selectedDate: string;
   selectedIds: string[];
   selectedSlots: Slot[];
-  setScreen: (_screen: Screen) => void;
-  setSelectedDate: (_date: string) => void;
-  setSelectedIds: (_ids: string[]) => void;
-  setSlotStatus: (_ids: string[], _status: SlotStatus, _note?: string) => void;
+  setScreen: (screen: Screen) => void;
+  setSelectedDate: (date: string) => void;
+  setSelectedIds: (ids: string[]) => void;
+  setSlotStatus: (ids: string[], status: SlotStatus, note?: string) => void;
   slots: Slot[];
-  toggleSelected: (_id: string) => void;
+  toggleSelected: (id: string) => void;
 }) {
   const free = slots.filter((slot) => slot.status === "available").length;
   const booked = slots.filter((slot) => slot.status === "booked").length;
-  const blocked = slots.filter(
-    (slot) => slot.status === "blocked" || slot.status === "break",
-  ).length;
+  const blocked = slots.filter((slot) => slot.status === "blocked" || slot.status === "break").length;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
@@ -924,77 +703,33 @@ function ManageScreen({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <CardTitle>Manage Generated Slots</CardTitle>
-              <CardDescription>
-                Reviewing draft availability for {dateLabel(selectedDate)}
-              </CardDescription>
+              <CardDescription>Reviewing draft availability for {dateLabel(selectedDate)}</CardDescription>
             </div>
-            <input
-              className={inputClass}
-              type="date"
-              value={selectedDate}
-              onChange={(event) => setSelectedDate(event.target.value)}
-            />
+            <input className={inputClass} type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-[#c8d5e3] bg-[#eaf2fb] p-3">
             <span className="text-sm font-bold">Bulk Actions:</span>
-            <Button size="sm" onClick={() => setSlotStatus(selectedIds, "available")}>
-              Accept All
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSlotStatus(selectedIds, "blocked", "Blocked by admin")}
-            >
-              Block Selected
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSlotStatus(selectedIds, "break", "Break")}
-            >
-              Mark as Break
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSlotStatus(selectedIds, "cancelled", "Cancelled by clinic")}
-            >
-              Cancel Selected
-            </Button>
-            <Button size="sm" variant="outline" onClick={removeSelected}>
-              Remove Selected
-            </Button>
+            <Button size="sm" onClick={() => setSlotStatus(selectedIds, "available")}>Accept All</Button>
+            <Button size="sm" variant="outline" onClick={() => setSlotStatus(selectedIds, "blocked", "Blocked by admin")}>Block Selected</Button>
+            <Button size="sm" variant="outline" onClick={() => setSlotStatus(selectedIds, "break", "Break")}>Mark as Break</Button>
+            <Button size="sm" variant="outline" onClick={() => setSlotStatus(selectedIds, "cancelled", "Cancelled by clinic")}>Cancel Selected</Button>
+            <Button size="sm" variant="outline" onClick={removeSelected}>Remove Selected</Button>
             <label className="ml-auto flex items-center gap-2 text-sm">
-              <input
-                checked={selectedIds.length === slots.length && slots.length > 0}
-                onChange={(event) =>
-                  setSelectedIds(event.target.checked ? slots.map((slot) => slot.id) : [])
-                }
-                type="checkbox"
-              />
+              <input checked={selectedIds.length === slots.length && slots.length > 0} onChange={(event) => setSelectedIds(event.target.checked ? slots.map((slot) => slot.id) : [])} type="checkbox" />
               Select All
             </label>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {slots.map((slot) => (
-              <label
-                className={`min-h-20 rounded-md border p-3 ${slotClass(slot.status)}`}
-                key={slot.id}
-              >
+              <label className={`min-h-20 rounded-md border p-3 ${slotClass(slot.status)}`} key={slot.id}>
                 <div className="flex items-start gap-2">
-                  <input
-                    checked={selectedIds.includes(slot.id)}
-                    onChange={() => toggleSelected(slot.id)}
-                    type="checkbox"
-                  />
+                  <input checked={selectedIds.includes(slot.id)} onChange={() => toggleSelected(slot.id)} type="checkbox" />
                   <div>
                     <div className="text-lg font-bold tabular-nums">{slot.start}</div>
-                    <div className="text-[10px] font-bold uppercase">
-                      {statusLabel(slot.status)}
-                    </div>
+                    <div className="text-[10px] font-bold uppercase">{statusLabel(slot.status)}</div>
                     <div className="mt-1 text-xs">{slot.patient ?? slot.note ?? slot.mode}</div>
                   </div>
                 </div>
@@ -1010,42 +745,18 @@ function ManageScreen({
             <CardTitle>Shift Overview</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span>Total Slots</span>
-              <b>{slots.length}</b>
-            </div>
-            <div className="flex justify-between text-emerald-700">
-              <span>Free</span>
-              <b>{free}</b>
-            </div>
-            <div className="flex justify-between text-[#0b5cad]">
-              <span>Booked</span>
-              <b>{booked}</b>
-            </div>
-            <div className="flex justify-between text-slate-700">
-              <span>Blocked</span>
-              <b>{blocked}</b>
-            </div>
-            <div className="flex justify-between">
-              <span>Selected</span>
-              <b>{selectedSlots.length}</b>
-            </div>
+            <div className="flex justify-between"><span>Total Slots</span><b>{slots.length}</b></div>
+            <div className="flex justify-between text-emerald-700"><span>Free</span><b>{free}</b></div>
+            <div className="flex justify-between text-[#0b5cad]"><span>Booked</span><b>{booked}</b></div>
+            <div className="flex justify-between text-slate-700"><span>Blocked</span><b>{blocked}</b></div>
+            <div className="flex justify-between"><span>Selected</span><b>{selectedSlots.length}</b></div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="space-y-3 p-4">
-            <Button className="w-full" onClick={saveFinalAvailability}>
-              <Save className="h-4 w-4" />
-              Save Final Availability
-            </Button>
-            <Button className="w-full" variant="outline" onClick={() => setScreen("configure")}>
-              <Plus className="h-4 w-4" />
-              Add More Slots
-            </Button>
-            <Button className="w-full" variant="ghost" onClick={() => setScreen("schedule")}>
-              <RotateCcw className="h-4 w-4" />
-              Back to Schedule
-            </Button>
+            <Button className="w-full" onClick={saveFinalAvailability}><Save className="h-4 w-4" />Save Final Availability</Button>
+            <Button className="w-full" variant="outline" onClick={() => setScreen("configure")}><Plus className="h-4 w-4" />Add More Slots</Button>
+            <Button className="w-full" variant="ghost" onClick={() => setScreen("schedule")}><RotateCcw className="h-4 w-4" />Back to Schedule</Button>
           </CardContent>
         </Card>
         <div className="rounded-md border border-[#c8d5e3] bg-[#eaf6ff] p-4 text-center text-sm text-[#0b3d78]">

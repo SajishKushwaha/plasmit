@@ -28,23 +28,9 @@ import { dashboardQuickActions } from "@/data/navigation";
 import { bedOccupancy, dashboardStats, departmentActivity, recentActivity } from "@/data/mock";
 import { IcuNursingPage } from "@/features/care-team/icu-nursing/icu-nursing-pages";
 
-const statIcons = [
-  Stethoscope,
-  IdCard,
-  CalendarClock,
-  Users,
-  BedDouble,
-  BedDouble,
-  FlaskConical,
-  Pill,
-  CreditCard,
-  AlertTriangle,
-];
+const statIcons = [Stethoscope, IdCard, CalendarClock, Users, BedDouble, BedDouble, FlaskConical, Pill, CreditCard, AlertTriangle];
 const AppointmentTimelineChart = dynamic(
-  () =>
-    import("@/features/platform/dashboard/appointment-timeline-chart").then(
-      (module) => module.AppointmentTimelineChart,
-    ),
+  () => import("@/features/platform/dashboard/appointment-timeline-chart").then((module) => module.AppointmentTimelineChart),
   {
     ssr: false,
     loading: () => <div className="h-[220px] rounded-md bg-surface-muted" />,
@@ -61,16 +47,12 @@ export function DashboardPage() {
 
   const quickActions =
     role === "Doctor"
-      ? dashboardQuickActions.filter((action) =>
-          ["consult", "sample", "monitor"].includes(action.id),
-        )
+      ? dashboardQuickActions.filter((action) => ["consult", "sample", "monitor"].includes(action.id))
       : role === "Billing Executive"
-        ? dashboardQuickActions.filter((action) => ["bill", "register"].includes(action.id))
-        : role === "Management"
-          ? dashboardQuickActions.filter((action) =>
-              ["bill", "monitor", "inventory"].includes(action.id),
-            )
-          : dashboardQuickActions;
+          ? dashboardQuickActions.filter((action) => ["bill", "register"].includes(action.id))
+          : role === "Management"
+            ? dashboardQuickActions.filter((action) => ["bill", "monitor", "inventory"].includes(action.id))
+            : dashboardQuickActions;
 
   function handleLogout() {
     window.localStorage.removeItem("hk-general-auth");
@@ -85,9 +67,7 @@ export function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-foreground">Hospital Dashboard</h1>
-          <p className="text-sm font-medium text-muted-foreground">
-            Secure HK General ERP workspace
-          </p>
+          <p className="text-sm font-medium text-muted-foreground">Secure HK General ERP workspace</p>
         </div>
         <Button variant="outline" onClick={handleLogout}>
           <LogOut className="h-4 w-4" />
@@ -97,11 +77,7 @@ export function DashboardPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {dashboardStats.map((stat, index) => (
-          <div
-            className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-            key={stat.id}
-            style={{ animationDelay: `${index * 25}ms` }}
-          >
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300" key={stat.id} style={{ animationDelay: `${index * 25}ms` }}>
             <StatCard
               label={stat.label}
               value={stat.value}
@@ -119,9 +95,7 @@ export function DashboardPage() {
         <CardHeader>
           <div>
             <CardTitle>Role-Aware Quick Actions</CardTitle>
-            <CardDescription>
-              Actions update with the selected static role and route into future phase workspaces.
-            </CardDescription>
+            <CardDescription>Actions update with the selected static role and route into future phase workspaces.</CardDescription>
           </div>
           <StatusPill tone="success">{role}</StatusPill>
         </CardHeader>
@@ -130,21 +104,14 @@ export function DashboardPage() {
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
-                <Button
-                  asChild
-                  className="h-auto justify-start p-3"
-                  key={action.id}
-                  variant="outline"
-                >
+                <Button asChild className="h-auto justify-start p-3" key={action.id} variant="outline">
                   <Link href={action.route} prefetch={false}>
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                       <Icon className="h-4 w-4" />
                     </span>
                     <span className="text-left">
                       <span className="block text-sm font-semibold">{action.label}</span>
-                      <span className="block text-xs font-normal text-muted-foreground">
-                        Open {action.route}
-                      </span>
+                      <span className="block text-xs font-normal text-muted-foreground">Open {action.route}</span>
                     </span>
                   </Link>
                 </Button>
@@ -159,9 +126,7 @@ export function DashboardPage() {
           <CardHeader>
             <div>
               <CardTitle>Department Activity</CardTitle>
-              <CardDescription>
-                Queue pressure, appointments, and doctor availability.
-              </CardDescription>
+              <CardDescription>Queue pressure, appointments, and doctor availability.</CardDescription>
             </div>
             <StatusPill tone="info">Live-looking static</StatusPill>
           </CardHeader>
@@ -175,10 +140,7 @@ export function DashboardPage() {
                   <span>Status</span>
                 </div>
                 {departmentActivity.map((item, index) => (
-                  <div
-                    className={`grid grid-cols-[1.2fr_0.7fr_0.7fr_0.8fr] items-center border-b border-border px-3 py-3 text-sm last:border-0 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}
-                    key={item.department}
-                  >
+                  <div className={`grid grid-cols-[1.2fr_0.7fr_0.7fr_0.8fr] items-center border-b border-border px-3 py-3 text-sm last:border-0 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`} key={item.department}>
                     <span className="font-medium text-foreground">{item.department}</span>
                     <span>{item.queue}</span>
                     <span>{item.doctors}</span>
@@ -187,9 +149,7 @@ export function DashboardPage() {
                 ))}
               </div>
               <div className="min-h-[260px] rounded-lg border border-border p-3">
-                <div className="mb-3 text-sm font-semibold text-foreground">
-                  Appointment Timeline
-                </div>
+                <div className="mb-3 text-sm font-semibold text-foreground">Appointment Timeline</div>
                 <AppointmentTimelineChart />
               </div>
             </div>
@@ -210,10 +170,7 @@ export function DashboardPage() {
               </TabsList>
               <TabsContent value="alerts" className="space-y-2">
                 {recentActivity.map((item, index) => (
-                  <div
-                    className={`rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}
-                    key={item.id}
-                  >
+                  <div className={`rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`} key={item.id}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-medium text-foreground">{item.title}</div>
@@ -228,15 +185,10 @@ export function DashboardPage() {
                 {bedOccupancy.map((item, index) => {
                   const pct = Math.round((item.occupied / item.total) * 100);
                   return (
-                    <div
-                      className={`rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}
-                      key={item.ward}
-                    >
+                    <div className={`rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`} key={item.ward}>
                       <div className="mb-1 flex justify-between text-xs">
                         <span className="font-medium text-foreground">{item.ward}</span>
-                        <span className="text-muted-foreground">
-                          {item.occupied}/{item.total}
-                        </span>
+                        <span className="text-muted-foreground">{item.occupied}/{item.total}</span>
                       </div>
                       <div className="h-2 rounded-full bg-muted">
                         <div className="h-2 rounded-full bg-primary" style={{ width: `${pct}%` }} />
@@ -246,15 +198,8 @@ export function DashboardPage() {
                 })}
               </TabsContent>
               <TabsContent value="tasks" className="space-y-2">
-                {[
-                  "Approve emergency discount",
-                  "Acknowledge critical lab alert",
-                  "Review ICU discharge readiness",
-                ].map((task, index) => (
-                  <div
-                    className={`flex items-center gap-3 rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`}
-                    key={task}
-                  >
+                {["Approve emergency discount", "Acknowledge critical lab alert", "Review ICU discharge readiness"].map((task, index) => (
+                  <div className={`flex items-center gap-3 rounded-lg border border-border p-3 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"}`} key={task}>
                     <ClipboardCheck className="h-4 w-4 text-primary" />
                     <span className="text-sm text-foreground">{task}</span>
                   </div>

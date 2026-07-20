@@ -33,35 +33,11 @@ export function PageHeader({
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 max-w-full">
-          {eyebrow ? (
-            <div
-              className={cn("mb-1 text-xs font-bold", primary ? "text-white/80" : "text-primary")}
-            >
-              {eyebrow}
-            </div>
-          ) : null}
-          <h1
-            className={cn(
-              "truncate text-2xl font-bold tracking-tight",
-              primary ? "text-white" : "text-foreground",
-            )}
-          >
-            {title}
-          </h1>
-          {description ? (
-            <p
-              className={cn(
-                "mt-1.5 max-w-full break-words text-sm font-medium leading-6 lg:max-w-3xl",
-                primary ? "text-white/85" : "text-muted-foreground",
-              )}
-            >
-              {description}
-            </p>
-          ) : null}
+          {eyebrow ? <div className={cn("mb-1 text-xs font-bold", primary ? "text-white/80" : "text-primary")}>{eyebrow}</div> : null}
+          <h1 className={cn("truncate text-2xl font-bold tracking-tight", primary ? "text-white" : "text-foreground")}>{title}</h1>
+          {description ? <p className={cn("mt-1.5 max-w-full break-words text-sm font-medium leading-6 lg:max-w-3xl", primary ? "text-white/85" : "text-muted-foreground")}>{description}</p> : null}
         </div>
-        {actions ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
-        ) : null}
+        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
       {metrics ? <div className="mt-3">{metrics}</div> : null}
     </div>

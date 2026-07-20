@@ -1,9 +1,22 @@
 export type TaskPriority = "High" | "Moderate" | "Routine";
 
 export type TaskCategory =
-  "Activity" | "Care Plans" | "Medication" | "Assessment" | "Procedure" | "POCT" | "Diet" | "Other";
+  | "Activity"
+  | "Care Plans"
+  | "Medication"
+  | "Assessment"
+  | "Procedure"
+  | "POCT"
+  | "Diet"
+  | "Other";
 
-export type TaskFrequency = "Once a day" | "BID" | "TID" | "QID" | "Hourly" | "As Needed";
+export type TaskFrequency =
+  | "Once a day"
+  | "BID"
+  | "TID"
+  | "QID"
+  | "Hourly"
+  | "As Needed";
 
 export type TaskStatus = "Active" | "Completed" | "Skipped" | "Discontinued";
 
@@ -51,11 +64,4 @@ export const taskCategories: TaskCategory[] = [
 
 export const taskPriorities: TaskPriority[] = ["High", "Moderate", "Routine"];
 
-export const taskFrequencies: TaskFrequency[] = [
-  "Once a day",
-  "BID",
-  "TID",
-  "QID",
-  "Hourly",
-  "As Needed",
-];
+export const taskFrequencies: TaskFrequency[] = ["Once a day", "BID", "TID", "QID", "Hourly", "As Needed"];

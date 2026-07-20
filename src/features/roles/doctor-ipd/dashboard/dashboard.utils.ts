@@ -1,13 +1,7 @@
 import type { DoctorIpdPatient, PatientTone, VitalTone } from "./dashboard.types";
 
 export function patientTone(patient: DoctorIpdPatient): PatientTone {
-  const tones = [
-    patient.hr.tone,
-    patient.spo2.tone,
-    patient.abps.tone,
-    patient.abpd.tone,
-    patient.temperature.tone,
-  ];
+  const tones = [patient.hr.tone, patient.spo2.tone, patient.abps.tone, patient.abpd.tone, patient.temperature.tone];
   if (tones.includes("red")) return "red";
   if (tones.includes("orange")) return "orange";
   return "blue";
@@ -39,7 +33,7 @@ export function patientToneRowClass(tone: PatientTone) {
   return "bg-blue-50/60 hover:bg-blue-50";
 }
 
-export function patientToneCellClass(_tone: PatientTone) {
+export function patientToneCellClass(tone: PatientTone) {
   return "bg-white hover:bg-slate-50";
 }
 

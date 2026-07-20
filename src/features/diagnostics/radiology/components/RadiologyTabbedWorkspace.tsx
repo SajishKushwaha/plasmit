@@ -25,10 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { RadiologyCreateOrderView } from "@/features/diagnostics/radiology/components/RadiologyCreateOrderView";
 import { RadiologyOrderListView } from "@/features/diagnostics/radiology/components/RadiologyOrderListView";
-import {
-  RadiologyMastersView,
-  RadiologyReportTemplatesView,
-} from "@/features/diagnostics/radiology/components/RadiologyConfigurationViews";
+import { RadiologyMastersView, RadiologyReportTemplatesView } from "@/features/diagnostics/radiology/components/RadiologyConfigurationViews";
 import {
   RadiologyAnalyticsWorkflowView,
   RadiologyBillingStatusView,
@@ -71,10 +68,7 @@ function RadiologyWorkspaceTabs({
   tabs: RadiologyTab[];
 }) {
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id ?? "");
-  const activeTab = useMemo(
-    () => tabs.find((tab) => tab.id === activeTabId) ?? tabs[0],
-    [activeTabId, tabs],
-  );
+  const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId) ?? tabs[0], [activeTabId, tabs]);
 
   if (!activeTab) {
     return null;
@@ -98,29 +92,18 @@ function RadiologyWorkspaceTabs({
               <button
                 className={cn(
                   "min-h-[76px] rounded-lg border px-3 py-3 text-left transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  active
-                    ? "border-primary bg-primary/5 ring-1 ring-inset ring-primary/20"
-                    : "border-border bg-background",
+                  active ? "border-primary bg-primary/5 ring-1 ring-inset ring-primary/20" : "border-border bg-background",
                 )}
                 key={tab.id}
                 onClick={() => setActiveTabId(tab.id)}
                 type="button"
               >
                 <span className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "inline-flex h-8 w-8 items-center justify-center rounded-md border",
-                      active
-                        ? "border-primary/30 bg-primary/10 text-primary"
-                        : "border-border bg-surface text-muted-foreground",
-                    )}
-                  >
+                  <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-md border", active ? "border-primary/30 bg-primary/10 text-primary" : "border-border bg-surface text-muted-foreground")}>
                     {tab.icon}
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-foreground">
-                      {tab.label}
-                    </span>
+                    <span className="block truncate text-sm font-semibold text-foreground">{tab.label}</span>
                     <span className="block truncate text-xs text-muted-foreground">{tab.role}</span>
                   </span>
                 </span>
@@ -161,24 +144,15 @@ export function RadiologyOrdersWorkspace() {
           id: "order-list",
           label: "Order List",
           role: "Doctor / Reception",
-          summary:
-            "Track all radiology orders, current status, billing state, and next workflow action.",
+          summary: "Track all radiology orders, current status, billing state, and next workflow action.",
           icon: <ClipboardList className="h-4 w-4" />,
-          content: (
-            <RadiologyOrderListView
-              modalities={radiologyModalities}
-              orders={radiologyOrders}
-              patients={radiologyPatients}
-              tests={radiologyTests}
-            />
-          ),
+          content: <RadiologyOrderListView modalities={radiologyModalities} orders={radiologyOrders} patients={radiologyPatients} tests={radiologyTests} />,
         },
         {
           id: "create-order",
           label: "Create Order",
           role: "Doctor / Reception",
-          summary:
-            "Register patient, select radiology tests, set priority, capture clinical indication, and create an order.",
+          summary: "Register patient, select radiology tests, set priority, capture clinical indication, and create an order.",
           icon: <FilePlus2 className="h-4 w-4" />,
           content: <RadiologyCreateOrderView patients={radiologyPatients} tests={radiologyTests} />,
         },
@@ -229,8 +203,7 @@ export function RadiologyFrontOfficeWorkspace() {
           id: "preparation",
           label: "Preparation",
           role: "Nurse / Technician",
-          summary:
-            "Complete contrast, consent, fasting, safety, and preparation steps before scan.",
+          summary: "Complete contrast, consent, fasting, safety, and preparation steps before scan.",
           icon: <ClipboardCheck className="h-4 w-4" />,
           content: <RadiologyPreparationView />,
         },
@@ -365,8 +338,7 @@ export function RadiologyAdminMisWorkspace() {
           id: "masters",
           label: "Masters",
           role: "Admin",
-          summary:
-            "Manage modalities, tests, technicians, radiologists, and configuration references.",
+          summary: "Manage modalities, tests, technicians, radiologists, and configuration references.",
           icon: <Settings className="h-4 w-4" />,
           content: <RadiologyMastersView />,
         },

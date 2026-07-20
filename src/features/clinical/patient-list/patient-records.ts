@@ -25,9 +25,7 @@ function isBrowser() {
 
 function getFieldLabel(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {
   const fieldGroup = field.closest("[data-patient-field-group]");
-  const fieldGroupLabel = fieldGroup
-    ?.querySelector("[data-patient-field-label]")
-    ?.textContent?.trim();
+  const fieldGroupLabel = fieldGroup?.querySelector("[data-patient-field-label]")?.textContent?.trim();
   if (fieldGroupLabel) return fieldGroupLabel;
 
   const wrappingLabel = field.closest("label");
@@ -38,17 +36,14 @@ function getFieldLabel(field: HTMLInputElement | HTMLSelectElement | HTMLTextAre
 function getFieldValue(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {
   if (field instanceof HTMLInputElement) {
     if (field.type === "radio") {
-      return field.checked ? (field.closest("label")?.textContent?.trim() ?? field.value) : "";
+      return field.checked ? field.closest("label")?.textContent?.trim() ?? field.value : "";
     }
     if (field.type === "file") return field.files?.[0]?.name ?? "";
   }
   return field.value.trim();
 }
 
-function setFieldValue(
-  field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-  value: string,
-) {
+function setFieldValue(field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, value: string) {
   if (field instanceof HTMLInputElement && field.type === "radio") {
     field.checked = (field.closest("label")?.textContent?.trim() ?? field.value) === value;
     return;
@@ -99,19 +94,11 @@ export function upsertPatientRecordSection(recordId: string | null, section: Pat
   return nextRecord;
 }
 
-export function collectPatientSection(
-  form: HTMLFormElement,
-  tabId: string,
-  tabLabel: string,
-): PatientRecordSection {
+export function collectPatientSection(form: HTMLFormElement, tabId: string, tabLabel: string): PatientRecordSection {
   const tabPanel = form.querySelector<HTMLElement>(`[data-patient-tab="${tabId}"]`);
   if (!tabPanel) return { tabId, tabLabel, fields: [] };
 
-  const fields = Array.from(
-    tabPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
-      "input, select, textarea",
-    ),
-  );
+  const fields = Array.from(tabPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea"));
   const entries: PatientRecordField[] = [];
   const seenRadioGroups = new Set<string>();
 
@@ -120,13 +107,7 @@ export function collectPatientSection(
     if (field instanceof HTMLInputElement && field.type === "radio") {
       if (seenRadioGroups.has(field.name)) return;
       seenRadioGroups.add(field.name);
-      const checked = fields.find(
-        (item) =>
-          item instanceof HTMLInputElement &&
-          item.type === "radio" &&
-          item.name === field.name &&
-          item.checked,
-      );
+      const checked = fields.find((item) => item instanceof HTMLInputElement && item.type === "radio" && item.name === field.name && item.checked);
       if (!checked) return;
       entries.push({ label: getFieldLabel(field), value: getFieldValue(checked) });
       return;
@@ -144,11 +125,7 @@ export function applyPatientSection(form: HTMLFormElement, section: PatientRecor
   const tabPanel = form.querySelector<HTMLElement>(`[data-patient-tab="${section.tabId}"]`);
   if (!tabPanel) return;
 
-  const fields = Array.from(
-    tabPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
-      "input, select, textarea",
-    ),
-  );
+  const fields = Array.from(tabPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea"));
   const usedLabels = new Map<string, number>();
 
   fields.forEach((field) => {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ChevronDown } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchInput } from "@/components/ui/search-input";
 
 import type { DrugOrder, DrugScope } from "./types";
@@ -23,9 +23,9 @@ export function SelectDrugsCard({
   selectedIds: string[];
   search: string;
   drugScope: DrugScope;
-  onSearchChange: (_value: string) => void;
-  onDrugScopeChange: (_value: DrugScope) => void;
-  onToggleDrug: (_order: DrugOrder, _checked: boolean) => void;
+  onSearchChange: (value: string) => void;
+  onDrugScopeChange: (value: DrugScope) => void;
+  onToggleDrug: (order: DrugOrder, checked: boolean) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
@@ -146,9 +146,7 @@ export function SelectDrugsCard({
                         <div className="mt-1 text-xs text-muted-foreground">
                           {order.genericName} / {order.form}
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Available: {order.availableQty}
-                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">Available: {order.availableQty}</div>
                       </div>
                     </label>
                   );

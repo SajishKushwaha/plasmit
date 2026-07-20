@@ -18,12 +18,7 @@ export const billingSnapshot: BillingSnapshotItem[] = [
 
 export const workQueues: ReceptionWorkQueue[] = [
   { label: "Patient Registration", route: "/patients/register", icon: IdCard, count: "12 waiting" },
-  {
-    label: "Appointment Booking",
-    route: "/appointments/book",
-    icon: CalendarClock,
-    count: "18 slots open",
-  },
+  { label: "Appointment Booking", route: "/appointments/book", icon: CalendarClock, count: "18 slots open" },
   { label: "OPD Queue", route: "/opd", icon: Stethoscope, count: "27 active" },
   { label: "Admission Desk", route: "/admission/reception", icon: DoorOpen, count: "6 requests" },
   { label: "Patient Search", route: "/patients", icon: Search, count: "Quick lookup" },

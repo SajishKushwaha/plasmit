@@ -1,10 +1,4 @@
-import type {
-  Patient,
-  RadiologyOrder,
-  RadiologyTest,
-  Schedule,
-  Technician,
-} from "@/features/diagnostics/radiology/types";
+import type { Patient, RadiologyOrder, RadiologyTest, Schedule, Technician } from "@/features/diagnostics/radiology/types";
 import { ModalityBadge } from "@/features/diagnostics/radiology/components/ModalityBadge";
 import { RadiologyStatusBadge } from "@/features/diagnostics/radiology/components/RadiologyStatusBadge";
 
@@ -16,13 +10,7 @@ interface TechnicianWorklistTableProps {
   technicians: Technician[];
 }
 
-export function TechnicianWorklistTable({
-  schedules,
-  orders,
-  patients,
-  tests,
-  technicians,
-}: TechnicianWorklistTableProps) {
+export function TechnicianWorklistTable({ schedules, orders, patients, tests, technicians }: TechnicianWorklistTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -49,9 +37,7 @@ export function TechnicianWorklistTable({
                   <p className="text-xs text-slate-500">{schedule.room}</p>
                 </td>
                 <td className="px-4 py-3">
-                  <p className="font-medium text-slate-950">
-                    {patient?.name ?? schedule.patientId}
-                  </p>
+                  <p className="font-medium text-slate-950">{patient?.name ?? schedule.patientId}</p>
                   <p className="text-xs text-slate-500">{order?.orderNo ?? schedule.orderId}</p>
                 </td>
                 <td className="px-4 py-3">

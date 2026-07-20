@@ -1,9 +1,4 @@
-import type {
-  TaskDisplayStatus,
-  WorklistTask,
-  WorklistTaskForm,
-  WorklistTaskFormErrors,
-} from "@/types/worklist";
+import type { TaskDisplayStatus, WorklistTask, WorklistTaskForm, WorklistTaskFormErrors } from "@/types/worklist";
 
 export function pad2(value: number) {
   return String(value).padStart(2, "0");
@@ -74,8 +69,7 @@ export function validateTaskForm(form: WorklistTaskForm): WorklistTaskFormErrors
   if (!form.startDate) errors.startDate = "Start date is required.";
   if (!form.startTime) errors.startTime = "Start time is required.";
   if (!form.frequency) errors.frequency = "Frequency is required.";
-  if (form.endDate && form.startDate && form.endDate < form.startDate)
-    errors.endDate = "End date cannot be before start date.";
+  if (form.endDate && form.startDate && form.endDate < form.startDate) errors.endDate = "End date cannot be before start date.";
   return errors;
 }
 

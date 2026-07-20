@@ -15,9 +15,7 @@ const CommandSearch = dynamic(
   () => import("@/components/shell/command-search").then((module) => module.CommandSearch),
   {
     ssr: false,
-    loading: () => (
-      <div className="hidden h-11 min-w-64 rounded-lg border border-border bg-white shadow-sm lg:block" />
-    ),
+    loading: () => <div className="hidden h-11 min-w-64 rounded-lg border border-border bg-white shadow-sm lg:block" />,
   },
 );
 const MobileNavigation = dynamic(
@@ -63,7 +61,7 @@ export function TopHeader() {
           <span className="truncate">{hospitalContext.name}</span>
         </div>
       </div>
-
+     
       <RoleSwitcher className="hidden sm:flex" />
       <ProfileMenu />
     </header>

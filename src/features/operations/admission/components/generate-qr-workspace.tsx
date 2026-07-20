@@ -20,10 +20,7 @@ function qrCells(seed: string) {
 
 export function GenerateQrWorkspace() {
   const { state, activeRequest, actions } = useAdmissionStore();
-  const cells = React.useMemo(
-    () => qrCells(activeRequest?.qrReference ?? activeRequest?.id ?? ""),
-    [activeRequest?.id, activeRequest?.qrReference],
-  );
+  const cells = React.useMemo(() => qrCells(activeRequest?.qrReference ?? activeRequest?.id ?? ""), [activeRequest?.id, activeRequest?.qrReference]);
 
   function generateQr(requestId?: string) {
     actions.generateQr(requestId);
@@ -36,9 +33,7 @@ export function GenerateQrWorkspace() {
         <CardHeader>
           <div>
             <CardTitle>Generate QR</CardTitle>
-            <CardDescription>
-              Step 8 admission QR reference for patient verification and print handoff.
-            </CardDescription>
+            <CardDescription>Step 8 admission QR reference for patient verification and print handoff.</CardDescription>
           </div>
           <Button onClick={() => generateQr(activeRequest?.id)} disabled={!activeRequest}>
             <QrCode className="h-4 w-4" />
@@ -65,14 +60,8 @@ export function GenerateQrWorkspace() {
                   <div className="text-xs text-muted-foreground">{activeRequest.uhid}</div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Info
-                    label="Admission Type"
-                    value={`${activeRequest.admissionCategory ?? "Admission"} / ${activeRequest.type}`}
-                  />
-                  <Info
-                    label="Admitting Team"
-                    value={activeRequest.admittingTeam ?? activeRequest.doctor}
-                  />
+                  <Info label="Admission Type" value={`${activeRequest.admissionCategory ?? "Admission"} / ${activeRequest.type}`} />
+                  <Info label="Admitting Team" value={activeRequest.admittingTeam ?? activeRequest.doctor} />
                   <Info label="Ward" value={activeRequest.ward} />
                   <Info label="Priority" value={activeRequest.priority} />
                 </div>
@@ -124,11 +113,7 @@ export function GenerateQrWorkspace() {
                     <div className="font-semibold text-foreground">{request.patient}</div>
                     <div className="mt-1 text-xs text-muted-foreground">{request.uhid}</div>
                   </div>
-                  {request.qrReference ? (
-                    <CheckCircle2 className="h-4 w-4 text-success" />
-                  ) : (
-                    <QrCode className="h-4 w-4 text-muted-foreground" />
-                  )}
+                  {request.qrReference ? <CheckCircle2 className="h-4 w-4 text-success" /> : <QrCode className="h-4 w-4 text-muted-foreground" />}
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <AdmissionStatusBadge value={request.priority} />

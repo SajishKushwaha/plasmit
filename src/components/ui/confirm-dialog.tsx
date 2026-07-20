@@ -19,7 +19,7 @@ export function ConfirmDialog({
   description: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  onOpenChange: (_open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }) {
   return (
@@ -33,9 +33,7 @@ export function ConfirmDialog({
             </div>
             <div className="min-w-0 flex-1">
               <Dialog.Title className="text-base font-bold text-foreground">{title}</Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm leading-6 text-muted-foreground">
-                {description}
-              </Dialog.Description>
+              <Dialog.Description className="mt-1 text-sm leading-6 text-muted-foreground">{description}</Dialog.Description>
             </div>
             <Dialog.Close asChild>
               <Button size="icon" variant="ghost" aria-label="Close confirmation">

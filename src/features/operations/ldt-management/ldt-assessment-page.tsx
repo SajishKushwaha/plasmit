@@ -79,81 +79,12 @@ const ldtConfigurations: Record<string, LdtConfig> = {
     name: "PICC double lumen",
     type: "Line",
     assessments: [
-      {
-        id: "assess-site",
-        name: "Site Assessment",
-        type: "Dropdown",
-        config: {
-          options: [
-            "Clean",
-            "Tender",
-            "Redness",
-            "Leakage",
-            "Dry",
-            "Intact",
-            "Bleeding",
-            "Draining",
-            "Edematous",
-            "Extravasated",
-            "Leaking",
-            "Painful",
-            "Pink",
-            "Red",
-            "Infected",
-          ],
-          selectionMode: "Single",
-        },
-      },
-      {
-        id: "assess-status",
-        name: "LDT Status",
-        type: "Dropdown",
-        config: {
-          options: [
-            "Blood",
-            "Return Noted",
-            "No Blood Return",
-            "Capped",
-            "Occluded",
-            "Flushed",
-            "Heparin Locked",
-          ],
-          selectionMode: "Single",
-        },
-      },
+      { id: "assess-site", name: "Site Assessment", type: "Dropdown", config: { options: ["Clean", "Tender", "Redness", "Leakage", "Dry", "Intact", "Bleeding", "Draining", "Edematous", "Extravasated", "Leaking", "Painful", "Pink", "Red", "Infected"], selectionMode: "Single" } },
+      { id: "assess-status", name: "LDT Status", type: "Dropdown", config: { options: ["Blood", "Return Noted", "No Blood Return", "Capped", "Occluded", "Flushed", "Heparin Locked"], selectionMode: "Single" } },
 
-      {
-        id: "assess-dressing-type",
-        name: "Dressing Type",
-        type: "Dropdown",
-        config: {
-          options: [
-            "Transparent",
-            "Gauze",
-            "Pressure",
-            "Occlusive",
-            "No Dressing",
-            "Securing Device",
-            "Negative Pressure Wound Therapy",
-          ],
-          selectionMode: "Single",
-        },
-      },
-      {
-        id: "assess-dressing-status",
-        name: "Dressing Status",
-        type: "Dropdown",
-        config: {
-          options: ["Dry", "Soiled", "Loose", "Changed", "New Drainage", "Old Drainage"],
-          selectionMode: "Single",
-        },
-      },
-      {
-        id: "assess-volume",
-        name: "Volume",
-        type: "Number",
-        config: { decimalPlaces: 0, min: 0, max: 500, unit: "ml", trackInIntake: true },
-      },
+      { id: "assess-dressing-type", name: "Dressing Type", type: "Dropdown", config: { options: ["Transparent", "Gauze", "Pressure", "Occlusive", "No Dressing","Securing Device", "Negative Pressure Wound Therapy"], selectionMode: "Single" } },
+      { id: "assess-dressing-status", name: "Dressing Status", type: "Dropdown", config: { options: ["Dry", "Soiled", "Loose", "Changed","New Drainage", "Old Drainage"], selectionMode: "Single" } },
+      { id: "assess-volume", name: "Volume", type: "Number", config: { decimalPlaces: 0, min: 0, max: 500, unit: "ml", trackInIntake: true } },
     ],
   },
   "ldt-002": {
@@ -162,39 +93,11 @@ const ldtConfigurations: Record<string, LdtConfig> = {
     type: "Tube",
     assessments: [
       { id: "assess-site", name: "Site Assessment", type: "Free text", config: {} },
-      {
-        id: "assess-status",
-        name: "LDT Status",
-        type: "Dropdown",
-        config: {
-          options: ["In situ", "Dislodged", "Blocked", "Removed"],
-          selectionMode: "Single",
-        },
-      },
-      {
-        id: "assess-dressing-type",
-        name: "Dressing Type",
-        type: "Dropdown",
-        config: { options: ["Tape", "Securement device", "None"], selectionMode: "Single" },
-      },
-      {
-        id: "assess-dressing-status",
-        name: "Dressing Status",
-        type: "Dropdown",
-        config: { options: ["Secure", "Loose", "Reapplied"], selectionMode: "Single" },
-      },
-      {
-        id: "assess-volume",
-        name: "Volume",
-        type: "Number",
-        config: { decimalPlaces: 0, min: 0, max: 1000, unit: "ml", trackInOutput: true },
-      },
-      {
-        id: "assess-next-change",
-        name: "Next change date",
-        type: "Date",
-        config: { dateFormat: "YYYY-MM-DD" },
-      },
+      { id: "assess-status", name: "LDT Status", type: "Dropdown", config: { options: ["In situ", "Dislodged", "Blocked", "Removed"], selectionMode: "Single" } },
+      { id: "assess-dressing-type", name: "Dressing Type", type: "Dropdown", config: { options: ["Tape", "Securement device", "None"], selectionMode: "Single" } },
+      { id: "assess-dressing-status", name: "Dressing Status", type: "Dropdown", config: { options: ["Secure", "Loose", "Reapplied"], selectionMode: "Single" } },
+      { id: "assess-volume", name: "Volume", type: "Number", config: { decimalPlaces: 0, min: 0, max: 1000, unit: "ml", trackInOutput: true } },
+      { id: "assess-next-change", name: "Next change date", type: "Date", config: { dateFormat: "YYYY-MM-DD" } },
     ],
   },
   "ldt-003": {
@@ -202,45 +105,12 @@ const ldtConfigurations: Record<string, LdtConfig> = {
     name: "Intercoastal drain",
     type: "Drain",
     assessments: [
-      {
-        id: "assess-site",
-        name: "Site Assessment",
-        type: "Dropdown",
-        config: { options: ["Clean", "Tender", "Redness", "Leakage"], selectionMode: "Single" },
-      },
-      {
-        id: "assess-status",
-        name: "LDT Status",
-        type: "Dropdown",
-        config: {
-          options: ["Swinging", "Not swinging", "Clamped", "Removed"],
-          selectionMode: "Single",
-        },
-      },
-      {
-        id: "assess-dressing-type",
-        name: "Dressing Type",
-        type: "Dropdown",
-        config: { options: ["Pressure", "Transparent", "Gauze"], selectionMode: "Single" },
-      },
-      {
-        id: "assess-dressing-status",
-        name: "Dressing Status",
-        type: "Dropdown",
-        config: { options: ["Dry", "Soaked", "Loose", "Changed"], selectionMode: "Single" },
-      },
-      {
-        id: "assess-volume",
-        name: "Volume",
-        type: "Number",
-        config: { decimalPlaces: 0, min: 0, max: 2000, unit: "ml", trackInOutput: true },
-      },
-      {
-        id: "assess-check-time",
-        name: "Review time",
-        type: "Time",
-        config: { timeFormat: "24 hour" },
-      },
+      { id: "assess-site", name: "Site Assessment", type: "Dropdown", config: { options: ["Clean", "Tender", "Redness", "Leakage"], selectionMode: "Single" } },
+      { id: "assess-status", name: "LDT Status", type: "Dropdown", config: { options: ["Swinging", "Not swinging", "Clamped", "Removed"], selectionMode: "Single" } },
+      { id: "assess-dressing-type", name: "Dressing Type", type: "Dropdown", config: { options: ["Pressure", "Transparent", "Gauze"], selectionMode: "Single" } },
+      { id: "assess-dressing-status", name: "Dressing Status", type: "Dropdown", config: { options: ["Dry", "Soaked", "Loose", "Changed"], selectionMode: "Single" } },
+      { id: "assess-volume", name: "Volume", type: "Number", config: { decimalPlaces: 0, min: 0, max: 2000, unit: "ml", trackInOutput: true } },
+      { id: "assess-check-time", name: "Review time", type: "Time", config: { timeFormat: "24 hour" } },
     ],
   },
 };
@@ -281,7 +151,7 @@ function isEmptyValue(value: AssessmentValue) {
 }
 
 function displayValue(value: AssessmentValue, field: AssessmentField) {
-  if (typeof value === "boolean") return value ? (field.config.checkboxLabel ?? "Yes") : "No";
+  if (typeof value === "boolean") return value ? field.config.checkboxLabel ?? "Yes" : "No";
   return field.config.unit && field.type === "Number" ? `${value} ${field.config.unit}` : value;
 }
 
@@ -313,7 +183,7 @@ function SelectField({
   label: string;
   value: string;
   options: { label: string; value: string }[];
-  onChange: (_value: string) => void;
+  onChange: (value: string) => void;
 }) {
   return (
     <label className="space-y-2">
@@ -340,16 +210,10 @@ function AssessmentValueInput({
 }: {
   field: AssessmentField;
   value: AssessmentValue;
-  onChange: (_value: AssessmentValue) => void;
+  onChange: (value: AssessmentValue) => void;
 }) {
-  if (field.type === "Date")
-    return (
-      <Input type="date" value={String(value)} onChange={(event) => onChange(event.target.value)} />
-    );
-  if (field.type === "Time")
-    return (
-      <Input type="time" value={String(value)} onChange={(event) => onChange(event.target.value)} />
-    );
+  if (field.type === "Date") return <Input type="date" value={String(value)} onChange={(event) => onChange(event.target.value)} />;
+  if (field.type === "Time") return <Input type="time" value={String(value)} onChange={(event) => onChange(event.target.value)} />;
   if (field.type === "Number") {
     return (
       <div className="flex gap-2">
@@ -374,18 +238,10 @@ function AssessmentValueInput({
       <select
         multiple={field.config.selectionMode === "Multi"}
         className="min-h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
-        value={
-          field.config.selectionMode === "Multi"
-            ? String(value).split(",").filter(Boolean)
-            : String(value)
-        }
+        value={field.config.selectionMode === "Multi" ? String(value).split(",").filter(Boolean) : String(value)}
         onChange={(event) => {
           if (field.config.selectionMode === "Multi") {
-            onChange(
-              Array.from(event.target.selectedOptions)
-                .map((option) => option.value)
-                .join(","),
-            );
+            onChange(Array.from(event.target.selectedOptions).map((option) => option.value).join(","));
             return;
           }
           onChange(event.target.value);
@@ -413,13 +269,7 @@ function AssessmentValueInput({
       </label>
     );
   }
-  return (
-    <Input
-      value={String(value)}
-      onChange={(event) => onChange(event.target.value)}
-      placeholder={`Enter ${field.name.toLowerCase()}`}
-    />
-  );
+  return <Input value={String(value)} onChange={(event) => onChange(event.target.value)} placeholder={`Enter ${field.name.toLowerCase()}`} />;
 }
 
 function AssessmentEntryForm({
@@ -430,7 +280,7 @@ function AssessmentEntryForm({
 }: {
   fields: AssessmentField[];
   values: AssessmentFormValues;
-  onChange: (_values: Partial<AssessmentFormValues>) => void;
+  onChange: (values: Partial<AssessmentFormValues>) => void;
   onSubmit: () => void;
 }) {
   const selectedField = fields.find((field) => field.id === values.fieldId) ?? fields[0];
@@ -443,10 +293,7 @@ function AssessmentEntryForm({
             <ClipboardCheck className="h-4 w-4 text-primary" />
             Add Assessment
           </CardTitle>
-          <CardDescription>
-            Enter assessment name, configured value, and time. Submit maps the value into the
-            matching hourly slot.
-          </CardDescription>
+          <CardDescription>Enter assessment name, configured value, and time. Submit maps the value into the matching hourly slot.</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -467,22 +314,12 @@ function AssessmentEntryForm({
             }}
           />
           <label className="space-y-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Configured field value
-            </span>
-            <AssessmentValueInput
-              field={selectedField}
-              value={values.value}
-              onChange={(value) => onChange({ value })}
-            />
+            <span className="text-xs font-medium text-muted-foreground">Configured field value</span>
+            <AssessmentValueInput field={selectedField} value={values.value} onChange={(value) => onChange({ value })} />
           </label>
           <label className="space-y-2">
             <span className="text-xs font-medium text-muted-foreground">Time</span>
-            <Input
-              type="time"
-              value={values.time}
-              onChange={(event) => onChange({ time: event.target.value })}
-            />
+            <Input type="time" value={values.time} onChange={(event) => onChange({ time: event.target.value })} />
           </label>
           <Button type="submit" className="lg:w-auto">
             <Save className="h-4 w-4" />
@@ -504,8 +341,8 @@ function AssessmentSlotTable({
   fields: AssessmentField[];
   entries: AssessmentEntry[];
   selectedDate: string;
-  onDateChange: (_date: string) => void;
-  onEdit: (_entry: AssessmentEntry) => void;
+  onDateChange: (date: string) => void;
+  onEdit: (entry: AssessmentEntry) => void;
 }) {
   const entriesByFieldAndSlot = React.useMemo(() => {
     return entries.reduce<Record<string, AssessmentEntry>>((acc, entry) => {
@@ -519,20 +356,12 @@ function AssessmentSlotTable({
       <CardHeader>
         <div>
           <CardTitle>Assessment / Time</CardTitle>
-          <CardDescription>
-            Rows are assessment names. Columns are 1 hour time intervals, and each value appears in
-            its mapped slot.
-          </CardDescription>
+          <CardDescription>Rows are assessment names. Columns are 1 hour time intervals, and each value appears in its mapped slot.</CardDescription>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             Date
-            <Input
-              className="h-9 w-[160px]"
-              type="date"
-              value={selectedDate}
-              onChange={(event) => onDateChange(event.target.value)}
-            />
+            <Input className="h-9 w-[160px]" type="date" value={selectedDate} onChange={(event) => onDateChange(event.target.value)} />
           </label>
           <Badge tone={entries.length ? "success" : "muted"}>{entries.length} Values</Badge>
         </div>
@@ -547,10 +376,7 @@ function AssessmentSlotTable({
                     Assessment / Time
                   </th>
                   {hourlySlots.map((slot) => (
-                    <th
-                      key={slot}
-                      className="min-w-32 border-b border-r border-primary-foreground/20 px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] text-center last:border-r-0"
-                    >
+                    <th key={slot} className="min-w-32 border-b border-r border-primary-foreground/20 px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] text-center last:border-r-0">
                       {slot}
                     </th>
                   ))}
@@ -558,32 +384,22 @@ function AssessmentSlotTable({
               </thead>
               <tbody>
                 {fields.map((field) => (
-                  <tr
-                    key={field.id}
-                    className="border-b border-border last:border-0 hover:bg-primary/5"
-                  >
+                  <tr key={field.id} className="border-b border-border last:border-0 hover:bg-primary/5">
                     <th className="sticky left-0 z-10 border-r border-border bg-primary/10 px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] align-top">
-                      <div className="font-medium normal-case tracking-normal text-foreground">
-                        {field.name}
-                      </div>
+                      <div className="font-medium normal-case tracking-normal text-foreground">{field.name}</div>
                       {/* <FieldTypeBadges field={field} /> */}
                     </th>
                     {hourlySlots.map((slot) => {
                       const entry = entriesByFieldAndSlot[`${field.id}-${slot}`];
                       return (
-                        <td
-                          key={`${field.id}-${slot}`}
-                          className="h-8 border-r border-border/60 px-1 py-2 align-top text-center last:border-r-0"
-                        >
+                        <td key={`${field.id}-${slot}`} className="h-8 border-r border-border/60 px-1 py-2 align-top text-center last:border-r-0">
                           {entry ? (
                             <button
                               type="button"
                               onClick={() => onEdit(entry)}
                               className="mx-auto flex min-h-8 w-full flex-col items-center justify-center rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-foreground transition hover:border-primary hover:bg-primary/15 focus:outline-none focus:ring-2 focus:ring-ring/20"
                             >
-                              <span className="line-clamp-2">
-                                {displayValue(entry.value, field)}
-                              </span>
+                              <span className="line-clamp-2">{displayValue(entry.value, field)}</span>
                               <span className="mt-1 flex items-center gap-1 text-[11px] font-normal text-muted-foreground">
                                 <Edit3 className="h-3 w-3" />
                                 {entry.time}
@@ -601,8 +417,7 @@ function AssessmentSlotTable({
             </table>
           </div>
           <div className="border-t border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] text-xs text-muted-foreground">
-            Times with minutes are grouped into their hour slot, while the exact time remains
-            visible inside the cell.
+            Times with minutes are grouped into their hour slot, while the exact time remains visible inside the cell.
           </div>
         </div>
       </CardContent>
@@ -618,8 +433,8 @@ function EditAssessmentDrawer({
 }: {
   fields: AssessmentField[];
   entry: AssessmentEntry | null;
-  onOpenChange: (_open: boolean) => void;
-  onSave: (_entry: AssessmentEntry) => void;
+  onOpenChange: (open: boolean) => void;
+  onSave: (entry: AssessmentEntry) => void;
 }) {
   const [draft, setDraft] = React.useState<AssessmentEntry | null>(entry);
   const field = fields.find((item) => item.id === draft?.fieldId);
@@ -663,34 +478,16 @@ function EditAssessmentDrawer({
             options={fields.map((item) => ({ label: item.name, value: item.id }))}
             onChange={(fieldId) => {
               const nextField = fields.find((item) => item.id === fieldId);
-              setDraft((current) =>
-                current ? { ...current, fieldId, value: getDefaultValue(nextField) } : current,
-              );
+              setDraft((current) => (current ? { ...current, fieldId, value: getDefaultValue(nextField) } : current));
             }}
           />
           <label className="space-y-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Configured field value
-            </span>
-            <AssessmentValueInput
-              field={field}
-              value={draft.value}
-              onChange={(value) =>
-                setDraft((current) => (current ? { ...current, value } : current))
-              }
-            />
+            <span className="text-xs font-medium text-muted-foreground">Configured field value</span>
+            <AssessmentValueInput field={field} value={draft.value} onChange={(value) => setDraft((current) => (current ? { ...current, value } : current))} />
           </label>
           <label className="space-y-2">
             <span className="text-xs font-medium text-muted-foreground">Time</span>
-            <Input
-              type="time"
-              value={draft.time}
-              onChange={(event) =>
-                setDraft((current) =>
-                  current ? { ...current, time: event.target.value } : current,
-                )
-              }
-            />
+            <Input type="time" value={draft.time} onChange={(event) => setDraft((current) => (current ? { ...current, time: event.target.value } : current))} />
           </label>
         </div>
       ) : null}
@@ -699,12 +496,8 @@ function EditAssessmentDrawer({
 }
 
 function IntakeOutputPanel({ entries }: { entries: IntakeOutputEntry[] }) {
-  const intakeTotal = entries
-    .filter((entry) => entry.type === "Intake")
-    .reduce((total, entry) => total + entry.volume, 0);
-  const outputTotal = entries
-    .filter((entry) => entry.type === "Output")
-    .reduce((total, entry) => total + entry.volume, 0);
+  const intakeTotal = entries.filter((entry) => entry.type === "Intake").reduce((total, entry) => total + entry.volume, 0);
+  const outputTotal = entries.filter((entry) => entry.type === "Output").reduce((total, entry) => total + entry.volume, 0);
 
   return (
     <Card>
@@ -714,9 +507,7 @@ function IntakeOutputPanel({ entries }: { entries: IntakeOutputEntry[] }) {
             <Send className="h-4 w-4 text-primary" />
             Intake / Output Updates
           </CardTitle>
-          <CardDescription>
-            Number fields configured for Intake or Output are pushed here automatically.
-          </CardDescription>
+          <CardDescription>Number fields configured for Intake or Output are pushed here automatically.</CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge tone="success">Intake {intakeTotal} ml</Badge>
@@ -730,33 +521,19 @@ function IntakeOutputPanel({ entries }: { entries: IntakeOutputEntry[] }) {
               <table className="w-full min-w-[560px] border-collapse text-left text-sm">
                 <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <tr>
-                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                      Time
-                    </th>
-                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                      Assessment
-                    </th>
-                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                      Module
-                    </th>
-                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                      Volume
-                    </th>
+                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">Time</th>
+                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">Assessment</th>
+                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">Module</th>
+                    <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">Volume</th>
                   </tr>
                 </thead>
                 <tbody>
                   {entries.map((entry) => (
                     <tr key={entry.id} className="border-b border-border last:border-0">
+                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{entry.time}</td>
+                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{entry.fieldName}</td>
                       <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                        {entry.time}
-                      </td>
-                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                        {entry.fieldName}
-                      </td>
-                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                        <Badge tone={entry.type === "Intake" ? "success" : "warning"}>
-                          {entry.type}
-                        </Badge>
+                        <Badge tone={entry.type === "Intake" ? "success" : "warning"}>{entry.type}</Badge>
                       </td>
                       <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] font-medium">
                         {entry.volume} {entry.unit}
@@ -796,11 +573,7 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
   React.useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       const nextFirstField = ldtConfig.assessments[0];
-      setFormValues({
-        fieldId: nextFirstField.id,
-        time: formatCurrentTime(),
-        value: getDefaultValue(nextFirstField),
-      });
+      setFormValues({ fieldId: nextFirstField.id, time: formatCurrentTime(), value: getDefaultValue(nextFirstField) });
       setEntries([]);
       setSelectedDate(formatCurrentDate());
       setEditingEntry(null);
@@ -809,10 +582,7 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
     return () => window.clearTimeout(timeoutId);
   }, [ldtConfig.id, ldtConfig.assessments]);
 
-  const dateEntries = React.useMemo(
-    () => entries.filter((entry) => entry.date === selectedDate),
-    [entries, selectedDate],
-  );
+  const dateEntries = React.useMemo(() => entries.filter((entry) => entry.date === selectedDate), [entries, selectedDate]);
 
   const intakeOutputEntries = React.useMemo<IntakeOutputEntry[]>(() => {
     return entries.flatMap((entry) => {
@@ -823,24 +593,10 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
 
       const updates: IntakeOutputEntry[] = [];
       if (field.config.trackInIntake) {
-        updates.push({
-          id: `${entry.id}-intake`,
-          time: entry.time,
-          fieldName: field.name,
-          type: "Intake",
-          volume,
-          unit: field.config.unit ?? "ml",
-        });
+        updates.push({ id: `${entry.id}-intake`, time: entry.time, fieldName: field.name, type: "Intake", volume, unit: field.config.unit ?? "ml" });
       }
       if (field.config.trackInOutput) {
-        updates.push({
-          id: `${entry.id}-output`,
-          time: entry.time,
-          fieldName: field.name,
-          type: "Output",
-          volume,
-          unit: field.config.unit ?? "ml",
-        });
+        updates.push({ id: `${entry.id}-output`, time: entry.time, fieldName: field.name, type: "Output", volume, unit: field.config.unit ?? "ml" });
       }
       return updates;
     });
@@ -857,9 +613,7 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
           getHourSlot(entry.time) !== nextSlot,
       );
       const exists = withoutSameSlot.some((entry) => entry.id === nextEntry.id);
-      return exists
-        ? withoutSameSlot.map((entry) => (entry.id === nextEntry.id ? nextEntry : entry))
-        : [...withoutSameSlot, nextEntry];
+      return exists ? withoutSameSlot.map((entry) => (entry.id === nextEntry.id ? nextEntry : entry)) : [...withoutSameSlot, nextEntry];
     });
   };
 
@@ -878,22 +632,10 @@ export function LdtAssessmentPage({ ldtId = defaultLdtId }: { ldtId?: string }) 
       return;
     }
 
-    upsertEntry({
-      id: makeEntryId(),
-      fieldId: field.id,
-      date: selectedDate,
-      time: formValues.time,
-      value: formValues.value,
-    });
+    upsertEntry({ id: makeEntryId(), fieldId: field.id, date: selectedDate, time: formValues.time, value: formValues.value });
     setFormValues((current) => ({ ...current, value: getDefaultValue(field) }));
 
-    const ioTarget = isIoField(field)
-      ? field.config.trackInIntake && field.config.trackInOutput
-        ? " and Intake/Output updated"
-        : field.config.trackInIntake
-          ? " and Intake updated"
-          : " and Output updated"
-      : "";
+    const ioTarget = isIoField(field) ? (field.config.trackInIntake && field.config.trackInOutput ? " and Intake/Output updated" : field.config.trackInIntake ? " and Intake updated" : " and Output updated") : "";
     toast.success(`${field.name} mapped to ${getHourSlot(formValues.time)} slot${ioTarget}`);
   };
 

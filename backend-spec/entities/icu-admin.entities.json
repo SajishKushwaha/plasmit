@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "AdmissionRequest": {
+      "fields": {
+        "id": "uuid",
+        "requestNumber": "string",
+        "patientId": "uuid",
+        "sourceType": "ER|WARD|OT|EXTERNAL",
+        "sourceHospital": "string|null",
+        "referringDoctorName": "string|null",
+        "clinicalSummary": "string",
+        "currentVitals": "object",
+        "oxygenSupport": "string|null",
+        "ventilatorRequired": "boolean",
+        "isolationRequired": "boolean",
+        "priority": "Priority",
+        "requestedUnitId": "uuid|null",
+        "bedRequirement": "string",
+        "status": "AdmissionRequestStatus",
+        "rejectionReason": "string|null",
+        "waitingSince": "datetime"
+      }
+    },
+    "BedAllocation": {
+      "fields": {
+        "id": "uuid",
+        "bedId": "uuid",
+        "admissionId": "uuid",
+        "allocatedAt": "datetime",
+        "releasedAt": "datetime|null",
+        "status": "ACTIVE|RELEASED|CANCELLED",
+        "allocatedBy": "uuid"
+      }
+    },
+    "Equipment": {
+      "fields": {
+        "id": "uuid",
+        "assetCode": "string",
+        "name": "string",
+        "category": "VENTILATOR|INFUSION_PUMP|SYRINGE_PUMP|MONITOR|DEFIBRILLATOR|OXYGEN_DEVICE|DIALYSIS_MACHINE",
+        "status": "EquipmentStatus",
+        "unitId": "uuid|null",
+        "bedId": "uuid|null",
+        "patientId": "uuid|null",
+        "lastMaintenanceAt": "datetime|null",
+        "nextCalibrationAt": "datetime|null"
+      }
+    },
+    "Escalation": {
+      "fields": {
+        "id": "uuid",
+        "type": "CLINICAL|STAFFING|MEDICATION|EQUIPMENT|BED|SAFETY",
+        "priority": "Priority",
+        "title": "string",
+        "description": "string",
+        "patientId": "uuid|null",
+        "admissionId": "uuid|null",
+        "assignedTo": "uuid",
+        "status": "EscalationStatus",
+        "slaDueAt": "datetime|null"
+      }
+    }
+  }
+}
+

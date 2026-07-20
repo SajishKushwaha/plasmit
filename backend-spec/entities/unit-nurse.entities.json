@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "UnitChecklist": {
+      "fields": {
+        "id": "uuid",
+        "unitId": "uuid",
+        "admissionRequestId": "uuid|null",
+        "checklistType": "ADMISSION_PREPARATION|TRANSFER_COORDINATION",
+        "items": "ChecklistItem[]",
+        "status": "PENDING|IN_PROGRESS|COMPLETED"
+      }
+    },
+    "UnitHandover": {
+      "fields": {
+        "id": "uuid",
+        "unitId": "uuid",
+        "outgoingNurseId": "uuid",
+        "incomingNurseId": "uuid",
+        "shiftId": "uuid",
+        "unitCensus": "object",
+        "criticalPatients": "uuid[]",
+        "pendingTasks": "uuid[]",
+        "staffingIssues": "string|null",
+        "equipmentIssues": "string|null",
+        "status": "HandoverStatus"
+      }
+    },
+    "UnitIssue": {
+      "fields": {
+        "id": "uuid",
+        "unitId": "uuid",
+        "raisedBy": "uuid",
+        "assignedTo": "uuid",
+        "title": "string",
+        "description": "string",
+        "priority": "Priority",
+        "status": "OPEN|ACKNOWLEDGED|RESOLVED|CLOSED"
+      }
+    }
+  }
+}
+

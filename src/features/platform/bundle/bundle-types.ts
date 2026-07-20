@@ -15,7 +15,7 @@ export type BundleItem = {
   description: string;
   icon: LucideIcon;
   code: string;
-  renderPreview: (_api: BundlePreviewApi) => ReactNode;
+  renderPreview: (api: BundlePreviewApi) => ReactNode;
 };
 
 export const fieldClass =

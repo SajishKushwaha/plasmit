@@ -18,14 +18,5 @@ export default async function IcuCommandCenterRoute({
   const orderId = firstParam(params.orderId);
   const department = firstParam(params.department);
 
-  return (
-    <DoctorOrdersPage
-      wardNurseMode
-      patientId={patientId}
-      locked={locked}
-      mode={mode}
-      orderId={orderId}
-      department={department}
-    />
-  );
+  return <DoctorOrdersPage wardNurseMode patientId={patientId} locked={locked} mode={mode} orderId={orderId} department={department} />;
 }

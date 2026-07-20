@@ -4,11 +4,7 @@ import * as React from "react";
 
 import { ActiveTasksSection } from "@/components/worklist/ActiveTasksSection";
 import { CompleteTaskModal } from "@/components/worklist/CompleteTaskModal";
-import {
-  ContinueTaskModal,
-  type ContinueTaskErrors,
-  type ContinueTaskForm,
-} from "@/components/worklist/ContinueTaskModal";
+import { ContinueTaskModal, type ContinueTaskErrors, type ContinueTaskForm } from "@/components/worklist/ContinueTaskModal";
 import { DiscontinueReasonModal } from "@/components/worklist/DiscontinueReasonModal";
 import { DiscontinuedTasksSection } from "@/components/worklist/DiscontinuedTasksSection";
 import { SkipReasonModal } from "@/components/worklist/SkipReasonModal";
@@ -22,21 +18,9 @@ import {
   toTimeInputValue,
   validateTaskForm,
 } from "@/components/worklist/worklist-utils";
-import {
-  isLinkedCarePlanTask,
-  readLinkedWorklistTasks,
-  replaceLinkedWorklistTask,
-  subscribeToLinkedWorklistTasks,
-} from "@/components/worklist/worklist-storage";
+import { isLinkedCarePlanTask, readLinkedWorklistTasks, replaceLinkedWorklistTask, subscribeToLinkedWorklistTasks } from "@/components/worklist/worklist-storage";
 import { NursingPatientStrip, NursingShell } from "@/features/care-team/nursing/nursing-shared";
-import type {
-  TaskCategory,
-  TaskFrequency,
-  TaskPriority,
-  WorklistTask,
-  WorklistTaskForm,
-  WorklistTaskFormErrors,
-} from "@/types/worklist";
+import type { TaskCategory, TaskFrequency, TaskPriority, WorklistTask, WorklistTaskForm, WorklistTaskFormErrors } from "@/types/worklist";
 
 function defaultTaskForm(now = new Date()): WorklistTaskForm {
   return {
@@ -135,24 +119,14 @@ function isValidCompletedForm(form: WorklistTaskForm): form is WorklistTaskForm 
   priority: TaskPriority;
   frequency: TaskFrequency;
 } {
-  return Boolean(
-    form.category &&
-    form.priority &&
-    form.frequency &&
-    form.taskName.trim() &&
-    form.startDate &&
-    form.startTime,
-  );
+  return Boolean(form.category && form.priority && form.frequency && form.taskName.trim() && form.startDate && form.startTime);
 }
 
 export function WorklistPage() {
   const today = React.useMemo(() => toDateInputValue(new Date()), []);
   const [fromDate, setFromDate] = React.useState(today);
   const [toDate, setToDate] = React.useState(today);
-  const [tasks, setTasks] = React.useState<WorklistTask[]>(() => [
-    ...createInitialTasks(),
-    ...readLinkedWorklistTasks(),
-  ]);
+  const [tasks, setTasks] = React.useState<WorklistTask[]>(() => [...createInitialTasks(), ...readLinkedWorklistTasks()]);
   const [taskForm, setTaskForm] = React.useState<WorklistTaskForm>(() => defaultTaskForm());
   const [taskFormErrors, setTaskFormErrors] = React.useState<WorklistTaskFormErrors>({});
   const [formMode, setFormMode] = React.useState<"add" | "edit" | null>(null);
@@ -171,22 +145,18 @@ export function WorklistPage() {
   }));
   const [continueErrors, setContinueErrors] = React.useState<ContinueTaskErrors>({});
 
-  const dateRangeError =
-    fromDate && toDate && fromDate > toDate ? "From Date cannot be greater than To Date." : "";
+  const dateRangeError = fromDate && toDate && fromDate > toDate ? "From Date cannot be greater than To Date." : "";
 
   React.useEffect(() => {
     const syncLinkedTasks = () => {
       const linkedTasks = readLinkedWorklistTasks();
-      setTasks((current) => [
-        ...current.filter((task) => !isLinkedCarePlanTask(task)),
-        ...linkedTasks,
-      ]);
+      setTasks((current) => [...current.filter((task) => !isLinkedCarePlanTask(task)), ...linkedTasks]);
     };
     syncLinkedTasks();
     return subscribeToLinkedWorklistTasks(syncLinkedTasks);
   }, []);
 
-  function updateTasks(update: (_current: WorklistTask[]) => WorklistTask[]) {
+  function updateTasks(update: (current: WorklistTask[]) => WorklistTask[]) {
     setTasks((current) => {
       const next = update(current);
       next.filter(isLinkedCarePlanTask).forEach(replaceLinkedWorklistTask);
@@ -238,23 +208,17 @@ export function WorklistPage() {
 
     if (formMode === "edit" && editingTaskId) {
       // Backend integration note: editing a repeating task should update only future pending occurrences and should not modify already completed occurrences.
-      updateTasks((current) =>
-        current.map((task) =>
-          task.id === editingTaskId
-            ? {
-                ...task,
-                taskName: taskForm.taskName.trim(),
-                category: taskForm.category,
-                priority: taskForm.priority,
-                startDate: taskForm.startDate,
-                startTime: taskForm.startTime,
-                endDate: taskForm.endDate,
-                frequency: taskForm.frequency,
-                comments: taskForm.comments,
-              }
-            : task,
-        ),
-      );
+      updateTasks((current) => current.map((task) => task.id === editingTaskId ? {
+        ...task,
+        taskName: taskForm.taskName.trim(),
+        category: taskForm.category,
+        priority: taskForm.priority,
+        startDate: taskForm.startDate,
+        startTime: taskForm.startTime,
+        endDate: taskForm.endDate,
+        frequency: taskForm.frequency,
+        comments: taskForm.comments,
+      } : task));
     }
 
     setFormMode(null);
@@ -267,11 +231,7 @@ export function WorklistPage() {
 
   function markComplete() {
     if (!completeTarget) return;
-    updateTasks((current) =>
-      current.map((task) =>
-        task.id === completeTarget.id ? { ...task, status: "Completed", reason: "" } : task,
-      ),
-    );
+    updateTasks((current) => current.map((task) => task.id === completeTarget.id ? { ...task, status: "Completed", reason: "" } : task));
     setCompleteTarget(null);
   }
 
@@ -288,11 +248,7 @@ export function WorklistPage() {
       setReasonError("Reason for skip is required.");
       return;
     }
-    updateTasks((current) =>
-      current.map((task) =>
-        task.id === skipTarget.id ? { ...task, status: "Skipped", reason: cleanReason } : task,
-      ),
-    );
+    updateTasks((current) => current.map((task) => task.id === skipTarget.id ? { ...task, status: "Skipped", reason: cleanReason } : task));
     setSkipTarget(null);
     setReason("");
   }
@@ -310,18 +266,12 @@ export function WorklistPage() {
       setReasonError("Reason for discontinuing is required.");
       return;
     }
-    updateTasks((current) =>
-      current.map((task) =>
-        task.id === discontinueTarget.id
-          ? {
-              ...task,
-              status: "Discontinued",
-              reason: cleanReason,
-              discontinuedOn: toLocalDateTime(new Date()),
-            }
-          : task,
-      ),
-    );
+    updateTasks((current) => current.map((task) => task.id === discontinueTarget.id ? {
+      ...task,
+      status: "Discontinued",
+      reason: cleanReason,
+      discontinuedOn: toLocalDateTime(new Date()),
+    } : task));
     setDiscontinueTarget(null);
     setReason("");
   }
@@ -360,10 +310,7 @@ export function WorklistPage() {
       source: continueTarget.source ?? "Manual",
     };
     // Backend integration note: real systems may keep the discontinued record as immutable history while creating this new active occurrence.
-    updateTasks((current) => [
-      ...current.filter((task) => task.id !== continueTarget.id),
-      continuedTask,
-    ]);
+    updateTasks((current) => [...current.filter((task) => task.id !== continueTarget.id), continuedTask]);
     setContinueTarget(null);
   }
 
@@ -372,35 +319,14 @@ export function WorklistPage() {
     return tasks.filter((task) => task.startDate >= fromDate && task.startDate <= toDate);
   }, [dateRangeError, fromDate, tasks, toDate]);
 
-  const activeGroups = React.useMemo(
-    () =>
-      groupTasksByDateTime(
-        visibleTasks.filter((task) => task.status === "Active" || task.status === "Skipped"),
-      ),
-    [visibleTasks],
-  );
+  const activeGroups = React.useMemo(() => groupTasksByDateTime(visibleTasks.filter((task) => task.status === "Active" || task.status === "Skipped")), [visibleTasks]);
   const discontinuedTasks = visibleTasks.filter((task) => task.status === "Discontinued");
 
   return (
-    <NursingShell
-      title="Worklist"
-      description="Nursing task worklist with date filtering, grouped active tasks, overdue rules, and discontinuation workflows."
-    >
+    <NursingShell title="Worklist" description="Nursing task worklist with date filtering, grouped active tasks, overdue rules, and discontinuation workflows.">
       <NursingPatientStrip />
-      <WorklistHeader
-        fromDate={fromDate}
-        toDate={toDate}
-        error={dateRangeError}
-        onAddTask={handleAddTask}
-        onDateFilterChange={handleDateFilterChange}
-      />
-      <ActiveTasksSection
-        groups={activeGroups}
-        onEdit={handleEditTask}
-        onComplete={handleCompleteTask}
-        onSkip={handleSkipTask}
-        onDiscontinue={handleDiscontinueTask}
-      />
+      <WorklistHeader fromDate={fromDate} toDate={toDate} error={dateRangeError} onAddTask={handleAddTask} onDateFilterChange={handleDateFilterChange} />
+      <ActiveTasksSection groups={activeGroups} onEdit={handleEditTask} onComplete={handleCompleteTask} onSkip={handleSkipTask} onDiscontinue={handleDiscontinueTask} />
       <DiscontinuedTasksSection tasks={discontinuedTasks} onContinue={handleContinueTask} />
 
       {formMode ? (
@@ -413,13 +339,7 @@ export function WorklistPage() {
           onSubmit={saveTaskForm}
         />
       ) : null}
-      {completeTarget ? (
-        <CompleteTaskModal
-          task={completeTarget}
-          onClose={() => setCompleteTarget(null)}
-          onComplete={markComplete}
-        />
-      ) : null}
+      {completeTarget ? <CompleteTaskModal task={completeTarget} onClose={() => setCompleteTarget(null)} onComplete={markComplete} /> : null}
       {skipTarget ? (
         <SkipReasonModal
           task={skipTarget}

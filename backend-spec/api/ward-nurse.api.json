@@ -1,0 +1,27 @@
+{
+  "role": "WARD_NURSE",
+  "endpoints": [
+    { "method": "GET", "path": "/ward-nurse/dashboard", "permission": "WARD_NURSE_DASHBOARD_VIEW", "response": "WardNurseDashboard" },
+    { "method": "GET", "path": "/ward-nurse/assigned-patients", "permission": "WARD_PATIENT_VIEW", "response": "Paginated<AssignedPatient>" },
+    { "method": "POST", "path": "/admissions/:admissionId/nursing-assessments", "permission": "NURSING_ASSESSMENT_CREATE", "request": "NursingAssessmentCreate", "response": "NursingAssessment" },
+    { "method": "GET", "path": "/admissions/:admissionId/nursing-assessments", "permission": "NURSING_ASSESSMENT_VIEW", "response": "NursingAssessment[]" },
+    { "method": "POST", "path": "/admissions/:admissionId/vitals", "permission": "NURSING_VITALS_CREATE", "request": "VitalSignCreate", "response": "VitalSign" },
+    { "method": "GET", "path": "/admissions/:admissionId/vitals", "permission": "NURSING_VITALS_VIEW", "response": "VitalSign[]" },
+    { "method": "GET", "path": "/admissions/:admissionId/vitals/latest", "permission": "NURSING_VITALS_VIEW", "response": "VitalSign" },
+    { "method": "GET", "path": "/admissions/:admissionId/vitals/trends", "permission": "NURSING_VITALS_VIEW", "response": "VitalsTrend" },
+    { "method": "GET", "path": "/nursing/medication-administration", "permission": "NURSING_MEDICATION_VIEW", "response": "Paginated<MedicationAdministration>" },
+    { "method": "POST", "path": "/medication-orders/:orderId/administer", "permission": "NURSING_MEDICATION_ADMINISTER", "request": "MedicationAdministerRequest", "response": "MedicationAdministration" },
+    { "method": "POST", "path": "/medication-orders/:orderId/hold-dose", "permission": "NURSING_MEDICATION_HOLD", "request": "ReasonRequest", "response": "MedicationAdministration" },
+    { "method": "POST", "path": "/medication-orders/:orderId/refuse", "permission": "NURSING_MEDICATION_REFUSE", "request": "ReasonRequest", "response": "MedicationAdministration" },
+    { "method": "POST", "path": "/medication-orders/:orderId/mark-missed", "permission": "NURSING_MEDICATION_UPDATE", "request": "ReasonRequest", "response": "MedicationAdministration" },
+    { "method": "GET", "path": "/admissions/:admissionId/intake-output", "permission": "NURSING_IO_VIEW", "response": "IntakeOutputSummary" },
+    { "method": "POST", "path": "/admissions/:admissionId/intake-output", "permission": "NURSING_IO_CREATE", "request": "IntakeOutputCreate", "response": "IntakeOutputRecord" },
+    { "method": "GET", "path": "/admissions/:admissionId/nursing-notes", "permission": "NURSING_NOTE_VIEW", "response": "NursingNote[]" },
+    { "method": "POST", "path": "/admissions/:admissionId/nursing-notes", "permission": "NURSING_NOTE_CREATE", "request": "NursingNoteCreate", "response": "NursingNote" },
+    { "method": "GET", "path": "/nursing/tasks", "permission": "NURSING_TASK_VIEW", "response": "Paginated<NursingTask>" },
+    { "method": "POST", "path": "/nursing/tasks/:id/complete", "permission": "NURSING_TASK_COMPLETE", "request": "CompleteTaskRequest", "response": "NursingTask" },
+    { "method": "GET", "path": "/nursing/shift-handovers", "permission": "NURSING_HANDOVER_VIEW", "response": "Paginated<ShiftHandover>" },
+    { "method": "POST", "path": "/nursing/shift-handovers", "permission": "NURSING_HANDOVER_CREATE", "request": "ShiftHandoverCreate", "response": "ShiftHandover" }
+  ]
+}
+

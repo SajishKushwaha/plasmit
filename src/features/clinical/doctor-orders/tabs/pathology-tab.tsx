@@ -7,28 +7,16 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-import {
-  previousTestOrders,
-  resultBlocks as initialResultBlocks,
-  groupedTests,
-  summaryRows as initialSummaryRows,
-  testList,
-} from "./pathology/data";
+import { PatientSummaryBanner } from "./shared/patient-summary-banner";
+import { previousTestOrders, resultBlocks as initialResultBlocks, groupedTests, summaryRows as initialSummaryRows, testList } from "./pathology/data";
 import { PathologyCriticalFindingsTab } from "./pathology/critical-findings-tab";
 import { PathologyOrderSummaryTab } from "./pathology/order-summary-tab";
 import { PathologyResultReviewTab } from "./pathology/result-review-tab";
 import { PathologyTestOrderTab } from "./pathology/test-order-tab";
-import type {
-  PathologyPriority,
-  PathologyResultBlock,
-  PathologySummaryRow,
-} from "./pathology/types";
+import type { PathologyPriority, PathologyResultBlock, PathologySummaryRow } from "./pathology/types";
 
 type MainTab = "test-order" | "order-summary" | "result-review" | "critical-findings";
-type SummarySortKey = keyof Pick<
-  PathologySummaryRow,
-  "name" | "loinc" | "cpt" | "department" | "specimen" | "priority"
->;
+type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
 
 const selectedByDefault = ["cbc", "kft"];
 const selectedGroupDefault = ["renal"];
@@ -37,11 +25,7 @@ function normalizeSelectionLabel(value: string) {
   return value.toLowerCase().replace(/[-_]/g, " ").trim();
 }
 
-function buildPathologySnapshotRows(
-  testIds: string[],
-  groupIds: string[],
-  fallbackRows: PathologySummaryRow[],
-) {
+function buildPathologySnapshotRows(testIds: string[], groupIds: string[], fallbackRows: PathologySummaryRow[]) {
   const rows: PathologySummaryRow[] = [];
 
   for (const id of testIds) {
@@ -81,11 +65,7 @@ function buildPathologySnapshotRows(
   return rows.length ? rows : fallbackRows;
 }
 
-function buildPathologySnapshotBlocks(
-  testIds: string[],
-  groupIds: string[],
-  fallbackBlocks: PathologyResultBlock[],
-) {
+function buildPathologySnapshotBlocks(testIds: string[], groupIds: string[], fallbackBlocks: PathologyResultBlock[]) {
   const blocks: PathologyResultBlock[] = [];
 
   for (const id of testIds) {
@@ -95,9 +75,7 @@ function buildPathologySnapshotBlocks(
       id: `saved-${test.id}`,
       name: `${test.name} - ${test.description}`,
       specialty: test.department,
-      rows: [
-        { parameter: test.name, result: "Pending", unit: "-", referenceRange: "-", flag: "N" },
-      ],
+      rows: [{ parameter: test.name, result: "Pending", unit: "-", referenceRange: "-", flag: "N" }],
     });
   }
 
@@ -108,9 +86,7 @@ function buildPathologySnapshotBlocks(
       id: `saved-${group.id}`,
       name: `${group.name} - grouped request`,
       specialty: group.department,
-      rows: [
-        { parameter: group.name, result: "Pending", unit: "-", referenceRange: "-", flag: "N" },
-      ],
+      rows: [{ parameter: group.name, result: "Pending", unit: "-", referenceRange: "-", flag: "N" }],
     });
   }
 
@@ -132,12 +108,8 @@ export function PathologyTab() {
   const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(selectedGroupDefault);
   const [savedTestIds, setSavedTestIds] = React.useState<string[]>(selectedByDefault);
   const [savedGroupIds, setSavedGroupIds] = React.useState<string[]>(selectedGroupDefault);
-  const [savedSummaryRows, setSavedSummaryRows] = React.useState<PathologySummaryRow[]>(() =>
-    buildSavedPathologyRows(selectedByDefault, selectedGroupDefault),
-  );
-  const [savedResultBlocks, setSavedResultBlocks] = React.useState<PathologyResultBlock[]>(() =>
-    buildSavedPathologyBlocks(selectedByDefault, selectedGroupDefault),
-  );
+  const [savedSummaryRows, setSavedSummaryRows] = React.useState<PathologySummaryRow[]>(() => buildSavedPathologyRows(selectedByDefault, selectedGroupDefault));
+  const [savedResultBlocks, setSavedResultBlocks] = React.useState<PathologyResultBlock[]>(() => buildSavedPathologyBlocks(selectedByDefault, selectedGroupDefault));
   const [savedInstructionsForLab, setSavedInstructionsForLab] = React.useState("");
   const [problemListVisible, setProblemListVisible] = React.useState(true);
   const [activeProblemView, setActiveProblemView] = React.useState<"Active" | "Find">("Active");
@@ -150,10 +122,7 @@ export function PathologyTab() {
   const [instructionsForLab, setInstructionsForLab] = React.useState("");
   const [collectionDate, setCollectionDate] = React.useState(new Date().toISOString().slice(0, 10));
   const [collectionTime, setCollectionTime] = React.useState(new Date().toTimeString().slice(0, 5));
-  const [summarySort, setSummarySort] = React.useState<{
-    key: SummarySortKey;
-    direction: "asc" | "desc";
-  }>({ key: "name", direction: "asc" });
+  const [summarySort, setSummarySort] = React.useState<{ key: SummarySortKey; direction: "asc" | "desc" }>({ key: "name", direction: "asc" });
   const [diagnosisSearch, setDiagnosisSearch] = React.useState("");
   const [diagnosisType, setDiagnosisType] = React.useState("Primary");
   const [diagnosisOpen, setDiagnosisOpen] = React.useState(false);
@@ -165,9 +134,7 @@ export function PathologyTab() {
 
   const filteredTests = React.useMemo(() => {
     const query = search.trim().toLowerCase();
-    return testList.filter((test) =>
-      `${test.name} ${test.description} ${test.code ?? ""}`.toLowerCase().includes(query),
-    );
+    return testList.filter((test) => `${test.name} ${test.description} ${test.code ?? ""}`.toLowerCase().includes(query));
   }, [search]);
 
   const sortedSummaryRows = React.useMemo(() => {
@@ -195,15 +162,11 @@ export function PathologyTab() {
   };
 
   const toggleTest = (id: string) => {
-    setSelectedTestIds((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-    );
+    setSelectedTestIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   };
 
   const toggleGroup = (id: string) => {
-    setSelectedGroupIds((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-    );
+    setSelectedGroupIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   };
 
   const updateSpecimenSource = (id: string, value: string) => {
@@ -253,10 +216,7 @@ export function PathologyTab() {
   };
 
   const updateSummarySort = (key: SummarySortKey) => {
-    setSummarySort((current) => ({
-      key,
-      direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
-    }));
+    setSummarySort((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" }));
   };
 
   const editSummaryRow = (id: string) => {
@@ -267,9 +227,7 @@ export function PathologyTab() {
     if (matchedTest) {
       setSelectedTestIds((current) => Array.from(new Set([...current, matchedTest.id])));
     }
-    const matchedGroup = groupedTests.find((group) =>
-      row.name.toLowerCase().includes(group.name.toLowerCase().split(" ")[0] ?? ""),
-    );
+    const matchedGroup = groupedTests.find((group) => row.name.toLowerCase().includes(group.name.toLowerCase().split(" ")[0] ?? ""));
     if (matchedGroup) {
       setSelectedGroupIds((current) => Array.from(new Set([...current, matchedGroup.id])));
     }
@@ -286,19 +244,8 @@ export function PathologyTab() {
   const confirmDeleteSummaryRow = () => {
     if (!deleteTarget) return;
     setSavedSummaryRows((current) => current.filter((row) => row.id !== deleteTarget.id));
-    setSavedResultBlocks((current) =>
-      current.filter(
-        (block) =>
-          normalizeSelectionLabel(block.name) !== normalizeSelectionLabel(deleteTarget.name),
-      ),
-    );
-    setSavedTestIds((current) =>
-      current.filter(
-        (id) =>
-          normalizeSelectionLabel(testList.find((test) => test.id === id)?.name ?? "") !==
-          normalizeSelectionLabel(deleteTarget.name),
-      ),
-    );
+    setSavedResultBlocks((current) => current.filter((block) => normalizeSelectionLabel(block.name) !== normalizeSelectionLabel(deleteTarget.name)));
+    setSavedTestIds((current) => current.filter((id) => normalizeSelectionLabel(testList.find((test) => test.id === id)?.name ?? "") !== normalizeSelectionLabel(deleteTarget.name)));
     toast.success(`${deleteTarget.name} deleted`);
     setDeleteTarget(null);
   };
@@ -338,11 +285,7 @@ export function PathologyTab() {
     <div className="space-y-4">
       {/* <PatientSummaryBanner /> */}
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as MainTab)}
-        className="w-full"
-      >
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MainTab)} className="w-full">
         <Card>
           <CardContent className="space-y-4">
             <div className="overflow-x-auto pb-1 sm:pb-0">
@@ -356,103 +299,93 @@ export function PathologyTab() {
                     onClick={() => setActiveTab(tab)}
                     className={[
                       "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
-                      activeTab === tab
-                        ? "bg-white text-primary shadow-sm hover:bg-white"
-                        : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+                      activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
                     ].join(" ")}
                   >
-                    {tab === "test-order"
-                      ? "Test Order"
-                      : tab === "order-summary"
-                        ? "Order Summary"
-                        : tab === "result-review"
-                          ? "Result Review"
-                          : ""}
+                    {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : tab === "result-review" ? "Result Review" : ''}
                   </Button>
                 ))}
               </div>
             </div>
 
-            <TabsContent value="test-order" className="mt-0">
-              <PathologyTestOrderTab
-                search={search}
-                onSearchChange={setSearch}
-                filteredTests={filteredTests}
-                selectedTestIds={selectedTestIds}
-                selectedGroupIds={selectedGroupIds}
-                problems={problems}
-                newProblem={newProblem}
-                onNewProblemChange={setNewProblem}
-                problemListVisible={problemListVisible}
-                activeProblemView={activeProblemView}
-                onProblemListVisibleChange={setProblemListVisible}
-                onActiveProblemViewChange={setActiveProblemView}
-                onAddProblem={addProblem}
-                onToggleTest={toggleTest}
-                onToggleGroup={toggleGroup}
-                specimenSourceById={specimenSourceById}
-                onSpecimenSourceChange={updateSpecimenSource}
-                priority={priority}
-                onPriorityChange={setPriority}
-                fasting={fasting}
-                onFastingChange={setFasting}
-                clinicalNotes={clinicalNotes}
-                onClinicalNotesChange={setClinicalNotes}
-                instructionsForLab={instructionsForLab}
-                onInstructionsForLabChange={setInstructionsForLab}
-                collectionDate={collectionDate}
-                onCollectionDateChange={setCollectionDate}
-                collectionTime={collectionTime}
-                onCollectionTimeChange={setCollectionTime}
-                onOpenSummary={handleOpenSummary}
-                onSave={saveOrder}
-                onSaveAndBill={saveAndBill}
-                onAddToBill={addToBill}
-                onReorderPrevious={selectHistory}
-                onDownloadAllReports={downloadAllReports}
-              />
-            </TabsContent>
-            <TabsContent value="order-summary" className="mt-0">
-              <PathologyOrderSummaryTab
-                rows={selectedSummaryRows}
-                selectedCount={selectedCount}
-                billingNote={billingNote}
-                instructionsForLab={savedInstructionsForLab}
-                savedSummaryRows={selectedSummaryRows}
-                onSort={updateSummarySort}
-                sort={summarySort}
-                onSave={saveOrder}
-                onAddToBill={addToBill}
-                onSaveAndBill={saveAndBill}
-                onEdit={editSummaryRow}
-                onDelete={requestDeleteSummaryRow}
-                onViewAll={() =>
-                  setSavedSummaryRows(buildSavedPathologyRows(savedTestIds, savedGroupIds))
-                }
-                onBackToTestOrder={() => setActiveTab("test-order")}
-              />
-            </TabsContent>
-            <TabsContent value="result-review" className="mt-0">
-              <PathologyResultReviewTab
-                resultBlocks={selectedResultBlocks}
-                diagnosisSearch={diagnosisSearch}
-                diagnosisType={diagnosisType}
-                diagnosisOpen={diagnosisOpen}
-                selectedDiagnosisLabel={selectedDiagnosisLabel}
-                instructionsForLab={savedInstructionsForLab}
-                savedSummaryRows={selectedSummaryRows}
-                onDiagnosisSearchChange={setDiagnosisSearch}
-                onDiagnosisTypeChange={setDiagnosisType}
-                onDiagnosisOpenChange={setDiagnosisOpen}
-                onAddDiagnosis={addDiagnosis}
-                onEditResult={editResultBlock}
-                onDeleteResult={removeResultBlock}
-                onReorderResult={reorderResult}
-              />
-            </TabsContent>
-            <TabsContent value="critical-findings" className="mt-0">
-              <PathologyCriticalFindingsTab resultBlocks={selectedResultBlocks} />
-            </TabsContent>
+        <TabsContent value="test-order" className="mt-0">
+          <PathologyTestOrderTab
+            search={search}
+            onSearchChange={setSearch}
+            filteredTests={filteredTests}
+            selectedTestIds={selectedTestIds}
+            selectedGroupIds={selectedGroupIds}
+            problems={problems}
+            newProblem={newProblem}
+            onNewProblemChange={setNewProblem}
+            problemListVisible={problemListVisible}
+            activeProblemView={activeProblemView}
+            onProblemListVisibleChange={setProblemListVisible}
+            onActiveProblemViewChange={setActiveProblemView}
+            onAddProblem={addProblem}
+            onToggleTest={toggleTest}
+            onToggleGroup={toggleGroup}
+            specimenSourceById={specimenSourceById}
+            onSpecimenSourceChange={updateSpecimenSource}
+            priority={priority}
+            onPriorityChange={setPriority}
+            fasting={fasting}
+            onFastingChange={setFasting}
+            clinicalNotes={clinicalNotes}
+            onClinicalNotesChange={setClinicalNotes}
+            instructionsForLab={instructionsForLab}
+            onInstructionsForLabChange={setInstructionsForLab}
+            collectionDate={collectionDate}
+            onCollectionDateChange={setCollectionDate}
+            collectionTime={collectionTime}
+            onCollectionTimeChange={setCollectionTime}
+            onOpenSummary={handleOpenSummary}
+            onSave={saveOrder}
+            onSaveAndBill={saveAndBill}
+            onAddToBill={addToBill}
+            onReorderPrevious={selectHistory}
+            onDownloadAllReports={downloadAllReports}
+          />
+        </TabsContent>
+        <TabsContent value="order-summary" className="mt-0">
+          <PathologyOrderSummaryTab
+            rows={selectedSummaryRows}
+            selectedCount={selectedCount}
+            billingNote={billingNote}
+            instructionsForLab={savedInstructionsForLab}
+            savedSummaryRows={selectedSummaryRows}
+            onSort={updateSummarySort}
+            sort={summarySort}
+            onSave={saveOrder}
+            onAddToBill={addToBill}
+            onSaveAndBill={saveAndBill}
+            onEdit={editSummaryRow}
+            onDelete={requestDeleteSummaryRow}
+            onViewAll={() => setSavedSummaryRows(buildSavedPathologyRows(savedTestIds, savedGroupIds))}
+            onBackToTestOrder={() => setActiveTab("test-order")}
+          />
+        </TabsContent>
+        <TabsContent value="result-review" className="mt-0">
+          <PathologyResultReviewTab
+            resultBlocks={selectedResultBlocks}
+            diagnosisSearch={diagnosisSearch}
+            diagnosisType={diagnosisType}
+            diagnosisOpen={diagnosisOpen}
+            selectedDiagnosisLabel={selectedDiagnosisLabel}
+            instructionsForLab={savedInstructionsForLab}
+            savedSummaryRows={selectedSummaryRows}
+            onDiagnosisSearchChange={setDiagnosisSearch}
+            onDiagnosisTypeChange={setDiagnosisType}
+            onDiagnosisOpenChange={setDiagnosisOpen}
+            onAddDiagnosis={addDiagnosis}
+            onEditResult={editResultBlock}
+            onDeleteResult={removeResultBlock}
+            onReorderResult={reorderResult}
+          />
+        </TabsContent>
+        <TabsContent value="critical-findings" className="mt-0">
+          <PathologyCriticalFindingsTab resultBlocks={selectedResultBlocks} />
+        </TabsContent>
           </CardContent>
         </Card>
       </Tabs>

@@ -36,14 +36,8 @@ export function BedManagerWorkspace() {
   const [search, setSearch] = React.useState("");
   const [ward, setWard] = React.useState("All");
   const [status, setStatus] = React.useState<"All" | AdmissionBedStatus>("Available");
-  const [selectedId, setSelectedId] = React.useState<string>(
-    state.beds.find((bed) => bed.status === "Available")?.id ?? state.beds[0]?.id ?? "",
-  );
-  const activeRequests = state.requests.filter((request) =>
-    ["Pending Bed Allotment", "Accepted", "Billing Hold", "Ready for Nursing"].includes(
-      request.status,
-    ),
-  );
+  const [selectedId, setSelectedId] = React.useState<string>(state.beds.find((bed) => bed.status === "Available")?.id ?? state.beds[0]?.id ?? "");
+  const activeRequests = state.requests.filter((request) => ["Pending Bed Allotment", "Accepted", "Billing Hold", "Ready for Nursing"].includes(request.status));
 
   const beds = state.beds.filter((bed) => {
     const wardMatch = ward === "All" || bed.ward === ward;
@@ -82,13 +76,9 @@ export function BedManagerWorkspace() {
             <div className="text-xs font-medium text-muted-foreground">Active Request</div>
             <div className="mt-1 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <div className="text-sm font-semibold">
-                  {activeRequest?.patient ?? "No active request selected"}
-                </div>
+                <div className="text-sm font-semibold">{activeRequest?.patient ?? "No active request selected"}</div>
                 <div className="text-xs text-muted-foreground">
-                  {activeRequest
-                    ? `${activeRequest.uhid} | ${activeRequest.doctor} | Ward: ${activeRequest.ward}`
-                    : "Use the selector below or open from Admission Desk."}
+                  {activeRequest ? `${activeRequest.uhid} | ${activeRequest.doctor} | Ward: ${activeRequest.ward}` : "Use the selector below or open from Admission Desk."}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -113,30 +103,13 @@ export function BedManagerWorkspace() {
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px]">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Search bed, ward, floor, station"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
+              <Input className="pl-9" placeholder="Search bed, ward, floor, station" value={search} onChange={(event) => setSearch(event.target.value)} />
             </div>
-            <select
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-              value={ward}
-              onChange={(event) => setWard(event.target.value)}
-            >
-              {allWards.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
+            <select className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={ward} onChange={(event) => setWard(event.target.value)}>
+              {allWards.map((item) => <option key={item}>{item}</option>)}
             </select>
-            <select
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-              value={status}
-              onChange={(event) => setStatus(event.target.value as "All" | AdmissionBedStatus)}
-            >
-              {allStatuses.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
+            <select className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={status} onChange={(event) => setStatus(event.target.value as "All" | AdmissionBedStatus)}>
+              {allStatuses.map((item) => <option key={item}>{item}</option>)}
             </select>
           </div>
 
@@ -145,9 +118,7 @@ export function BedManagerWorkspace() {
             value={activeRequest?.id ?? ""}
             onChange={(event) => actions.setActiveRequest(event.target.value)}
           >
-            <option value="" disabled>
-              Select active admission request
-            </option>
+            <option value="" disabled>Select active admission request</option>
             {activeRequests.map((request) => (
               <option key={request.id} value={request.id}>
                 {request.patient} | {request.uhid} | {request.status}
@@ -157,12 +128,7 @@ export function BedManagerWorkspace() {
 
           <div className="flex flex-wrap gap-2">
             {allStatuses.map((item) => (
-              <Button
-                key={item}
-                size="sm"
-                variant={status === item ? "default" : "outline"}
-                onClick={() => setStatus(item)}
-              >
+              <Button key={item} size="sm" variant={status === item ? "default" : "outline"} onClick={() => setStatus(item)}>
                 {item}
               </Button>
             ))}
@@ -172,13 +138,9 @@ export function BedManagerWorkspace() {
             <div className="flex items-center justify-between border-b border-border px-3 py-2">
               <div>
                 <div className="text-sm font-semibold">Bed list</div>
-                <div className="text-xs text-muted-foreground">
-                  {beds.length} beds found from 100 total beds
-                </div>
+                <div className="text-xs text-muted-foreground">{beds.length} beds found from 100 total beds</div>
               </div>
-              <Badge tone="success">
-                {beds.filter((bed) => bed.status === "Available").length} ready beds
-              </Badge>
+              <Badge tone="success">{beds.filter((bed) => bed.status === "Available").length} ready beds</Badge>
             </div>
             <div className="max-h-[520px] overflow-y-auto p-3">
               <div className="grid gap-2 md:grid-cols-2">
@@ -201,19 +163,13 @@ export function BedManagerWorkspace() {
                           </div>
                           <div className="min-w-0">
                             <div className="truncate text-sm font-semibold">{bed.bedNo}</div>
-                            <div className="truncate text-xs text-muted-foreground">
-                              {bed.ward} | {bed.floor} | {bed.roomType}
-                            </div>
+                            <div className="truncate text-xs text-muted-foreground">{bed.ward} | {bed.floor} | {bed.roomType}</div>
                           </div>
                         </div>
                         <AdmissionStatusBadge value={bed.status} />
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {bed.tags.slice(0, 3).map((tag) => (
-                          <Badge key={tag} tone="info">
-                            {tag}
-                          </Badge>
-                        ))}
+                        {bed.tags.slice(0, 3).map((tag) => <Badge key={tag} tone="info">{tag}</Badge>)}
                       </div>
                     </button>
                   );
@@ -230,9 +186,7 @@ export function BedManagerWorkspace() {
                 <div>
                   <div className="text-xs text-muted-foreground">Room/Ward</div>
                   <div className="mt-1 text-lg font-semibold">{selected.bedNo}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {selected.ward} | {selected.floor}
-                  </div>
+                  <div className="text-xs text-muted-foreground">{selected.ward} | {selected.floor}</div>
                 </div>
                 <AdmissionStatusBadge value={selected.status} />
               </div>
@@ -243,25 +197,14 @@ export function BedManagerWorkspace() {
               </div>
             </div>
           ) : null}
-          {["Ready to allot", "Requested room/ward matched", "No isolation conflict"].map(
-            (item) => (
-              <div
-                className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm text-success"
-                key={item}
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {item}
-              </div>
-            ),
-          )}
-          <div className="rounded-lg border border-info/20 bg-info/10 p-3 text-sm font-semibold text-info">
-            Recommendation score: 100/100
-          </div>
-          <Button
-            className="w-full"
-            disabled={!selected || selected.status !== "Available" || !activeRequest}
-            onClick={allotSelectedBed}
-          >
+          {["Ready to allot", "Requested room/ward matched", "No isolation conflict"].map((item) => (
+            <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm text-success" key={item}>
+              <CheckCircle2 className="h-4 w-4" />
+              {item}
+            </div>
+          ))}
+          <div className="rounded-lg border border-info/20 bg-info/10 p-3 text-sm font-semibold text-info">Recommendation score: 100/100</div>
+          <Button className="w-full" disabled={!selected || selected.status !== "Available" || !activeRequest} onClick={allotSelectedBed}>
             Allot Selected Bed
           </Button>
         </aside>

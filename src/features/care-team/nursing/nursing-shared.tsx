@@ -12,20 +12,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import type { Role, StatusTone } from "@/types";
 
-export const nursingAccessRoles: Role[] = [
-  "Super Admin",
-  "Hospital Admin",
-  "Doctor",
-  "Nurse",
-  "Nurse ICU 2",
-  "Management",
-];
-export const nursingFullAccessRoles: Role[] = [
-  "Super Admin",
-  "Hospital Admin",
-  "Nurse",
-  "Nurse ICU 2",
-];
+export const nursingAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Nurse ICU 2", "Management"];
+export const nursingFullAccessRoles: Role[] = ["Super Admin", "Hospital Admin", "Nurse", "Nurse ICU 2"];
 
 export function useNursingAccess() {
   const { role } = useRole();
@@ -36,27 +24,16 @@ export function useNursingAccess() {
   };
 }
 
-export function ProtectedNursing({
-  children,
-}: {
-  children: (_state: { role: Role; readOnly: boolean }) => React.ReactNode;
-}) {
+export function ProtectedNursing({ children }: { children: (state: { role: Role; readOnly: boolean }) => React.ReactNode }) {
   const access = useNursingAccess();
   if (!access.allowed) {
-    return (
-      <EmptyState
-        icon={LockKeyhole}
-        title="Nursing permission required"
-        description="Your current role cannot access nursing documentation screens."
-      />
-    );
+    return <EmptyState icon={LockKeyhole} title="Nursing permission required" description="Your current role cannot access nursing documentation screens." />;
   }
   return (
     <div className="space-y-4">
       {access.readOnly ? (
         <AlertBanner icon={LockKeyhole} tone="warning" title="Read-only nursing access">
-          {access.role} can review nursing assessments and care plans in this static preview, but
-          documentation and master configuration actions are disabled.
+          {access.role} can review nursing assessments and care plans in this static preview, but documentation and master configuration actions are disabled.
         </AlertBanner>
       ) : null}
       {children({ role: access.role, readOnly: access.readOnly })}
@@ -73,14 +50,17 @@ export function NursingShell({
   actions?: React.ReactNode;
   showSectionNav?: boolean;
 }) {
-  return <ProtectedNursing>{() => <div className="space-y-4">{children}</div>}</ProtectedNursing>;
+  return (
+    <ProtectedNursing>
+      {() => <div className="space-y-4">{children}</div>}
+    </ProtectedNursing>
+  );
 }
 
 export function NursingStatus({ status }: { status: string }) {
   let tone: StatusTone = "muted";
   if (["Active", "Achieved", "Completed", "Resolved", "Yes"].includes(status)) tone = "success";
-  if (["Pending", "Partially achieved", "Adequate for discharge"].includes(status))
-    tone = "warning";
+  if (["Pending", "Partially achieved", "Adequate for discharge"].includes(status)) tone = "warning";
   if (["Calculated", "Dropdown", "In progress"].includes(status)) tone = "info";
   return <Badge tone={tone}>{status}</Badge>;
 }
@@ -99,20 +79,10 @@ export function NursingQuickNav() {
         const Icon = item.icon;
         const active = pathname === item.href;
         return (
-          <Link
-            className={cn(
-              "rounded-lg border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-muted",
-              active &&
-                "border-primary bg-primary text-primary-foreground hover:bg-primary hover:brightness-95",
-            )}
-            href={item.href}
-            key={item.href}
-          >
+          <Link className={cn("rounded-lg border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-muted", active && "border-primary bg-primary text-primary-foreground hover:bg-primary hover:brightness-95")} href={item.href} key={item.href}>
             <Icon className={cn("mb-3 h-5 w-5 text-muted-foreground", active && "text-white")} />
             <div className="text-sm font-semibold">{item.label}</div>
-            <div className={cn("mt-1 text-xs text-muted-foreground", active && "text-white/75")}>
-              Open reusable nursing workspace
-            </div>
+            <div className={cn("mt-1 text-xs text-muted-foreground", active && "text-white/75")}>Open reusable nursing workspace</div>
           </Link>
         );
       })}
@@ -131,9 +101,7 @@ export function NursingPatientStrip() {
             <Badge tone="info">IPD-1188</Badge>
             <NursingStatus status="Active" />
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            Orthopedics ward • OW-204 • Consultant Dr. Aman Verma
-          </div>
+          <div className="mt-1 text-xs text-muted-foreground">Orthopedics ward • OW-204 • Consultant Dr. Aman Verma</div>
         </div>
       </CardContent>
     </Card>
@@ -143,9 +111,7 @@ export function NursingPatientStrip() {
 export function FieldLabel({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-md border border-border bg-surface-muted p-2">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
+      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-sm text-foreground">{value}</div>
     </div>
   );

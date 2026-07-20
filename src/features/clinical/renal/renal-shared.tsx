@@ -2,7 +2,7 @@
 
 import type * as React from "react";
 import Link from "next/link";
-import { AlertTriangle, Droplets, LockKeyhole } from "lucide-react";
+import { AlertTriangle, Droplets, LockKeyhole, ShieldAlert } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -29,13 +29,7 @@ export const renalAllowedRoles: Role[] = [
 
 const renalEntryRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Nurse"];
 const renalReviewRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD"];
-const renalLabRoles: Role[] = [
-  "Super Admin",
-  "Hospital Admin",
-  "Doctor",
-  "Doctor IPD",
-  "Lab Technician",
-];
+const renalLabRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor IPD", "Lab Technician"];
 const renalBillingRoles: Role[] = ["Super Admin", "Hospital Admin", "Billing Executive"];
 
 export function useRenalAccess() {
@@ -50,11 +44,7 @@ export function useRenalAccess() {
   return { role, allowed, canEnterIO, canReview, canUpdateLabs, canBill, readOnly };
 }
 
-export function ProtectedRenal({
-  children,
-}: {
-  children: (_access: ReturnType<typeof useRenalAccess>) => React.ReactNode;
-}) {
+export function ProtectedRenal({ children }: { children: (access: ReturnType<typeof useRenalAccess>) => React.ReactNode }) {
   const access = useRenalAccess();
 
   if (!access.allowed) {
@@ -79,28 +69,16 @@ export function ProtectedRenal({
 
 export function RenalRoleBanner({ role }: { role: Role }) {
   if (role === "Nurse") {
-    return (
-      <AlertBanner icon={Droplets} tone="info" title="Nursing renal chart">
-        Intake, output, drains, and shift notes are enabled for this role.
-      </AlertBanner>
-    );
+    return <AlertBanner icon={Droplets} tone="info" title="Nursing renal chart">Intake, output, drains, and shift notes are enabled for this role.</AlertBanner>;
   }
   // if (role === "Doctor" || role === "Doctor IPD") {
   //   return <AlertBanner icon={ShieldAlert} tone="warning" title="Doctor review">Trends, alerts, renal orders, and sign-off actions are enabled for this role.</AlertBanner>;
   // }
   if (role === "Lab Technician") {
-    return (
-      <AlertBanner icon={AlertTriangle} tone="info" title="Renal investigations">
-        Renal lab update actions are enabled; clinical I/O entry remains protected.
-      </AlertBanner>
-    );
+    return <AlertBanner icon={AlertTriangle} tone="info" title="Renal investigations">Renal lab update actions are enabled; clinical I/O entry remains protected.</AlertBanner>;
   }
   if (role === "Billing Executive" || role === "Management") {
-    return (
-      <AlertBanner icon={LockKeyhole} tone="muted" title="Read-only renal view">
-        Patient renal data is visible for review, while clinical edits are disabled.
-      </AlertBanner>
-    );
+    return <AlertBanner icon={LockKeyhole} tone="muted" title="Read-only renal view">Patient renal data is visible for review, while clinical edits are disabled.</AlertBanner>;
   }
   // return <AlertBanner icon={ShieldAlert} tone="info" title="Renal module access">Clinical, audit, and configuration actions follow the selected static role.</AlertBanner>;
 }
@@ -119,24 +97,16 @@ export function renalAlertTone(severity: RenalAlertSeverity): StatusTone {
 }
 
 export function RenalStatusBadge({ status }: { status: RenalStatus | string }) {
-  const tone = ["Stable", "AKI watch", "Fluid overload", "Critical", "Dialysis review"].includes(
-    status,
-  )
+  const tone = ["Stable", "AKI watch", "Fluid overload", "Critical", "Dialysis review"].includes(status)
     ? renalStatusTone(status as RenalStatus)
     : "info";
   return <StatusPill tone={tone}>{status}</StatusPill>;
 }
 
 export function BalanceBadge({ value }: { value: number }) {
-  const tone: StatusTone =
-    value > 1000 ? "critical" : value > 500 ? "warning" : value >= 0 ? "success" : "info";
+  const tone: StatusTone = value > 1000 ? "critical" : value > 500 ? "warning" : value >= 0 ? "success" : "info";
   const prefix = value > 0 ? "+" : "";
-  return (
-    <Badge tone={tone}>
-      {prefix}
-      {formatMl(value)}
-    </Badge>
-  );
+  return <Badge tone={tone}>{prefix}{formatMl(value)}</Badge>;
 }
 
 export function formatMl(value: number) {
@@ -179,9 +149,7 @@ export function RenalPatientHeader({
             <span>UHID: {patient?.uhid ?? "Unknown"}</span>
             <span>Bed: {bedNo}</span>
             <span>Ward: {ward}</span>
-            <span>
-              {patient?.age ?? "-"} / {patient?.gender ?? "-"}
-            </span>
+            <span>{patient?.age ?? "-"} / {patient?.gender ?? "-"}</span>
           </div>
           <div className="mt-2 text-xs text-muted-foreground">{windowLabel}</div>
         </div>
@@ -275,35 +243,10 @@ export function ClinicalTable({
   );
 }
 
-export function ClinicalTh({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <th
-      className={cn(
-        "border-b border-border bg-surface-muted px-3 py-2 font-semibold uppercase text-muted-foreground",
-        className,
-      )}
-    >
-      {children}
-    </th>
-  );
+export function ClinicalTh({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <th className={cn("border-b border-border bg-surface-muted px-3 py-2 font-semibold uppercase text-muted-foreground", className)}>{children}</th>;
 }
 
-export function ClinicalTd({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <td className={cn("border-b border-border px-3 py-2 align-middle text-foreground", className)}>
-      {children}
-    </td>
-  );
+export function ClinicalTd({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <td className={cn("border-b border-border px-3 py-2 align-middle text-foreground", className)}>{children}</td>;
 }

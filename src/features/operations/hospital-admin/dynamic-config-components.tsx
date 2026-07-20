@@ -1,16 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  CalendarDays,
-  CheckSquare,
-  Clock,
-  Hash,
-  ListChecks,
-  Plus,
-  Trash2,
-  Type,
-} from "lucide-react";
+import { CalendarDays, CheckSquare, Clock, Hash, ListChecks, Plus, Trash2, Type } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,15 +19,7 @@ export type CheckboxConfigValues = {
   checkboxDefault: boolean;
 };
 
-export function FieldShell({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
+export function FieldShell({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <label className="space-y-1 text-sm">
       <span className="font-medium text-foreground">{label}</span>
@@ -55,7 +38,7 @@ export function SelectField<T extends string>({
   label: string;
   value: T;
   options: T[];
-  onChange: (_value: T) => void;
+  onChange: (value: T) => void;
 }) {
   return (
     <FieldShell label={label}>
@@ -83,20 +66,14 @@ export function DropdownOptionsField<TValues extends OptionConfigValues>({
   values: TValues;
   error?: string;
   selectionModes: AdminSelectionMode[];
-  onChange: (_values: Partial<TValues>) => void;
+  onChange: (values: Partial<TValues>) => void;
 }) {
   const updateOption = (index: number, value: string) => {
-    onChange({
-      options: values.options.map((option, optionIndex) =>
-        optionIndex === index ? value : option,
-      ),
-    } as Partial<TValues>);
+    onChange({ options: values.options.map((option, optionIndex) => (optionIndex === index ? value : option)) } as Partial<TValues>);
   };
 
   const deleteOption = (index: number) => {
-    onChange({
-      options: values.options.filter((_, optionIndex) => optionIndex !== index),
-    } as Partial<TValues>);
+    onChange({ options: values.options.filter((_, optionIndex) => optionIndex !== index) } as Partial<TValues>);
   };
 
   return (
@@ -110,12 +87,7 @@ export function DropdownOptionsField<TValues extends OptionConfigValues>({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-foreground">Options</span>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => onChange({ options: [...values.options, ""] } as Partial<TValues>)}
-          >
+          <Button type="button" size="sm" variant="outline" onClick={() => onChange({ options: [...values.options, ""] } as Partial<TValues>)}>
             <Plus className="h-3.5 w-3.5" />
             Add Option
           </Button>
@@ -123,19 +95,8 @@ export function DropdownOptionsField<TValues extends OptionConfigValues>({
         <div className="space-y-2">
           {values.options.map((option, index) => (
             <div className="flex gap-2" key={index}>
-              <Input
-                value={option}
-                onChange={(event) => updateOption(index, event.target.value)}
-                placeholder={`Option ${index + 1}`}
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                onClick={() => deleteOption(index)}
-                disabled={values.options.length === 1}
-                aria-label="Delete option"
-              >
+              <Input value={option} onChange={(event) => updateOption(index, event.target.value)} placeholder={`Option ${index + 1}`} />
+              <Button type="button" size="icon" variant="outline" onClick={() => deleteOption(index)} disabled={values.options.length === 1} aria-label="Delete option">
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -152,25 +113,19 @@ export function CheckboxConfigFields<TValues extends CheckboxConfigValues>({
   onChange,
 }: {
   values: TValues;
-  onChange: (_values: Partial<TValues>) => void;
+  onChange: (values: Partial<TValues>) => void;
 }) {
   return (
     <div className="space-y-4">
       <FieldShell label="Checkbox label">
-        <Input
-          value={values.checkboxLabel}
-          onChange={(event) => onChange({ checkboxLabel: event.target.value } as Partial<TValues>)}
-          placeholder="Visible checkbox label"
-        />
+        <Input value={values.checkboxLabel} onChange={(event) => onChange({ checkboxLabel: event.target.value } as Partial<TValues>)} placeholder="Visible checkbox label" />
       </FieldShell>
       <label className="flex items-center gap-2 text-sm font-medium text-foreground">
         <input
           type="checkbox"
           className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
           checked={values.checkboxDefault}
-          onChange={(event) =>
-            onChange({ checkboxDefault: event.target.checked } as Partial<TValues>)
-          }
+          onChange={(event) => onChange({ checkboxDefault: event.target.checked } as Partial<TValues>)}
         />
         Default value
       </label>

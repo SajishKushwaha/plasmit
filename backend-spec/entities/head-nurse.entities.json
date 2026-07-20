@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "ShiftRoster": {
+      "fields": {
+        "id": "uuid",
+        "userId": "uuid",
+        "unitId": "uuid|null",
+        "wardId": "uuid|null",
+        "shiftType": "MORNING|EVENING|NIGHT|GENERAL|ON_CALL|LEAVE|WEEKLY_OFF",
+        "startDateTime": "datetime",
+        "endDateTime": "datetime",
+        "status": "SCHEDULED|COMPLETED|ABSENT|CANCELLED"
+      }
+    },
+    "StaffAssignment": {
+      "fields": {
+        "id": "uuid",
+        "userId": "uuid",
+        "roleCode": "WARD_NURSE|UNIT_NURSE|HEAD_NURSE",
+        "unitId": "uuid|null",
+        "wardId": "uuid|null",
+        "admissionId": "uuid|null",
+        "shiftId": "uuid",
+        "assignmentType": "PATIENT|WARD|UNIT",
+        "status": "ACTIVE|ENDED|CANCELLED",
+        "assignedBy": "uuid",
+        "assignedAt": "datetime"
+      }
+    },
+    "Incident": {
+      "fields": {
+        "id": "uuid",
+        "admissionId": "uuid|null",
+        "incidentType": "PATIENT_FALL|MEDICATION_ERROR|EQUIPMENT_FAILURE|PRESSURE_INJURY|OTHER",
+        "severity": "LOW|MEDIUM|HIGH|CRITICAL",
+        "description": "string",
+        "reportedBy": "uuid",
+        "status": "OPEN|IN_PROGRESS|RESOLVED|CLOSED"
+      }
+    }
+  }
+}
+

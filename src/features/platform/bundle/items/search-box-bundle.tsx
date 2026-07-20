@@ -27,13 +27,8 @@ export function SearchBoxBundle() {
   renderPreview: () => (
     <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
       <Input placeholder="Search patient, UHID, mobile" />
-      <Button size="icon" aria-label="Search">
-        <Search className="h-4 w-4" />
-      </Button>
-      <Button variant="outline">
-        <Filter className="h-4 w-4" />
-        Filter
-      </Button>
+      <Button size="icon" aria-label="Search"><Search className="h-4 w-4" /></Button>
+      <Button variant="outline"><Filter className="h-4 w-4" />Filter</Button>
     </div>
   ),
 };

@@ -47,6 +47,16 @@ const tabs = [
   { id: "allergy", label: "4. Allergy History" },
   { id: "social", label: "5. Social History" },
 ] as const;
+const medicationHistoryRows = [
+  { color: "Red", dose: "500 mg", duration: "5 days", frequency: "BD", indication: "Fever / infection", medicationName: "Paracetamol", reason: "Course completed", route: "Oral", stoppedOn: "12 / 07 / 2026" },
+  { color: "Green", dose: "40 mg", duration: "Ongoing", frequency: "OD", indication: "Gastric protection", medicationName: "Pantoprazole", reason: "Active medicine", route: "Oral", stoppedOn: "-" },
+  { color: "Blue", dose: "1 g", duration: "3 days", frequency: "BD", indication: "Antibiotic cover", medicationName: "Ceftriaxone", reason: "Changed after review", route: "IV", stoppedOn: "15 / 07 / 2026" },
+];
+const medicationColorClasses: Record<string, string> = {
+  Blue: "bg-blue-500",
+  Green: "bg-green-500",
+  Red: "bg-red-500",
+};
 
 type HistoryTab = (typeof tabs)[number]["id"];
 
@@ -117,7 +127,7 @@ function YearRangePicker({
 }: {
   visibleYear: number;
   onClose: () => void;
-  onSelectYear: (_year: number) => void;
+  onSelectYear: (year: number) => void;
   onToday: () => void;
 }) {
   const currentYear = new Date().getFullYear();
@@ -125,57 +135,28 @@ function YearRangePicker({
   const currentPageStart = yearRangePageStart(currentYear);
   const [pageStart, setPageStart] = React.useState(currentPageStart);
   const [selectedRangeStart, setSelectedRangeStart] = React.useState<number | null>(null);
-  const ranges = React.useMemo(
-    () => Array.from({ length: 25 }, (_, index) => pageStart + index * 5),
-    [pageStart],
-  );
-  const exactYears = selectedRangeStart
-    ? Array.from({ length: 6 }, (_, index) => selectedRangeStart + index)
-    : [];
+  const ranges = React.useMemo(() => Array.from({ length: 25 }, (_, index) => pageStart + index * 5), [pageStart]);
+  const exactYears = selectedRangeStart ? Array.from({ length: 6 }, (_, index) => selectedRangeStart + index) : [];
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col overflow-hidden rounded-lg bg-surface">
       <div className="flex h-full w-full flex-col overflow-hidden">
         <div className="border-b border-border p-3">
           <div className="flex items-center justify-between gap-2">
-            <Button
-              aria-label="Previous year ranges"
-              disabled={Boolean(selectedRangeStart) || pageStart <= firstYear}
-              onClick={() => setPageStart((year) => Math.max(firstYear, year - 125))}
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
+            <Button aria-label="Previous year ranges" disabled={Boolean(selectedRangeStart) || pageStart <= firstYear} onClick={() => setPageStart((year) => Math.max(firstYear, year - 125))} size="icon" type="button" variant="ghost">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <CalendarDays className="h-4 w-4 text-primary" />
-              {selectedRangeStart
-                ? yearRangeLabel(selectedRangeStart)
-                : `${pageStart}-${String(pageStart + 125).slice(-2)}`}
+              {selectedRangeStart ? yearRangeLabel(selectedRangeStart) : `${pageStart}-${String(pageStart + 125).slice(-2)}`}
             </div>
-            <Button
-              aria-label="Next year ranges"
-              disabled={Boolean(selectedRangeStart) || pageStart >= currentPageStart}
-              onClick={() => setPageStart((year) => Math.min(currentPageStart, year + 125))}
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
+            <Button aria-label="Next year ranges" disabled={Boolean(selectedRangeStart) || pageStart >= currentPageStart} onClick={() => setPageStart((year) => Math.min(currentPageStart, year + 125))} size="icon" type="button" variant="ghost">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <p className="mt-1 text-center text-xs text-muted-foreground">
-            {selectedRangeStart ? "Choose exact year" : "Choose a 5-year range"}
-          </p>
+          <p className="mt-1 text-center text-xs text-muted-foreground">{selectedRangeStart ? "Choose exact year" : "Choose a 5-year range"}</p>
         </div>
-        <div
-          className={
-            selectedRangeStart
-              ? "grid flex-1 grid-cols-3 gap-2 p-3"
-              : "grid flex-1 grid-cols-5 grid-rows-5 gap-1.5 p-3"
-          }
-        >
+        <div className={selectedRangeStart ? "grid flex-1 grid-cols-3 gap-2 p-3" : "grid flex-1 grid-cols-5 grid-rows-5 gap-1.5 p-3"}>
           {(selectedRangeStart ? exactYears : ranges).map((value) => (
             <button
               className={`rounded-md border px-1 text-xs font-medium transition ${
@@ -207,14 +188,8 @@ function YearRangePicker({
             Today
           </Button>
           <div className="flex gap-2">
-            {selectedRangeStart ? (
-              <Button onClick={() => setSelectedRangeStart(null)} type="button" variant="outline">
-                Back
-              </Button>
-            ) : null}
-            <Button onClick={onClose} type="button" variant="outline">
-              Close
-            </Button>
+            {selectedRangeStart ? <Button onClick={() => setSelectedRangeStart(null)} type="button" variant="outline">Back</Button> : null}
+            <Button onClick={onClose} type="button" variant="outline">Close</Button>
           </div>
         </div>
       </div>
@@ -222,23 +197,14 @@ function YearRangePicker({
   );
 }
 
-function validateNumericInput(
-  event: React.FormEvent<HTMLInputElement>,
-  label: string,
-  allowDecimal = false,
-) {
+function validateNumericInput(event: React.FormEvent<HTMLInputElement>, label: string, allowDecimal = false) {
   const input = event.currentTarget;
   const value = input.value.trim();
   const numberPattern = allowDecimal ? /^\d*(\.\d*)?$/ : /^\d*$/;
-  input.setCustomValidity(
-    value && !numberPattern.test(value) ? `${label} must contain numbers only.` : "",
-  );
+  input.setCustomValidity(value && !numberPattern.test(value) ? `${label} must contain numbers only.` : "");
 }
 
-function preventInvalidNumericInput(
-  event: React.FormEvent<HTMLInputElement>,
-  allowDecimal = false,
-) {
+function preventInvalidNumericInput(event: React.FormEvent<HTMLInputElement>, allowDecimal = false) {
   const nativeEvent = event.nativeEvent as InputEvent;
   const input = event.currentTarget;
   const data = nativeEvent.data ?? "";
@@ -252,10 +218,7 @@ function preventInvalidNumericInput(
   }
 }
 
-function preventInvalidNumericPaste(
-  event: React.ClipboardEvent<HTMLInputElement>,
-  allowDecimal = false,
-) {
+function preventInvalidNumericPaste(event: React.ClipboardEvent<HTMLInputElement>, allowDecimal = false) {
   const input = event.currentTarget;
   const paste = event.clipboardData.getData("text");
   const start = input.selectionStart ?? input.value.length;
@@ -276,10 +239,7 @@ function DateField({ required }: { required?: boolean }) {
   const [popoverStyle, setPopoverStyle] = React.useState<React.CSSProperties>({});
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const selected = parseDateValue(value);
-  const monthNames = React.useMemo(
-    () => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    [],
-  );
+  const monthNames = React.useMemo(() => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], []);
   const totalDays = daysInMonth(visibleMonth, visibleYear);
 
   function updatePopoverPosition() {
@@ -331,9 +291,7 @@ function DateField({ required }: { required?: boolean }) {
   }
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-    event.currentTarget.setCustomValidity(
-      /[^\d/]/.test(event.target.value) ? "Year must contain numbers only." : "",
-    );
+    event.currentTarget.setCustomValidity(/[^\d/]/.test(event.target.value) ? "Year must contain numbers only." : "");
     const nextValue = formatDateInput(event.target.value);
     setValue(nextValue);
     const nextDate = parseDateValue(nextValue);
@@ -394,18 +352,9 @@ function DateField({ required }: { required?: boolean }) {
       </div>
 
       {open ? (
-        <div
-          className="fixed z-[100] h-[356px] rounded-lg border border-border bg-surface p-3 shadow-soft"
-          style={popoverStyle}
-        >
+        <div className="fixed z-[100] h-[356px] rounded-lg border border-border bg-surface p-3 shadow-soft" style={popoverStyle}>
           <div className="mb-3 flex items-center justify-between gap-2">
-            <Button
-              aria-label="Previous month"
-              onClick={() => moveMonth(-1)}
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
+            <Button aria-label="Previous month" onClick={() => moveMonth(-1)} size="icon" type="button" variant="ghost">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="grid flex-1 grid-cols-[1fr_6rem] gap-2">
@@ -421,23 +370,12 @@ function DateField({ required }: { required?: boolean }) {
                   </option>
                 ))}
               </select>
-              <button
-                aria-label="Select year"
-                className={selectClass}
-                onClick={() => setYearPickerOpen(true)}
-                type="button"
-              >
+              <button aria-label="Select year" className={selectClass} onClick={() => setYearPickerOpen(true)} type="button">
                 <span className="flex-1 text-left">{visibleYear}</span>
                 <ChevronRight className="h-4 w-4 rotate-90 text-muted-foreground" />
               </button>
             </div>
-            <Button
-              aria-label="Next month"
-              onClick={() => moveMonth(1)}
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
+            <Button aria-label="Next month" onClick={() => moveMonth(1)} size="icon" type="button" variant="ghost">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -448,11 +386,9 @@ function DateField({ required }: { required?: boolean }) {
             ))}
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
-            {Array.from({ length: new Date(visibleYear, visibleMonth, 1).getDay() }).map(
-              (_, index) => (
-                <span key={`blank-${index}`} />
-              ),
-            )}
+            {Array.from({ length: new Date(visibleYear, visibleMonth, 1).getDay() }).map((_, index) => (
+              <span key={`blank-${index}`} />
+            ))}
             {Array.from({ length: totalDays }).map((_, index) => {
               const day = index + 1;
               const active =
@@ -474,29 +410,14 @@ function DateField({ required }: { required?: boolean }) {
             })}
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-            <Button
-              onClick={() => {
-                setValue("");
-                setOpen(false);
-              }}
-              size="sm"
-              type="button"
-              variant="ghost"
-            >
+            <Button onClick={() => { setValue(""); setOpen(false); }} size="sm" type="button" variant="ghost">
               Clear
             </Button>
             <Button onClick={selectToday} size="sm" type="button" variant="outline">
               Today
             </Button>
           </div>
-          {yearPickerOpen ? (
-            <YearRangePicker
-              onClose={() => setYearPickerOpen(false)}
-              onSelectYear={setVisibleYear}
-              onToday={selectTodayYear}
-              visibleYear={visibleYear}
-            />
-          ) : null}
+          {yearPickerOpen ? <YearRangePicker onClose={() => setYearPickerOpen(false)} onSelectYear={setVisibleYear} onToday={selectTodayYear} visibleYear={visibleYear} /> : null}
         </div>
       ) : null}
     </div>
@@ -544,10 +465,7 @@ function Field({
 function Checkbox({ label }: { label: string }) {
   return (
     <label className="inline-flex items-center gap-2 text-xs text-foreground">
-      <input
-        className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring"
-        type="checkbox"
-      />
+      <input className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring" type="checkbox" />
       {label}
     </label>
   );
@@ -603,7 +521,7 @@ function PatientHistoryPreview({
   onFieldChange,
 }: {
   record: PatientHistoryRecord;
-  onFieldChange: (_tabId: string, _fieldIndex: number, _value: string) => void;
+  onFieldChange: (tabId: string, fieldIndex: number, value: string) => void;
 }) {
   const sections = tabs.map((tab) => {
     const section = record.sections.find((item) => item.tabId === tab.id);
@@ -617,13 +535,9 @@ function PatientHistoryPreview({
           <div className="border-b-2 border-black pb-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  Plasmit Hospital HMS
-                </div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Plasmit Hospital HMS</div>
                 <h2 className="mt-1 text-2xl font-bold text-black">Patient History Preview</h2>
-                <p className="mt-1 text-sm text-neutral-600">
-                  Review and edit history before final submit.
-                </p>
+                <p className="mt-1 text-sm text-neutral-600">Review and edit history before final submit.</p>
               </div>
               <div className="rounded border border-neutral-300 px-3 py-2 text-right text-xs text-neutral-600">
                 <div className="font-semibold text-black">Draft</div>
@@ -637,27 +551,18 @@ function PatientHistoryPreview({
               <section className="break-inside-avoid" key={`history-preview-${section.tabId}`}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="h-px flex-1 bg-neutral-300" />
-                  <h3 className="shrink-0 text-sm font-bold uppercase tracking-wide text-black">
-                    {section.tabLabel}
-                  </h3>
+                  <h3 className="shrink-0 text-sm font-bold uppercase tracking-wide text-black">{section.tabLabel}</h3>
                   <div className="h-px flex-1 bg-neutral-300" />
                 </div>
 
                 {section.fields.length ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {section.fields.map((field, index) => (
-                      <label
-                        className="block rounded border border-neutral-300 p-2"
-                        key={`${section.tabId}-${field.label}-${index}`}
-                      >
-                        <span className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                          {field.label}
-                        </span>
+                      <label className="block rounded border border-neutral-300 p-2" key={`${section.tabId}-${field.label}-${index}`}>
+                        <span className="block text-[11px] font-semibold uppercase tracking-wide text-neutral-500">{field.label}</span>
                         <textarea
                           className="mt-1 min-h-9 w-full resize-y rounded border border-transparent bg-white p-1 text-sm font-medium text-black outline-none transition focus:border-neutral-400"
-                          onChange={(event) =>
-                            onFieldChange(section.tabId, index, event.target.value)
-                          }
+                          onChange={(event) => onFieldChange(section.tabId, index, event.target.value)}
                           value={field.value}
                         />
                       </label>
@@ -700,13 +605,13 @@ export function PatientHistoryPage() {
   const initialEditingRecord = React.useMemo(() => getInitialEditingHistoryRecord(), []);
   const [activeTab, setActiveTab] = React.useState<HistoryTab>("medical");
   const [formKey, setFormKey] = React.useState(0);
-  const [editingRecordId, setEditingRecordId] = React.useState<string | null>(
-    initialEditingRecord?.id ?? null,
-  );
-  const [editingRecord, setEditingRecord] = React.useState<PatientHistoryRecord | null>(
-    initialEditingRecord,
-  );
+  const [editingRecordId, setEditingRecordId] = React.useState<string | null>(initialEditingRecord?.id ?? null);
+  const [editingRecord, setEditingRecord] = React.useState<PatientHistoryRecord | null>(initialEditingRecord);
   const [previewRecord, setPreviewRecord] = React.useState<PatientHistoryRecord | null>(null);
+  const [medicationStatus, setMedicationStatus] = React.useState<"ongoing" | "stopped">("ongoing");
+  const [allergyStatus, setAllergyStatus] = React.useState("");
+  const [allergyType, setAllergyType] = React.useState("");
+  const [otherAllergyType, setOtherAllergyType] = React.useState("");
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
   React.useEffect(() => {
@@ -786,27 +691,20 @@ export function PatientHistoryPage() {
           section.tabId === tabId
             ? {
                 ...section,
-                fields: section.fields.map((field, index) =>
-                  index === fieldIndex ? { ...field, value } : field,
-                ),
+                fields: section.fields.map((field, index) => (index === fieldIndex ? { ...field, value } : field)),
               }
             : section,
         ),
       };
       setEditingRecord(nextRecord);
-      writePatientHistoryRecords(
-        readPatientHistoryRecords().map((record) =>
-          record.id === nextRecord.id ? nextRecord : record,
-        ),
-      );
+      writePatientHistoryRecords(readPatientHistoryRecords().map((record) => (record.id === nextRecord.id ? nextRecord : record)));
       return nextRecord;
     });
   }
 
   function handleFormKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
     const target = event.target as HTMLElement;
-    if (event.key !== "Enter" || target.tagName === "BUTTON" || target.tagName === "TEXTAREA")
-      return;
+    if (event.key !== "Enter" || target.tagName === "BUTTON" || target.tagName === "TEXTAREA") return;
     event.preventDefault();
     if (activeTabIndex === tabs.length - 1) {
       handlePreview();
@@ -823,24 +721,16 @@ export function PatientHistoryPage() {
         open={Boolean(previewRecord)}
         title="Patient History Preview"
       >
-        {previewRecord ? (
-          <PatientHistoryPreview record={previewRecord} onFieldChange={handlePreviewFieldChange} />
-        ) : null}
+        {previewRecord ? <PatientHistoryPreview record={previewRecord} onFieldChange={handlePreviewFieldChange} /> : null}
       </CenterModal>
 
       <div className="pt-4">
-        <div
-          className="flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1"
-          role="tablist"
-          aria-label="Patient history sections"
-        >
+        <div className="flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1" role="tablist" aria-label="Patient history sections">
           {tabs.map((tab) => (
             <button
               aria-selected={activeTab === tab.id}
               className={`h-8 shrink-0 rounded px-3 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${
-                activeTab === tab.id
-                  ? "bg-surface text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                activeTab === tab.id ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -869,20 +759,9 @@ export function PatientHistoryPage() {
                   <TextArea placeholder="Enter past medical history" />
                 </Field>
                 <div className="space-y-2" data-history-field-group>
-                  <span className={labelClass} data-history-field-label>
-                    Known Comorbidities
-                  </span>
+                  <span className={labelClass} data-history-field-label>Known Comorbidities</span>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    {[
-                      "Hypertension",
-                      "Diabetes Mellitus",
-                      "Ischemic Heart Disease",
-                      "COPD / Asthma",
-                      "CKD",
-                      "Hypothyroidism",
-                      "Malignancy",
-                      "Others",
-                    ].map((item) => (
+                    {["Hypertension", "Diabetes Mellitus", "Ischemic Heart Disease", "COPD / Asthma", "CKD", "Hypothyroidism", "Malignancy", "Others"].map((item) => (
                       <Checkbox key={item} label={item} />
                     ))}
                   </div>
@@ -1005,31 +884,8 @@ export function PatientHistoryPage() {
                       <Radio label="Complications Present" name="surgicalComplication" />
                     </div>
                   </div>
-                  <Field label="Type of Complication">
-                    <select className={selectClass}>
-                      <option>Select complication</option>
-                      <option>Bleeding</option>
-                      <option>Infection</option>
-                      <option>Wound Dehiscence</option>
-                      <option>Other</option>
-                    </select>
-                  </Field>
                   <Field label="Details">
                     <Input placeholder="Enter details" />
-                  </Field>
-                  <Field label="Management">
-                    <Input placeholder="Enter management" />
-                  </Field>
-                  <Field label="Outcome">
-                    <select className={selectClass}>
-                      <option>Select outcome</option>
-                      <option>Resolved</option>
-                      <option>Ongoing</option>
-                      <option>Referred</option>
-                    </select>
-                  </Field>
-                  <Field label="Date">
-                    <DateField />
                   </Field>
                 </div>
               </div>
@@ -1051,24 +907,23 @@ export function PatientHistoryPage() {
             >
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-5">
-                  <Radio label="Ongoing Medications" name="medicationStatus" />
-                  <Radio label="Stopped Medications" name="medicationStatus" />
+                  <label className="inline-flex min-h-7 items-center gap-2 rounded-md px-1 text-xs text-foreground">
+                    <input checked={medicationStatus === "ongoing"} className={radioInputClass} name="medicationStatus" type="radio" onChange={() => setMedicationStatus("ongoing")} />
+                    <span className="leading-5">Ongoing Medications</span>
+                  </label>
+                  <label className="inline-flex min-h-7 items-center gap-2 rounded-md px-1 text-xs text-foreground">
+                    <input checked={medicationStatus === "stopped"} className={radioInputClass} name="medicationStatus" type="radio" onChange={() => setMedicationStatus("stopped")} />
+                    <span className="leading-5">Stopped Medications</span>
+                  </label>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <table className="w-full min-w-[860px] text-left text-sm">
                     <thead className="bg-surface-muted text-xs font-semibold uppercase text-muted-foreground">
                       <tr>
-                        {[
-                          "S. No.",
-                          "Medication Name",
-                          "Dose",
-                          "Frequency",
-                          "Route",
-                          "Duration",
-                          "Indication",
-                          "Stopped On",
-                          "Reason",
-                        ].map((heading) => (
+                        {(medicationStatus === "ongoing"
+                          ? ["S. No.", "Indicator", "Medication Name", "Dose", "Frequency", "Route", "Duration"]
+                          : ["S. No.", "Indicator", "Medication Name", "Dose", "Frequency", "Route", "Duration", "Indication", "Stopped On", "Reason"]
+                        ).map((heading) => (
                           <th className="border-b border-border px-3 py-2" key={heading}>
                             {heading}
                           </th>
@@ -1076,14 +931,29 @@ export function PatientHistoryPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td
-                          className="px-3 py-8 text-center text-xs text-muted-foreground"
-                          colSpan={9}
-                        >
-                          No medication history added.
-                        </td>
-                      </tr>
+                      {medicationHistoryRows.map((row, index) => (
+                        <tr className="border-b border-border last:border-b-0" key={row.medicationName}>
+                          <td className="px-3 py-2 text-center text-xs text-muted-foreground">{index + 1}</td>
+                          <td className="px-3 py-2">
+                            <span className="inline-flex items-center gap-2 text-xs font-semibold text-foreground">
+                              <span className={`h-2.5 w-2.5 rounded-full ${medicationColorClasses[row.color]}`} />
+                              {row.color}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 font-medium text-foreground">{row.medicationName}</td>
+                          <td className="px-3 py-2">{row.dose}</td>
+                          <td className="px-3 py-2">{row.frequency}</td>
+                          <td className="px-3 py-2">{row.route}</td>
+                          <td className="px-3 py-2">{row.duration}</td>
+                          {medicationStatus === "stopped" ? (
+                            <>
+                              <td className="px-3 py-2">{row.indication}</td>
+                              <td className="px-3 py-2">{row.stoppedOn}</td>
+                              <td className="px-3 py-2">{row.reason}</td>
+                            </>
+                          ) : null}
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -1096,57 +966,59 @@ export function PatientHistoryPage() {
           <div className="mt-4" data-history-tab="allergy">
             <Section icon={ShieldAlert} title="4. Allergy History">
               <div className="space-y-5">
-                <div className="flex flex-wrap gap-5">
-                  <Checkbox label="No Allergy" />
-                  <Checkbox label="Latex Allergy" />
-                  <Checkbox label="Drug Allergy" />
-                  <Checkbox label="Food Allergy" />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-8">
                   <Field label="Allergy">
-                    <select className={selectClass}>
-                      <option>Select Allergy</option>
+                    <select
+                      className={selectClass}
+                      value={allergyStatus}
+                      onChange={(event) => {
+                        setAllergyStatus(event.target.value);
+                        if (event.target.value !== "Yes") {
+                          setAllergyType("");
+                          setOtherAllergyType("");
+                        }
+                      }}
+                    >
+                      <option value="">Select Allergy</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
                     </select>
                   </Field>
-                  <Field label="Allergy Type">
-                    <select className={selectClass}>
-                      <option>Select Type</option>
-                      <option>Drug</option>
-                      <option>Food</option>
-                      <option>Latex</option>
-                      <option>Environmental</option>
-                    </select>
-                  </Field>
-                  <Field label="Reaction / Symptoms">
-                    <Input placeholder="Enter symptoms" />
-                  </Field>
-                  <div className="space-y-2 xl:col-span-2">
-                    <span className={labelClass}>Severity</span>
-                    <div className="grid gap-2 pt-1">
-                      <Radio label="Urticaria" name="severity" />
-                      <Radio label="Angioedema" name="severity" />
-                      <Radio label="Anaphylaxis / Shock" name="severity" />
-                    </div>
-                  </div>
-                  <Field label="Date Noted">
-                    <DateField required />
-                  </Field>
-                  <Field label="Notes">
-                    <Input placeholder="Enter notes" />
-                  </Field>
+                  {allergyStatus === "Yes" ? (
+                    <>
+                      <Field label="Type">
+                        <select className={selectClass} value={allergyType} onChange={(event) => setAllergyType(event.target.value)}>
+                          <option value="">Select Type</option>
+                          <option value="Food">Food</option>
+                          <option value="Drug">Drug</option>
+                          <option value="Chemical">Chemical</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </Field>
+                      {allergyType === "Other" ? (
+                        <Field label="Other Allergy Type">
+                          <Input placeholder="Enter other allergy type" value={otherAllergyType} onChange={(event) => setOtherAllergyType(event.target.value)} />
+                        </Field>
+                      ) : null}
+                      <Field label="Date">
+                        <DateField required />
+                      </Field>
+                      <Field label="Remark">
+                        <Input placeholder="Enter remark" />
+                      </Field>
+                    </>
+                  ) : null}
+                  {allergyStatus === "No" ? (
+                    <Field label="Remark">
+                      <Input placeholder="Enter remark" />
+                    </Field>
+                  ) : null}
                 </div>
                 <div className="rounded-lg border border-border bg-surface p-4">
                   <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
                     Allergy Override
                   </div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <Checkbox label="Override this allergy" />
-                    <Field className="md:col-span-2" label="Reason for Override">
-                      <Input placeholder="Enter reason" />
-                    </Field>
-                    <Field label="Override Date & Time">
-                      <DateField />
-                    </Field>
                     <Field label="Countersigned By (Doctor)">
                       <select className={selectClass}>
                         <option>Select Doctor</option>
@@ -1207,9 +1079,7 @@ export function PatientHistoryPage() {
                 </div>
 
                 <div className="rounded-lg border border-border p-4">
-                  <div className="mb-4 text-sm font-semibold text-foreground">
-                    5A. Smoking History
-                  </div>
+                  <div className="mb-4 text-sm font-semibold text-foreground">5A. Smoking History</div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                     <div className="space-y-2">
                       <span className={labelClass}>Smoking Status</span>
@@ -1258,9 +1128,7 @@ export function PatientHistoryPage() {
                         inputMode="decimal"
                         min="0"
                         onBeforeInput={(event) => preventInvalidNumericInput(event, true)}
-                        onInput={(event) =>
-                          validateNumericInput(event, "Years back quit since", true)
-                        }
+                        onInput={(event) => validateNumericInput(event, "Years back quit since", true)}
                         onPaste={(event) => preventInvalidNumericPaste(event, true)}
                         pattern="[0-9]*\\.?[0-9]*"
                         placeholder="Enter years"
@@ -1279,9 +1147,7 @@ export function PatientHistoryPage() {
                 </div>
 
                 <div className="rounded-lg border border-border p-4">
-                  <div className="mb-4 text-sm font-semibold text-foreground">
-                    5B. Alcohol History
-                  </div>
+                  <div className="mb-4 text-sm font-semibold text-foreground">5B. Alcohol History</div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                     <div className="space-y-2">
                       <span className={labelClass}>Alcohol Use</span>

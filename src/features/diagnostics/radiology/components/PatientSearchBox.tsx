@@ -21,9 +21,7 @@ export function PatientSearchBox({ patients }: PatientSearchBoxProps) {
     }
 
     return patients.filter((patient) =>
-      [patient.name, patient.mrn, patient.phone, patient.consultant].some((value) =>
-        value.toLowerCase().includes(normalizedQuery),
-      ),
+      [patient.name, patient.mrn, patient.phone, patient.consultant].some((value) => value.toLowerCase().includes(normalizedQuery)),
     );
   }, [patients, query]);
 
@@ -47,9 +45,7 @@ export function PatientSearchBox({ patients }: PatientSearchBoxProps) {
 
       <div className="mt-3 divide-y divide-slate-100 rounded-lg border border-slate-200">
         {matches.length === 0 ? (
-          <div className="p-4 text-sm text-slate-500">
-            No patient found. Try another MRN or phone number.
-          </div>
+          <div className="p-4 text-sm text-slate-500">No patient found. Try another MRN or phone number.</div>
         ) : (
           matches.map((patient) => (
             <button
@@ -75,8 +71,7 @@ export function PatientSearchBox({ patients }: PatientSearchBoxProps) {
 
       {selectedPatient ? (
         <div className="mt-4 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
-          Selected: <span className="font-semibold">{selectedPatient.name}</span> for radiology
-          order workflow.
+          Selected: <span className="font-semibold">{selectedPatient.name}</span> for radiology order workflow.
         </div>
       ) : null}
     </section>

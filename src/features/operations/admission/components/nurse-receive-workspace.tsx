@@ -14,29 +14,22 @@ import { AdmissionStatusBadge } from "@/features/operations/admission/components
 
 export function NurseReceiveWorkspace() {
   const { state, activeRequest, actions } = useAdmissionStore();
-  const readyRequests = state.requests.filter((request) =>
-    ["Ready for Nursing", "Received", "Care Started"].includes(request.status),
-  );
-  const currentRequest =
-    readyRequests.find((request) => request.id === activeRequest?.id) ?? readyRequests[0] ?? null;
+  const readyRequests = state.requests.filter((request) => ["Ready for Nursing", "Received", "Care Started"].includes(request.status));
+  const currentRequest = readyRequests.find((request) => request.id === activeRequest?.id) ?? readyRequests[0] ?? null;
   const existing = state.receiveRecords.find((record) => record.requestId === currentRequest?.id);
   const [receivedBy, setReceivedBy] = React.useState(existing?.receivedBy ?? "");
   const [receivedTime, setReceivedTime] = React.useState(existing?.receivedTime ?? "");
   const [checked, setChecked] = React.useState<string[]>(existing?.checklist ?? []);
 
   React.useEffect(() => {
-    const nextExisting = state.receiveRecords.find(
-      (record) => record.requestId === currentRequest?.id,
-    );
+    const nextExisting = state.receiveRecords.find((record) => record.requestId === currentRequest?.id);
     setReceivedBy(nextExisting?.receivedBy ?? "");
     setReceivedTime(nextExisting?.receivedTime ?? "");
     setChecked(nextExisting?.checklist ?? []);
   }, [currentRequest?.id, state.receiveRecords]);
 
   function toggle(item: string) {
-    setChecked((current) =>
-      current.includes(item) ? current.filter((entry) => entry !== item) : [...current, item],
-    );
+    setChecked((current) => (current.includes(item) ? current.filter((entry) => entry !== item) : [...current, item]));
   }
 
   function confirmReceive() {
@@ -66,17 +59,13 @@ export function NurseReceiveWorkspace() {
             <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-sm font-semibold">{currentRequest.patient}</div>
-                <div className="text-xs text-muted-foreground">
-                  {currentRequest.uhid} | Bed: {currentRequest.bedNo ?? "Not assigned"}
-                </div>
+                <div className="text-xs text-muted-foreground">{currentRequest.uhid} | Bed: {currentRequest.bedNo ?? "Not assigned"}</div>
               </div>
               <AdmissionStatusBadge value={currentRequest.status} />
             </div>
           ) : (
             <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="text-sm text-muted-foreground">
-                No patient is ready for nursing receive.
-              </div>
+              <div className="text-sm text-muted-foreground">No patient is ready for nursing receive.</div>
               <Button asChild size="sm" variant="outline">
                 <Link href="/admission/bed-manager">Open Bed Manager</Link>
               </Button>
@@ -90,32 +79,20 @@ export function NurseReceiveWorkspace() {
           onChange={(event) => actions.setActiveRequest(event.target.value)}
           disabled={!readyRequests.length}
         >
-          <option value="" disabled>
-            Select patient to receive
-          </option>
+          <option value="" disabled>Select patient to receive</option>
           {readyRequests.map((request) => (
-            <option key={request.id} value={request.id}>
-              {request.patient} | {request.uhid} | {request.bedNo ?? "No bed"}
-            </option>
+            <option key={request.id} value={request.id}>{request.patient} | {request.uhid} | {request.bedNo ?? "No bed"}</option>
           ))}
         </select>
 
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-1 text-sm">
             <span className="font-medium">Received By</span>
-            <Input
-              placeholder="Enter nurse name"
-              value={receivedBy}
-              onChange={(event) => setReceivedBy(event.target.value)}
-            />
+            <Input placeholder="Enter nurse name" value={receivedBy} onChange={(event) => setReceivedBy(event.target.value)} />
           </label>
           <label className="space-y-1 text-sm">
             <span className="font-medium">Received Time</span>
-            <Input
-              type="datetime-local"
-              value={receivedTime}
-              onChange={(event) => setReceivedTime(event.target.value)}
-            />
+            <Input type="datetime-local" value={receivedTime} onChange={(event) => setReceivedTime(event.target.value)} />
           </label>
         </div>
 
@@ -123,12 +100,7 @@ export function NurseReceiveWorkspace() {
           <div className="space-y-3">
             {nurseReceiveChecklist.map((item) => (
               <label className="flex items-center gap-2 text-sm" key={item}>
-                <input
-                  className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
-                  checked={checked.includes(item)}
-                  onChange={() => toggle(item)}
-                  type="checkbox"
-                />
+                <input className="h-4 w-4 rounded border-input text-primary focus:ring-ring" checked={checked.includes(item)} onChange={() => toggle(item)} type="checkbox" />
                 <span>{item}</span>
               </label>
             ))}

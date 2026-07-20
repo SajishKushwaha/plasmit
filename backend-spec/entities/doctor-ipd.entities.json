@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "DoctorRound": {
+      "fields": {
+        "id": "uuid",
+        "admissionId": "uuid",
+        "doctorId": "uuid",
+        "roundDateTime": "datetime",
+        "roundType": "RoundType",
+        "subjective": "string",
+        "objective": "string",
+        "assessment": "string",
+        "plan": "string",
+        "clinicalStatus": "ClinicalStatus",
+        "diagnosisUpdates": "Diagnosis[]",
+        "ordersCreated": "uuid[]",
+        "followUpInstructions": "string",
+        "nextReviewAt": "datetime|null",
+        "status": "DRAFT|COMPLETED"
+      }
+    },
+    "DoctorOrder": {
+      "fields": {
+        "id": "uuid",
+        "orderNumber": "string",
+        "admissionId": "uuid",
+        "patientId": "uuid",
+        "orderedBy": "uuid",
+        "orderType": "OrderType",
+        "priority": "Priority",
+        "title": "string",
+        "instructions": "string",
+        "startDateTime": "datetime",
+        "endDateTime": "datetime|null",
+        "frequency": "string|null",
+        "status": "OrderStatus",
+        "acknowledgedBy": "uuid|null",
+        "acknowledgedAt": "datetime|null",
+        "completedAt": "datetime|null",
+        "discontinuedBy": "uuid|null",
+        "discontinuedAt": "datetime|null",
+        "discontinueReason": "string|null"
+      }
+    },
+    "ProgressNote": {
+      "fields": {
+        "id": "uuid",
+        "admissionId": "uuid",
+        "authorId": "uuid",
+        "noteType": "SOAP|FREE_TEXT|SPECIALTY",
+        "subjective": "string|null",
+        "objective": "string|null",
+        "assessment": "string|null",
+        "plan": "string|null",
+        "freeText": "string|null",
+        "status": "NoteStatus",
+        "signedAt": "datetime|null",
+        "version": "number"
+      }
+    },
+    "ConsultationRequest": {
+      "fields": {
+        "id": "uuid",
+        "admissionId": "uuid",
+        "requestedSpecialty": "string",
+        "requestedDoctorId": "uuid|null",
+        "clinicalReason": "string",
+        "priority": "Priority",
+        "status": "REQUESTED|ACCEPTED|COMPLETED|CANCELLED",
+        "recommendations": "string|null"
+      }
+    }
+  }
+}
+

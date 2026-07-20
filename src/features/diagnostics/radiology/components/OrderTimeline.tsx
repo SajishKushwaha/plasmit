@@ -1,9 +1,6 @@
 import type { RadiologyOrder, RadiologyStatus } from "@/features/diagnostics/radiology/types";
 import { formatDateTime } from "@/features/diagnostics/radiology/utils/formatters";
-import {
-  radiologyStatusLabels,
-  radiologyStatusOrder,
-} from "@/features/diagnostics/radiology/utils/status";
+import { radiologyStatusLabels, radiologyStatusOrder } from "@/features/diagnostics/radiology/utils/status";
 
 interface OrderTimelineProps {
   order: RadiologyOrder;
@@ -17,9 +14,7 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-slate-950">Order Timeline</h2>
-          <p className="text-sm text-slate-500">
-            Every clinical, billing, scan, PACS, and reporting milestone.
-          </p>
+          <p className="text-sm text-slate-500">Every clinical, billing, scan, PACS, and reporting milestone.</p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
           {order.timeline.length} events
@@ -45,27 +40,14 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
                         : "border-slate-300 bg-white",
                   ].join(" ")}
                 />
-                {index < radiologyStatusOrder.length - 1 ? (
-                  <span className="mt-1 h-full min-h-6 w-px bg-slate-200" />
-                ) : null}
+                {index < radiologyStatusOrder.length - 1 ? <span className="mt-1 h-full min-h-6 w-px bg-slate-200" /> : null}
               </div>
-              <div
-                className={[
-                  "rounded-lg border p-3",
-                  isCurrent ? "border-sky-200 bg-sky-50" : "border-slate-200 bg-white",
-                ].join(" ")}
-              >
+              <div className={["rounded-lg border p-3", isCurrent ? "border-sky-200 bg-sky-50" : "border-slate-200 bg-white"].join(" ")}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium text-slate-950">
-                    {event?.label ?? radiologyStatusLabels[status]}
-                  </p>
-                  <span className="text-xs text-slate-500">
-                    {event ? formatDateTime(event.timestamp) : "Pending"}
-                  </span>
+                  <p className="font-medium text-slate-950">{event?.label ?? radiologyStatusLabels[status]}</p>
+                  <span className="text-xs text-slate-500">{event ? formatDateTime(event.timestamp) : "Pending"}</span>
                 </div>
-                <p className="mt-1 text-sm text-slate-600">
-                  {event?.note ?? event?.actor ?? (isDone ? "Completed" : "Waiting for action")}
-                </p>
+                <p className="mt-1 text-sm text-slate-600">{event?.note ?? event?.actor ?? (isDone ? "Completed" : "Waiting for action")}</p>
               </div>
             </div>
           );

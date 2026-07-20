@@ -15,12 +15,7 @@ import { defaultAdministrationDetail, defaultFluidDetail, nurseDrugOrders } from
 import { AdministrationDetailsPanel, FluidAdministrationDetailsPanel } from "./detail-panels";
 import { DrugOrderReviewTab } from "./order-review";
 import { NurseMedicationPatientSummary } from "./patient-summary";
-import type {
-  AdministrationCell,
-  AdministrationDetail,
-  FluidAdministrationDetail,
-  NurseDrugOrder,
-} from "./types";
+import type { AdministrationCell, AdministrationDetail, FluidAdministrationDetail, NurseDrugOrder } from "./types";
 
 const nurseRoles: Role[] = ["Nurse", "Super Admin", "Hospital Admin"];
 
@@ -34,11 +29,7 @@ function formatCurrentDate() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-function buildAdministrationDetail(
-  order: NurseDrugOrder,
-  selectedDate: string,
-  cell?: AdministrationCell,
-): AdministrationDetail {
+function buildAdministrationDetail(order: NurseDrugOrder, selectedDate: string, cell?: AdministrationCell): AdministrationDetail {
   const isOverdue = cell?.status === "overdue";
   return {
     ...defaultAdministrationDetail,
@@ -92,11 +83,8 @@ function buildFluidDetail(order: NurseDrugOrder, selectedDate: string): FluidAdm
 export function NurseDrugAdministrationPage() {
   const { role } = useRole();
   const allowed = nurseRoles.includes(role);
-  const [administrationDetail, setAdministrationDetail] = React.useState<AdministrationDetail>(
-    defaultAdministrationDetail,
-  );
-  const [fluidDetail, setFluidDetail] =
-    React.useState<FluidAdministrationDetail>(defaultFluidDetail);
+  const [administrationDetail, setAdministrationDetail] = React.useState<AdministrationDetail>(defaultAdministrationDetail);
+  const [fluidDetail, setFluidDetail] = React.useState<FluidAdministrationDetail>(defaultFluidDetail);
   const [administrationOpen, setAdministrationOpen] = React.useState(false);
   const [fluidOpen, setFluidOpen] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState(formatCurrentDate);
@@ -110,9 +98,7 @@ export function NurseDrugAdministrationPage() {
         lastAdministeredAt: order.lastAdministeredAt || "Yesterday 22:00",
         cells: order.cells.map((cell) => ({
           ...cell,
-          label:
-            cell.label?.replace("Overdue ", "") ??
-            (cell.status === "infusion" ? `${order.dosage} infusion` : undefined),
+          label: cell.label?.replace("Overdue ", "") ?? (cell.status === "infusion" ? `${order.dosage} infusion` : undefined),
           status: cell.status === "empty" ? cell.status : ("administered" as const),
         })),
       }));
@@ -126,10 +112,7 @@ export function NurseDrugAdministrationPage() {
         administeredVolume: 0,
         cells: order.cells.map((cell) => ({
           ...cell,
-          label:
-            cell.status === "infusion"
-              ? `${order.dosage} planned`
-              : cell.label?.replace("Overdue ", ""),
+          label: cell.status === "infusion" ? `${order.dosage} planned` : cell.label?.replace("Overdue ", ""),
           status: cell.status === "empty" ? cell.status : ("due" as const),
         })),
       }));
@@ -149,11 +132,7 @@ export function NurseDrugAdministrationPage() {
   }
 
   const handleCellSelect = (order: NurseDrugOrder, cell?: AdministrationCell) => {
-    if (
-      order.category === "Continuous" ||
-      order.category === "Diluent" ||
-      order.form === "IV Fluid"
-    ) {
+    if (order.category === "Continuous" || order.category === "Diluent" || order.form === "IV Fluid") {
       setFluidDetail(buildFluidDetail(order, selectedDate));
       setFluidOpen(true);
       return;
@@ -169,10 +148,7 @@ export function NurseDrugAdministrationPage() {
         className="static mx-0 border-b bg-transparent px-0 py-2"
       />
 
-      <NurseMedicationPatientSummary
-        patientId={selectedPatientId}
-        onPatientChange={setSelectedPatientId}
-      />
+      <NurseMedicationPatientSummary patientId={selectedPatientId} onPatientChange={setSelectedPatientId} />
 
       {/* <AlertBanner icon={Pill} tone="info" title="Administration safety">
         Select a time slot to review administration details, counter-check requirements, overdue status, and fluid bag information before accepting.
@@ -214,12 +190,7 @@ export function NurseDrugAdministrationPage() {
         onOpenChange={setAdministrationOpen}
         onChange={setAdministrationDetail}
       />
-      <FluidAdministrationDetailsPanel
-        open={fluidOpen}
-        detail={fluidDetail}
-        onOpenChange={setFluidOpen}
-        onChange={setFluidDetail}
-      />
+      <FluidAdministrationDetailsPanel open={fluidOpen} detail={fluidDetail} onOpenChange={setFluidOpen} onChange={setFluidDetail} />
     </div>
   );
 }

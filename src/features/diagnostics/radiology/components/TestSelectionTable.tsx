@@ -48,9 +48,7 @@ export function TestSelectionTable({ tests, selectedIds = [] }: TestSelectionTab
                 <ModalityBadge modalityId={test.modalityId} />
               </td>
               <td className="max-w-md px-4 py-3 text-slate-600">{test.preparation}</td>
-              <td className="px-4 py-3 text-right font-medium text-slate-900">
-                {formatCurrency(test.price)}
-              </td>
+              <td className="px-4 py-3 text-right font-medium text-slate-900">{formatCurrency(test.price)}</td>
             </tr>
           ))}
         </tbody>

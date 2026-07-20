@@ -15,18 +15,13 @@ import { AdmissionStatusBadge } from "@/features/operations/admission/components
 
 function workflowStatus(title: string, state: ReturnType<typeof useAdmissionStore>["state"]) {
   if (title === "Patient Lookup") return state.selectedScenario ? "Started" : "Start here";
-  if (title === "Admission Order")
-    return state.requests.length ? `${state.requests.length} orders` : "Clinical input";
-  if (title === "Requests")
-    return `${state.requests.filter((item) => item.status.includes("Pending")).length} pending`;
-  if (title === "Billing")
-    return `${state.clearances.filter((item) => item.status !== "Cleared").length} pending`;
-  if (title === "Bed Manager")
-    return `${state.requests.filter((item) => item.bedNo).length} allotted`;
+  if (title === "Admission Order") return state.requests.length ? `${state.requests.length} orders` : "Clinical input";
+  if (title === "Requests") return `${state.requests.filter((item) => item.status.includes("Pending")).length} pending`;
+  if (title === "Billing") return `${state.clearances.filter((item) => item.status !== "Cleared").length} pending`;
+  if (title === "Bed Manager") return `${state.requests.filter((item) => item.bedNo).length} allotted`;
   if (title === "Receive Patient") return `${state.receiveRecords.length} received`;
   if (title === "Patient Care") return `${state.careRecords.length} started`;
-  if (title === "Generate QR")
-    return `${state.requests.filter((item) => item.qrReference).length} generated`;
+  if (title === "Generate QR") return `${state.requests.filter((item) => item.qrReference).length} generated`;
   return "Open";
 }
 
@@ -37,32 +32,21 @@ export function AdminWorkflowOverview() {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <Metric
-          label="Pending requests"
-          value={state.requests.filter((request) => request.status.includes("Pending")).length}
-          tone="warning"
-        />
-        <Metric
-          label="Billing holds"
-          value={state.clearances.filter((item) => item.status !== "Cleared").length}
-          tone="danger"
-        />
+        <Metric label="Pending requests" value={state.requests.filter((request) => request.status.includes("Pending")).length} tone="warning" />
+        <Metric label="Billing holds" value={state.clearances.filter((item) => item.status !== "Cleared").length} tone="danger" />
         <Metric label="Available beds" value={availableBeds} tone="success" />
         <Metric label="Nurse handover" value={state.receiveRecords.length} tone="info" />
       </div>
 
       <AlertBanner icon={ShieldAlert} tone="info" title="Admin view">
-        Full frontend workflow is connected with local state. Reception, doctor order, desk,
-        billing, bed, and nurse actions update this overview.
+        Full frontend workflow is connected with local state. Reception, doctor order, desk, billing, bed, and nurse actions update this overview.
       </AlertBanner>
 
       <Card>
         <CardHeader>
           <div>
             <CardTitle>Admission Workflow</CardTitle>
-            <CardDescription>
-              Open any role workspace from one operational overview.
-            </CardDescription>
+            <CardDescription>Open any role workspace from one operational overview.</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone="info">All roles</Badge>
@@ -129,15 +113,7 @@ export function AdminWorkflowOverview() {
   );
 }
 
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number | string;
-  tone: "success" | "warning" | "danger" | "info";
-}) {
+function Metric({ label, value, tone }: { label: string; value: number | string; tone: "success" | "warning" | "danger" | "info" }) {
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
       <div className="text-xs font-medium text-muted-foreground">{label}</div>

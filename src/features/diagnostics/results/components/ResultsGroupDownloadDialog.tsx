@@ -40,10 +40,7 @@ const formatOptions: Array<{
 ];
 
 function cleanFilePart(value: string) {
-  return value
-    .replace(/[^a-z0-9]+/gi, "-")
-    .replace(/^-+|-+$/g, "")
-    .toLowerCase();
+  return value.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
 }
 
 function escapeHtml(value: string) {
@@ -172,25 +169,16 @@ function downloadResults(results: ResultRecord[], title: string, format: GroupDo
   const baseName = `${cleanFilePart(title)}-reports`;
 
   if (format === "PDF") {
-    downloadBlob(
-      new Blob([buildPdfReport(results, title)], { type: "application/pdf" }),
-      `${baseName}.pdf`,
-    );
+    downloadBlob(new Blob([buildPdfReport(results, title)], { type: "application/pdf" }), `${baseName}.pdf`);
     return;
   }
 
   if (format === "Excel") {
-    downloadBlob(
-      new Blob([buildHtmlReport(results, title, "excel")], { type: "application/vnd.ms-excel" }),
-      `${baseName}.xls`,
-    );
+    downloadBlob(new Blob([buildHtmlReport(results, title, "excel")], { type: "application/vnd.ms-excel" }), `${baseName}.xls`);
     return;
   }
 
-  downloadBlob(
-    new Blob([buildHtmlReport(results, title, "word")], { type: "application/msword" }),
-    `${baseName}.doc`,
-  );
+  downloadBlob(new Blob([buildHtmlReport(results, title, "word")], { type: "application/msword" }), `${baseName}.doc`);
 }
 
 export function ResultsGroupDownloadDialog({
@@ -200,8 +188,8 @@ export function ResultsGroupDownloadDialog({
   results,
   title,
 }: {
-  onDownloaded?: (_format: GroupDownloadFormat) => void;
-  onOpenChange: (_open: boolean) => void;
+  onDownloaded?: (format: GroupDownloadFormat) => void;
+  onOpenChange: (open: boolean) => void;
   open: boolean;
   results: ResultRecord[];
   title: string;
@@ -219,9 +207,7 @@ export function ResultsGroupDownloadDialog({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[90] w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface p-4 shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <Dialog.Title className="text-base font-semibold text-foreground">
-                Download Reports
-              </Dialog.Title>
+              <Dialog.Title className="text-base font-semibold text-foreground">Download Reports</Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted-foreground">
                 Choose the format you want to download the reports in.
               </Dialog.Description>
@@ -244,15 +230,9 @@ export function ResultsGroupDownloadDialog({
                 onClick={() => handleDownload(option.format)}
                 type="button"
               >
-                <span
-                  className={`inline-flex h-9 w-9 items-center justify-center rounded-md border ${option.className}`}
-                >
-                  {option.icon}
-                </span>
+                <span className={`inline-flex h-9 w-9 items-center justify-center rounded-md border ${option.className}`}>{option.icon}</span>
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-foreground">
-                    {option.title}
-                  </span>
+                  <span className="block text-sm font-semibold text-foreground">{option.title}</span>
                   <span className="block text-xs text-muted-foreground">{option.description}</span>
                 </span>
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground">

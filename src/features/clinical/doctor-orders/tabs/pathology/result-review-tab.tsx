@@ -1,15 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Download,
-  Eye,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, Eye, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
@@ -28,11 +20,7 @@ function StatusPill({ status }: { status: string }) {
         : status === "Pending" || status === "Ordered"
           ? "bg-info/10 text-info"
           : "bg-surface-muted text-muted-foreground";
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${tone}`}>
-      {status}
-    </span>
-  );
+  return <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${tone}`}>{status}</span>;
 }
 
 type SortKey = "loinc" | "test" | "orderDate" | "completionDate";
@@ -52,8 +40,7 @@ function parseReviewDate(value: string) {
 
 function getSortValue(block: PathologyResultBlock, sortKey: SortKey) {
   if (sortKey === "loinc") return block.name.toLowerCase().includes("cbc") ? "11273-0" : "28515-7";
-  if (sortKey === "test")
-    return block.name.replace(" - complete blood count", "").replace(" - kidney function test", "");
+  if (sortKey === "test") return block.name.replace(" - complete blood count", "").replace(" - kidney function test", "");
   if (sortKey === "orderDate") return "12/05/2021";
   return "14/05/2021";
 }
@@ -71,31 +58,13 @@ function getSelectedReportRows(block: PathologyResultBlock): SelectedReportRow[]
   const name = block.name.toLowerCase();
   if (name.includes("cbc")) {
     return [
-      {
-        parameter: "Hemoglobin",
-        result: "13.6",
-        unit: "g/dL",
-        referenceRange: "13.0 - 17.0",
-        flag: "N",
-      },
-      {
-        parameter: "RBC Count",
-        result: "4.6",
-        unit: "10^6/µl",
-        referenceRange: "4.5 - 5.5",
-        flag: "N",
-      },
+      { parameter: "Hemoglobin", result: "13.6", unit: "g/dL", referenceRange: "13.0 - 17.0", flag: "N" },
+      { parameter: "RBC Count", result: "4.6", unit: "10^6/µl", referenceRange: "4.5 - 5.5", flag: "N" },
       { parameter: "PCV", result: "40.1", unit: "%", referenceRange: "40 - 50", flag: "N" },
       { parameter: "MCV", result: "86.8", unit: "fL", referenceRange: "83 - 101", flag: "N" },
       { parameter: "MCH", result: "29.5", unit: "pg", referenceRange: "27 - 32", flag: "N" },
       { parameter: "MCHC", result: "34", unit: "g/dL", referenceRange: "31.5 - 34.5", flag: "N" },
-      {
-        parameter: "RDW (CV)",
-        result: "13.1",
-        unit: "%",
-        referenceRange: "11.6 - 14.0",
-        flag: "N",
-      },
+      { parameter: "RDW (CV)", result: "13.1", unit: "%", referenceRange: "11.6 - 14.0", flag: "N" },
       { parameter: "RDW-SD", result: "28.5", unit: "fL", referenceRange: "35.1 - 43.9", flag: "L" },
       { parameter: "TLC", result: "6.8", unit: "10^3/µl", referenceRange: "4 - 10", flag: "N" },
       { parameter: "Neutrophils", result: "64", unit: "%", referenceRange: "40 - 80", flag: "N" },
@@ -103,48 +72,12 @@ function getSelectedReportRows(block: PathologyResultBlock): SelectedReportRow[]
       { parameter: "Monocytes", result: "9", unit: "%", referenceRange: "2 - 10", flag: "N" },
       { parameter: "Eosinophils", result: "2", unit: "%", referenceRange: "0 - 6", flag: "N" },
       { parameter: "Basophils", result: "0", unit: "%", referenceRange: "0 - 1", flag: "N" },
-      {
-        parameter: "Neutrophils, absolute",
-        result: "4.35",
-        unit: "10^3/µl",
-        referenceRange: "2 - 7",
-        flag: "N",
-      },
-      {
-        parameter: "Lymphocytes, absolute",
-        result: "1.7",
-        unit: "10^3/µl",
-        referenceRange: "1 - 3",
-        flag: "N",
-      },
-      {
-        parameter: "Monocytes, absolute",
-        result: "0.61",
-        unit: "10^3/µl",
-        referenceRange: "0.2 - 1.0",
-        flag: "N",
-      },
-      {
-        parameter: "Eosinophils, absolute",
-        result: "0.14",
-        unit: "10^3/µl",
-        referenceRange: "0.02 - 0.5",
-        flag: "N",
-      },
-      {
-        parameter: "Basophils, absolute",
-        result: "0",
-        unit: "10^3/µl",
-        referenceRange: "0.02 - 0.5",
-        flag: "L",
-      },
-      {
-        parameter: "Platelet Count",
-        result: "211",
-        unit: "10^3/µl",
-        referenceRange: "150 - 410",
-        flag: "N",
-      },
+      { parameter: "Neutrophils, absolute", result: "4.35", unit: "10^3/µl", referenceRange: "2 - 7", flag: "N" },
+      { parameter: "Lymphocytes, absolute", result: "1.7", unit: "10^3/µl", referenceRange: "1 - 3", flag: "N" },
+      { parameter: "Monocytes, absolute", result: "0.61", unit: "10^3/µl", referenceRange: "0.2 - 1.0", flag: "N" },
+      { parameter: "Eosinophils, absolute", result: "0.14", unit: "10^3/µl", referenceRange: "0.02 - 0.5", flag: "N" },
+      { parameter: "Basophils, absolute", result: "0", unit: "10^3/µl", referenceRange: "0.02 - 0.5", flag: "L" },
+      { parameter: "Platelet Count", result: "211", unit: "10^3/µl", referenceRange: "150 - 410", flag: "N" },
       { parameter: "MPV", result: "8.7", unit: "fL", referenceRange: "9.3 - 12.1", flag: "L" },
       { parameter: "PCT", result: "0.2", unit: "%", referenceRange: "0.17 - 0.32", flag: "N" },
       { parameter: "PDW", result: "14.6", unit: "fL", referenceRange: "8.3 - 25.0", flag: "N" },
@@ -155,34 +88,10 @@ function getSelectedReportRows(block: PathologyResultBlock): SelectedReportRow[]
   }
   if (name.includes("kft") || name.includes("kidney function")) {
     return [
-      {
-        parameter: "Serum Creatinine",
-        result: "1.9",
-        unit: "mg/dL",
-        referenceRange: "0.6 - 1.2",
-        flag: "H",
-      },
-      {
-        parameter: "Blood Urea Nitrogen",
-        result: "22",
-        unit: "mg/dL",
-        referenceRange: "7 - 20",
-        flag: "H",
-      },
-      {
-        parameter: "Uric Acid",
-        result: "6.3",
-        unit: "mg/dL",
-        referenceRange: "2.6 - 6.0",
-        flag: "H",
-      },
-      {
-        parameter: "eGFR",
-        result: "58",
-        unit: "mL/min/1.73m2",
-        referenceRange: ">= 90",
-        flag: "L",
-      },
+      { parameter: "Serum Creatinine", result: "1.9", unit: "mg/dL", referenceRange: "0.6 - 1.2", flag: "H" },
+      { parameter: "Blood Urea Nitrogen", result: "22", unit: "mg/dL", referenceRange: "7 - 20", flag: "H" },
+      { parameter: "Uric Acid", result: "6.3", unit: "mg/dL", referenceRange: "2.6 - 6.0", flag: "H" },
+      { parameter: "eGFR", result: "58", unit: "mL/min/1.73m2", referenceRange: ">= 90", flag: "L" },
     ];
   }
   return block.rows.map((row) => ({
@@ -202,22 +111,9 @@ function resultTone(flag: "N" | "H" | "L") {
 
 function cbcGroupForParameter(parameter: string) {
   const value = parameter.toLowerCase();
-  if (
-    ["hemoglobin", "rbc", "pcv", "mcv", "mch", "mchc", "rdw"].some((item) => value.includes(item))
-  )
-    return "RBC Parameters";
-  if (
-    ["tlc", "wbc", "neutrophil", "lymphocyte", "monocyte", "eosinophil", "basophil"].some((item) =>
-      value.includes(item),
-    )
-  )
-    return "WBC Parameters";
-  if (
-    ["platelet", "mpv", "pct", "pdw", "p-lcr", "p-lcc", "mentzer"].some((item) =>
-      value.includes(item),
-    )
-  )
-    return "Platelet Parameters";
+  if (["hemoglobin", "rbc", "pcv", "mcv", "mch", "mchc", "rdw"].some((item) => value.includes(item))) return "RBC Parameters";
+  if (["tlc", "wbc", "neutrophil", "lymphocyte", "monocyte", "eosinophil", "basophil"].some((item) => value.includes(item))) return "WBC Parameters";
+  if (["platelet", "mpv", "pct", "pdw", "p-lcr", "p-lcc", "mentzer"].some((item) => value.includes(item))) return "Platelet Parameters";
   return "Main Parameters";
 }
 
@@ -227,7 +123,7 @@ export function PathologyResultReviewTab({
   diagnosisType,
   diagnosisOpen,
   selectedDiagnosisLabel,
-  instructionsForLab: _instructionsForLab,
+  instructionsForLab,
   savedSummaryRows = [],
   onDiagnosisSearchChange,
   onDiagnosisTypeChange,
@@ -242,13 +138,13 @@ export function PathologyResultReviewTab({
   selectedDiagnosisLabel: string;
   instructionsForLab: string;
   savedSummaryRows?: import("./types").PathologySummaryRow[];
-  onDiagnosisSearchChange: (_value: string) => void;
-  onDiagnosisTypeChange: (_value: string) => void;
-  onDiagnosisOpenChange: (_value: boolean) => void;
+  onDiagnosisSearchChange: (value: string) => void;
+  onDiagnosisTypeChange: (value: string) => void;
+  onDiagnosisOpenChange: (value: boolean) => void;
   onAddDiagnosis: () => void;
-  onEditResult: (_name: string) => void;
-  onDeleteResult: (_id: string) => void;
-  onReorderResult: (_name: string) => void;
+  onEditResult: (name: string) => void;
+  onDeleteResult: (id: string) => void;
+  onReorderResult: (name: string) => void;
 }) {
   const diagnosisOptions = React.useMemo(
     () => [
@@ -260,13 +156,9 @@ export function PathologyResultReviewTab({
     ],
     [],
   );
-  const [selectedDiagnosis, setSelectedDiagnosis] = React.useState<
-    (typeof diagnosisOptions)[number] | null
-  >(null);
+  const [selectedDiagnosis, setSelectedDiagnosis] = React.useState<(typeof diagnosisOptions)[number] | null>(null);
   const [commentDraft, setCommentDraft] = React.useState(selectedDiagnosisLabel);
-  const [confirmedDiagnoses, setConfirmedDiagnoses] = React.useState<
-    Array<{ id: string; type: string; diagnosis: string; snomed: string; comments: string }>
-  >([]);
+  const [confirmedDiagnoses, setConfirmedDiagnoses] = React.useState<Array<{ id: string; type: string; diagnosis: string; snomed: string; comments: string }>>([]);
   const [sortKey, setSortKey] = React.useState<SortKey>("orderDate");
   const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc");
   const [pageSize, setPageSize] = React.useState(5);
@@ -276,9 +168,7 @@ export function PathologyResultReviewTab({
   const visibleBlocks = React.useMemo(() => {
     const query = diagnosisSearch.trim().toLowerCase();
     if (!query) return allBlocks;
-    return allBlocks.filter((block) =>
-      `${block.name} ${block.specialty}`.toLowerCase().includes(query),
-    );
+    return allBlocks.filter((block) => `${block.name} ${block.specialty}`.toLowerCase().includes(query));
   }, [allBlocks, diagnosisSearch]);
 
   const sortedBlocks = React.useMemo(() => {
@@ -291,10 +181,7 @@ export function PathologyResultReviewTab({
       if (sortKey === "orderDate" || sortKey === "completionDate") {
         comparison = compareDates(leftValue, rightValue);
       } else {
-        comparison = leftValue.localeCompare(rightValue, undefined, {
-          numeric: true,
-          sensitivity: "base",
-        });
+        comparison = leftValue.localeCompare(rightValue, undefined, { numeric: true, sensitivity: "base" });
       }
 
       return sortDirection === "asc" ? comparison : -comparison;
@@ -319,28 +206,24 @@ export function PathologyResultReviewTab({
 
   const downloadReport = () => {
     const reportBlocks = allBlocks.map((block) => ({
-      testName: block.name
-        .replace(" - complete blood count", "")
-        .replace(" - kidney function test", ""),
-      department: block.specialty,
-      sampleCollectedOn: "12/05/2021",
-      completedOn: "14/05/2021",
-      reportStatus: "Final",
-      barcodeNo: `BAR-${block.id}`,
-      sampleType: "Blood",
-      reportDate: "14/05/2021",
-      interpretation: block.name.includes("CBC")
-        ? "CBC pattern suggests anemia and low hematocrit."
-        : "KFT indicates renal function abnormality.",
-      rows: getSelectedReportRows(block).map((row) => ({
-        testName: block.name,
-        parameter: row.parameter,
-        value: row.result,
-        unit: row.unit,
-        referenceRange: row.referenceRange,
-        flag: row.flag,
-      })),
-    }));
+        testName: block.name.replace(" - complete blood count", "").replace(" - kidney function test", ""),
+        department: block.specialty,
+        sampleCollectedOn: "12/05/2021",
+        completedOn: "14/05/2021",
+        reportStatus: "Final",
+        barcodeNo: `BAR-${block.id}`,
+        sampleType: "Blood",
+        reportDate: "14/05/2021",
+        interpretation: block.name.includes("CBC") ? "CBC pattern suggests anemia and low hematocrit." : "KFT indicates renal function abnormality.",
+        rows: getSelectedReportRows(block).map((row) => ({
+          testName: block.name,
+          parameter: row.parameter,
+          value: row.result,
+          unit: row.unit,
+          referenceRange: row.referenceRange,
+          flag: row.flag,
+        })),
+      }));
     downloadLaboratoryPdf(reportBlocks, "pathology-reports.pdf", "PATHOLOGY REPORT");
   };
 
@@ -364,8 +247,7 @@ export function PathologyResultReviewTab({
   };
 
   React.useEffect(() => {
-    if (!selectedDiagnosis && filteredDiagnosisOptions.length)
-      setSelectedDiagnosis(filteredDiagnosisOptions[0]);
+    if (!selectedDiagnosis && filteredDiagnosisOptions.length) setSelectedDiagnosis(filteredDiagnosisOptions[0]);
   }, [filteredDiagnosisOptions, selectedDiagnosis]);
 
   const openDiagnosisDialog = () => {
@@ -390,32 +272,22 @@ export function PathologyResultReviewTab({
     setSelectedBlock(null);
   };
 
-  const selectedReportName = selectedBlock
-    ? selectedBlock.name
-        .replace(" - complete blood count", "")
-        .replace(" - kidney function test", "")
-    : "";
+  const selectedReportName = selectedBlock ? selectedBlock.name.replace(" - complete blood count", "").replace(" - kidney function test", "") : "";
   const selectedReportStatus = "Final";
   const isCbc = Boolean(selectedBlock?.name.toLowerCase().includes("cbc"));
   const selectedSpecimen = React.useMemo(() => {
     const normalized = selectedBlock ? selectedBlock.name.toLowerCase() : "";
-    const matched = savedSummaryRows.find(
-      (row) =>
-        row.name.toLowerCase().includes(normalized) || normalized.includes(row.name.toLowerCase()),
-    );
+    const matched = savedSummaryRows.find((row) => row.name.toLowerCase().includes(normalized) || normalized.includes(row.name.toLowerCase()));
     return matched?.specimen ?? "Blood";
   }, [savedSummaryRows, selectedBlock]);
 
   const groupedRows = React.useMemo(() => {
     if (!selectedBlock || !isCbc) return {};
-    return getSelectedReportRows(selectedBlock).reduce<Record<string, SelectedReportRow[]>>(
-      (acc, row) => {
-        const group = cbcGroupForParameter(row.parameter);
-        acc[group] = [...(acc[group] ?? []), row];
-        return acc;
-      },
-      {},
-    );
+    return getSelectedReportRows(selectedBlock).reduce<Record<string, SelectedReportRow[]>>((acc, row) => {
+      const group = cbcGroupForParameter(row.parameter);
+      acc[group] = [...(acc[group] ?? []), row];
+      return acc;
+    }, {});
   }, [isCbc, selectedBlock]);
 
   return (
@@ -435,75 +307,27 @@ export function PathologyResultReviewTab({
           <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="w-[180px] px-3 py-3">
-                <button
-                  className="inline-flex items-center gap-1.5"
-                  type="button"
-                  onClick={() => requestSort("loinc")}
-                >
+                <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort("loinc")}>
                   LOINC Code
-                  {sortKey === "loinc" ? (
-                    sortDirection === "asc" ? (
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
-                  )}
+                  {sortKey === "loinc" ? sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
                 </button>
               </th>
               <th className="w-[220px] px-3 py-3">
-                <button
-                  className="inline-flex items-center gap-1.5"
-                  type="button"
-                  onClick={() => requestSort("test")}
-                >
+                <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort("test")}>
                   Test
-                  {sortKey === "test" ? (
-                    sortDirection === "asc" ? (
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
-                  )}
+                  {sortKey === "test" ? sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
                 </button>
               </th>
               <th className="w-[160px] px-3 py-3">
-                <button
-                  className="inline-flex items-center gap-1.5"
-                  type="button"
-                  onClick={() => requestSort("orderDate")}
-                >
+                <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort("orderDate")}>
                   Order Date
-                  {sortKey === "orderDate" ? (
-                    sortDirection === "asc" ? (
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
-                  )}
+                  {sortKey === "orderDate" ? sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
                 </button>
               </th>
               <th className="w-[160px] px-3 py-3">
-                <button
-                  className="inline-flex items-center gap-1.5"
-                  type="button"
-                  onClick={() => requestSort("completionDate")}
-                >
+                <button className="inline-flex items-center gap-1.5" type="button" onClick={() => requestSort("completionDate")}>
                   Order completion Date
-                  {sortKey === "completionDate" ? (
-                    sortDirection === "asc" ? (
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
-                  )}
+                  {sortKey === "completionDate" ? sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />}
                 </button>
               </th>
               <th className="w-[180px] px-3 py-3">Action</th>
@@ -516,98 +340,67 @@ export function PathologyResultReviewTab({
             </tr>
           </thead>
           <tbody>
-            {pagedBlocks.length ? (
-              pagedBlocks.map((block) => {
-                return (
-                  <React.Fragment key={block.id}>
-                    <tr className="border-t border-border align-top">
-                      <td className="w-[180px] px-3 py-3 text-xs text-muted-foreground">
-                        {block.name.toLowerCase().includes("cbc") ? "11273-0" : "28515-7"}
-                      </td>
-                      <td className="w-[220px] px-3 py-3">
-                        <div className="font-medium text-foreground">
-                          {block.name
-                            .replace(" - complete blood count", "")
-                            .replace(" - kidney function test", "")}
-                        </div>
-                        <div className="text-xs text-muted-foreground">{block.specialty}</div>
-                      </td>
-                      {/* <td className="px-3 py-3 text-muted-foreground">{primaryRow?.unit ?? "-"}</td>
+            {pagedBlocks.length ? pagedBlocks.map((block) => {
+              return (
+                <React.Fragment key={block.id}>
+                  <tr className="border-t border-border align-top">
+                    <td className="w-[180px] px-3 py-3 text-xs text-muted-foreground">{block.name.toLowerCase().includes("cbc") ? "11273-0" : "28515-7"}</td>
+                    <td className="w-[220px] px-3 py-3">
+                      <div className="font-medium text-foreground">{block.name.replace(" - complete blood count", "").replace(" - kidney function test", "")}</div>
+                      <div className="text-xs text-muted-foreground">{block.specialty}</div>
+                    </td>
+                    {/* <td className="px-3 py-3 text-muted-foreground">{primaryRow?.unit ?? "-"}</td>
                     <td className="px-3 py-3">
                       <div className={["font-semibold", hasHigh ? "text-danger" : hasLow ? "text-warning" : "text-foreground"].join(" ")}>
                         {primaryRow?.result ?? "-"}
                       </div>
                     </td>
                     <td className="px-3 py-3 text-muted-foreground">{primaryRow?.referenceRange ?? "-"}</td> */}
-                      <td className="w-[160px] px-3 py-3 text-muted-foreground">12/05/2021</td>
-                      <td className="w-[160px] px-3 py-3 text-muted-foreground">14/05/2021</td>
-                      {/* <td className="px-3 py-3">
+                    <td className="w-[160px] px-3 py-3 text-muted-foreground">12/05/2021</td>
+                    <td className="w-[160px] px-3 py-3 text-muted-foreground">14/05/2021</td>
+                    {/* <td className="px-3 py-3">
                       <StatusPill status={hasPending ? "Pending" : hasHigh ? "High" : "Low"} />
                     </td> */}
-                      <td className="w-[180px] px-3 py-3">
-                        <div className="flex items-center gap-2 overflow-x-auto">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onReorderResult(block.name)}
-                          >
-                            <ArrowUpDown className="h-4 w-4" />
-                            {/* Reorder */}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              downloadLaboratoryPdf(
-                                [
-                                  {
-                                    testName: block.name
-                                      .replace(" - complete blood count", "")
-                                      .replace(" - kidney function test", ""),
-                                    department: block.specialty,
-                                    sampleCollectedOn: "12/05/2021",
-                                    completedOn: "14/05/2021",
-                                    reportStatus: "Final",
-                                    barcodeNo: `BAR-${block.id}`,
-                                    sampleType: "Blood",
-                                    reportDate: "14/05/2021",
-                                    interpretation: block.name.includes("CBC")
-                                      ? "CBC pattern suggests anemia and low hematocrit."
-                                      : "KFT indicates renal function abnormality.",
-                                    rows: getSelectedReportRows(block).map((row) => ({
-                                      testName: block.name,
-                                      parameter: row.parameter,
-                                      value: row.result,
-                                      unit: row.unit,
-                                      referenceRange: row.referenceRange,
-                                      flag: row.flag,
-                                    })),
-                                  },
-                                ],
-                                "pathology-report.pdf",
-                                "PATHOLOGY REPORT",
-                              );
-                            }}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openBlockView(block)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  </React.Fragment>
-                );
-              })
-            ) : (
+                    <td className="w-[180px] px-3 py-3">
+              <div className="flex items-center gap-2 overflow-x-auto">
+                        <Button type="button" variant="outline" size="sm" onClick={() => onReorderResult(block.name)}>
+                          <ArrowUpDown className="h-4 w-4" />
+                          {/* Reorder */}
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => {
+                          downloadLaboratoryPdf([
+                            {
+                              testName: block.name.replace(" - complete blood count", "").replace(" - kidney function test", ""),
+                              department: block.specialty,
+                              sampleCollectedOn: "12/05/2021",
+                              completedOn: "14/05/2021",
+                              reportStatus: "Final",
+                              barcodeNo: `BAR-${block.id}`,
+                              sampleType: "Blood",
+                              reportDate: "14/05/2021",
+                              interpretation: block.name.includes("CBC") ? "CBC pattern suggests anemia and low hematocrit." : "KFT indicates renal function abnormality.",
+                              rows: getSelectedReportRows(block).map((row) => ({
+                                testName: block.name,
+                                parameter: row.parameter,
+                                value: row.result,
+                                unit: row.unit,
+                                referenceRange: row.referenceRange,
+                                flag: row.flag,
+                              })),
+                            },
+                          ], "pathology-report.pdf", "PATHOLOGY REPORT");
+                        }}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => openBlockView(block)}>
+                          <Eye className="h-4 w-4"/>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            }) : (
               <tr>
                 <td className="px-3 py-6 text-center text-muted-foreground" colSpan={6}>
                   No result review records found.
@@ -642,38 +435,16 @@ export function PathologyResultReviewTab({
           </label>
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setPageIndex(0)}
-            disabled={currentPage === 0}
-            aria-label="First page"
-          >
+          <Button size="sm" variant="outline" onClick={() => setPageIndex(0)} disabled={currentPage === 0} aria-label="First page">
             <ChevronsLeft className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
-            disabled={currentPage === 0}
-          >
+          <Button size="sm" variant="outline" onClick={() => setPageIndex((current) => Math.max(0, current - 1))} disabled={currentPage === 0}>
             Previous
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setPageIndex((current) => Math.min(pageCount - 1, current + 1))}
-            disabled={currentPage >= pageCount - 1}
-          >
+          <Button size="sm" variant="outline" onClick={() => setPageIndex((current) => Math.min(pageCount - 1, current + 1))} disabled={currentPage >= pageCount - 1}>
             Next
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setPageIndex(pageCount - 1)}
-            disabled={currentPage >= pageCount - 1}
-            aria-label="Last page"
-          >
+          <Button size="sm" variant="outline" onClick={() => setPageIndex(pageCount - 1)} disabled={currentPage >= pageCount - 1} aria-label="Last page">
             <ChevronsRight className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -682,10 +453,7 @@ export function PathologyResultReviewTab({
         {/* <Button type="button" variant="outline" onClick={openDiagnosisDialog}>
           Add Diagnosis
         </Button> */}
-        <Button type="button" onClick={openDiagnosisDialog}>
-          {" "}
-          Add Diagnosis
-        </Button>
+        <Button type="button" onClick={openDiagnosisDialog}> Add Diagnosis</Button>
       </div>
       <div className="rounded-md border border-border bg-surface-muted/30 p-4">
         <div className="mb-3 text-sm font-semibold text-foreground">Selected Diagnosis</div>
@@ -723,11 +491,7 @@ export function PathologyResultReviewTab({
           if (!open) closeBlockView();
         }}
         title={selectedBlock ? selectedReportName : "Result preview"}
-        description={
-          selectedBlock
-            ? `${selectedBlock.specialty} • Report status: ${selectedReportStatus} • Sample Name: ${selectedSpecimen}`
-            : "Static result preview"
-        }
+        description={selectedBlock ? `${selectedBlock.specialty} • Report status: ${selectedReportStatus} • Sample Name: ${selectedSpecimen}` : "Static result preview"}
       >
         {selectedBlock ? (
           <div className="space-y-4">
@@ -742,9 +506,7 @@ export function PathologyResultReviewTab({
               <div className="space-y-4">
                 {Object.entries(groupedRows).map(([groupName, rows]) => (
                   <div key={groupName} className="overflow-hidden rounded-md border border-border">
-                    <div className="border-b border-border bg-surface-muted px-3 py-2 text-sm font-semibold text-foreground">
-                      {groupName}
-                    </div>
+                    <div className="border-b border-border bg-surface-muted px-3 py-2 text-sm font-semibold text-foreground">{groupName}</div>
                     <table className="w-full table-fixed border-collapse text-left text-sm">
                       <thead className="bg-surface-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         <tr>
@@ -757,14 +519,10 @@ export function PathologyResultReviewTab({
                       <tbody>
                         {rows.map((row) => (
                           <tr key={row.parameter} className="border-t border-border">
-                            <td className="px-3 py-2 font-medium text-foreground">
-                              {row.parameter}
-                            </td>
+                            <td className="px-3 py-2 font-medium text-foreground">{row.parameter}</td>
                             <td className={`px-3 py-2 ${resultTone(row.flag)}`}>{row.result}</td>
                             <td className="px-3 py-2 text-muted-foreground">{row.unit}</td>
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {row.referenceRange}
-                            </td>
+                            <td className="px-3 py-2 text-muted-foreground">{row.referenceRange}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -839,19 +597,11 @@ export function PathologyResultReviewTab({
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
             <div className="min-w-0">
-              <Input
-                value={diagnosisSearch}
-                onChange={(event) => onDiagnosisSearchChange(event.target.value)}
-                placeholder="Search by clinical conclusion or SNOMED code"
-              />
+              <Input value={diagnosisSearch} onChange={(event) => onDiagnosisSearchChange(event.target.value)} placeholder="Search by clinical conclusion or SNOMED code" />
             </div>
             <div className="min-w-0">
               <div className="mb-1 text-xs font-medium text-muted-foreground">Diagnosis Type</div>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-border focus:ring-0"
-                value={diagnosisType}
-                onChange={(event) => onDiagnosisTypeChange(event.target.value)}
-              >
+              <select className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-border focus:ring-0" value={diagnosisType} onChange={(event) => onDiagnosisTypeChange(event.target.value)}>
                 <option value="">All Types</option>
                 {diagnosisTypes.map((type) => (
                   <option key={type} value={type}>
@@ -874,10 +624,7 @@ export function PathologyResultReviewTab({
                 {filteredDiagnosisOptions.map((item) => {
                   const checked = selectedDiagnosis?.code === item.code;
                   return (
-                    <tr
-                      key={item.code}
-                      className={checked ? "bg-primary/5" : "border-t border-border"}
-                    >
+                    <tr key={item.code} className={checked ? "bg-primary/5" : "border-t border-border"}>
                       <td className="px-3 py-2">
                         <input
                           type="checkbox"
@@ -910,12 +657,7 @@ export function PathologyResultReviewTab({
           <div className="grid gap-3 md:grid-cols-2">
             <label className="space-y-2 md:col-span-2">
               <div className="text-xs font-medium text-muted-foreground">Comments</div>
-              <textarea
-                className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border focus:ring-0"
-                value={commentDraft}
-                onChange={(event) => setCommentDraft(event.target.value)}
-                placeholder="Enter comments"
-              />
+              <textarea className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-border focus:ring-0" value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} placeholder="Enter comments" />
             </label>
           </div>
         </div>
@@ -923,3 +665,7 @@ export function PathologyResultReviewTab({
     </div>
   );
 }
+
+
+
+

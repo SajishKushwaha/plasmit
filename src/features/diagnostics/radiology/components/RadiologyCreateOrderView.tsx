@@ -3,16 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  AlertCircle,
-  CheckCircle2,
-  ClipboardList,
-  CreditCard,
-  FilePlus2,
-  Search,
-  UserRound,
-  X,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, ClipboardList, CreditCard, FilePlus2, Search, UserRound, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ModalityBadge } from "@/features/diagnostics/radiology/components/ModalityBadge";
@@ -20,22 +11,14 @@ import { PriorityBadge } from "@/features/diagnostics/radiology/components/Prior
 import { RadiologyStatsCard } from "@/features/diagnostics/radiology/components/RadiologyStatsCard";
 import { radiologyModalities } from "@/features/diagnostics/radiology/data/modalities";
 import { useRadiologyWorkspace } from "@/features/diagnostics/radiology/hooks/useRadiologyWorkspace";
-import type {
-  Patient,
-  Priority,
-  RadiologyOrder,
-  RadiologyTest,
-} from "@/features/diagnostics/radiology/types";
-import {
-  formatCurrency,
-  formatPatientAgeGender,
-} from "@/features/diagnostics/radiology/utils/formatters";
+import type { Patient, Priority, RadiologyOrder, RadiologyTest } from "@/features/diagnostics/radiology/types";
+import { formatCurrency, formatPatientAgeGender } from "@/features/diagnostics/radiology/utils/formatters";
 
 interface RadiologyCreateOrderViewProps {
   patients: Patient[];
   tests: RadiologyTest[];
   onCancel?: () => void;
-  onCreated?: (_orderId: string) => void;
+  onCreated?: (orderId: string) => void;
 }
 
 interface FormErrors {
@@ -59,12 +42,7 @@ function priorityLabel(priority: Priority) {
   return priority.charAt(0) + priority.slice(1).toLowerCase();
 }
 
-export function RadiologyCreateOrderView({
-  patients,
-  tests,
-  onCancel,
-  onCreated,
-}: RadiologyCreateOrderViewProps) {
+export function RadiologyCreateOrderView({ patients, tests, onCancel, onCreated }: RadiologyCreateOrderViewProps) {
   const router = useRouter();
   const workspace = useRadiologyWorkspace();
   const [patientSearch, setPatientSearch] = useState("");
@@ -72,9 +50,7 @@ export function RadiologyCreateOrderView({
   const [modalityFilter, setModalityFilter] = useState("ALL");
   const [contrastFilter, setContrastFilter] = useState("ALL");
   const [patientId, setPatientId] = useState(patients[0]?.id ?? "");
-  const [selectedTestIds, setSelectedTestIds] = useState<string[]>(
-    tests[0]?.id ? [tests[0].id] : [],
-  );
+  const [selectedTestIds, setSelectedTestIds] = useState<string[]>(tests[0]?.id ? [tests[0].id] : []);
   const [priority, setPriority] = useState<Priority>("ROUTINE");
   const [billingStatus, setBillingStatus] = useState<RadiologyOrder["billingStatus"]>("Pending");
   const [clinicalIndication, setClinicalIndication] = useState("");
@@ -88,10 +64,7 @@ export function RadiologyCreateOrderView({
   const selectedModalityId = selectedTests[0]?.modalityId ?? "ALL";
   const total = selectedTests.reduce((sum, test) => sum + test.price, 0);
   const totalDuration = selectedTests.reduce((sum, test) => sum + test.durationMinutes, 0);
-  const maxReportingTat = selectedTests.reduce(
-    (max, test) => Math.max(max, test.reportingTatMinutes),
-    0,
-  );
+  const maxReportingTat = selectedTests.reduce((max, test) => Math.max(max, test.reportingTatMinutes), 0);
 
   const visiblePatients = useMemo(() => {
     const search = patientSearch.trim().toLowerCase();
@@ -100,14 +73,7 @@ export function RadiologyCreateOrderView({
     }
 
     return patients.filter((patient) =>
-      [
-        patient.name,
-        patient.mrn,
-        patient.phone,
-        patient.consultant,
-        patient.department,
-        patient.location,
-      ]
+      [patient.name, patient.mrn, patient.phone, patient.consultant, patient.department, patient.location]
         .join(" ")
         .toLowerCase()
         .includes(search),
@@ -120,14 +86,10 @@ export function RadiologyCreateOrderView({
     return tests.filter((test) => {
       const matchesSearch =
         search.length === 0 ||
-        [test.name, test.code, test.bodyPart, test.preparation]
-          .join(" ")
-          .toLowerCase()
-          .includes(search);
+        [test.name, test.code, test.bodyPart, test.preparation].join(" ").toLowerCase().includes(search);
       const matchesModality = modalityFilter === "ALL" || test.modalityId === modalityFilter;
       const matchesContrast =
-        contrastFilter === "ALL" ||
-        (contrastFilter === "CONTRAST" ? test.contrast : !test.contrast);
+        contrastFilter === "ALL" || (contrastFilter === "CONTRAST" ? test.contrast : !test.contrast);
 
       return matchesSearch && matchesModality && matchesContrast;
     });
@@ -241,29 +203,10 @@ export function RadiologyCreateOrderView({
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <RadiologyStatsCard
-          icon={<UserRound className="h-5 w-5" />}
-          subtext="Search and select patient"
-          title="Step 1"
-          value="Patient"
-        />
-        <RadiologyStatsCard
-          icon={<ClipboardList className="h-5 w-5" />}
-          subtext="Choose same-modality tests"
-          title="Step 2"
-          value={selectedTests.length}
-        />
-        <RadiologyStatsCard
-          icon={<CreditCard className="h-5 w-5" />}
-          subtext={`${totalDuration || 0} min scan time`}
-          title="Estimated Bill"
-          value={formatCurrency(total)}
-        />
-        <RadiologyStatsCard
-          subtext="Current draft status"
-          title="Billing Mode"
-          value={billingStatus}
-        />
+        <RadiologyStatsCard icon={<UserRound className="h-5 w-5" />} subtext="Search and select patient" title="Step 1" value="Patient" />
+        <RadiologyStatsCard icon={<ClipboardList className="h-5 w-5" />} subtext="Choose same-modality tests" title="Step 2" value={selectedTests.length} />
+        <RadiologyStatsCard icon={<CreditCard className="h-5 w-5" />} subtext={`${totalDuration || 0} min scan time`} title="Estimated Bill" value={formatCurrency(total)} />
+        <RadiologyStatsCard subtext="Current draft status" title="Billing Mode" value={billingStatus} />
       </section>
 
       {Object.keys(errors).length > 0 ? (
@@ -272,11 +215,9 @@ export function RadiologyCreateOrderView({
           <div>
             <p className="font-semibold">Please complete the required fields.</p>
             <ul className="mt-1 list-inside list-disc">
-              {Object.values(errors)
-                .filter(Boolean)
-                .map((error) => (
-                  <li key={error}>{error}</li>
-                ))}
+              {Object.values(errors).filter(Boolean).map((error) => (
+                <li key={error}>{error}</li>
+              ))}
             </ul>
           </div>
         </div>
@@ -288,9 +229,7 @@ export function RadiologyCreateOrderView({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-foreground">1. Patient Search</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Search by MRN, name, phone, consultant, department, or location.
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Search by MRN, name, phone, consultant, department, or location.</p>
               </div>
               <Search className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -302,9 +241,7 @@ export function RadiologyCreateOrderView({
             />
             <div className="mt-3 max-h-[360px] divide-y divide-border overflow-auto rounded-lg border border-border">
               {visiblePatients.length === 0 ? (
-                <div className="p-6 text-center text-sm text-muted-foreground">
-                  No matching patient found.
-                </div>
+                <div className="p-6 text-center text-sm text-muted-foreground">No matching patient found.</div>
               ) : (
                 visiblePatients.map((patient) => (
                   <button
@@ -318,20 +255,14 @@ export function RadiologyCreateOrderView({
                   >
                     <span className="min-w-0">
                       <span className="block font-medium">{patient.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {patient.mrn} - {patient.phone}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{patient.mrn} - {patient.phone}</span>
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {patient.location}
-                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{patient.location}</span>
                   </button>
                 ))
               )}
             </div>
-            {errors.patientId ? (
-              <p className="mt-2 text-xs font-medium text-danger">{errors.patientId}</p>
-            ) : null}
+            {errors.patientId ? <p className="mt-2 text-xs font-medium text-danger">{errors.patientId}</p> : null}
           </div>
 
           {selectedPatient ? (
@@ -340,28 +271,13 @@ export function RadiologyCreateOrderView({
               <div className="mt-3 grid gap-3 text-sm">
                 <div>
                   <p className="font-semibold text-foreground">{selectedPatient.name}</p>
-                  <p className="text-muted-foreground">
-                    {selectedPatient.mrn} -{" "}
-                    {formatPatientAgeGender(selectedPatient.age, selectedPatient.gender)}
-                  </p>
+                  <p className="text-muted-foreground">{selectedPatient.mrn} - {formatPatientAgeGender(selectedPatient.age, selectedPatient.gender)}</p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <p>
-                    <span className="font-medium text-foreground">Consultant:</span>{" "}
-                    {selectedPatient.consultant}
-                  </p>
-                  <p>
-                    <span className="font-medium text-foreground">Department:</span>{" "}
-                    {selectedPatient.department}
-                  </p>
-                  <p>
-                    <span className="font-medium text-foreground">Payer:</span>{" "}
-                    {selectedPatient.payerType}
-                  </p>
-                  <p>
-                    <span className="font-medium text-foreground">Location:</span>{" "}
-                    {selectedPatient.location}
-                  </p>
+                  <p><span className="font-medium text-foreground">Consultant:</span> {selectedPatient.consultant}</p>
+                  <p><span className="font-medium text-foreground">Department:</span> {selectedPatient.department}</p>
+                  <p><span className="font-medium text-foreground">Payer:</span> {selectedPatient.payerType}</p>
+                  <p><span className="font-medium text-foreground">Location:</span> {selectedPatient.location}</p>
                 </div>
                 {selectedPatient.allergies ? (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
@@ -379,24 +295,13 @@ export function RadiologyCreateOrderView({
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <label className="text-sm font-medium text-foreground">
                 Ordered by
-                <input
-                  className={`${fieldClass(Boolean(errors.orderedBy))} mt-1`}
-                  onChange={(event) => setOrderedBy(event.target.value)}
-                  placeholder="Ordering doctor"
-                  value={orderedBy}
-                />
+                <input className={`${fieldClass(Boolean(errors.orderedBy))} mt-1`} onChange={(event) => setOrderedBy(event.target.value)} placeholder="Ordering doctor" value={orderedBy} />
               </label>
               <label className="text-sm font-medium text-foreground">
                 Priority
-                <select
-                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                  onChange={(event) => setPriority(event.target.value as Priority)}
-                  value={priority}
-                >
+                <select className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setPriority(event.target.value as Priority)} value={priority}>
                   {priorityOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {priorityLabel(option)}
-                    </option>
+                    <option key={option} value={option}>{priorityLabel(option)}</option>
                   ))}
                 </select>
               </label>
@@ -424,10 +329,7 @@ export function RadiologyCreateOrderView({
           <div className="rounded-lg border border-border bg-surface shadow-sm">
             <div className="border-b border-border p-4">
               <h2 className="text-base font-semibold text-foreground">3. Select Radiology Tests</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                One order supports tests from the same modality. Selecting another modality starts a
-                new test selection.
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">One order supports tests from the same modality. Selecting another modality starts a new test selection.</p>
               <div className="mt-3 grid gap-3 md:grid-cols-[1fr_180px_160px]">
                 <input
                   className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
@@ -435,23 +337,13 @@ export function RadiologyCreateOrderView({
                   placeholder="Search test, code, body part"
                   value={testSearch}
                 />
-                <select
-                  className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                  onChange={(event) => setModalityFilter(event.target.value)}
-                  value={modalityFilter}
-                >
+                <select className="rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setModalityFilter(event.target.value)} value={modalityFilter}>
                   <option value="ALL">All modalities</option>
                   {radiologyModalities.map((modality) => (
-                    <option key={modality.id} value={modality.id}>
-                      {modality.name}
-                    </option>
+                    <option key={modality.id} value={modality.id}>{modality.name}</option>
                   ))}
                 </select>
-                <select
-                  className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                  onChange={(event) => setContrastFilter(event.target.value)}
-                  value={contrastFilter}
-                >
+                <select className="rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setContrastFilter(event.target.value)} value={contrastFilter}>
                   <option value="ALL">All contrast types</option>
                   <option value="CONTRAST">Contrast</option>
                   <option value="NON_CONTRAST">Non-contrast</option>
@@ -460,19 +352,14 @@ export function RadiologyCreateOrderView({
             </div>
             <div className="max-h-[430px] divide-y divide-border overflow-auto">
               {visibleTests.length === 0 ? (
-                <div className="p-8 text-center text-sm text-muted-foreground">
-                  No tests match the selected filters.
-                </div>
+                <div className="p-8 text-center text-sm text-muted-foreground">No tests match the selected filters.</div>
               ) : (
                 visibleTests.map((test) => {
                   const isSelected = selectedTestIds.includes(test.id);
 
                   return (
                     <button
-                      className={[
-                        "flex w-full items-start justify-between gap-4 px-4 py-3 text-left hover:bg-surface-muted",
-                        isSelected ? "bg-primary-soft" : "bg-surface",
-                      ].join(" ")}
+                      className={["flex w-full items-start justify-between gap-4 px-4 py-3 text-left hover:bg-surface-muted", isSelected ? "bg-primary-soft" : "bg-surface"].join(" ")}
                       key={test.id}
                       onClick={() => toggleTest(test)}
                       type="button"
@@ -483,18 +370,13 @@ export function RadiologyCreateOrderView({
                           {isSelected ? <CheckCircle2 className="h-4 w-4 text-primary" /> : null}
                         </span>
                         <span className="mt-1 block text-xs text-muted-foreground">
-                          {test.code} - {test.bodyPart} - {test.durationMinutes} min - TAT{" "}
-                          {test.reportingTatMinutes} min
+                          {test.code} - {test.bodyPart} - {test.durationMinutes} min - TAT {test.reportingTatMinutes} min
                         </span>
-                        <span className="mt-1 block text-xs text-muted-foreground">
-                          {test.preparation}
-                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">{test.preparation}</span>
                       </span>
                       <span className="flex shrink-0 flex-col items-end gap-2">
                         <ModalityBadge modalityId={test.modalityId} />
-                        <span className="text-sm font-semibold text-foreground">
-                          {formatCurrency(test.price)}
-                        </span>
+                        <span className="text-sm font-semibold text-foreground">{formatCurrency(test.price)}</span>
                       </span>
                     </button>
                   );
@@ -502,9 +384,7 @@ export function RadiologyCreateOrderView({
               )}
             </div>
           </div>
-          {errors.testIds ? (
-            <p className="text-xs font-medium text-danger">{errors.testIds}</p>
-          ) : null}
+          {errors.testIds ? <p className="text-xs font-medium text-danger">{errors.testIds}</p> : null}
 
           <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
             <h2 className="text-base font-semibold text-foreground">4. Billing and Review</h2>
@@ -512,13 +392,7 @@ export function RadiologyCreateOrderView({
               <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">
                   Billing status
-                  <select
-                    className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                    onChange={(event) =>
-                      setBillingStatus(event.target.value as RadiologyOrder["billingStatus"])
-                    }
-                    value={billingStatus}
-                  >
+                  <select className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" onChange={(event) => setBillingStatus(event.target.value as RadiologyOrder["billingStatus"])} value={billingStatus}>
                     <option value="Pending">Payment pending</option>
                     <option value="Paid">Paid</option>
                     <option value="Corporate Approved">Corporate approved</option>
@@ -528,35 +402,12 @@ export function RadiologyCreateOrderView({
                 <div className="rounded-lg border border-border bg-surface-muted p-3 text-sm">
                   <p className="font-semibold text-foreground">Order Summary</p>
                   <div className="mt-2 grid gap-2 text-muted-foreground">
-                    <p>
-                      Patient:{" "}
-                      <span className="font-medium text-foreground">
-                        {selectedPatient?.name ?? "Not selected"}
-                      </span>
-                    </p>
-                    <p>
-                      Priority: <PriorityBadge priority={priority} />
-                    </p>
-                    <p>
-                      Modality:{" "}
-                      {selectedModalityId !== "ALL" ? (
-                        <ModalityBadge modalityId={selectedModalityId} />
-                      ) : (
-                        "Not selected"
-                      )}
-                    </p>
-                    <p>
-                      Estimated scan time:{" "}
-                      <span className="font-medium text-foreground">{totalDuration} min</span>
-                    </p>
-                    <p>
-                      Reporting TAT:{" "}
-                      <span className="font-medium text-foreground">{maxReportingTat} min</span>
-                    </p>
-                    <p>
-                      Total amount:{" "}
-                      <span className="font-semibold text-foreground">{formatCurrency(total)}</span>
-                    </p>
+                    <p>Patient: <span className="font-medium text-foreground">{selectedPatient?.name ?? "Not selected"}</span></p>
+                    <p>Priority: <PriorityBadge priority={priority} /></p>
+                    <p>Modality: {selectedModalityId !== "ALL" ? <ModalityBadge modalityId={selectedModalityId} /> : "Not selected"}</p>
+                    <p>Estimated scan time: <span className="font-medium text-foreground">{totalDuration} min</span></p>
+                    <p>Reporting TAT: <span className="font-medium text-foreground">{maxReportingTat} min</span></p>
+                    <p>Total amount: <span className="font-semibold text-foreground">{formatCurrency(total)}</span></p>
                   </div>
                 </div>
               </div>
@@ -564,27 +415,15 @@ export function RadiologyCreateOrderView({
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-foreground">Selected Tests</p>
                 {selectedTests.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                    No test selected.
-                  </div>
+                  <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">No test selected.</div>
                 ) : (
                   selectedTests.map((test) => (
-                    <div
-                      className="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface-muted p-3 text-sm"
-                      key={test.id}
-                    >
+                    <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface-muted p-3 text-sm" key={test.id}>
                       <div>
                         <p className="font-medium text-foreground">{test.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {test.code} - {formatCurrency(test.price)}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{test.code} - {formatCurrency(test.price)}</p>
                       </div>
-                      <button
-                        className="rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground"
-                        onClick={() => removeTest(test.id)}
-                        type="button"
-                        aria-label={`Remove ${test.name}`}
-                      >
+                      <button className="rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground" onClick={() => removeTest(test.id)} type="button" aria-label={`Remove ${test.name}`}>
                         <X className="h-4 w-4" />
                       </button>
                     </div>

@@ -122,13 +122,7 @@ function subscribeWorkspace(onStoreChange: () => void) {
   };
 }
 
-function appendTimeline(
-  order: RadiologyOrder,
-  status: RadiologyStatus,
-  label: string,
-  actor: string,
-  note?: string,
-): RadiologyOrder {
+function appendTimeline(order: RadiologyOrder, status: RadiologyStatus, label: string, actor: string, note?: string): RadiologyOrder {
   return {
     ...order,
     status,
@@ -158,41 +152,28 @@ function addMinutesToTime(time: string, minutes: number) {
 }
 
 function firstTechnicianForModality(modalityId: string) {
-  return (
-    radiologyTechnicians.find((technician) => technician.modalities.includes(modalityId))?.id ??
-    radiologyTechnicians[0]?.id ??
-    "tech-1"
-  );
+  return radiologyTechnicians.find((technician) => technician.modalities.includes(modalityId))?.id ?? radiologyTechnicians[0]?.id ?? "tech-1";
 }
 
 function firstRadiologistForModality(modalityId: string) {
-  return (
-    radiologists.find((radiologist) => radiologist.modalities.includes(modalityId))?.id ??
-    radiologists[0]?.id ??
-    "rad-1"
-  );
+  return radiologists.find((radiologist) => radiologist.modalities.includes(modalityId))?.id ?? radiologists[0]?.id ?? "rad-1";
 }
 
 function updateScheduleStatus(schedules: Schedule[], orderId: string, status: RadiologyStatus) {
-  return schedules.map((schedule) =>
-    schedule.orderId === orderId ? { ...schedule, status } : schedule,
-  );
+  return schedules.map((schedule) => (schedule.orderId === orderId ? { ...schedule, status } : schedule));
 }
 
 export function useRadiologyWorkspace() {
   const state = useSyncExternalStore(subscribeWorkspace, readWorkspace, () => defaultState);
 
-  const commit = useCallback(
-    (updater: (_current: RadiologyWorkspaceState) => RadiologyWorkspaceState, message?: string) => {
-      const nextState = updater(readWorkspace());
-      persistWorkspace(nextState);
+  const commit = useCallback((updater: (current: RadiologyWorkspaceState) => RadiologyWorkspaceState, message?: string) => {
+    const nextState = updater(readWorkspace());
+    persistWorkspace(nextState);
 
-      if (message) {
-        toast.success(message);
-      }
-    },
-    [],
-  );
+    if (message) {
+      toast.success(message);
+    }
+  }, []);
 
   const actions = useMemo(
     () => ({
@@ -208,8 +189,7 @@ export function useRadiologyWorkspace() {
         }
 
         const orderId = `ord-local-${Date.now()}`;
-        const initialStatus: RadiologyStatus =
-          input.billingStatus === "Pending" ? "PAYMENT_PENDING" : "PAYMENT_DONE";
+        const initialStatus: RadiologyStatus = input.billingStatus === "Pending" ? "PAYMENT_PENDING" : "PAYMENT_DONE";
         const now = new Date().toISOString();
 
         const newOrder: RadiologyOrder = {
@@ -242,26 +222,15 @@ export function useRadiologyWorkspace() {
           ],
         };
 
-        commit(
-          (current) => ({ ...current, orders: [newOrder, ...current.orders] }),
-          "Radiology order created",
-        );
+        commit((current) => ({ ...current, orders: [newOrder, ...current.orders] }), "Radiology order created");
         return orderId;
       },
 
-      updateOrderStatus(
-        orderId: string,
-        status: RadiologyStatus,
-        label: string,
-        actor: string,
-        note?: string,
-      ) {
+      updateOrderStatus(orderId: string, status: RadiologyStatus, label: string, actor: string, note?: string) {
         commit(
           (current) => ({
             ...current,
-            orders: current.orders.map((order) =>
-              order.id === orderId ? appendTimeline(order, status, label, actor, note) : order,
-            ),
+            orders: current.orders.map((order) => (order.id === orderId ? appendTimeline(order, status, label, actor, note) : order)),
           }),
           label,
         );
@@ -273,12 +242,7 @@ export function useRadiologyWorkspace() {
             ...current,
             orders: current.orders.map((order) =>
               order.id === orderId
-                ? appendTimeline(
-                    { ...order, billingStatus: "Paid" },
-                    "PAYMENT_DONE",
-                    "Payment received",
-                    "Billing Desk",
-                  )
+                ? appendTimeline({ ...order, billingStatus: "Paid" }, "PAYMENT_DONE", "Payment received", "Billing Desk")
                 : order,
             ),
           }),
@@ -290,55 +254,54 @@ export function useRadiologyWorkspace() {
         const now = new Date();
         const start = new Date(now.getTime() + 30 * 60 * 1000);
 
-        commit((current) => {
-          const order = current.orders.find((item) => item.id === orderId);
-          if (!order) {
-            return current;
-          }
+        commit(
+          (current) => {
+            const order = current.orders.find((item) => item.id === orderId);
+            if (!order) {
+              return current;
+            }
 
-          const testId = order.testIds[0];
-          const test = radiologyTests.find((item) => item.id === testId);
-          const startTime = input.startTime ?? start.toTimeString().slice(0, 5);
-          const technicianId =
-            input.technicianId ??
-            order.assignedTechnicianId ??
-            firstTechnicianForModality(order.modalityId);
-          const schedule: Schedule = {
-            id: `sch-local-${Date.now()}`,
-            orderId,
-            patientId: order.patientId,
-            testId,
-            modalityId: order.modalityId,
-            date: input.date ?? start.toISOString().slice(0, 10),
-            startTime,
-            endTime: addMinutesToTime(startTime, test?.durationMinutes ?? 20),
-            room: input.room ?? order.location ?? "Auto Assigned Room",
-            technicianId,
-            status: "SCHEDULED",
-          };
+            const testId = order.testIds[0];
+            const test = radiologyTests.find((item) => item.id === testId);
+            const startTime = input.startTime ?? start.toTimeString().slice(0, 5);
+            const technicianId = input.technicianId ?? order.assignedTechnicianId ?? firstTechnicianForModality(order.modalityId);
+            const schedule: Schedule = {
+              id: `sch-local-${Date.now()}`,
+              orderId,
+              patientId: order.patientId,
+              testId,
+              modalityId: order.modalityId,
+              date: input.date ?? start.toISOString().slice(0, 10),
+              startTime,
+              endTime: addMinutesToTime(startTime, test?.durationMinutes ?? 20),
+              room: input.room ?? order.location ?? "Auto Assigned Room",
+              technicianId,
+              status: "SCHEDULED",
+            };
 
-          return {
-            ...current,
-            schedules: [schedule, ...current.schedules.filter((item) => item.orderId !== orderId)],
-            orders: current.orders.map((item) =>
-              item.id === orderId
-                ? appendTimeline(
-                    {
-                      ...item,
-                      scheduledAt: `${schedule.date}T${schedule.startTime}:00`,
-                      location: schedule.room,
-                      assignedTechnicianId: technicianId,
-                      assignedRadiologistId:
-                        item.assignedRadiologistId ?? firstRadiologistForModality(item.modalityId),
-                    },
-                    "SCHEDULED",
-                    "Slot scheduled",
-                    "Radiology Reception",
-                  )
-                : item,
-            ),
-          };
-        }, "Slot scheduled");
+            return {
+              ...current,
+              schedules: [schedule, ...current.schedules.filter((item) => item.orderId !== orderId)],
+              orders: current.orders.map((item) =>
+                item.id === orderId
+                  ? appendTimeline(
+                      {
+                        ...item,
+                        scheduledAt: `${schedule.date}T${schedule.startTime}:00`,
+                        location: schedule.room,
+                        assignedTechnicianId: technicianId,
+                        assignedRadiologistId: item.assignedRadiologistId ?? firstRadiologistForModality(item.modalityId),
+                      },
+                      "SCHEDULED",
+                      "Slot scheduled",
+                      "Radiology Reception",
+                    )
+                  : item,
+              ),
+            };
+          },
+          "Slot scheduled",
+        );
       },
 
       checkIn(orderId: string) {
@@ -347,14 +310,7 @@ export function useRadiologyWorkspace() {
             ...current,
             schedules: updateScheduleStatus(current.schedules, orderId, "PATIENT_ARRIVED"),
             orders: current.orders.map((order) =>
-              order.id === orderId
-                ? appendTimeline(
-                    order,
-                    "PATIENT_ARRIVED",
-                    "Patient checked in",
-                    "Radiology Reception",
-                  )
-                : order,
+              order.id === orderId ? appendTimeline(order, "PATIENT_ARRIVED", "Patient checked in", "Radiology Reception") : order,
             ),
           }),
           "Patient checked in",
@@ -367,14 +323,7 @@ export function useRadiologyWorkspace() {
             ...current,
             schedules: updateScheduleStatus(current.schedules, orderId, "READY_FOR_SCAN"),
             orders: current.orders.map((order) =>
-              order.id === orderId
-                ? appendTimeline(
-                    order,
-                    "READY_FOR_SCAN",
-                    "Preparation completed",
-                    "Nursing Assistant",
-                  )
-                : order,
+              order.id === orderId ? appendTimeline(order, "READY_FOR_SCAN", "Preparation completed", "Nursing Assistant") : order,
             ),
           }),
           "Preparation completed",
@@ -387,9 +336,7 @@ export function useRadiologyWorkspace() {
             ...current,
             schedules: updateScheduleStatus(current.schedules, orderId, "SCAN_IN_PROGRESS"),
             orders: current.orders.map((order) =>
-              order.id === orderId
-                ? appendTimeline(order, "SCAN_IN_PROGRESS", "Scan started", "Technician")
-                : order,
+              order.id === orderId ? appendTimeline(order, "SCAN_IN_PROGRESS", "Scan started", "Technician") : order,
             ),
           }),
           "Scan started",
@@ -402,9 +349,7 @@ export function useRadiologyWorkspace() {
             ...current,
             schedules: updateScheduleStatus(current.schedules, orderId, "SCAN_COMPLETED"),
             orders: current.orders.map((order) =>
-              order.id === orderId
-                ? appendTimeline(order, "SCAN_COMPLETED", "Scan completed", "Technician")
-                : order,
+              order.id === orderId ? appendTimeline(order, "SCAN_COMPLETED", "Scan completed", "Technician") : order,
             ),
           }),
           "Scan completed",
@@ -412,157 +357,142 @@ export function useRadiologyWorkspace() {
       },
 
       sendToPacs(orderId: string) {
-        commit((current) => {
-          const order = current.orders.find((item) => item.id === orderId);
-          if (!order) {
-            return current;
-          }
+        commit(
+          (current) => {
+            const order = current.orders.find((item) => item.id === orderId);
+            if (!order) {
+              return current;
+            }
 
-          const studyExists = current.pacsStudies.some((study) => study.orderId === orderId);
-          const test = radiologyTests.find((item) => item.id === order.testIds[0]);
-          const pacsStudy: PACSStudy = {
-            id: `pacs-local-${Date.now()}`,
-            accessionNo: `ACC-${order.modalityId.toUpperCase()}-${Date.now().toString().slice(-6)}`,
-            orderId,
-            patientId: order.patientId,
-            modalityId: order.modalityId,
-            studyDescription: test?.name ?? "Radiology Study",
-            imageCount: 96,
-            studyDateTime: new Date().toISOString(),
-            pacsStatus: "Images Available",
-            viewerUrl: `/radiology/pacs-studies?pacs=${orderId}`,
-          };
+            const studyExists = current.pacsStudies.some((study) => study.orderId === orderId);
+            const test = radiologyTests.find((item) => item.id === order.testIds[0]);
+            const pacsStudy: PACSStudy = {
+              id: `pacs-local-${Date.now()}`,
+              accessionNo: `ACC-${order.modalityId.toUpperCase()}-${Date.now().toString().slice(-6)}`,
+              orderId,
+              patientId: order.patientId,
+              modalityId: order.modalityId,
+              studyDescription: test?.name ?? "Radiology Study",
+              imageCount: 96,
+              studyDateTime: new Date().toISOString(),
+              pacsStatus: "Images Available",
+              viewerUrl: `/radiology/pacs-studies?pacs=${orderId}`,
+            };
 
-          return {
-            ...current,
-            pacsStudies: studyExists ? current.pacsStudies : [pacsStudy, ...current.pacsStudies],
-            schedules: updateScheduleStatus(current.schedules, orderId, "IMAGE_SENT_TO_PACS"),
-            orders: current.orders.map((item) =>
-              item.id === orderId
-                ? appendTimeline(item, "IMAGE_SENT_TO_PACS", "Images sent to PACS", "PACS Gateway")
-                : item,
-            ),
-          };
-        }, "Images sent to PACS");
+            return {
+              ...current,
+              pacsStudies: studyExists ? current.pacsStudies : [pacsStudy, ...current.pacsStudies],
+              schedules: updateScheduleStatus(current.schedules, orderId, "IMAGE_SENT_TO_PACS"),
+              orders: current.orders.map((item) =>
+                item.id === orderId ? appendTimeline(item, "IMAGE_SENT_TO_PACS", "Images sent to PACS", "PACS Gateway") : item,
+              ),
+            };
+          },
+          "Images sent to PACS",
+        );
       },
 
-      saveReportDraft(
-        orderId: string,
-        findings: string,
-        impression: string,
-        critical: boolean,
-        templateName = "General Radiology Report",
-      ) {
-        commit((current) => {
-          const order = current.orders.find((item) => item.id === orderId);
-          if (!order) {
-            return current;
-          }
+      saveReportDraft(orderId: string, findings: string, impression: string, critical: boolean, templateName = "General Radiology Report") {
+        commit(
+          (current) => {
+            const order = current.orders.find((item) => item.id === orderId);
+            if (!order) {
+              return current;
+            }
 
-          const existingReport = current.reports.find((report) => report.orderId === orderId);
-          const radiologistId = order.assignedRadiologistId ?? radiologists[0]?.id ?? "rad-1";
-          const report: RadiologyReport = {
-            id: existingReport?.id ?? `rep-local-${Date.now()}`,
-            orderId,
-            patientId: order.patientId,
-            testId: order.testIds[0],
-            radiologistId,
-            templateName: existingReport?.templateName ?? templateName,
-            findings,
-            impression,
-            status: "Pending Verification",
-            critical,
-            createdAt: existingReport?.createdAt ?? new Date().toISOString(),
-          };
+            const existingReport = current.reports.find((report) => report.orderId === orderId);
+            const radiologistId = order.assignedRadiologistId ?? radiologists[0]?.id ?? "rad-1";
+            const report: RadiologyReport = {
+              id: existingReport?.id ?? `rep-local-${Date.now()}`,
+              orderId,
+              patientId: order.patientId,
+              testId: order.testIds[0],
+              radiologistId,
+              templateName: existingReport?.templateName ?? templateName,
+              findings,
+              impression,
+              status: "Pending Verification",
+              critical,
+              createdAt: existingReport?.createdAt ?? new Date().toISOString(),
+            };
 
-          const existingAlert = current.criticalAlerts.find(
-            (item) => item.orderId === orderId && item.status !== "Closed",
-          );
-          const alert: CriticalAlert | null = critical
-            ? {
-                id: existingAlert?.id ?? `alert-local-${Date.now()}`,
-                orderId,
-                patientId: order.patientId,
-                severity: "Critical",
-                finding: impression,
-                notifiedTo: order.orderedBy,
-                notifiedAt: existingAlert?.notifiedAt ?? new Date().toISOString(),
-                status: "Open",
-              }
-            : null;
+            const existingAlert = current.criticalAlerts.find((item) => item.orderId === orderId && item.status !== "Closed");
+            const alert: CriticalAlert | null = critical
+              ? {
+                  id: existingAlert?.id ?? `alert-local-${Date.now()}`,
+                  orderId,
+                  patientId: order.patientId,
+                  severity: "Critical",
+                  finding: impression,
+                  notifiedTo: order.orderedBy,
+                  notifiedAt: existingAlert?.notifiedAt ?? new Date().toISOString(),
+                  status: "Open",
+                }
+              : null;
 
-          return {
-            ...current,
-            reports: [report, ...current.reports.filter((item) => item.id !== report.id)],
-            criticalAlerts: alert
-              ? existingAlert
-                ? current.criticalAlerts.map((item) =>
-                    item.id === existingAlert.id ? alert : item,
-                  )
-                : [alert, ...current.criticalAlerts]
-              : current.criticalAlerts,
-            orders: current.orders.map((item) =>
-              item.id === orderId
-                ? appendTimeline(item, "REPORT_DRAFTED", "Report drafted", "Radiologist")
-                : item,
-            ),
-          };
-        }, "Report sent for verification");
+            return {
+              ...current,
+              reports: [report, ...current.reports.filter((item) => item.id !== report.id)],
+              criticalAlerts: alert
+                ? existingAlert
+                  ? current.criticalAlerts.map((item) => (item.id === existingAlert.id ? alert : item))
+                  : [alert, ...current.criticalAlerts]
+                : current.criticalAlerts,
+              orders: current.orders.map((item) =>
+                item.id === orderId ? appendTimeline(item, "REPORT_DRAFTED", "Report drafted", "Radiologist") : item,
+              ),
+            };
+          },
+          "Report sent for verification",
+        );
       },
 
       verifyReport(reportId: string) {
-        commit((current) => {
-          const report = current.reports.find((item) => item.id === reportId);
-          if (!report) {
-            return current;
-          }
+        commit(
+          (current) => {
+            const report = current.reports.find((item) => item.id === reportId);
+            if (!report) {
+              return current;
+            }
 
-          return {
-            ...current,
-            reports: current.reports.map((item) =>
-              item.id === reportId
-                ? { ...item, status: "Verified", verifiedAt: new Date().toISOString() }
-                : item,
-            ),
-            orders: current.orders.map((order) =>
-              order.id === report.orderId
-                ? appendTimeline(order, "REPORT_VERIFIED", "Report verified", "Senior Radiologist")
-                : order,
-            ),
-          };
-        }, "Report verified");
+            return {
+              ...current,
+              reports: current.reports.map((item) =>
+                item.id === reportId ? { ...item, status: "Verified", verifiedAt: new Date().toISOString() } : item,
+              ),
+              orders: current.orders.map((order) =>
+                order.id === report.orderId ? appendTimeline(order, "REPORT_VERIFIED", "Report verified", "Senior Radiologist") : order,
+              ),
+            };
+          },
+          "Report verified",
+        );
       },
 
       releaseReport(reportId: string) {
-        commit((current) => {
-          const report = current.reports.find((item) => item.id === reportId);
-          if (!report) {
-            return current;
-          }
+        commit(
+          (current) => {
+            const report = current.reports.find((item) => item.id === reportId);
+            if (!report) {
+              return current;
+            }
 
-          return {
-            ...current,
-            reports: current.reports.map((item) =>
-              item.id === reportId
-                ? { ...item, status: "Released", releasedAt: new Date().toISOString() }
-                : item,
-            ),
-            orders: current.orders.map((order) =>
-              order.id === report.orderId
-                ? appendTimeline(order, "REPORT_RELEASED", "Report released", "Radiology Desk")
-                : order,
-            ),
-          };
-        }, "Report released");
+            return {
+              ...current,
+              reports: current.reports.map((item) =>
+                item.id === reportId ? { ...item, status: "Released", releasedAt: new Date().toISOString() } : item,
+              ),
+              orders: current.orders.map((order) =>
+                order.id === report.orderId ? appendTimeline(order, "REPORT_RELEASED", "Report released", "Radiology Desk") : order,
+              ),
+            };
+          },
+          "Report released",
+        );
       },
 
       deliverReport(orderId: string) {
-        actions.updateOrderStatus(
-          orderId,
-          "REPORT_DELIVERED",
-          "Report delivered",
-          "Report Delivery Desk",
-        );
+        actions.updateOrderStatus(orderId, "REPORT_DELIVERED", "Report delivered", "Report Delivery Desk");
       },
 
       cancelOrder(orderId: string) {
@@ -570,11 +500,7 @@ export function useRadiologyWorkspace() {
           (current) => ({
             ...current,
             schedules: updateScheduleStatus(current.schedules, orderId, "CANCELLED"),
-            orders: current.orders.map((order) =>
-              order.id === orderId
-                ? appendTimeline(order, "CANCELLED", "Order cancelled", "Radiology Desk")
-                : order,
-            ),
+            orders: current.orders.map((order) => (order.id === orderId ? appendTimeline(order, "CANCELLED", "Order cancelled", "Radiology Desk") : order)),
           }),
           "Order cancelled",
         );
@@ -584,9 +510,7 @@ export function useRadiologyWorkspace() {
         commit(
           (current) => ({
             ...current,
-            pacsStudies: current.pacsStudies.map((study) =>
-              study.id === studyId ? { ...study, pacsStatus } : study,
-            ),
+            pacsStudies: current.pacsStudies.map((study) => (study.id === studyId ? { ...study, pacsStatus } : study)),
           }),
           "PACS status updated",
         );

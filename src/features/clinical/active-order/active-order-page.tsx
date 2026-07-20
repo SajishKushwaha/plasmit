@@ -50,9 +50,13 @@ const unitStatusTone: Record<UnitStatus, StatusTone> = {
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-surface-muted p-3">
-      <div className="text-xs font-medium text-muted-foreground">{label}:</div>
+      <div className="text-xs font-medium text-muted-foreground">
+        {label}:
+      </div>
 
-      <div className="text-sm font-semibold text-foreground">{value}</div>
+      <div className="text-sm font-semibold text-foreground">
+        {value}
+      </div>
     </div>
   );
 }
@@ -61,7 +65,10 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <span className="text-xs font-medium text-muted-foreground">{children}</span>;
 }
 
-function Textarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+function Textarea({
+  className,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       className={[
@@ -82,7 +89,7 @@ function ActiveOrdersCard() {
   const [discontinueReason, setDiscontinueReason] = React.useState("");
 
   const releasedUnits = units.length;
-  const _completedUnits = units.filter((unit) => unit.status === "Completed").length;
+  const completedUnits = units.filter((unit) => unit.status === "Completed").length;
   const activeUnit = units.find((unit) => unit.status === "In Progress");
   const releaseDisabled = Boolean(activeUnit) || releasedUnits >= totalUnits;
 
@@ -132,14 +139,8 @@ function ActiveOrdersCard() {
   }, [activeUnit, discontinueReason]);
 
   const updateUnitField = React.useCallback(
-    (
-      id: number,
-      field: keyof Pick<Unit, "startTime" | "endTime" | "volume" | "comments">,
-      value: string,
-    ) => {
-      setUnits((current) =>
-        current.map((unit) => (unit.id === id ? { ...unit, [field]: value } : unit)),
-      );
+    (id: number, field: keyof Pick<Unit, "startTime" | "endTime" | "volume" | "comments">, value: string) => {
+      setUnits((current) => current.map((unit) => (unit.id === id ? { ...unit, [field]: value } : unit)));
     },
     [],
   );
@@ -153,9 +154,7 @@ function ActiveOrdersCard() {
               <Droplet className="h-4 w-4 text-danger" />
               Active Blood Order
             </CardTitle>
-            <CardDescription>
-              Release units sequentially and record transfusion details.
-            </CardDescription>
+            <CardDescription>Release units sequentially and record transfusion details.</CardDescription>
           </div>
           <Button onClick={() => setShowReleaseDrawer(true)} disabled={releaseDisabled}>
             <Plus className="h-4 w-4" />
@@ -222,9 +221,7 @@ function ActiveOrdersCard() {
                         type="time"
                         value={unit.startTime}
                         disabled={unit.status !== "In Progress"}
-                        onChange={(event) =>
-                          updateUnitField(unit.id, "startTime", event.target.value)
-                        }
+                        onChange={(event) => updateUnitField(unit.id, "startTime", event.target.value)}
                       />
                     </label>
                     <label className="space-y-2">
@@ -233,9 +230,7 @@ function ActiveOrdersCard() {
                         type="time"
                         value={unit.endTime}
                         disabled={unit.status !== "In Progress"}
-                        onChange={(event) =>
-                          updateUnitField(unit.id, "endTime", event.target.value)
-                        }
+                        onChange={(event) => updateUnitField(unit.id, "endTime", event.target.value)}
                       />
                     </label>
                     <label className="space-y-2">
@@ -244,14 +239,13 @@ function ActiveOrdersCard() {
                         type="number"
                         placeholder="250"
                         value={unit.volume}
-                        min="0"
+                        min='0'
                         disabled={unit.status !== "In Progress"}
-                        onChange={(event) => updateUnitField(unit.id, "volume", event.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "-" || e.key === "e") {
-                            e.preventDefault();
-                          }
-                        }}
+                        onChange={(event) => updateUnitField(unit.id, "volume", event.target.value)} onKeyDown={(e) => {
+                        if (e.key === "-" || e.key === "e") {
+                          e.preventDefault();
+                        }
+                      }}
                       />
                     </label>
                     <label className="space-y-2 md:col-span-2 xl:col-span-1">
@@ -261,9 +255,7 @@ function ActiveOrdersCard() {
                         placeholder="Enter comments"
                         value={unit.comments}
                         disabled={unit.status !== "In Progress"}
-                        onChange={(event) =>
-                          updateUnitField(unit.id, "comments", event.target.value)
-                        }
+                        onChange={(event) => updateUnitField(unit.id, "comments", event.target.value)}
                       />
                     </label>
                   </div>
@@ -333,11 +325,7 @@ function ActiveOrdersCard() {
             <Button variant="outline" onClick={() => setShowDiscontinueDrawer(false)}>
               Cancel
             </Button>
-            <Button
-              variant="danger"
-              onClick={handleDiscontinue}
-              disabled={!discontinueReason.trim()}
-            >
+            <Button variant="danger" onClick={handleDiscontinue} disabled={!discontinueReason.trim()}>
               <Ban className="h-4 w-4" />
               Discontinue
             </Button>
@@ -381,7 +369,10 @@ export function ActiveOrderPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Active Order" className="static mx-0 border-b bg-transparent px-0 py-2" />
+      <PageHeader
+        title="Active Order"
+        className="static mx-0 border-b bg-transparent px-0 py-2"
+      />
 
       <Card className="sticky top-4 z-20">
         <CardContent className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-4">

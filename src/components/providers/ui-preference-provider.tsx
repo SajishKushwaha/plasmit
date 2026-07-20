@@ -14,9 +14,9 @@ import type { UiPreference } from "@/types";
 
 type UiPreferenceContextValue = {
   preference: UiPreference;
-  setPreference: (_preference: UiPreference) => void;
+  setPreference: (preference: UiPreference) => void;
   resetPreference: () => void;
-  applyPrimaryColor: (_preference: UiPreference) => void;
+  applyPrimaryColor: (preference: UiPreference) => void;
 };
 
 const UiPreferenceContext = React.createContext<UiPreferenceContextValue | null>(null);
@@ -35,8 +35,7 @@ function readPreference(): UiPreference {
   }
   try {
     const parsed = JSON.parse(raw) as UiPreference;
-    cachedPreferenceValue =
-      parsed.version === 1 ? { ...defaultPreference, ...parsed } : defaultPreference;
+    cachedPreferenceValue = parsed.version === 1 ? { ...defaultPreference, ...parsed } : defaultPreference;
     return cachedPreferenceValue;
   } catch {
     cachedPreferenceValue = defaultPreference;
@@ -63,18 +62,11 @@ function applyPrimaryVariables(preference: UiPreference) {
   const root = document.documentElement;
   const preset = themePresets.find((item) => item.id === preference.colorPreset);
   const custom = preference.colorPreset === "custom" ? preference.customPrimary : undefined;
-  const hsl =
-    custom && isHexColor(custom) ? hexToHsl(custom) : (preset?.hsl ?? themePresets[0].hsl);
-  const foreground =
-    custom && isHexColor(custom)
-      ? foregroundForHex(custom)
-      : (preset?.foreground ?? themePresets[0].foreground);
+  const hsl = custom && isHexColor(custom) ? hexToHsl(custom) : preset?.hsl ?? themePresets[0].hsl;
+  const foreground = custom && isHexColor(custom) ? foregroundForHex(custom) : preset?.foreground ?? themePresets[0].foreground;
   root.style.setProperty("--primary", hsl);
   root.style.setProperty("--primary-foreground", foreground);
-  root.style.setProperty(
-    "--primary-soft",
-    custom ? softFromHsl(hsl) : (preset?.soft ?? themePresets[0].soft),
-  );
+  root.style.setProperty("--primary-soft", custom ? softFromHsl(hsl) : preset?.soft ?? themePresets[0].soft);
   root.style.setProperty("--ring", hsl);
   root.style.setProperty("--sidebar-active", hsl);
   root.style.setProperty("--sidebar-active-foreground", foreground);
@@ -89,11 +81,7 @@ function applyThemeMode(mode: UiPreference["mode"]) {
 }
 
 export function UiPreferenceProvider({ children }: { children: React.ReactNode }) {
-  const preference = React.useSyncExternalStore(
-    subscribePreference,
-    readPreference,
-    () => defaultPreference,
-  );
+  const preference = React.useSyncExternalStore(subscribePreference, readPreference, () => defaultPreference);
 
   React.useEffect(() => {
     applyThemeMode(preference.mode);
@@ -106,15 +94,18 @@ export function UiPreferenceProvider({ children }: { children: React.ReactNode }
     return () => media.removeEventListener("change", handleSystemThemeChange);
   }, [preference]);
 
-  const setPreference = React.useCallback((nextPreference: UiPreference) => {
-    const normalizedPreference = { ...nextPreference, version: 1 as const };
-    cachedPreferenceValue = normalizedPreference;
-    cachedPreferenceRaw = JSON.stringify(normalizedPreference);
-    window.localStorage.setItem(uiPreferenceStorageKey, cachedPreferenceRaw);
-    applyThemeMode(normalizedPreference.mode);
-    applyPrimaryVariables(normalizedPreference);
-    window.dispatchEvent(new Event(preferenceChangeEvent));
-  }, []);
+  const setPreference = React.useCallback(
+    (nextPreference: UiPreference) => {
+      const normalizedPreference = { ...nextPreference, version: 1 as const };
+      cachedPreferenceValue = normalizedPreference;
+      cachedPreferenceRaw = JSON.stringify(normalizedPreference);
+      window.localStorage.setItem(uiPreferenceStorageKey, cachedPreferenceRaw);
+      applyThemeMode(normalizedPreference.mode);
+      applyPrimaryVariables(normalizedPreference);
+      window.dispatchEvent(new Event(preferenceChangeEvent));
+    },
+    [],
+  );
 
   const resetPreference = React.useCallback(() => {
     setPreference(defaultPreference);

@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, Droplet, Eye, UserRound } from "lucide-react";
+import { AlertTriangle, Ban, Droplet, Eye, FileWarning, UserRound } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -75,9 +75,13 @@ const discontinuedOrders: DiscontinuedOrder[] = [
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-surface-muted p-3">
-      <div className="text-xs font-medium text-muted-foreground">{label}:</div>
+      <div className="text-xs font-medium text-muted-foreground">
+        {label}:
+      </div>
 
-      <div className="text-sm font-semibold text-foreground">{value}</div>
+      <div className="text-sm font-semibold text-foreground">
+        {value}
+      </div>
     </div>
   );
 }
@@ -140,7 +144,11 @@ function DiscontinuedOrdersTable({ searchQuery }: { searchQuery: string }) {
       { header: "Units ordered", accessorKey: "unitsOrdered" },
       {
         header: "Units transfused",
-        cell: ({ row }) => <span className="font-medium">{row.original.unitsTransfused}</span>,
+        cell: ({ row }) => (
+          <span className="font-medium">
+            {row.original.unitsTransfused}
+          </span>
+        ),
       },
       { header: "Reason", accessorKey: "reason" },
       { header: "Instructions", accessorKey: "instructions" },
@@ -205,14 +213,8 @@ export function DiscontinuedOrderPage() {
   const allowed = nurseRoles.includes(role);
   const [patientId, setPatientId] = React.useState(mockPatients[0]?.id ?? "");
   const patient = mockPatients.find((item) => item.id === patientId) ?? mockPatients[0];
-  const _totalUnitsOrdered = discontinuedOrders.reduce(
-    (total, order) => total + order.unitsOrdered,
-    0,
-  );
-  const _totalUnitsTransfused = discontinuedOrders.reduce(
-    (total, order) => total + order.unitsTransfused,
-    0,
-  );
+  const totalUnitsOrdered = discontinuedOrders.reduce((total, order) => total + order.unitsOrdered, 0);
+  const totalUnitsTransfused = discontinuedOrders.reduce((total, order) => total + order.unitsTransfused, 0);
 
   if (!allowed) {
     return (
@@ -279,12 +281,7 @@ export function DiscontinuedOrderPage() {
             {/* <label className="text-xs font-medium text-muted-foreground" htmlFor="discontinued-order-search">
               Search discontinued orders
             </label> */}
-            <SearchInput
-              id="discontinued-order-search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search product, reason, nurse, date..."
-            />
+            <SearchInput id="discontinued-order-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search product, reason, nurse, date..." />
             {/* <CardDescription>Search filters the discontinued order list below.</CardDescription> */}
           </div>
           <Badge tone="danger">Stopped</Badge>

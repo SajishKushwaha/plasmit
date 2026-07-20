@@ -20,12 +20,9 @@ export function RadiologyNewOrderDialog({ trigger }: { trigger: ReactNode }) {
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[80] flex h-[min(88dvh,820px)] w-[min(94vw,1120px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border bg-surface px-5 py-4">
             <div className="min-w-0">
-              <Dialog.Title className="text-base font-semibold text-foreground">
-                Create Radiology Order
-              </Dialog.Title>
+              <Dialog.Title className="text-base font-semibold text-foreground">Create Radiology Order</Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-                Search patient, select tests, add clinical details, and create the order without
-                leaving this screen.
+                Search patient, select tests, add clinical details, and create the order without leaving this screen.
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>

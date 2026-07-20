@@ -1,0 +1,20 @@
+{
+  "role": "HEAD_NURSE",
+  "endpoints": [
+    { "method": "GET", "path": "/head-nurse/dashboard", "permission": "HEAD_NURSE_DASHBOARD_VIEW", "response": "HeadNurseDashboard" },
+    { "method": "GET", "path": "/head-nurse/admission-queue", "permission": "HEAD_NURSE_ADMISSION_VIEW", "response": "Paginated<AdmissionRequest>" },
+    { "method": "POST", "path": "/head-nurse/admissions/:id/review", "permission": "HEAD_NURSE_ADMISSION_REVIEW", "request": "AdmissionReviewRequest", "response": "AdmissionRequest" },
+    { "method": "GET", "path": "/head-nurse/staff-availability", "permission": "HEAD_NURSE_STAFF_VIEW", "response": "StaffAvailability" },
+    { "method": "GET", "path": "/head-nurse/unit-availability", "permission": "HEAD_NURSE_UNIT_VIEW", "response": "UnitAvailability[]" },
+    { "method": "POST", "path": "/head-nurse/patient-assignments", "permission": "HEAD_NURSE_ASSIGN_PATIENT", "request": "PatientAssignmentRequest", "response": "StaffAssignment" },
+    { "method": "GET", "path": "/head-nurse/roster", "permission": "HEAD_NURSE_MANAGE_ROSTER", "response": "Paginated<ShiftRoster>" },
+    { "method": "POST", "path": "/head-nurse/roster", "permission": "HEAD_NURSE_MANAGE_ROSTER", "request": "ShiftRosterCreate", "response": "ShiftRoster" },
+    { "method": "PUT", "path": "/head-nurse/roster/:id", "permission": "HEAD_NURSE_MANAGE_ROSTER", "request": "ShiftRosterUpdate", "response": "ShiftRoster" },
+    { "method": "POST", "path": "/head-nurse/roster/bulk-assign", "permission": "HEAD_NURSE_MANAGE_ROSTER", "request": "BulkRosterAssign", "response": "ShiftRoster[]" },
+    { "method": "GET", "path": "/head-nurse/escalations", "permission": "HEAD_NURSE_ESCALATION_VIEW", "response": "Paginated<Escalation>" },
+    { "method": "POST", "path": "/head-nurse/escalations/:id/assign", "permission": "HEAD_NURSE_ESCALATION_ASSIGN", "request": "AssignEscalationRequest", "response": "Escalation" },
+    { "method": "POST", "path": "/nursing/shift-handovers/:id/verify", "permission": "HEAD_NURSE_VERIFY_HANDOVER", "request": "VerifyHandoverRequest", "response": "ShiftHandover" },
+    { "method": "GET", "path": "/head-nurse/audit-control", "permission": "HEAD_NURSE_AUDIT_VIEW", "response": "AuditControlDashboard" }
+  ]
+}
+

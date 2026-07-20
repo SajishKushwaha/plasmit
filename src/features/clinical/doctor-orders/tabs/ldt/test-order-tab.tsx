@@ -2,12 +2,9 @@
 
 import * as React from "react";
 
-import {
-  getAllLdtTypeConfigs,
-  getLdtTypeConfig,
-  type LdtDynamicField,
-  type LdtFieldOption,
-} from "./config";
+import { Button } from "@/components/ui/button";
+
+import { getAllLdtTypeConfigs, getLdtTypeConfig, type LdtDynamicField, type LdtFieldOption } from "./config";
 import type { LdtOrderPriority, LdtOrderStatus } from "./types";
 
 const priorityOptions: LdtOrderPriority[] = ["Routine", "Urgent", "STAT"];
@@ -25,26 +22,17 @@ export type LdtDraft = {
 
 type Props = {
   draft: LdtDraft;
-  onDraftChange: (_value: LdtDraft) => void;
+  onDraftChange: (value: LdtDraft) => void;
   onSave: () => void;
   readOnly?: boolean;
   errors?: Partial<Record<keyof LdtDraft, string>>;
 };
 
-export function LdtTestOrderTab({
-  draft,
-  onDraftChange,
-  onSave: _onSave,
-  readOnly = false,
-  errors = {},
-}: Props) {
+export function LdtTestOrderTab({ draft, onDraftChange, onSave, readOnly = false, errors = {} }: Props) {
   const selectedConfig = draft.ldtTypeId ? getLdtTypeConfig(draft.ldtTypeId) : null;
   const propertyFields = selectedConfig?.fields.filter((field) => field.group === "property") ?? [];
-  const assessmentFields =
-    selectedConfig?.fields.filter((field) => field.group === "assessment") ?? [];
-  const ldtNameOptions = selectedConfig
-    ? [{ label: selectedConfig.ldtName, value: selectedConfig.ldtName }]
-    : [];
+  const assessmentFields = selectedConfig?.fields.filter((field) => field.group === "assessment") ?? [];
+  const ldtNameOptions = selectedConfig ? [{ label: selectedConfig.ldtName, value: selectedConfig.ldtName }] : [];
 
   const updateDraft = (next: Partial<LdtDraft>) => onDraftChange({ ...draft, ...next });
 
@@ -67,11 +55,7 @@ export function LdtTestOrderTab({
           className="h-10 w-full rounded-md border border-input px-3 text-sm outline-none"
           value={typeof value === "string" ? value : ""}
           disabled={readOnly}
-          onChange={(event) =>
-            updateDraft({
-              dynamicValues: { ...draft.dynamicValues, [field.id]: event.target.value },
-            })
-          }
+          onChange={(event) => updateDraft({ dynamicValues: { ...draft.dynamicValues, [field.id]: event.target.value } })}
         >
           <option value="">Select {field.label}</option>
           {(field.options ?? []).map((option: LdtFieldOption) => (
@@ -88,10 +72,7 @@ export function LdtTestOrderTab({
       return (
         <div className="grid gap-2 sm:grid-cols-2">
           {(field.options ?? []).map((option: LdtFieldOption) => (
-            <label
-              key={option.value}
-              className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm"
-            >
+            <label key={option.value} className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
               <input
                 type="checkbox"
                 checked={selected.has(option.value)}
@@ -100,9 +81,7 @@ export function LdtTestOrderTab({
                   const next = new Set(selected);
                   if (event.target.checked) next.add(option.value);
                   else next.delete(option.value);
-                  updateDraft({
-                    dynamicValues: { ...draft.dynamicValues, [field.id]: Array.from(next) },
-                  });
+                  updateDraft({ dynamicValues: { ...draft.dynamicValues, [field.id]: Array.from(next) } });
                 }}
               />
               {option.label}
@@ -118,9 +97,7 @@ export function LdtTestOrderTab({
         className="h-10 w-full rounded-md border border-input px-3 text-sm outline-none"
         value={typeof value === "string" ? value : ""}
         disabled={readOnly}
-        onChange={(event) =>
-          updateDraft({ dynamicValues: { ...draft.dynamicValues, [field.id]: event.target.value } })
-        }
+        onChange={(event) => updateDraft({ dynamicValues: { ...draft.dynamicValues, [field.id]: event.target.value } })}
       />
     );
   };
@@ -144,9 +121,7 @@ export function LdtTestOrderTab({
                 </option>
               ))}
             </select>
-            {errors.ldtTypeId ? (
-              <p className="text-[11px] text-danger">{errors.ldtTypeId}</p>
-            ) : null}
+            {errors.ldtTypeId ? <p className="text-[11px] text-danger">{errors.ldtTypeId}</p> : null}
           </label>
           <label className="space-y-1 text-xs font-medium text-muted-foreground">
             <span>LDT Name</span>
@@ -171,9 +146,7 @@ export function LdtTestOrderTab({
               className="h-10 w-full rounded-md border border-input px-3 text-sm"
               value={draft.priority}
               disabled={readOnly}
-              onChange={(event) =>
-                onDraftChange({ ...draft, priority: event.target.value as LdtOrderPriority })
-              }
+              onChange={(event) => onDraftChange({ ...draft, priority: event.target.value as LdtOrderPriority })}
             >
               <option value="">Select Priority</option>
               {priorityOptions.map((option) => (
@@ -185,22 +158,12 @@ export function LdtTestOrderTab({
           </label>
           <label className="space-y-1 text-xs font-medium text-muted-foreground sm:col-span-1">
             <span>Reason / Indication</span>
-            <textarea
-              className="min-h-24 w-full rounded-md border border-input px-3 py-2 text-sm outline-none"
-              value={draft.reason}
-              disabled={readOnly}
-              onChange={(event) => onDraftChange({ ...draft, reason: event.target.value })}
-            />
+            <textarea className="min-h-24 w-full rounded-md border border-input px-3 py-2 text-sm outline-none" value={draft.reason} disabled={readOnly} onChange={(event) => onDraftChange({ ...draft, reason: event.target.value })} />
             {errors.reason ? <p className="text-[11px] text-danger">{errors.reason}</p> : null}
           </label>
           <label className="space-y-1 text-xs font-medium text-muted-foreground sm:col-span-1">
             <span>Clinical Notes</span>
-            <textarea
-              className="min-h-24 w-full rounded-md border border-input px-3 py-2 text-sm outline-none"
-              value={draft.clinicalNotes}
-              disabled={readOnly}
-              onChange={(event) => onDraftChange({ ...draft, clinicalNotes: event.target.value })}
-            />
+            <textarea className="min-h-24 w-full rounded-md border border-input px-3 py-2 text-sm outline-none" value={draft.clinicalNotes} disabled={readOnly} onChange={(event) => onDraftChange({ ...draft, clinicalNotes: event.target.value })} />
           </label>
         </div>
 
@@ -210,43 +173,34 @@ export function LdtTestOrderTab({
               <h4 className="text-sm font-semibold text-foreground">Properties</h4>
               <div className="grid gap-4">
                 {propertyFields.map((field) => (
-                  <label
-                    key={field.id}
-                    className="space-y-1 text-xs font-medium text-muted-foreground"
-                  >
+                  <label key={field.id} className="space-y-1 text-xs font-medium text-muted-foreground">
                     <span>{field.label}</span>
                     {renderField(field)}
                   </label>
                 ))}
-                {propertyFields.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No properties configured for this LDT Type.
-                  </p>
-                ) : null}
+                {propertyFields.length === 0 ? <p className="text-sm text-muted-foreground">No properties configured for this LDT Type.</p> : null}
               </div>
             </section>
             <section className="space-y-3 rounded-md border border-border bg-surface-muted/30 p-4">
               <h4 className="text-sm font-semibold text-foreground">Assessment</h4>
               <div className="grid gap-4">
                 {assessmentFields.map((field) => (
-                  <label
-                    key={field.id}
-                    className="space-y-1 text-xs font-medium text-muted-foreground"
-                  >
+                  <label key={field.id} className="space-y-1 text-xs font-medium text-muted-foreground">
                     <span>{field.label}</span>
                     {renderField(field)}
                   </label>
                 ))}
-                {assessmentFields.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No assessments configured for this LDT Type.
-                  </p>
-                ) : null}
+                {assessmentFields.length === 0 ? <p className="text-sm text-muted-foreground">No assessments configured for this LDT Type.</p> : null}
               </div>
             </section>
           </div>
         ) : null}
+
+
+
       </div>
     </div>
   );
 }
+
+

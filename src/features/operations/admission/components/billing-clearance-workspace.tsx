@@ -33,10 +33,7 @@ export function BillingClearanceWorkspace() {
       { header: "Hold Type", accessorKey: "holdType" },
       { header: "Risk", cell: ({ row }) => <AdmissionStatusBadge value={row.original.risk} /> },
       { header: "Estimate", cell: ({ row }) => formatCurrency(row.original.estimate) },
-      {
-        header: "Status",
-        cell: ({ row }) => <AdmissionStatusBadge value={row.original.status ?? "Pending"} />,
-      },
+      { header: "Status", cell: ({ row }) => <AdmissionStatusBadge value={row.original.status ?? "Pending"} /> },
       { header: "Note", accessorKey: "note" },
       {
         header: "Action",
@@ -77,26 +74,17 @@ export function BillingClearanceWorkspace() {
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-lg border border-border p-4">
             <div className="text-xs font-medium text-muted-foreground">Pending clearance</div>
-            <div className="mt-2 text-2xl font-semibold">
-              {state.clearances.filter((item) => item.status !== "Cleared").length}
-            </div>
+            <div className="mt-2 text-2xl font-semibold">{state.clearances.filter((item) => item.status !== "Cleared").length}</div>
           </div>
           <div className="rounded-lg border border-border p-4">
             <div className="text-xs font-medium text-muted-foreground">High risk</div>
-            <div className="mt-2 text-2xl font-semibold">
-              {
-                state.clearances.filter((item) => item.risk === "High" && item.status !== "Cleared")
-                  .length
-              }
-            </div>
+            <div className="mt-2 text-2xl font-semibold">{state.clearances.filter((item) => item.risk === "High" && item.status !== "Cleared").length}</div>
           </div>
           <div className="rounded-lg border border-border p-4">
             <div className="text-xs font-medium text-muted-foreground">Estimated value</div>
             <div className="mt-2 flex items-center gap-2 text-2xl font-semibold">
               <CreditCard className="h-5 w-5 text-muted-foreground" />
-              {formatCurrency(
-                totalEstimate(state.clearances.filter((item) => item.status !== "Cleared")),
-              )}
+              {formatCurrency(totalEstimate(state.clearances.filter((item) => item.status !== "Cleared")))}
             </div>
           </div>
         </div>

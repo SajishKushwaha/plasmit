@@ -2,18 +2,7 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import {
-  CalendarDays,
-  CheckSquare,
-  Clock,
-  Hash,
-  ListChecks,
-  Pencil,
-  Plus,
-  Save,
-  Trash2,
-  Type,
-} from "lucide-react";
+import { CalendarDays, CheckSquare, ClipboardCheck, Clock, Hash, ListChecks, Pencil, Plus, Save, Trash2, Type } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shell/page-header";
@@ -22,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import { AdminSection, FilterBar, ProtectedAdmin } from "@/features/operations/admin/admin-shared";
+import { StatCard } from "@/components/ui/stat-card";
+import { AdminSection, FilterBar, ProtectedAdmin, StickyActionBar } from "@/features/operations/admin/admin-shared";
 
 type AssessmentFieldType = "Free text" | "Date" | "Time" | "Number" | "Dropdown" | "Checkbox";
 type SelectionMode = "Single" | "Multi";
@@ -62,14 +52,7 @@ type AssessmentFormValues = {
 type AssessmentDrawerState = { type: "add" } | { type: "edit"; record: AssessmentRecord };
 type FormErrors = Partial<Record<"name" | "options", string>>;
 
-const assessmentTypes: AssessmentFieldType[] = [
-  "Free text",
-  "Date",
-  "Time",
-  "Number",
-  "Dropdown",
-  "Checkbox",
-];
+const assessmentTypes: AssessmentFieldType[] = ["Free text", "Date", "Time", "Number", "Dropdown", "Checkbox"];
 const dateFormats = ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"];
 const timeFormats = ["12 hour", "24 hour"];
 const selectionModes: SelectionMode[] = ["Single", "Multi"];
@@ -154,11 +137,7 @@ function buildConfig(values: AssessmentFormValues): AssessmentConfig {
 }
 
 function formatDate() {
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date());
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
 }
 
 function getConfigSummary(record: AssessmentRecord) {
@@ -169,27 +148,15 @@ function getConfigSummary(record: AssessmentRecord) {
     const tracking = [
       config.trackInIntake ? "Intake" : null,
       config.trackInOutput ? "Output" : null,
-    ]
-      .filter(Boolean)
-      .join(", ");
+    ].filter(Boolean).join(", ");
     return tracking ? `Number field, tracks ${tracking}` : "Number field";
   }
-  if (record.type === "Dropdown")
-    return `${config.options?.length ?? 0} options, ${config.selectionMode ?? "Single"} select`;
-  if (record.type === "Checkbox")
-    return `${config.checkboxLabel ?? record.name}, default ${config.checkboxDefault ? "checked" : "unchecked"}`;
+  if (record.type === "Dropdown") return `${config.options?.length ?? 0} options, ${config.selectionMode ?? "Single"} select`;
+  if (record.type === "Checkbox") return `${config.checkboxLabel ?? record.name}, default ${config.checkboxDefault ? "checked" : "unchecked"}`;
   return "Free text";
 }
 
-function FieldShell({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
+function FieldShell({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <label className="space-y-1 text-sm">
       <span className="font-medium text-foreground">{label}</span>
@@ -208,7 +175,7 @@ function SelectField<T extends string>({
   label: string;
   value: T;
   options: T[];
-  onChange: (_value: T) => void;
+  onChange: (value: T) => void;
 }) {
   return (
     <FieldShell label={label}>
@@ -232,7 +199,7 @@ function TrackingCheckboxes({
   onChange,
 }: {
   values: AssessmentFormValues;
-  onChange: (_values: Partial<AssessmentFormValues>) => void;
+  onChange: (values: Partial<AssessmentFormValues>) => void;
 }) {
   return (
     <div className="rounded-md border border-border bg-surface-muted p-3">
@@ -266,7 +233,7 @@ function NumberAssessmentFields({
   onChange,
 }: {
   values: AssessmentFormValues;
-  onChange: (_values: Partial<AssessmentFormValues>) => void;
+  onChange: (values: Partial<AssessmentFormValues>) => void;
 }) {
   return (
     <div>
@@ -282,14 +249,10 @@ function DropdownOptionsField({
 }: {
   values: AssessmentFormValues;
   error?: string;
-  onChange: (_values: Partial<AssessmentFormValues>) => void;
+  onChange: (values: Partial<AssessmentFormValues>) => void;
 }) {
   const updateOption = (index: number, value: string) => {
-    onChange({
-      options: values.options.map((option, optionIndex) =>
-        optionIndex === index ? value : option,
-      ),
-    });
+    onChange({ options: values.options.map((option, optionIndex) => (optionIndex === index ? value : option)) });
   };
 
   const deleteOption = (index: number) => {
@@ -298,21 +261,11 @@ function DropdownOptionsField({
 
   return (
     <div className="space-y-4">
-      <SelectField
-        label="Select mode"
-        value={values.selectionMode}
-        options={selectionModes}
-        onChange={(selectionMode) => onChange({ selectionMode })}
-      />
+      <SelectField label="Select mode" value={values.selectionMode} options={selectionModes} onChange={(selectionMode) => onChange({ selectionMode })} />
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-foreground">Options</span>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => onChange({ options: [...values.options, ""] })}
-          >
+          <Button type="button" size="sm" variant="outline" onClick={() => onChange({ options: [...values.options, ""] })}>
             <Plus className="h-3.5 w-3.5" />
             Add Option
           </Button>
@@ -320,19 +273,8 @@ function DropdownOptionsField({
         <div className="space-y-2">
           {values.options.map((option, index) => (
             <div className="flex gap-2" key={index}>
-              <Input
-                value={option}
-                onChange={(event) => updateOption(index, event.target.value)}
-                placeholder={`Option ${index + 1}`}
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                onClick={() => deleteOption(index)}
-                disabled={values.options.length === 1}
-                aria-label="Delete option"
-              >
+              <Input value={option} onChange={(event) => updateOption(index, event.target.value)} placeholder={`Option ${index + 1}`} />
+              <Button type="button" size="icon" variant="outline" onClick={() => deleteOption(index)} disabled={values.options.length === 1} aria-label="Delete option">
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -349,16 +291,12 @@ function CheckboxAssessmentFields({
   onChange,
 }: {
   values: AssessmentFormValues;
-  onChange: (_values: Partial<AssessmentFormValues>) => void;
+  onChange: (values: Partial<AssessmentFormValues>) => void;
 }) {
   return (
     <div className="space-y-4">
       <FieldShell label="Checkbox label">
-        <Input
-          value={values.checkboxLabel}
-          onChange={(event) => onChange({ checkboxLabel: event.target.value })}
-          placeholder="Visible checkbox label"
-        />
+        <Input value={values.checkboxLabel} onChange={(event) => onChange({ checkboxLabel: event.target.value })} placeholder="Visible checkbox label" />
       </FieldShell>
       <label className="flex items-center gap-2 text-sm font-medium text-foreground">
         <input
@@ -380,27 +318,13 @@ function DynamicAssessmentFields({
 }: {
   values: AssessmentFormValues;
   errors: FormErrors;
-  onChange: (_values: Partial<AssessmentFormValues>) => void;
+  onChange: (values: Partial<AssessmentFormValues>) => void;
 }) {
   if (values.type === "Date") {
-    return (
-      <SelectField
-        label="Date format"
-        value={values.dateFormat}
-        options={dateFormats}
-        onChange={(dateFormat) => onChange({ dateFormat })}
-      />
-    );
+    return <SelectField label="Date format" value={values.dateFormat} options={dateFormats} onChange={(dateFormat) => onChange({ dateFormat })} />;
   }
   if (values.type === "Time") {
-    return (
-      <SelectField
-        label="Time format"
-        value={values.timeFormat}
-        options={timeFormats}
-        onChange={(timeFormat) => onChange({ timeFormat })}
-      />
-    );
+    return <SelectField label="Time format" value={values.timeFormat} options={timeFormats} onChange={(timeFormat) => onChange({ timeFormat })} />;
   }
   if (values.type === "Number") {
     return <NumberAssessmentFields values={values} onChange={onChange} />;
@@ -440,7 +364,7 @@ function AssessmentFormDrawer({
   state: AssessmentDrawerState | null;
   records: AssessmentRecord[];
   onClose: () => void;
-  onSave: (_values: AssessmentFormValues, _editingId?: string) => void;
+  onSave: (values: AssessmentFormValues, editingId?: string) => void;
 }) {
   const editingRecord = state?.type === "edit" ? state.record : null;
   const [values, setValues] = React.useState<AssessmentFormValues>(emptyForm);
@@ -465,15 +389,11 @@ function AssessmentFormDrawer({
     const nextErrors: FormErrors = {};
     const name = values.name.trim();
     const dropdownOptions = values.options.map((option) => option.trim()).filter(Boolean);
-    const nameExists = records.some(
-      (record) =>
-        record.name.toLowerCase() === name.toLowerCase() && record.id !== editingRecord?.id,
-    );
+    const nameExists = records.some((record) => record.name.toLowerCase() === name.toLowerCase() && record.id !== editingRecord?.id);
 
     if (!name) nextErrors.name = "Assessment field name is required.";
     if (nameExists) nextErrors.name = "Assessment field name already exists.";
-    if (values.type === "Dropdown" && dropdownOptions.length === 0)
-      nextErrors.options = "Add at least one dropdown option.";
+    if (values.type === "Dropdown" && dropdownOptions.length === 0) nextErrors.options = "Add at least one dropdown option.";
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
@@ -501,18 +421,9 @@ function AssessmentFormDrawer({
     >
       <form id="assessment-form" className="grid gap-4" onSubmit={handleSubmit}>
         <FieldShell label="Assessment Field Name" error={errors.name}>
-          <Input
-            value={values.name}
-            onChange={(event) => updateValues({ name: event.target.value })}
-            placeholder="Enter assessment field name"
-          />
+          <Input value={values.name} onChange={(event) => updateValues({ name: event.target.value })} placeholder="Enter assessment field name" />
         </FieldShell>
-        <SelectField
-          label="Type"
-          value={values.type}
-          options={assessmentTypes}
-          onChange={(type) => updateValues({ type })}
-        />
+        <SelectField label="Type" value={values.type} options={assessmentTypes} onChange={(type) => updateValues({ type })} />
         <DynamicAssessmentFields values={values} errors={errors} onChange={updateValues} />
       </form>
     </Drawer>
@@ -525,9 +436,7 @@ export function AssessmentConfigurationPage({ ldtId }: { ldtId?: string }) {
   const [drawerState, setDrawerState] = React.useState<AssessmentDrawerState | null>(null);
 
   const filteredRecords = records.filter((record) =>
-    `${record.name} ${record.type} ${getConfigSummary(record)}`
-      .toLowerCase()
-      .includes(search.trim().toLowerCase()),
+    `${record.name} ${record.type} ${getConfigSummary(record)}`.toLowerCase().includes(search.trim().toLowerCase()),
   );
 
   const handleSave = React.useCallback((values: AssessmentFormValues, editingId?: string) => {
@@ -535,23 +444,13 @@ export function AssessmentConfigurationPage({ ldtId }: { ldtId?: string }) {
 
     if (editingId) {
       setRecords((current) =>
-        current.map((record) =>
-          record.id === editingId
-            ? { ...record, name: values.name, type: values.type, config, updatedAt: formatDate() }
-            : record,
-        ),
+        current.map((record) => (record.id === editingId ? { ...record, name: values.name, type: values.type, config, updatedAt: formatDate() } : record)),
       );
       toast.success("Assessment updated");
     } else {
       setRecords((current) => [
         ...current,
-        {
-          id: `assess-${Date.now()}`,
-          name: values.name,
-          type: values.type,
-          config,
-          updatedAt: formatDate(),
-        },
+        { id: `assess-${Date.now()}`, name: values.name, type: values.type, config, updatedAt: formatDate() },
       ]);
       toast.success("Assessment added");
     }
@@ -586,9 +485,7 @@ export function AssessmentConfigurationPage({ ldtId }: { ldtId?: string }) {
       },
       {
         header: "Configuration",
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">{getConfigSummary(row.original)}</span>
-        ),
+        cell: ({ row }) => <span className="text-sm text-muted-foreground">{getConfigSummary(row.original)}</span>,
       },
       { header: "Updated", accessorKey: "updatedAt" },
       {
@@ -597,11 +494,7 @@ export function AssessmentConfigurationPage({ ldtId }: { ldtId?: string }) {
           const record = row.original;
           return (
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDrawerState({ type: "edit", record })}
-              >
+              <Button size="sm" variant="outline" onClick={() => setDrawerState({ type: "edit", record })}>
                 <Pencil className="h-3.5 w-3.5" />
                 Edit
               </Button>
@@ -643,23 +536,14 @@ export function AssessmentConfigurationPage({ ldtId }: { ldtId?: string }) {
               tone="warning"
             />
           </div> */}
-          <FilterBar
-            search={search}
-            onSearch={setSearch}
-            placeholder="Search assessment, type, configuration..."
-          />
+          <FilterBar search={search} onSearch={setSearch} placeholder="Search assessment, type, configuration..." />
           <AdminSection
             title={ldtId ? `Assessment Configuration - ${ldtId}` : "Assessment Configuration"}
             description="Create assessment fields with type-specific configuration and number-based intake/output tracking."
           >
             <DataTable data={filteredRecords} columns={columns} />
           </AdminSection>
-          <AssessmentFormDrawer
-            state={drawerState}
-            records={records}
-            onClose={() => setDrawerState(null)}
-            onSave={handleSave}
-          />
+          <AssessmentFormDrawer state={drawerState} records={records} onClose={() => setDrawerState(null)} onSave={handleSave} />
           {/* <StickyActionBar readOnly={readOnly} saveLabel="Save Assessment Configuration" /> */}
         </>
       )}

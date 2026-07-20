@@ -2,7 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { DrugDraftFields } from "./field-controls";
 import type { DrugOrder, OrderDraft } from "./types";
@@ -20,9 +20,9 @@ export function OrderDetailsCard({
   drafts: Record<string, OrderDraft>;
   flashIds: Record<string, boolean>;
   activeId: string | null;
-  panelRef: (_id: string, _node: HTMLDivElement | null) => void;
-  onActiveChange: (_id: string | null) => void;
-  onDraftChange: (_id: string, _values: Partial<OrderDraft>) => void;
+  panelRef: (id: string, node: HTMLDivElement | null) => void;
+  onActiveChange: (id: string | null) => void;
+  onDraftChange: (id: string, values: Partial<OrderDraft>) => void;
 }) {
   return (
     <Card className="min-w-0 overflow-hidden">
@@ -52,9 +52,7 @@ export function OrderDetailsCard({
                   onClick={() => onActiveChange(open ? null : order.id)}
                 >
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-foreground">
-                      {draft.name}
-                    </div>
+                    <div className="truncate text-sm font-semibold text-foreground">{draft.name}</div>
                     <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <div className="mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span>{draft.genericName}</span>
@@ -64,29 +62,18 @@ export function OrderDetailsCard({
                       </div>
                     </div>
                   </div>
-                  <ChevronDown
-                    className={[
-                      "h-4 w-4 shrink-0 text-muted-foreground transition",
-                      open ? "rotate-180" : "",
-                    ].join(" ")}
-                  />
+                  <ChevronDown className={["h-4 w-4 shrink-0 text-muted-foreground transition", open ? "rotate-180" : ""].join(" ")} />
                 </button>
                 {open ? (
                   <div className="border-t border-border p-3">
-                    <DrugDraftFields
-                      draft={draft}
-                      flash={Boolean(flashIds[order.id])}
-                      onChange={(values) => onDraftChange(order.id, values)}
-                    />
+                    <DrugDraftFields draft={draft} flash={Boolean(flashIds[order.id])} onChange={(values) => onDraftChange(order.id, values)} />
                   </div>
                 ) : null}
               </div>
             );
           })
         ) : (
-          <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-            Select a drug from the left card to start ordering.
-          </div>
+          <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">Select a drug from the left card to start ordering.</div>
         )}
       </CardContent>
     </Card>

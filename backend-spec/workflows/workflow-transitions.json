@@ -1,0 +1,41 @@
+{
+  "admission": [
+    { "from": null, "to": "REQUESTED", "roles": ["ICU_ADMIN", "HEAD_NURSE"], "auditEvent": "ADMISSION_REQUESTED", "notification": "ADMISSION_REQUESTED" },
+    { "from": "REQUESTED", "to": "UNDER_REVIEW", "roles": ["ICU_ADMIN", "HEAD_NURSE"], "auditEvent": "ADMISSION_UNDER_REVIEW", "notification": "ADMISSION_REVIEW_STARTED" },
+    { "from": "UNDER_REVIEW", "to": "APPROVED", "roles": ["ICU_ADMIN"], "auditEvent": "ADMISSION_APPROVED", "notification": "ADMISSION_APPROVED" },
+    { "from": "UNDER_REVIEW", "to": "REJECTED", "roles": ["ICU_ADMIN"], "requires": ["rejectionReason"], "auditEvent": "ADMISSION_REJECTED", "notification": "ADMISSION_REJECTED" },
+    { "from": "APPROVED", "to": "BED_RESERVED", "roles": ["ICU_ADMIN", "UNIT_NURSE"], "requires": ["bedId"], "auditEvent": "BED_RESERVED_FOR_ADMISSION", "notification": "BED_RESERVED" },
+    { "from": "BED_RESERVED", "to": "ADMITTED", "roles": ["ICU_ADMIN"], "requires": ["doctorId", "nurseId"], "auditEvent": "PATIENT_ADMITTED", "notification": "PATIENT_ADMITTED" },
+    { "from": "ADMITTED", "to": "DISCHARGE_PLANNED", "roles": ["DOCTOR_IPD", "ICU_ADMIN"], "auditEvent": "DISCHARGE_PLANNED", "notification": "DISCHARGE_PLANNED" },
+    { "from": "DISCHARGE_PLANNED", "to": "DISCHARGED", "roles": ["DOCTOR_IPD", "ICU_ADMIN"], "auditEvent": "PATIENT_DISCHARGED", "notification": "PATIENT_DISCHARGED" }
+  ],
+  "bed": [
+    { "from": "AVAILABLE", "to": "RESERVED", "roles": ["ICU_ADMIN", "UNIT_NURSE"], "requires": ["admissionRequestId"], "auditEvent": "BED_RESERVED" },
+    { "from": "RESERVED", "to": "OCCUPIED", "roles": ["ICU_ADMIN"], "requires": ["admissionId"], "auditEvent": "BED_OCCUPIED" },
+    { "from": "OCCUPIED", "to": "CLEANING", "roles": ["ICU_ADMIN", "HEAD_NURSE"], "auditEvent": "BED_CLEANING" },
+    { "from": "CLEANING", "to": "AVAILABLE", "roles": ["ICU_ADMIN"], "requires": ["cleanedAt", "checkedBy"], "auditEvent": "BED_AVAILABLE" },
+    { "from": "AVAILABLE", "to": "MAINTENANCE", "roles": ["ICU_ADMIN"], "requires": ["reason"], "auditEvent": "BED_MAINTENANCE" },
+    { "from": "MAINTENANCE", "to": "AVAILABLE", "roles": ["ICU_ADMIN"], "requires": ["clearanceNote"], "auditEvent": "BED_AVAILABLE" }
+  ],
+  "doctorOrder": [
+    { "from": null, "to": "DRAFT", "roles": ["DOCTOR_IPD"], "auditEvent": "ORDER_DRAFT_CREATED" },
+    { "from": "DRAFT", "to": "PLACED", "roles": ["DOCTOR_IPD"], "auditEvent": "ORDER_PLACED", "notification": "NEW_DOCTOR_ORDER" },
+    { "from": "PLACED", "to": "ACKNOWLEDGED", "roles": ["WARD_NURSE"], "auditEvent": "ORDER_ACKNOWLEDGED" },
+    { "from": "ACKNOWLEDGED", "to": "IN_PROGRESS", "roles": ["WARD_NURSE"], "auditEvent": "ORDER_IN_PROGRESS" },
+    { "from": "IN_PROGRESS", "to": "COMPLETED", "roles": ["WARD_NURSE", "DOCTOR_IPD"], "auditEvent": "ORDER_COMPLETED" },
+    { "from": "ACTIVE", "to": "ON_HOLD", "roles": ["DOCTOR_IPD"], "requires": ["reason"], "auditEvent": "ORDER_HELD" },
+    { "from": "ON_HOLD", "to": "ACTIVE", "roles": ["DOCTOR_IPD"], "auditEvent": "ORDER_RESUMED" },
+    { "from": "ACTIVE", "to": "DISCONTINUED", "roles": ["DOCTOR_IPD"], "requires": ["reason"], "auditEvent": "ORDER_DISCONTINUED" },
+    { "from": "PLACED", "to": "CANCELLED", "roles": ["DOCTOR_IPD"], "requires": ["reason"], "auditEvent": "ORDER_CANCELLED" }
+  ],
+  "nursingTask": [
+    { "from": null, "to": "PENDING", "roles": ["DOCTOR_IPD", "WARD_NURSE", "HEAD_NURSE"], "auditEvent": "TASK_CREATED" },
+    { "from": "PENDING", "to": "DUE", "roles": ["SYSTEM"], "auditEvent": "TASK_DUE" },
+    { "from": "DUE", "to": "IN_PROGRESS", "roles": ["WARD_NURSE"], "auditEvent": "TASK_STARTED" },
+    { "from": "IN_PROGRESS", "to": "COMPLETED", "roles": ["WARD_NURSE"], "requires": ["completionNotes"], "auditEvent": "TASK_COMPLETED" },
+    { "from": "DUE", "to": "OVERDUE", "roles": ["SYSTEM"], "auditEvent": "TASK_OVERDUE", "notification": "TASK_OVERDUE" },
+    { "from": "PENDING", "to": "CANCELLED", "roles": ["DOCTOR_IPD", "HEAD_NURSE"], "requires": ["reason"], "auditEvent": "TASK_CANCELLED" },
+    { "from": "DUE", "to": "SKIPPED", "roles": ["WARD_NURSE", "HEAD_NURSE"], "requires": ["reason"], "auditEvent": "TASK_SKIPPED" }
+  ]
+}
+

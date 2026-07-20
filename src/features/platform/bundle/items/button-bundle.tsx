@@ -28,20 +28,12 @@ export function ButtonBundle() {
 }`,
   renderPreview: () => (
     <div className="flex flex-wrap gap-2">
-      <Button>
-        <Save className="h-4 w-4" />
-        Save
-      </Button>
+      <Button><Save className="h-4 w-4" />Save</Button>
       <Button variant="secondary">Secondary</Button>
       <Button variant="outline">Outline</Button>
       <Button variant="ghost">Ghost</Button>
-      <Button variant="danger">
-        <AlertTriangle className="h-4 w-4" />
-        Danger
-      </Button>
-      <Button size="icon" aria-label="Add">
-        <Plus className="h-4 w-4" />
-      </Button>
+      <Button variant="danger"><AlertTriangle className="h-4 w-4" />Danger</Button>
+      <Button size="icon" aria-label="Add"><Plus className="h-4 w-4" /></Button>
       <Button disabled>Disabled</Button>
     </div>
   ),

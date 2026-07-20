@@ -1,16 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronsUpDown,
-  MoreVertical,
-  Pill,
-  Plus,
-  Trash2,
-  UserRound,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, MoreVertical, Pill, Plus, Trash2, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -24,6 +15,7 @@ import { SearchInput } from "@/components/ui/search-input";
 import { PatientSummaryBanner } from "@/components/ui/patient-summary-banner";
 import { useRole } from "@/components/providers/role-provider";
 import { mockPatients } from "@/data/patients";
+import { PatientSearchSelect } from "@/features/clinical/patients/patient-search-select";
 import type { Role } from "@/types";
 
 type PatientForm = {
@@ -66,35 +58,12 @@ type DrugColumn = {
   label: string;
   sortable?: boolean;
   className?: string;
-  render: (
-    _row: DrugRow,
-    _rowErrors: Partial<Record<"drugName" | "dosage", string>>,
-    _updateDrug: (_row: DrugRow, _values: Partial<DrugRow>) => void,
-    _onDelete: (_id: string) => void,
-  ) => React.ReactNode;
+  render: (row: DrugRow, rowErrors: Partial<Record<"drugName" | "dosage", string>>, updateDrug: (row: DrugRow, values: Partial<DrugRow>) => void, onDelete: (id: string) => void) => React.ReactNode;
 };
 
 const doctorRoles: Role[] = ["Doctor", "Doctor OPD", "Doctor IPD", "Super Admin", "Hospital Admin"];
-const drugForms = [
-  "Tablet",
-  "Capsule",
-  "Syrup",
-  "Injection",
-  "IV Fluid",
-  "Cream",
-  "Drops",
-] as const;
-const frequencies = [
-  "OD",
-  "BD",
-  "TDS",
-  "QID",
-  "6 hrly",
-  "8 hrly",
-  "SOS",
-  "Continuous",
-  "Intermittent",
-] as const;
+const drugForms = ["Tablet", "Capsule", "Syrup", "Injection", "IV Fluid", "Cream", "Drops"] as const;
+const frequencies = ["OD", "BD", "TDS", "QID", "6 hrly", "8 hrly", "SOS", "Continuous", "Intermittent"] as const;
 const routes = ["Oral", "IV", "IM", "SC", "Topical", "Inhalation"] as const;
 const todayIso = new Date().toISOString().slice(0, 10);
 const loggedInDoctorName = "Dr. Vivek Bindra";
@@ -162,20 +131,14 @@ function FieldError({ children }: { children?: string }) {
 
 function formatDisplayDate(value: string) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${value}T00:00:00`));
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${value}T00:00:00`));
 }
 
 function DetailItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div className="flex min-h-10 items-center rounded-md border border-input bg-background px-3 text-sm font-semibold text-foreground">
-        {value}
-      </div>
+      <div className="flex min-h-10 items-center rounded-md border border-input bg-background px-3 text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
 }
@@ -188,7 +151,7 @@ function SelectInput<T extends string>({
 }: {
   value: T;
   options: readonly T[];
-  onChange: (_value: T) => void;
+  onChange: (value: T) => void;
   label: string;
 }) {
   return (
@@ -211,16 +174,16 @@ function PatientInformation({
   values,
   errors,
   onChange,
-  selectedPatientId: _selectedPatientId,
-  onPatientSelect: _onPatientSelect,
+  selectedPatientId,
+  onPatientSelect,
 }: {
   values: PatientForm;
   errors: Errors;
-  onChange: (_values: Partial<PatientForm>) => void;
+  onChange: (values: Partial<PatientForm>) => void;
   selectedPatientId: string;
-  onPatientSelect: (_patientId: string) => void;
+  onPatientSelect: (patientId: string) => void;
 }) {
-  const _details = [
+  const details = [
     { label: "MRN", value: values.mrn },
     { label: "Date of Birth", value: formatDisplayDate(values.dateOfBirth) },
     { label: "Age / Gender", value: values.ageGender },
@@ -275,11 +238,7 @@ const drugColumns: DrugColumn[] = [
     sortable: true,
     render: (row, rowErrors, updateDrug) => (
       <>
-        <Input
-          value={row.drugName}
-          onChange={(event) => updateDrug(row, { drugName: event.target.value })}
-          aria-invalid={Boolean(rowErrors.drugName)}
-        />
+        <Input value={row.drugName} onChange={(event) => updateDrug(row, { drugName: event.target.value })} aria-invalid={Boolean(rowErrors.drugName)} />
         <FieldError>{rowErrors.drugName}</FieldError>
       </>
     ),
@@ -288,14 +247,7 @@ const drugColumns: DrugColumn[] = [
     key: "form",
     label: "Form",
     sortable: true,
-    render: (row, _rowErrors, updateDrug) => (
-      <SelectInput
-        label="Form of drug"
-        value={row.form}
-        options={drugForms}
-        onChange={(form) => updateDrug(row, { form })}
-      />
-    ),
+    render: (row, _rowErrors, updateDrug) => <SelectInput label="Form of drug" value={row.form} options={drugForms} onChange={(form) => updateDrug(row, { form })} />,
   },
   {
     key: "dosage",
@@ -303,12 +255,7 @@ const drugColumns: DrugColumn[] = [
     sortable: true,
     render: (row, rowErrors, updateDrug) => (
       <>
-        <Input
-          value={row.dosage}
-          onChange={(event) => updateDrug(row, { dosage: event.target.value })}
-          placeholder="500mg"
-          aria-invalid={Boolean(rowErrors.dosage)}
-        />
+        <Input value={row.dosage} onChange={(event) => updateDrug(row, { dosage: event.target.value })} placeholder="500mg" aria-invalid={Boolean(rowErrors.dosage)} />
         <FieldError>{rowErrors.dosage}</FieldError>
       </>
     ),
@@ -317,65 +264,32 @@ const drugColumns: DrugColumn[] = [
     key: "frequency",
     label: "Frequency",
     sortable: true,
-    render: (row, _rowErrors, updateDrug) => (
-      <SelectInput
-        label="Frequency"
-        value={row.frequency}
-        options={frequencies}
-        onChange={(frequency) => updateDrug(row, { frequency })}
-      />
-    ),
+    render: (row, _rowErrors, updateDrug) => <SelectInput label="Frequency" value={row.frequency} options={frequencies} onChange={(frequency) => updateDrug(row, { frequency })} />,
   },
   {
     key: "route",
     label: "Route",
     sortable: true,
-    render: (row, _rowErrors, updateDrug) => (
-      <SelectInput
-        label="Route"
-        value={row.route}
-        options={routes}
-        onChange={(route) => updateDrug(row, { route })}
-      />
-    ),
+    render: (row, _rowErrors, updateDrug) => <SelectInput label="Route" value={row.route} options={routes} onChange={(route) => updateDrug(row, { route })} />,
   },
   {
     key: "days",
     label: "No. of Days",
     sortable: true,
-    render: (row, _rowErrors, updateDrug) => (
-      <Input
-        type="number"
-        min={1}
-        value={row.days}
-        onChange={(event) => updateDrug(row, { days: event.target.value })}
-      />
-    ),
+    render: (row, _rowErrors, updateDrug) => <Input type="number" min={1} value={row.days} onChange={(event) => updateDrug(row, { days: event.target.value })} />,
   },
   {
     key: "quantity",
     label: "Total Quantity",
     sortable: true,
     render: (row, _rowErrors, updateDrug) => (
-      <Input
-        type="number"
-        min={0}
-        value={row.quantity}
-        onChange={(event) =>
-          updateDrug(row, { quantity: event.target.value, quantityEdited: true })
-        }
-      />
+      <Input type="number" min={0} value={row.quantity} onChange={(event) => updateDrug(row, { quantity: event.target.value, quantityEdited: true })} />
     ),
   },
   {
     key: "instructions",
     label: "Instructions",
-    render: (row, _rowErrors, updateDrug) => (
-      <Input
-        value={row.instructions}
-        onChange={(event) => updateDrug(row, { instructions: event.target.value })}
-      />
-    ),
+    render: (row, _rowErrors, updateDrug) => <Input value={row.instructions} onChange={(event) => updateDrug(row, { instructions: event.target.value })} />,
   },
   {
     key: "actions",
@@ -394,12 +308,7 @@ function DrugActionsMenu({ onDelete }: { onDelete: () => void }) {
 
   return (
     <div className="relative">
-      <Button
-        size="icon"
-        variant="ghost"
-        onClick={() => setOpen((value) => !value)}
-        aria-label="Open drug row actions"
-      >
+      <Button size="icon" variant="ghost" onClick={() => setOpen((value) => !value)} aria-label="Open drug row actions">
         <MoreVertical className="h-4 w-4" />
       </Button>
       {open ? (
@@ -421,29 +330,13 @@ function DrugActionsMenu({ onDelete }: { onDelete: () => void }) {
   );
 }
 
-function SortButton({
-  label,
-  column,
-  sort,
-  onSort,
-}: {
-  label: string;
-  column: SortKey;
-  sort: SortState;
-  onSort: (_key: SortKey) => void;
-}) {
+function SortButton({ label, column, sort, onSort }: { label: string; column: SortKey; sort: SortState; onSort: (key: SortKey) => void }) {
   const active = sort.key === column;
   const SortIcon = active ? (sort.direction === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown;
   return (
-    <button
-      className="flex items-center gap-2 text-left font-semibold uppercase tracking-wide hover:text-foreground"
-      onClick={() => onSort(column)}
-      type="button"
-    >
+    <button className="flex items-center gap-2 text-left font-semibold uppercase tracking-wide hover:text-foreground" onClick={() => onSort(column)} type="button">
       {label}
-      <SortIcon
-        className={active ? "h-3.5 w-3.5 text-foreground" : "h-3.5 w-3.5 text-muted-foreground/70"}
-      />
+      <SortIcon className={active ? "h-3.5 w-3.5 text-foreground" : "h-3.5 w-3.5 text-muted-foreground/70"} />
     </button>
   );
 }
@@ -458,8 +351,8 @@ function DrugTable({
   rows: DrugRow[];
   errors: Errors;
   onAdd: () => void;
-  onDelete: (_id: string) => void;
-  onChange: (_id: string, _values: Partial<DrugRow>) => void;
+  onDelete: (id: string) => void;
+  onChange: (id: string, values: Partial<DrugRow>) => void;
 }) {
   const [search, setSearch] = React.useState("");
   const [sort, setSort] = React.useState<SortState>({ key: "drugName", direction: "asc" });
@@ -467,36 +360,25 @@ function DrugTable({
   const sortedRows = React.useMemo(() => {
     const query = search.trim().toLowerCase();
     return rows
-      .filter((row) =>
-        `${row.drugName} ${row.form} ${row.dosage} ${row.frequency} ${row.route} ${row.instructions}`
-          .toLowerCase()
-          .includes(query),
-      )
+      .filter((row) => `${row.drugName} ${row.form} ${row.dosage} ${row.frequency} ${row.route} ${row.instructions}`.toLowerCase().includes(query))
       .sort((left, right) => {
         const leftValue = left[sort.key];
         const rightValue = right[sort.key];
-        const result =
-          Number.isFinite(Number(leftValue)) && Number.isFinite(Number(rightValue))
-            ? Number(leftValue) - Number(rightValue)
-            : String(leftValue).localeCompare(String(rightValue));
+        const result = Number.isFinite(Number(leftValue)) && Number.isFinite(Number(rightValue))
+          ? Number(leftValue) - Number(rightValue)
+          : String(leftValue).localeCompare(String(rightValue));
         return sort.direction === "asc" ? result : -result;
       });
   }, [rows, search, sort]);
 
   const updateSort = (key: SortKey) => {
-    setSort((current) => ({
-      key,
-      direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
-    }));
+    setSort((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" }));
   };
 
   const updateDrug = (row: DrugRow, values: Partial<DrugRow>) => {
     const next = { ...row, ...values };
     const shouldAutoQuantity = !next.quantityEdited && ("days" in values || "frequency" in values);
-    onChange(row.id, {
-      ...values,
-      ...(shouldAutoQuantity ? { quantity: calculateQuantity(next.frequency, next.days) } : {}),
-    });
+    onChange(row.id, { ...values, ...(shouldAutoQuantity ? { quantity: calculateQuantity(next.frequency, next.days) } : {}) });
   };
 
   return (
@@ -504,9 +386,7 @@ function DrugTable({
       <CardHeader>
         <div>
           <CardTitle>Drug Table</CardTitle>
-          <CardDescription>
-            Add medicines, dosing, frequency, route, and dispensing quantity.
-          </CardDescription>
+          <CardDescription>Add medicines, dosing, frequency, route, and dispensing quantity.</CardDescription>
         </div>
         <Button onClick={onAdd}>
           <Plus className="h-4 w-4" />
@@ -515,12 +395,7 @@ function DrugTable({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <SearchInput
-            className="sm:w-80"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search drugs..."
-          />
+          <SearchInput className="sm:w-80" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search drugs..." />
           <Badge tone="info">{rows.length} Row(s)</Badge>
         </div>
         <FieldError>{errors.drugs}</FieldError>
@@ -530,22 +405,8 @@ function DrugTable({
               <thead className="bg-surface-muted text-xs text-muted-foreground">
                 <tr>
                   {drugColumns.map((column) => (
-                    <th
-                      className={["border-b border-border px-3 py-2", column.className]
-                        .filter(Boolean)
-                        .join(" ")}
-                      key={column.key}
-                    >
-                      {column.sortable ? (
-                        <SortButton
-                          label={column.label}
-                          column={column.key as SortKey}
-                          sort={sort}
-                          onSort={updateSort}
-                        />
-                      ) : (
-                        column.label
-                      )}
+                    <th className={["border-b border-border px-3 py-2", column.className].filter(Boolean).join(" ")} key={column.key}>
+                      {column.sortable ? <SortButton label={column.label} column={column.key as SortKey} sort={sort} onSort={updateSort} /> : column.label}
                     </th>
                   ))}
                 </tr>
@@ -576,29 +437,18 @@ function DrugTable({
   );
 }
 
-function DoctorSignature({
-  registrationNumber,
-  onRegistrationChange,
-}: {
-  registrationNumber: string;
-  onRegistrationChange: (_value: string) => void;
-}) {
+function DoctorSignature({ registrationNumber, onRegistrationChange }: { registrationNumber: string; onRegistrationChange: (value: string) => void }) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-4 p-4 md:ml-auto md:w-[420px]">
         <div>
-          <div className="text-sm font-semibold text-foreground">
-            Doctor&apos;s Name and Signature
-          </div>
+          <div className="text-sm font-semibold text-foreground">Doctor&apos;s Name and Signature</div>
           <div className="mt-8 border-b border-foreground/70" />
           <div className="mt-1 text-xs text-muted-foreground">{loggedInDoctorName}</div>
         </div>
         <label className="space-y-1">
           <span className="text-sm font-medium text-foreground">Registration Number</span>
-          <Input
-            value={registrationNumber}
-            onChange={(event) => onRegistrationChange(event.target.value)}
-          />
+          <Input value={registrationNumber} onChange={(event) => onRegistrationChange(event.target.value)} />
         </label>
       </CardContent>
     </Card>
@@ -623,11 +473,7 @@ function validatePrescription(patient: PatientForm, drugs: DrugRow[]) {
   if (!prescriptionDateError && compareIsoDate(patient.date, todayIso) > 0) {
     nextErrors.date = "Date cannot be in the future.";
   }
-  if (
-    !dobError &&
-    !prescriptionDateError &&
-    compareIsoDate(patient.date, patient.dateOfBirth) < 0
-  ) {
+  if (!dobError && !prescriptionDateError && compareIsoDate(patient.date, patient.dateOfBirth) < 0) {
     nextErrors.date = "Date cannot be before Date of Birth.";
   }
 
@@ -663,21 +509,13 @@ export function PrescriptionPage() {
   const router = useRouter();
   const patient = mockPatients[0];
   const [selectedPatientId, setSelectedPatientId] = React.useState(patient.id);
-  const [patientForm, setPatientForm] = React.useState<PatientForm>(() =>
-    buildPatientForm(patient),
-  );
+  const [patientForm, setPatientForm] = React.useState<PatientForm>(() => buildPatientForm(patient));
   const [drugs, setDrugs] = React.useState<DrugRow[]>([createDrugRow()]);
   const [registrationNumber, setRegistrationNumber] = React.useState("MMC-2014-48291");
   const [errors, setErrors] = React.useState<Errors>({});
 
   if (!doctorRoles.includes(role)) {
-    return (
-      <EmptyState
-        icon={UserRound}
-        title="Doctor access required"
-        description="Switch to Doctor role to create a prescription."
-      />
-    );
+    return <EmptyState icon={UserRound} title="Doctor access required" description="Switch to Doctor role to create a prescription." />;
   }
 
   const submitPrescription = () => {
@@ -692,10 +530,7 @@ export function PrescriptionPage() {
   const selectPatient = (patientId: string) => {
     const selectedPatient = mockPatients.find((item) => item.id === patientId) ?? patient;
     setSelectedPatientId(selectedPatient.id);
-    setPatientForm((current) => ({
-      ...buildPatientForm(selectedPatient),
-      diagnosis: current.diagnosis,
-    }));
+    setPatientForm((current) => ({ ...buildPatientForm(selectedPatient), diagnosis: current.diagnosis }));
   };
 
   return (
@@ -723,16 +558,9 @@ export function PrescriptionPage() {
         errors={errors}
         onAdd={() => setDrugs((current) => [...current, createDrugRow()])}
         onDelete={(id) => setDrugs((current) => current.filter((drug) => drug.id !== id))}
-        onChange={(id, values) =>
-          setDrugs((current) =>
-            current.map((drug) => (drug.id === id ? { ...drug, ...values } : drug)),
-          )
-        }
+        onChange={(id, values) => setDrugs((current) => current.map((drug) => (drug.id === id ? { ...drug, ...values } : drug)))}
       />
-      <DoctorSignature
-        registrationNumber={registrationNumber}
-        onRegistrationChange={setRegistrationNumber}
-      />
+      <DoctorSignature registrationNumber={registrationNumber} onRegistrationChange={setRegistrationNumber} />
       <div className="flex justify-end">
         <Button onClick={submitPrescription}>
           <Pill className="h-4 w-4" />

@@ -1,10 +1,6 @@
 import { CheckCircle2, Circle, ShieldAlert } from "lucide-react";
 
-import type {
-  Patient,
-  RadiologyOrder,
-  RadiologyTest,
-} from "@/features/diagnostics/radiology/types";
+import type { Patient, RadiologyOrder, RadiologyTest } from "@/features/diagnostics/radiology/types";
 
 interface PreparationChecklistCardProps {
   order: RadiologyOrder;
@@ -15,17 +11,9 @@ interface PreparationChecklistCardProps {
 export function PreparationChecklistCard({ order, patient, test }: PreparationChecklistCardProps) {
   const checklist = [
     { label: "Patient identity verified with MRN and phone", done: true },
-    {
-      label: test.contrast
-        ? "Creatinine and contrast consent checked"
-        : "No contrast consent required",
-      done: !test.contrast || order.status !== "PREPARATION_PENDING",
-    },
+    { label: test.contrast ? "Creatinine and contrast consent checked" : "No contrast consent required", done: !test.contrast || order.status !== "PREPARATION_PENDING" },
     { label: test.preparation, done: order.status !== "PREPARATION_PENDING" },
-    {
-      label: "Metallic objects, implants, and safety risks screened",
-      done: order.modalityId !== "mod-mri" || order.status !== "PREPARATION_PENDING",
-    },
+    { label: "Metallic objects, implants, and safety risks screened", done: order.modalityId !== "mod-mri" || order.status !== "PREPARATION_PENDING" },
   ];
 
   return (
@@ -48,23 +36,13 @@ export function PreparationChecklistCard({ order, patient, test }: PreparationCh
       <div className="mt-4 space-y-3">
         {checklist.map((item) => (
           <div className="flex gap-2 text-sm" key={item.label}>
-            {item.done ? (
-              <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
-            ) : (
-              <Circle className="mt-0.5 h-4 w-4 text-slate-400" />
-            )}
-            <span className={item.done ? "text-slate-700" : "font-medium text-slate-950"}>
-              {item.label}
-            </span>
+            {item.done ? <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" /> : <Circle className="mt-0.5 h-4 w-4 text-slate-400" />}
+            <span className={item.done ? "text-slate-700" : "font-medium text-slate-950"}>{item.label}</span>
           </div>
         ))}
       </div>
 
-      {patient.allergies ? (
-        <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          {patient.allergies}
-        </p>
-      ) : null}
+      {patient.allergies ? <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{patient.allergies}</p> : null}
     </article>
   );
 }

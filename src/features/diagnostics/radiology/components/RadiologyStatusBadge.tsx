@@ -1,8 +1,5 @@
 import type { RadiologyStatus } from "@/features/diagnostics/radiology/types";
-import {
-  getRadiologyStatusTone,
-  radiologyStatusLabels,
-} from "@/features/diagnostics/radiology/utils/status";
+import { getRadiologyStatusTone, radiologyStatusLabels } from "@/features/diagnostics/radiology/utils/status";
 
 interface RadiologyStatusBadgeProps {
   status: RadiologyStatus;

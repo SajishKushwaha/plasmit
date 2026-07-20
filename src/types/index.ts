@@ -21,6 +21,7 @@ export type Role =
   | "ICU Pharmacist"
   | "Quality Audit"
   | "Blood Bank"
+  | "ER Nurse"
   | "Receptionist"
   | "Lab Technician"
   | "Radiologist"
@@ -76,15 +77,7 @@ export type NotificationItem = {
 
 export type SearchResult = {
   id: string;
-  type:
-    | "Patient"
-    | "Doctor"
-    | "Appointment"
-    | "Module"
-    | "Bill"
-    | "Lab report"
-    | "Radiology report"
-    | "Action";
+  type: "Patient" | "Doctor" | "Appointment" | "Module" | "Bill" | "Lab report" | "Radiology report" | "Action";
   title: string;
   description: string;
   meta: string;
@@ -94,13 +87,7 @@ export type SearchResult = {
 export type UiPreference = {
   version: 1;
   mode: "light" | "dark" | "system";
-  colorPreset:
-    | "clinical-blue"
-    | "care-green"
-    | "trust-teal"
-    | "emergency-red"
-    | "executive-neutral"
-    | "custom";
+  colorPreset: "clinical-blue" | "care-green" | "trust-teal" | "emergency-red" | "executive-neutral" | "custom";
   customPrimary?: string;
   density: "comfortable" | "compact";
   sidebar: "expanded" | "collapsed" | "auto";
@@ -282,13 +269,7 @@ export type PatientStatus =
   | "Archived placeholder";
 
 export type PatientGender = "Female" | "Male" | "Other" | "Unknown";
-export type AbhaStatus =
-  | "Not linked"
-  | "Link pending"
-  | "Linked"
-  | "Verification failed"
-  | "Consent required"
-  | "Sync pending";
+export type AbhaStatus = "Not linked" | "Link pending" | "Linked" | "Verification failed" | "Consent required" | "Sync pending";
 
 export type PatientRecord = {
   id: string;
@@ -406,10 +387,8 @@ export type AppointmentStatus =
   | "Late"
   | "Follow-up due";
 
-export type QueueStatus =
-  "Waiting" | "Called" | "In consultation" | "On hold" | "Skipped" | "Completed" | "Cancelled";
-export type TokenStatus =
-  "Issued" | "Called" | "Serving" | "Skipped" | "Held" | "Completed" | "Expired";
+export type QueueStatus = "Waiting" | "Called" | "In consultation" | "On hold" | "Skipped" | "Completed" | "Cancelled";
+export type TokenStatus = "Issued" | "Called" | "Serving" | "Skipped" | "Held" | "Completed" | "Expired";
 export type OperationalPriority = "Routine" | "Urgent" | "Emergency" | "VIP";
 export type DelayLevel = "Normal" | "Approaching delay" | "Delayed" | "Critical delay";
 
@@ -515,13 +494,7 @@ export type TeleconsultationRecord = {
   doctor: string;
   department: string;
   consentStatus: "Signed" | "Pending" | "Missing";
-  linkStatus:
-    | "Link pending"
-    | "Ready to join"
-    | "Waiting online"
-    | "In call placeholder"
-    | "Completed"
-    | "Failed/no-show";
+  linkStatus: "Link pending" | "Ready to join" | "Waiting online" | "In call placeholder" | "Completed" | "Failed/no-show";
   appointmentStatus: AppointmentStatus;
 };
 
@@ -648,14 +621,7 @@ export type AllergyRecord = {
 export type ClinicalTemplate = {
   id: string;
   name: string;
-  type:
-    | "Clinical note"
-    | "SOAP note"
-    | "Diagnosis"
-    | "Prescription"
-    | "Procedure advice"
-    | "Follow-up advice"
-    | "Patient instruction";
+  type: "Clinical note" | "SOAP note" | "Diagnosis" | "Prescription" | "Procedure advice" | "Follow-up advice" | "Patient instruction";
   specialty: string;
   scope: "Doctor" | "Department" | "Global";
   tags: string[];
@@ -677,18 +643,10 @@ export type AdmissionStatus =
   | "Discharged"
   | "Cancelled";
 
-export type BedStatus =
-  "Available" | "Occupied" | "Reserved" | "Cleaning" | "Maintenance" | "Blocked" | "Isolation";
-export type NursingTaskStatus =
-  "Pending" | "Due now" | "Overdue" | "Completed" | "Missed" | "Cancelled";
-export type MedicationAdministrationStatus =
-  "Scheduled" | "Due" | "Administered" | "Missed" | "Held" | "Refused" | "Delayed";
-export type TriagePriority =
-  | "Red: immediate"
-  | "Orange: very urgent"
-  | "Yellow: urgent"
-  | "Green: standard"
-  | "Black/expectant placeholder";
+export type BedStatus = "Available" | "Occupied" | "Reserved" | "Cleaning" | "Maintenance" | "Blocked" | "Isolation";
+export type NursingTaskStatus = "Pending" | "Due now" | "Overdue" | "Completed" | "Missed" | "Cancelled";
+export type MedicationAdministrationStatus = "Scheduled" | "Due" | "Administered" | "Missed" | "Held" | "Refused" | "Delayed";
+export type TriagePriority = "Red: immediate" | "Orange: very urgent" | "Yellow: urgent" | "Green: standard" | "Black/expectant placeholder";
 export type EmergencyStatus =
   | "Registered"
   | "Triage pending"
@@ -778,8 +736,7 @@ export type AmbulanceRequest = {
   destination: string;
   ambulanceNo: string;
   driverName: string;
-  status:
-    "Requested" | "Assigned" | "Dispatched" | "Picked up" | "Arriving" | "Arrived" | "Cancelled";
+  status: "Requested" | "Assigned" | "Dispatched" | "Picked up" | "Arriving" | "Arrived" | "Cancelled";
   eta: string;
   delayReason?: string;
 };
@@ -805,25 +762,11 @@ export type ClinicalRecordStatus =
   | "Superseded placeholder"
   | "Legal hold placeholder";
 
-export type ClinicalAttachmentStatus =
-  "Uploaded" | "Verified" | "Pending verification" | "Rejected" | "Expired" | "Archived";
-export type DigitalSignatureStatus =
-  | "Not required"
-  | "Pending"
-  | "Signed placeholder"
-  | "Rejected placeholder"
-  | "Expired certificate placeholder";
-export type SensitivityLevel =
-  "Normal" | "Sensitive" | "Restricted" | "Break-glass placeholder" | "Consent-gated placeholder";
-export type RecordVersionState =
-  "Current" | "Previous" | "Addendum" | "Superseded" | "Archived placeholder";
-export type DisclosureStatus =
-  | "Draft"
-  | "Consent required"
-  | "Approval pending"
-  | "Approved placeholder"
-  | "Rejected placeholder"
-  | "Shared placeholder";
+export type ClinicalAttachmentStatus = "Uploaded" | "Verified" | "Pending verification" | "Rejected" | "Expired" | "Archived";
+export type DigitalSignatureStatus = "Not required" | "Pending" | "Signed placeholder" | "Rejected placeholder" | "Expired certificate placeholder";
+export type SensitivityLevel = "Normal" | "Sensitive" | "Restricted" | "Break-glass placeholder" | "Consent-gated placeholder";
+export type RecordVersionState = "Current" | "Previous" | "Addendum" | "Superseded" | "Archived placeholder";
+export type DisclosureStatus = "Draft" | "Consent required" | "Approval pending" | "Approved placeholder" | "Rejected placeholder" | "Shared placeholder";
 
 export type EmrEncounter = {
   id: string;
@@ -849,15 +792,7 @@ export type EmrEncounter = {
 export type MedicalHistoryItem = {
   id: string;
   patientId: string;
-  section:
-    | "Past medical"
-    | "Surgical"
-    | "Family"
-    | "Social"
-    | "Medication"
-    | "Allergy"
-    | "Immunization"
-    | "Obstetric/Gynecology placeholder";
+  section: "Past medical" | "Surgical" | "Family" | "Social" | "Medication" | "Allergy" | "Immunization" | "Obstetric/Gynecology placeholder";
   condition: string;
   onset: string;
   status: "Active" | "Resolved" | "Verified" | "Unverified" | "Archived placeholder";
@@ -872,14 +807,7 @@ export type ProgressNote = {
   id: string;
   patientId: string;
   encounterId: string;
-  noteType:
-    | "OPD note"
-    | "IPD progress note"
-    | "Emergency note"
-    | "Nursing note"
-    | "Doctor round note"
-    | "Addendum"
-    | "Referral note placeholder";
+  noteType: "OPD note" | "IPD progress note" | "Emergency note" | "Nursing note" | "Doctor round note" | "Addendum" | "Referral note placeholder";
   author: string;
   department: string;
   createdAt: string;
@@ -918,8 +846,7 @@ export type DigitalSignatureRecord = {
   signer: string;
   requestedAt: string;
   status: DigitalSignatureStatus;
-  certificateStatus:
-    "Valid placeholder" | "Expired placeholder" | "Not required" | "Pending enrollment placeholder";
+  certificateStatus: "Valid placeholder" | "Expired placeholder" | "Not required" | "Pending enrollment placeholder";
   reason: string;
 };
 
@@ -1024,8 +951,7 @@ export type DiagnosticResultStatus =
   | "Addendum placeholder"
   | "Superseded placeholder";
 
-export type DiagnosticPriority =
-  "Routine" | "Urgent" | "Emergency" | "Critical" | "STAT placeholder";
+export type DiagnosticPriority = "Routine" | "Urgent" | "Emergency" | "Critical" | "STAT placeholder";
 export type LabDepartment = "Biochemistry" | "Hematology" | "Microbiology" | "Histopathology";
 
 export type LabOrder = {
@@ -1052,8 +978,7 @@ export type LabTest = {
   department: LabDepartment;
   sampleType: string;
   method: string;
-  normalRangeStatus:
-    "Configured" | "Age/gender split" | "Missing range" | "Critical range configured";
+  normalRangeStatus: "Configured" | "Age/gender split" | "Missing range" | "Critical range configured";
   price: string;
   status: "Active" | "Inactive" | "Review required";
   parameters: Array<{
@@ -1163,21 +1088,9 @@ export type RadiologyOrderStatus =
   | "Report printed"
   | "Cancelled";
 
-export type PacsStatus =
-  | "Study pending"
-  | "Image unavailable"
-  | "Image available placeholder"
-  | "PACS sync pending"
-  | "PACS synced placeholder"
-  | "Sync failed placeholder";
+export type PacsStatus = "Study pending" | "Image unavailable" | "Image available placeholder" | "PACS sync pending" | "PACS synced placeholder" | "Sync failed placeholder";
 export type RadiologyModality = "Ultrasound" | "CT" | "MRI" | "X-Ray" | "Mammography" | "PET";
-export type RadiologyPrepStatus =
-  | "Not required"
-  | "Pending"
-  | "Completed"
-  | "Failed/prep incomplete"
-  | "Consent pending"
-  | "Safety checklist pending";
+export type RadiologyPrepStatus = "Not required" | "Pending" | "Completed" | "Failed/prep incomplete" | "Consent pending" | "Safety checklist pending";
 
 export type RadiologyOrder = {
   id: string;
@@ -1256,52 +1169,11 @@ export type PrescriptionDispenseStatus =
   | "Substitution requested placeholder"
   | "Returned placeholder";
 
-export type StockStatus =
-  | "In stock"
-  | "Low stock"
-  | "Critical stock"
-  | "Out of stock"
-  | "Reserved"
-  | "Quarantined"
-  | "Expired"
-  | "Near expiry";
-export type PurchaseStatus =
-  | "Draft"
-  | "Requested"
-  | "Approved placeholder"
-  | "Ordered"
-  | "Partially received"
-  | "Received"
-  | "Cancelled"
-  | "Rejected placeholder";
-export type StockTransferStatus =
-  | "Requested"
-  | "Approved placeholder"
-  | "Issued"
-  | "In transit"
-  | "Received"
-  | "Partially received"
-  | "Rejected"
-  | "Cancelled";
-export type OtStatus =
-  | "Scheduled"
-  | "Pre-op pending"
-  | "Ready for surgery"
-  | "In surgery"
-  | "Recovery"
-  | "Completed"
-  | "Cancelled"
-  | "Delayed";
-export type InstrumentStatus =
-  | "Available"
-  | "In use"
-  | "Used"
-  | "Cleaning"
-  | "Sterilization pending"
-  | "Sterilized"
-  | "Missing"
-  | "Damaged"
-  | "Quarantined";
+export type StockStatus = "In stock" | "Low stock" | "Critical stock" | "Out of stock" | "Reserved" | "Quarantined" | "Expired" | "Near expiry";
+export type PurchaseStatus = "Draft" | "Requested" | "Approved placeholder" | "Ordered" | "Partially received" | "Received" | "Cancelled" | "Rejected placeholder";
+export type StockTransferStatus = "Requested" | "Approved placeholder" | "Issued" | "In transit" | "Received" | "Partially received" | "Rejected" | "Cancelled";
+export type OtStatus = "Scheduled" | "Pre-op pending" | "Ready for surgery" | "In surgery" | "Recovery" | "Completed" | "Cancelled" | "Delayed";
+export type InstrumentStatus = "Available" | "In use" | "Used" | "Cleaning" | "Sterilization pending" | "Sterilized" | "Missing" | "Damaged" | "Quarantined";
 
 export type PharmacyPrescription = {
   id: string;
@@ -1328,8 +1200,7 @@ export type DispenseItem = {
   batchNo: string;
   expiryDate: string;
   dispenseQty: number;
-  substitutionStatus:
-    "Not required" | "Requested placeholder" | "Approved placeholder" | "Rejected placeholder";
+  substitutionStatus: "Not required" | "Requested placeholder" | "Approved placeholder" | "Rejected placeholder";
   alerts: string[];
 };
 
@@ -1400,12 +1271,7 @@ export type StockAuditRecord = {
   systemStock: number;
   physicalStock: number;
   variance: number;
-  status:
-    | "Pending count"
-    | "Variance found"
-    | "Approval pending"
-    | "Approved placeholder"
-    | "Rejected placeholder";
+  status: "Pending count" | "Variance found" | "Approval pending" | "Approved placeholder" | "Rejected placeholder";
   reason: string;
 };
 
@@ -1416,13 +1282,7 @@ export type GrnRecord = {
   vendorId: string;
   receivedAt: string;
   items: string[];
-  qualityStatus:
-    | "Pending QC"
-    | "Accepted"
-    | "Damaged"
-    | "Rejected placeholder"
-    | "Short received"
-    | "Extra received placeholder";
+  qualityStatus: "Pending QC" | "Accepted" | "Damaged" | "Rejected placeholder" | "Short received" | "Extra received placeholder";
   ledgerStatus: "Pending posting" | "Posted placeholder" | "Variance hold";
 };
 
@@ -1461,8 +1321,7 @@ export type OtSurgery = {
   status: OtStatus;
   consentStatus: "Signed" | "Missing" | "Pending guardian" | "Expired placeholder";
   instrumentStatus: InstrumentStatus;
-  checklistStatus:
-    "Pending" | "Sign-in complete" | "Time-out complete" | "Sign-out pending" | "Complete";
+  checklistStatus: "Pending" | "Sign-in complete" | "Time-out complete" | "Sign-out pending" | "Complete";
   surgicalCountStatus: "Pending" | "Matched" | "Mismatch" | "Escalated placeholder";
 };
 
@@ -1505,61 +1364,21 @@ export type SterilizationCycle = {
 export type OtRoomCleaning = {
   id: string;
   room: string;
-  status:
-    "Clean" | "Cleaning due" | "Cleaning in progress" | "Ready" | "Failed checklist" | "Blocked";
+  status: "Clean" | "Cleaning due" | "Cleaning in progress" | "Ready" | "Failed checklist" | "Blocked";
   responsibleStaff: string;
   completedAt: string;
   infectionRisk: string;
   releaseStatus: "Ready" | "Override required" | "Blocked" | "Pending";
 };
 
-export type BillStatus =
-  | "Draft"
-  | "Pending"
-  | "Ready to bill"
-  | "Finalized"
-  | "Partially paid"
-  | "Paid"
-  | "Overdue"
-  | "Cancelled"
-  | "Revised"
-  | "Write-off requested placeholder";
-export type InvoiceStatus =
-  | "Draft"
-  | "Issued"
-  | "Printed"
-  | "Partially paid"
-  | "Paid"
-  | "Cancelled"
-  | "Revised"
-  | "Credit note placeholder";
-export type PaymentStatus =
-  | "Pending"
-  | "Received"
-  | "Split payment"
-  | "Failed placeholder"
-  | "Reversed placeholder"
-  | "Refunded";
-export type RefundStatus =
-  "Requested" | "Under review" | "Approved" | "Rejected" | "Paid" | "Cancelled";
+export type BillStatus = "Draft" | "Pending" | "Ready to bill" | "Finalized" | "Partially paid" | "Paid" | "Overdue" | "Cancelled" | "Revised" | "Write-off requested placeholder";
+export type InvoiceStatus = "Draft" | "Issued" | "Printed" | "Partially paid" | "Paid" | "Cancelled" | "Revised" | "Credit note placeholder";
+export type PaymentStatus = "Pending" | "Received" | "Split payment" | "Failed placeholder" | "Reversed placeholder" | "Refunded";
+export type RefundStatus = "Requested" | "Under review" | "Approved" | "Rejected" | "Paid" | "Cancelled";
 export type DiscountStatus = "Requested" | "Approved" | "Rejected" | "Expired" | "Applied";
-export type AdvanceStatus =
-  "Available" | "Partially adjusted" | "Fully adjusted" | "Refunded" | "On hold";
-export type CreditStatus =
-  | "Open"
-  | "Partially settled"
-  | "Settled"
-  | "Overdue"
-  | "Disputed"
-  | "Write-off requested placeholder";
-export type PackageBillingStatus =
-  | "Assigned"
-  | "Active"
-  | "Utilized"
-  | "Partially utilized"
-  | "Over limit"
-  | "Exclusion pending"
-  | "Closed";
+export type AdvanceStatus = "Available" | "Partially adjusted" | "Fully adjusted" | "Refunded" | "On hold";
+export type CreditStatus = "Open" | "Partially settled" | "Settled" | "Overdue" | "Disputed" | "Write-off requested placeholder";
+export type PackageBillingStatus = "Assigned" | "Active" | "Utilized" | "Partially utilized" | "Over limit" | "Exclusion pending" | "Closed";
 export type InsuranceTpaStatus =
   | "Eligible"
   | "Eligibility pending"
@@ -1575,15 +1394,7 @@ export type InsuranceTpaStatus =
   | "Resubmitted"
   | "Settled"
   | "Short settled";
-export type FinanceStatus =
-  | "Draft"
-  | "Posted placeholder"
-  | "Pending approval"
-  | "Approved"
-  | "Rejected"
-  | "Matched"
-  | "Unmatched"
-  | "Reconciled placeholder";
+export type FinanceStatus = "Draft" | "Posted placeholder" | "Pending approval" | "Approved" | "Rejected" | "Matched" | "Unmatched" | "Reconciled placeholder";
 
 export type BillingRecord = {
   id: string;
@@ -1591,16 +1402,7 @@ export type BillingRecord = {
   patientId: string;
   visitId: string;
   admissionId: string;
-  source:
-    | "OPD"
-    | "IPD"
-    | "Emergency"
-    | "Lab"
-    | "Radiology"
-    | "Pharmacy"
-    | "OT"
-    | "Package"
-    | "Manual placeholder";
+  source: "OPD" | "IPD" | "Emergency" | "Lab" | "Radiology" | "Pharmacy" | "OT" | "Package" | "Manual placeholder";
   department: string;
   payerType: "Self" | "Insurance" | "TPA" | "Corporate credit" | "Package";
   grossAmount: number;
@@ -1664,13 +1466,7 @@ export type PaymentRecord = {
   receiptNo: string;
   invoiceId: string;
   patientId: string;
-  paymentMode:
-    | "Cash"
-    | "Card placeholder"
-    | "UPI placeholder"
-    | "Bank transfer placeholder"
-    | "Cheque placeholder"
-    | "Advance adjustment";
+  paymentMode: "Cash" | "Card placeholder" | "UPI placeholder" | "Bank transfer placeholder" | "Cheque placeholder" | "Advance adjustment";
   amount: number;
   status: PaymentStatus;
   collectedBy: string;
@@ -1685,8 +1481,7 @@ export type ReceiptRecord = {
   patientId: string;
   amount: number;
   printStatus: "Ready to print" | "Printed" | "Reprint requires audit" | "Cancelled placeholder";
-  deliveryMode:
-    "Counter print" | "Email placeholder" | "WhatsApp placeholder" | "Patient portal placeholder";
+  deliveryMode: "Counter print" | "Email placeholder" | "WhatsApp placeholder" | "Patient portal placeholder";
   status: PaymentStatus;
   issuedBy: string;
   issuedAt: string;

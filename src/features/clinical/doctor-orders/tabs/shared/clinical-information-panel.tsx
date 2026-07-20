@@ -7,11 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">
-      {children}
-    </div>
-  );
+  return <div className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">{children}</div>;
 }
 
 type ClinicalInformationPanelProps = {
@@ -19,9 +15,9 @@ type ClinicalInformationPanelProps = {
   problemListVisible?: boolean;
   activeProblemView?: "Active" | "Find";
   newProblem?: string;
-  onNewProblemChange?: (_value: string) => void;
-  onActiveProblemViewChange?: (_value: "Active" | "Find") => void;
-  onReorderPrevious?: (_historyId: string) => void;
+  onNewProblemChange?: (value: string) => void;
+  onActiveProblemViewChange?: (value: "Active" | "Find") => void;
+  onReorderPrevious?: (historyId: string) => void;
   historyOptions: Array<{ id: string; label: string }>;
 };
 
@@ -55,9 +51,7 @@ export function ClinicalInformationPanel({
                   type="button"
                   className={[
                     "border-l border-input px-3 py-1 text-xs font-medium first:border-l-0",
-                    activeProblemView === mode
-                      ? "bg-white text-primary shadow-sm"
-                      : "text-muted-foreground",
+                    activeProblemView === mode ? "bg-white text-primary shadow-sm" : "text-muted-foreground",
                   ].join(" ")}
                   onClick={() => onActiveProblemViewChange(mode)}
                 >
@@ -67,11 +61,7 @@ export function ClinicalInformationPanel({
             </div>
           </div>
           {activeProblemView === "Find" ? (
-            <Input
-              placeholder="Search problem..."
-              value={newProblem}
-              onChange={(event) => onNewProblemChange(event.target.value)}
-            />
+            <Input placeholder="Search problem..." value={newProblem} onChange={(event) => onNewProblemChange(event.target.value)} />
           ) : null}
           <div className="max-h-[220px] overflow-x-auto overflow-y-auto border border-border">
             <table className="min-w-[520px] w-full text-xs">
@@ -84,28 +74,16 @@ export function ClinicalInformationPanel({
               </thead>
               <tbody>
                 {(problemListVisible ? filteredProblems : []).slice(0, 4).map((problem, index) => (
-                  <tr
-                    key={problem}
-                    className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}
-                  >
-                    <td className="border-t border-r border-border px-2 py-2 text-muted-foreground">
-                      12 May 2026
-                    </td>
-                    <td className="border-t border-r border-border px-2 py-2 text-foreground">
-                      {problem}
-                    </td>
+                  <tr key={problem} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
+                    <td className="border-t border-r border-border px-2 py-2 text-muted-foreground">12 May 2026</td>
+                    <td className="border-t border-r border-border px-2 py-2 text-foreground">{problem}</td>
                     <td className="border-t border-border px-2 py-2 text-muted-foreground">-</td>
                   </tr>
                 ))}
                 {problemListVisible && filteredProblems.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={3}
-                      className="border-t border-border px-2 py-4 text-center text-muted-foreground"
-                    >
-                      {activeProblemView === "Find" && newProblem.trim()
-                        ? "No matching problems found"
-                        : "No problems reported"}
+                    <td colSpan={3} className="border-t border-border px-2 py-4 text-center text-muted-foreground">
+                      {activeProblemView === "Find" && newProblem.trim() ? "No matching problems found" : "No problems reported"}
                     </td>
                   </tr>
                 ) : null}
@@ -129,23 +107,11 @@ export function ClinicalInformationPanel({
               </thead>
               <tbody>
                 {historyOptions.map((item, index) => (
-                  <tr
-                    key={item.id}
-                    className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}
-                  >
-                    <td className="border-t border-r border-border px-2 py-2 text-muted-foreground">
-                      {item.label.split("(")[1]?.replace(")", "") ?? "-"}
-                    </td>
-                    <td className="border-t border-r border-border px-2 py-2 font-medium text-foreground">
-                      {item.label.split(" (")[0]}
-                    </td>
+                  <tr key={item.id} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
+                    <td className="border-t border-r border-border px-2 py-2 text-muted-foreground">{item.label.split("(")[1]?.replace(")", "") ?? "-"}</td>
+                    <td className="border-t border-r border-border px-2 py-2 font-medium text-foreground">{item.label.split(" (")[0]}</td>
                     <td className="border-t border-border px-2 py-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onReorderPrevious(item.id)}
-                      >
+                      <Button type="button" size="sm" variant="outline" onClick={() => onReorderPrevious(item.id)}>
                         Reorder
                       </Button>
                     </td>

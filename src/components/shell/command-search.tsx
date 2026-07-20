@@ -9,22 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { searchResults } from "@/data/mock";
 
-export function CommandSearch({
-  triggerClassName,
-  compact = false,
-}: {
-  triggerClassName?: string;
-  compact?: boolean;
-}) {
+export function CommandSearch({ triggerClassName, compact = false }: { triggerClassName?: string; compact?: boolean }) {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
 
   React.useEffect(() => {
     const down = (event: KeyboardEvent) => {
-      if (
-        event.key === "/" ||
-        (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey))
-      ) {
+      if (event.key === "/" || (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey))) {
         event.preventDefault();
         setOpen((value) => !value);
       }
@@ -40,19 +31,12 @@ export function CommandSearch({
   return (
     <>
       {triggerClassName ? (
-        <button
-          className={triggerClassName}
-          onClick={() => setOpen(true)}
-          aria-label={compact ? "Open global search" : undefined}
-          type="button"
-        >
+        <button className={triggerClassName} onClick={() => setOpen(true)} aria-label={compact ? "Open global search" : undefined} type="button">
           <Search className="h-4 w-4" />
           {compact ? null : (
             <>
               Search patient, module, bill...
-              <span className="ml-auto rounded border border-border px-1.5 py-0.5 text-[10px]">
-                /
-              </span>
+              <span className="ml-auto rounded border border-border px-1.5 py-0.5 text-[10px]">/</span>
             </>
           )}
         </button>
@@ -65,9 +49,7 @@ export function CommandSearch({
           >
             <Search className="h-4 w-4" />
             Search patient, module, bill...
-            <span className="ml-auto rounded-md border border-border bg-surface-muted px-1.5 py-0.5 text-[10px]">
-              /
-            </span>
+            <span className="ml-auto rounded-md border border-border bg-surface-muted px-1.5 py-0.5 text-[10px]">/</span>
           </button>
           <button
             className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground shadow-sm hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 lg:hidden"
@@ -81,10 +63,7 @@ export function CommandSearch({
       )}
 
       {open ? (
-        <div
-          className="fixed inset-0 z-[90] bg-black/35 p-0 backdrop-blur-sm sm:p-6"
-          role="presentation"
-        >
+        <div className="fixed inset-0 z-[90] bg-black/35 p-0 backdrop-blur-sm sm:p-6" role="presentation">
           <div className="mx-auto flex h-dvh max-w-3xl flex-col overflow-hidden bg-surface shadow-soft sm:h-auto sm:max-h-[76dvh] sm:rounded-xl sm:border sm:border-border">
             <div className="flex items-center gap-2 border-b border-border px-3 py-2">
               <Search className="h-4 w-4 text-muted-foreground" />
@@ -114,12 +93,8 @@ export function CommandSearch({
                       >
                         <Clock3 className="h-4 w-4 text-muted-foreground" />
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-foreground">
-                            {result.title}
-                          </div>
-                          <div className="truncate text-xs text-muted-foreground">
-                            {result.meta}
-                          </div>
+                          <div className="truncate text-sm font-medium text-foreground">{result.title}</div>
+                          <div className="truncate text-xs text-muted-foreground">{result.meta}</div>
                         </div>
                       </Command.Item>
                     ))}
@@ -140,12 +115,8 @@ export function CommandSearch({
                       >
                         <Search className="h-4 w-4 text-primary" />
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-foreground">
-                            {result.title}
-                          </div>
-                          <div className="truncate text-xs text-muted-foreground">
-                            {result.description}
-                          </div>
+                          <div className="truncate text-sm font-medium text-foreground">{result.title}</div>
+                          <div className="truncate text-xs text-muted-foreground">{result.description}</div>
                         </div>
                       </Command.Item>
                     ))}
@@ -172,12 +143,8 @@ export function CommandSearch({
                               {result.type.slice(0, 2)}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-medium text-foreground">
-                                {result.title}
-                              </div>
-                              <div className="truncate text-xs text-muted-foreground">
-                                {result.description}
-                              </div>
+                              <div className="truncate text-sm font-medium text-foreground">{result.title}</div>
+                              <div className="truncate text-xs text-muted-foreground">{result.description}</div>
                             </div>
                             <Badge tone="muted">{result.meta}</Badge>
                           </Command.Item>
@@ -186,12 +153,7 @@ export function CommandSearch({
                   ))}
                 </Command.List>
               </Command>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setOpen(false)}
-                aria-label="Close search"
-              >
+              <Button size="icon" variant="ghost" onClick={() => setOpen(false)} aria-label="Close search">
                 <X className="h-4 w-4" />
               </Button>
             </div>

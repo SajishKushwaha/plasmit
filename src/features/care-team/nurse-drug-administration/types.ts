@@ -1,15 +1,5 @@
-export type NurseDrugCategory =
-  | "Scheduled"
-  | "SOS"
-  | "STAT"
-  | "Bolus"
-  | "Diluent"
-  | "Intermittent"
-  | "Continuous"
-  | "Discontinued"
-  | "Unscheduled";
-export type AdministrationCellStatus =
-  "due" | "overdue" | "administered" | "bolus" | "infusion" | "empty";
+export type NurseDrugCategory = "Scheduled" | "SOS" | "STAT" | "Bolus" | "Diluent" | "Intermittent" | "Continuous" | "Discontinued" | "Unscheduled";
+export type AdministrationCellStatus = "due" | "overdue" | "administered" | "bolus" | "infusion" | "empty";
 export type AdministrationAction = "Administered" | "Not administered" | "Late administered";
 
 export type AdministrationCell = {

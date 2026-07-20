@@ -1,17 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  AlertTriangle,
-  Baby,
-  FileText,
-  HeartPulse,
-  IdCard,
-  LockKeyhole,
-  Printer,
-  ShieldAlert,
-  UserRound,
-} from "lucide-react";
+import { AlertTriangle, Baby, FileText, HeartPulse, IdCard, LockKeyhole, Printer, ShieldAlert, UserRound } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -38,16 +28,7 @@ export const patientAccessRoles: Role[] = [
   "Management",
 ];
 
-export const patientReadOnlyRoles: Role[] = [
-  "Doctor",
-  "Doctor OPD",
-  "Doctor IPD",
-  "Nurse",
-  "Billing Executive",
-  "Lab Technician",
-  "Radiologist",
-  "Management",
-];
+export const patientReadOnlyRoles: Role[] = ["Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Billing Executive", "Lab Technician", "Radiologist", "Management"];
 
 export function usePatientAccess() {
   const { role } = useRole();
@@ -58,11 +39,7 @@ export function usePatientAccess() {
   };
 }
 
-export function ProtectedPatient({
-  children,
-}: {
-  children: (_state: { role: Role; readOnly: boolean }) => React.ReactNode;
-}) {
+export function ProtectedPatient({ children }: { children: (state: { role: Role; readOnly: boolean }) => React.ReactNode }) {
   const access = usePatientAccess();
   if (!access.allowed) {
     return (
@@ -74,7 +51,9 @@ export function ProtectedPatient({
     );
   }
   return (
-    <div className="space-y-4">{children({ role: access.role, readOnly: access.readOnly })}</div>
+    <div className="space-y-4">
+      {children({ role: access.role, readOnly: access.readOnly })}
+    </div>
   );
 }
 
@@ -95,16 +74,7 @@ export function PatientAlertChips({ alerts }: { alerts: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {alerts.map((alert) => (
-        <Badge
-          key={alert}
-          tone={
-            alert.includes("Allergy") || alert.includes("Unknown") || alert.includes("Deceased")
-              ? "danger"
-              : alert.includes("VIP")
-                ? "info"
-                : "warning"
-          }
-        >
+        <Badge key={alert} tone={alert.includes("Allergy") || alert.includes("Unknown") || alert.includes("Deceased") ? "danger" : alert.includes("VIP") ? "info" : "warning"}>
           {alert}
         </Badge>
       ))}
@@ -156,14 +126,10 @@ export function PatientHeader({
               <UserRound className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="min-w-0">
-              <div className="truncate text-base font-semibold text-foreground">
-                {patient.firstName} {patient.lastName}
-              </div>
+              <div className="truncate text-base font-semibold text-foreground">{patient.firstName} {patient.lastName}</div>
               <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <span>UHID {patient.uhid}</span>
-                <span>
-                  {patient.age}/{patient.gender}
-                </span>
+                <span>{patient.age}/{patient.gender}</span>
                 <span>{patient.maskedMobile}</span>
                 <span>{patient.department}</span>
               </div>
@@ -171,12 +137,8 @@ export function PatientHeader({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <PatientStatusBadge status={patient.status} />
-            <Badge tone={patient.abhaStatus === "Linked" ? "success" : "warning"}>
-              {patient.abhaStatus}
-            </Badge>
-            <Badge tone={patient.identityCompleteness > 85 ? "success" : "warning"}>
-              {patient.identityCompleteness}% identity
-            </Badge>
+            <Badge tone={patient.abhaStatus === "Linked" ? "success" : "warning"}>{patient.abhaStatus}</Badge>
+            <Badge tone={patient.identityCompleteness > 85 ? "success" : "warning"}>{patient.identityCompleteness}% identity</Badge>
           </div>
         </CardContent>
       </Card>
@@ -190,14 +152,12 @@ export function PatientSafetyBanners({ patient }: { patient: PatientRecord }) {
     <div className="space-y-2">
       {patient.status === "Unknown emergency" ? (
         <AlertBanner icon={AlertTriangle} tone="warning" title="Unknown emergency identity">
-          This record is incomplete and must be converted to a regular patient after identity
-          confirmation and duplicate check.
+          This record is incomplete and must be converted to a regular patient after identity confirmation and duplicate check.
         </AlertBanner>
       ) : null}
       {patient.status === "Deceased" ? (
         <AlertBanner icon={ShieldAlert} tone="danger" title="Deceased patient record">
-          This patient record is read-only except authorized administrative updates. Scheduling and
-          new visits are blocked.
+          This patient record is read-only except authorized administrative updates. Scheduling and new visits are blocked.
         </AlertBanner>
       ) : null}
       {patient.guardianRequired ? (
@@ -210,26 +170,10 @@ export function PatientSafetyBanners({ patient }: { patient: PatientRecord }) {
 }
 
 export function PatientNotFound() {
-  return (
-    <EmptyState
-      icon={IdCard}
-      title="Patient not found"
-      description="The static patient record does not exist or is not included in the Phase 3 seed data."
-    />
-  );
+  return <EmptyState icon={IdCard} title="Patient not found" description="The static patient record does not exist or is not included in the Phase 3 seed data." />;
 }
 
-export function PatientInfoCard({
-  title,
-  value,
-  meta,
-  icon: Icon = FileText,
-}: {
-  title: string;
-  value: React.ReactNode;
-  meta?: string;
-  icon?: typeof FileText;
-}) {
+export function PatientInfoCard({ title, value, meta, icon: Icon = FileText }: { title: string; value: React.ReactNode; meta?: string; icon?: typeof FileText }) {
   return (
     <Card>
       <CardContent className="flex items-start gap-3 p-3">
@@ -249,8 +193,7 @@ export function PatientInfoCard({
 export function PatientPrivacyNote() {
   return (
     <AlertBanner icon={HeartPulse} tone="info" title="Patient privacy preview">
-      Sensitive identifiers are masked. Document previews, ABHA verification, portal access, and
-      merge actions are static placeholders only.
+      Sensitive identifiers are masked. Document previews, ABHA verification, portal access, and merge actions are static placeholders only.
     </AlertBanner>
   );
 }

@@ -44,19 +44,12 @@ export function SidebarBundle() {
 
     return (
       <aside className="w-full max-w-72 rounded-lg border border-border bg-sidebar p-2 text-sidebar-foreground">
-        <div className="mb-2 flex items-center gap-2 px-2 py-2 font-semibold">
-          <Home className="h-4 w-4" />
-          Hospital
-        </div>
+        <div className="mb-2 flex items-center gap-2 px-2 py-2 font-semibold"><Home className="h-4 w-4" />Hospital</div>
         {items.map((item) => {
           const Icon = item.icon;
           return (
             <button
-              className={
-                item.active
-                  ? "flex h-9 w-full items-center gap-2 rounded-md bg-sidebar-active px-2 text-sm text-sidebar-active-foreground"
-                  : "flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm hover:bg-sidebar-active/10"
-              }
+              className={item.active ? "flex h-9 w-full items-center gap-2 rounded-md bg-sidebar-active px-2 text-sm text-sidebar-active-foreground" : "flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm hover:bg-sidebar-active/10"}
               key={item.label}
               type="button"
             >

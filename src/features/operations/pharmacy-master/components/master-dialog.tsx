@@ -24,7 +24,7 @@ export function MasterDialog({
   children: React.ReactNode;
   submitLabel: string;
   deleteLabel?: string;
-  onOpenChange: (_open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
   onSubmit: () => void;
   onDelete?: () => void;
 }) {
@@ -39,11 +39,7 @@ export function MasterDialog({
             <div className="flex items-start justify-between gap-4 border-b border-border bg-white px-4 py-3">
               <div>
                 <Dialog.Title className="text-sm font-bold text-foreground">{title}</Dialog.Title>
-                {description ? (
-                  <Dialog.Description className="mt-1 text-xs font-medium text-muted-foreground">
-                    {description}
-                  </Dialog.Description>
-                ) : null}
+                {description ? <Dialog.Description className="mt-1 text-xs font-medium text-muted-foreground">{description}</Dialog.Description> : null}
               </div>
               <Dialog.Close asChild>
                 <Button size="icon" variant="ghost" aria-label="Close dialog">
@@ -54,22 +50,10 @@ export function MasterDialog({
             <div className="min-h-0 flex-1 overflow-auto p-4">{children}</div>
             <div className="border-t border-border bg-white p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  {onDelete ? (
-                    <Button variant="danger" onClick={() => setConfirmDelete(true)}>
-                      <Trash2 className="h-4 w-4" />
-                      {deleteLabel}
-                    </Button>
-                  ) : null}
-                </div>
+                <div>{onDelete ? <Button variant="danger" onClick={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" />{deleteLabel}</Button> : null}</div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => onOpenChange(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={onSubmit}>
-                    <ClipboardCheck className="h-4 w-4" />
-                    {submitLabel}
-                  </Button>
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                  <Button onClick={onSubmit}><ClipboardCheck className="h-4 w-4" />{submitLabel}</Button>
                 </div>
               </div>
             </div>

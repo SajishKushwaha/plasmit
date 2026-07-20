@@ -1,7 +1,11 @@
 export type ResultDepartment = "laboratory" | "radiology" | "poct";
 
 export type ResultStatus =
-  "Sample Collected" | "Processing" | "Verification Pending" | "Completed" | "Critical";
+  | "Sample Collected"
+  | "Processing"
+  | "Verification Pending"
+  | "Completed"
+  | "Critical";
 
 export type ResultPriority = "Routine" | "Urgent" | "Emergency";
 

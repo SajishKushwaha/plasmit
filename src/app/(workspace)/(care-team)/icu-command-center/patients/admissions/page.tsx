@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
+import { IcuAdmissionPage } from "@/features/care-team/icu-command-center/icu-admission-page";
 
 export default function IcuCommandCenterRoute() {
-  return <NursingIcuModulePage page="arrival-bed-allocation" />;
+  return <IcuAdmissionPage />;
 }

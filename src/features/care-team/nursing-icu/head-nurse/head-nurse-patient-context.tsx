@@ -3,23 +3,22 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { UserRoundSearch } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { NativeSelect } from "@/features/operations/admin/admin-shared";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Select } from "@/components/ui/select";
+import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 import { headNursePatients } from "./head-nurse-mock-data";
-import type {
-  HeadNurseModuleId,
-  HeadNursePatientContextValue,
-  HeadNurseTone,
-} from "./head-nurse-types";
+import type { HeadNurseModuleId, HeadNursePatientContextValue, HeadNurseTone } from "./head-nurse-types";
 
 export function HeadNursePatientContext({
   children,
   initialPatientId,
   moduleId,
 }: {
-  children: (_context: HeadNursePatientContextValue) => React.ReactNode;
+  children: (context: HeadNursePatientContextValue) => React.ReactNode;
   initialPatientId?: string;
   moduleId: HeadNurseModuleId;
 }) {
@@ -31,13 +30,10 @@ export function HeadNursePatientContext({
   const [patientId, setPatientId] = React.useState(initialPatientId ?? queryPatientId);
   const patient = headNursePatients.find((item) => item.id === patientId);
   const patientPlaceholder = "Select patient";
-  const patientOptions = [
-    patientPlaceholder,
-    ...headNursePatients.map((item) => `${item.id}|${item.bedNo} - ${item.patientName}`),
-  ];
+  const patientOptions = [patientPlaceholder, ...headNursePatients.map((item) => `${item.id}|${item.bedNo} - ${item.patientName}`)];
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="min-w-0 space-y-3">
       {patient ? <HeadNursePatientHeader patient={patient} /> : null}
 
       {shouldShowPatientSelector ? (
@@ -45,16 +41,10 @@ export function HeadNursePatientContext({
           <CardContent className="p-3">
             <div className="w-full max-w-xl space-y-2">
               <p className="text-sm font-semibold text-slate-950">Patient</p>
-              <NativeSelect
-                label="Patient"
-                value={
-                  patientId
-                    ? `${patientId}|${patient?.bedNo ?? ""} - ${patient?.patientName ?? ""}`
-                    : patientPlaceholder
-                }
-                onChange={(value) =>
-                  setPatientId(value === patientPlaceholder ? "" : (value.split("|")[0] ?? ""))
-                }
+              <Select
+                ariaLabel="Patient"
+                value={patientId ? `${patientId}|${patient?.bedNo ?? ""} - ${patient?.patientName ?? ""}` : patientPlaceholder}
+                onValueChange={(value) => setPatientId(value === patientPlaceholder ? "" : value.split("|")[0] ?? "")}
                 options={patientOptions}
               />
             </div>
@@ -71,8 +61,8 @@ function HeadNursePatientHeader({ patient }: { patient: (typeof headNursePatient
   const nurseName = patient.assignedUnitNurse || "Not assigned";
 
   return (
-    <div className="overflow-x-auto rounded-t-xl border border-indigo-400 bg-[#6571ea] px-4 py-4 shadow-md shadow-indigo-100">
-      <div className="flex min-w-max items-center gap-5 whitespace-nowrap text-xs font-black text-white">
+    <div className="overflow-x-auto rounded-t-xl border border-indigo-400 bg-[#6571ea] px-4 py-3 shadow-md shadow-indigo-100">
+      <div className="flex min-w-max items-center gap-4 whitespace-nowrap text-xs font-black text-white">
         <span className="text-base">{patient.patientName}</span>
         <HeadNurseHeaderChip>MR: {patient.mrn}</HeadNurseHeaderChip>
         <HeadNurseHeaderChip>Age/Sex: {patient.ageGender}</HeadNurseHeaderChip>
@@ -87,84 +77,28 @@ function HeadNursePatientHeader({ patient }: { patient: (typeof headNursePatient
 }
 
 function HeadNurseHeaderChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/15 px-4 py-1.5 shadow-sm shadow-indigo-500/10">
-      {children}
-    </span>
-  );
+  return <span className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/15 px-4 py-1.5 shadow-sm shadow-indigo-500/10">{children}</span>;
 }
 
 export function HeadNurseEmptyPatientState({ moduleLabel }: { moduleLabel: string }) {
-  return (
-    <Card className="border-dashed border-slate-300 bg-white">
-      <CardContent className="p-8 text-center">
-        <p className="text-sm font-semibold text-slate-500">
-          Select patient to view {moduleLabel}.
-        </p>
-      </CardContent>
-    </Card>
-  );
+  return <EmptyState description={`Select a patient to view ${moduleLabel}.`} icon={UserRoundSearch} title="No patient selected" />;
 }
 
-export function InfoTile({
-  label,
-  value,
-  inline = false,
-}: {
-  label: string;
-  value: React.ReactNode;
-  inline?: boolean;
-}) {
+export function InfoTile({ label, value, inline = false }: { label: string; value: React.ReactNode; inline?: boolean }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-slate-200 bg-white px-3 py-2",
-        inline && "flex items-center justify-between gap-3",
-      )}
-    >
-      <p
-        className={cn("text-xs font-bold uppercase tracking-wide text-slate-500", inline && "mt-0")}
-      >
-        {label}
-      </p>
-      <p className={cn("text-sm font-semibold text-slate-950", inline ? "mt-0" : "mt-1")}>
-        {value}
-      </p>
+    <div className={cn("rounded-xl border border-slate-200 bg-white px-3 py-2", inline && "flex items-center justify-between gap-3")}> 
+      <p className={cn("text-xs font-bold uppercase tracking-wide text-slate-500", inline && "mt-0")}>{label}</p>
+      <p className={cn("text-sm font-semibold text-slate-950", inline ? "mt-0" : "mt-1")}>{value}</p>
     </div>
   );
 }
 
-export function HeadNurseTonePill({
-  children,
-  tone,
-}: {
-  children: React.ReactNode;
-  tone: HeadNurseTone;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex rounded-full px-3 py-1 text-xs font-black text-white",
-        headNurseToneClass(tone),
-      )}
-    >
-      {children}
-    </span>
-  );
+export function HeadNurseTonePill({ children, tone }: { children: React.ReactNode; tone: HeadNurseTone }) {
+  return <StatusPill tone={tone}>{children}</StatusPill>;
 }
 
-export function HeadNurseModuleLink({
-  children,
-  href,
-}: {
-  children: React.ReactNode;
-  href: string;
-}) {
-  return (
-    <Link className="font-bold text-sky-700 transition hover:text-sky-900" href={href}>
-      {children}
-    </Link>
-  );
+export function HeadNurseModuleLink({ children, href }: { children: React.ReactNode; href: string }) {
+  return <Link className="font-bold text-sky-700 transition hover:text-sky-900" href={href}>{children}</Link>;
 }
 
 export function headNurseToneClass(tone: HeadNurseTone) {

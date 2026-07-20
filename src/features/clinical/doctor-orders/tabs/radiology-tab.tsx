@@ -10,29 +10,11 @@ import { toast } from "sonner";
 import { RadiologyOrderSummaryTab } from "./radiology/order-summary-tab";
 import { RadiologyResultReviewTab } from "./radiology/result-review-tab";
 import { RadiologyTestOrderTab } from "./radiology/test-order-tab";
-import {
-  radiologyResultBlocks,
-  radiologySummaryRows,
-  radiologyTestGroups,
-  radiologyTestList,
-} from "./radiology/data";
-import type {
-  RadiologyPriority,
-  RadiologyResultBlock,
-  RadiologySummaryRow,
-} from "./radiology/types";
+import { radiologyResultBlocks, radiologySummaryRows, radiologyTestGroups, radiologyTestList } from "./radiology/data";
+import type { RadiologyPriority, RadiologyResultBlock, RadiologySummaryRow } from "./radiology/types";
 
 type MainTab = "test-order" | "order-summary" | "result-review";
-type SummarySortKey = keyof Pick<
-  RadiologySummaryRow,
-  | "selectedTests"
-  | "loincCode"
-  | "category"
-  | "specification"
-  | "priority"
-  | "status"
-  | "orderDateTime"
->;
+type SummarySortKey = keyof Pick<RadiologySummaryRow, "selectedTests" | "loincCode" | "category" | "specification" | "priority" | "status" | "orderDateTime">;
 
 const selectedByDefault = ["xray-chest"];
 const selectedGroupDefault: string[] = [];
@@ -86,7 +68,9 @@ function buildRadiologySnapshotBlocks(testIds: string[], groupIds: string[]) {
       category: test.category ?? "-",
       specification: test.specifications?.[0] ?? "-",
       priority: "Routine",
-      rows: [{ parameter: test.name, result: "Pending", unit: "-", referenceRange: "-" }],
+      rows: [
+        { parameter: test.name, result: "Pending", unit: "-", referenceRange: "-" },
+      ],
     });
   }
 
@@ -100,7 +84,9 @@ function buildRadiologySnapshotBlocks(testIds: string[], groupIds: string[]) {
       category: group.modality,
       specification: "Grouped request",
       priority: "Routine",
-      rows: [{ parameter: group.name, result: "Pending", unit: "-", referenceRange: "-" }],
+      rows: [
+        { parameter: group.name, result: "Pending", unit: "-", referenceRange: "-" },
+      ],
     });
   }
 
@@ -121,17 +107,10 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
   const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(selectedGroupDefault);
   const [priority, setPriority] = React.useState<RadiologyPriority>("Routine");
   const [notes, setNotes] = React.useState("");
-  const [savedSummaryRows, setSavedSummaryRows] = React.useState<RadiologySummaryRow[]>(() =>
-    buildRadiologySnapshotRows(selectedByDefault, selectedGroupDefault),
-  );
-  const [savedResultList, setSavedResultList] = React.useState<RadiologyResultBlock[]>(() =>
-    buildRadiologySnapshotBlocks(selectedByDefault, selectedGroupDefault),
-  );
-  const [summarySort, setSummarySort] = React.useState<{
-    key: SummarySortKey;
-    direction: "asc" | "desc";
-  }>({ key: "selectedTests", direction: "asc" });
-  const [_billingNote, setBillingNote] = React.useState("Radiology order ready.");
+  const [savedSummaryRows, setSavedSummaryRows] = React.useState<RadiologySummaryRow[]>(() => buildRadiologySnapshotRows(selectedByDefault, selectedGroupDefault));
+  const [savedResultList, setSavedResultList] = React.useState<RadiologyResultBlock[]>(() => buildRadiologySnapshotBlocks(selectedByDefault, selectedGroupDefault));
+  const [summarySort, setSummarySort] = React.useState<{ key: SummarySortKey; direction: "asc" | "desc" }>({ key: "selectedTests", direction: "asc" });
+  const [billingNote, setBillingNote] = React.useState("Radiology order ready.");
 
   React.useEffect(() => {
     if (defaultTab) {
@@ -145,9 +124,7 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
 
   const filteredTests = React.useMemo(() => {
     const query = search.trim().toLowerCase();
-    return radiologyTestList.filter((test) =>
-      `${test.name} ${test.description} ${test.code ?? ""}`.toLowerCase().includes(query),
-    );
+    return radiologyTestList.filter((test) => `${test.name} ${test.description} ${test.code ?? ""}`.toLowerCase().includes(query));
   }, [search]);
 
   const sortedSummaryRows = React.useMemo(() => {
@@ -160,22 +137,15 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
   }, [savedSummaryRows, summarySort]);
 
   const toggleTest = (id: string) => {
-    setSelectedTestIds((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-    );
+    setSelectedTestIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   };
 
   const toggleGroup = (id: string) => {
-    setSelectedGroupIds((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-    );
+    setSelectedGroupIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   };
 
   const updateSummarySort = (key: SummarySortKey) => {
-    setSummarySort((current) => ({
-      key,
-      direction: current.key === key && current.direction === "asc" ? "desc" : "asc",
-    }));
+    setSummarySort((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" }));
   };
 
   const commitSavedSelection = () => {
@@ -206,11 +176,8 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
     const row = savedSummaryRows.find((item) => item.id === id);
     if (!row) return;
     setSearch(row.selectedTests);
-    const matchedTest = radiologyTestList.find(
-      (test) => test.name.toLowerCase() === row.selectedTests.toLowerCase(),
-    );
-    if (matchedTest)
-      setSelectedTestIds((current) => Array.from(new Set([...current, matchedTest.id])));
+    const matchedTest = radiologyTestList.find((test) => test.name.toLowerCase() === row.selectedTests.toLowerCase());
+    if (matchedTest) setSelectedTestIds((current) => Array.from(new Set([...current, matchedTest.id])));
     setActiveTab("test-order");
     toast.success(`Editing ${row.selectedTests}`);
   };
@@ -224,11 +191,7 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
 
   return (
     <div className="space-y-4">
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as MainTab)}
-        className="w-full"
-      >
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MainTab)} className="w-full">
         <Card>
           <CardContent className="space-y-4">
             <div className="overflow-x-auto pb-1 sm:pb-0">
@@ -242,16 +205,10 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
                     onClick={() => setActiveTab(tab)}
                     className={[
                       "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
-                      activeTab === tab
-                        ? "bg-white text-primary shadow-sm hover:bg-white"
-                        : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+                      activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
                     ].join(" ")}
                   >
-                    {tab === "test-order"
-                      ? "Test Order"
-                      : tab === "order-summary"
-                        ? "Order Summary"
-                        : "Result Review"}
+                    {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result Review"}
                   </Button>
                 ))}
               </div>
@@ -289,10 +246,7 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
             </TabsContent>
 
             <TabsContent value="result-review" className="mt-0">
-              <RadiologyResultReviewTab
-                resultBlocks={savedResultList}
-                onReorderResult={reorderResult}
-              />
+              <RadiologyResultReviewTab resultBlocks={savedResultList} onReorderResult={reorderResult} />
             </TabsContent>
           </CardContent>
         </Card>
@@ -302,7 +256,6 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
 }
 
 function toRadiologyTab(value: string | null): MainTab | null {
-  if (value === "test-order" || value === "order-summary" || value === "result-review")
-    return value;
+  if (value === "test-order" || value === "order-summary" || value === "result-review") return value;
   return null;
 }

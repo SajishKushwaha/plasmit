@@ -25,11 +25,7 @@ function formatUpdatedAt(value: string) {
 }
 
 function recordTitle(record: PatientHistoryRecord) {
-  return (
-    getPatientHistoryRecordValue(record, "Medical History Notes") ||
-    getPatientHistoryRecordValue(record, "Surgery / Procedure") ||
-    record.id
-  );
+  return getPatientHistoryRecordValue(record, "Medical History Notes") || getPatientHistoryRecordValue(record, "Surgery / Procedure") || record.id;
 }
 
 function PatientHistoryListPreview({ record }: { record: PatientHistoryRecord }) {
@@ -38,9 +34,7 @@ function PatientHistoryListPreview({ record }: { record: PatientHistoryRecord })
       <div className="mx-auto w-full max-w-[210mm] overflow-hidden bg-white text-black shadow-soft">
         <div className="min-h-[297mm] p-6 sm:p-10">
           <div className="border-b-2 border-black pb-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-              Plasmit Hospital HMS
-            </div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Plasmit Hospital HMS</div>
             <h2 className="mt-1 text-2xl font-bold text-black">Patient History</h2>
             <p className="mt-1 text-sm text-neutral-600">Record ID: {record.id}</p>
           </div>
@@ -50,23 +44,14 @@ function PatientHistoryListPreview({ record }: { record: PatientHistoryRecord })
               <section className="break-inside-avoid" key={`${record.id}-${section.tabId}`}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="h-px flex-1 bg-neutral-300" />
-                  <h3 className="shrink-0 text-sm font-bold uppercase tracking-wide text-black">
-                    {section.tabLabel}
-                  </h3>
+                  <h3 className="shrink-0 text-sm font-bold uppercase tracking-wide text-black">{section.tabLabel}</h3>
                   <div className="h-px flex-1 bg-neutral-300" />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {section.fields.map((field, index) => (
-                    <div
-                      className="rounded border border-neutral-300 p-2"
-                      key={`${section.tabId}-${field.label}-${index}`}
-                    >
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                        {field.label}
-                      </div>
-                      <div className="mt-1 break-words text-sm font-medium text-black">
-                        {field.value}
-                      </div>
+                    <div className="rounded border border-neutral-300 p-2" key={`${section.tabId}-${field.label}-${index}`}>
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">{field.label}</div>
+                      <div className="mt-1 break-words text-sm font-medium text-black">{field.value}</div>
                     </div>
                   ))}
                 </div>
@@ -80,13 +65,9 @@ function PatientHistoryListPreview({ record }: { record: PatientHistoryRecord })
 }
 
 export function PatientHistoryListPage() {
-  const [records, setRecords] = React.useState<PatientHistoryRecord[]>(() =>
-    readPatientHistoryRecords(),
-  );
+  const [records, setRecords] = React.useState<PatientHistoryRecord[]>(() => readPatientHistoryRecords());
   const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = React.useState<{ top: number; right: number } | null>(
-    null,
-  );
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; right: number } | null>(null);
   const [previewRecord, setPreviewRecord] = React.useState<PatientHistoryRecord | null>(null);
 
   function handleMenuToggle(recordId: string, event: React.MouseEvent<HTMLButtonElement>) {
@@ -124,12 +105,7 @@ export function PatientHistoryListPage() {
             </span>
             <CardTitle>Saved Patient History</CardTitle>
           </div>
-          <Button
-            onClick={() => setRecords(readPatientHistoryRecords())}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
+          <Button onClick={() => setRecords(readPatientHistoryRecords())} size="sm" type="button" variant="outline">
             <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
@@ -140,18 +116,8 @@ export function PatientHistoryListPage() {
               <table className="w-full min-w-[860px] border-collapse text-left text-sm">
                 <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <tr>
-                    {[
-                      "Record ID",
-                      "Medical Notes",
-                      "Surgery / Procedure",
-                      "Allergy",
-                      "Updated At",
-                      "Action",
-                    ].map((header) => (
-                      <th
-                        className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]"
-                        key={header}
-                      >
+                    {["Record ID", "Medical Notes", "Surgery / Procedure", "Allergy", "Updated At", "Action"].map((header) => (
+                      <th className="border-b border-border px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]" key={header}>
                         {header}
                       </th>
                     ))}
@@ -159,27 +125,12 @@ export function PatientHistoryListPage() {
                 </thead>
                 <tbody>
                   {records.map((record) => (
-                    <tr
-                      className="border-b border-border last:border-0 hover:bg-surface-muted/70"
-                      key={record.id}
-                    >
-                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                        {record.id}
-                      </td>
-                      <td className="max-w-64 truncate px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] font-medium text-foreground">
-                        {getPatientHistoryRecordValue(record, "Medical History Notes") || "-"}
-                      </td>
-                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                        {getPatientHistoryRecordValue(record, "Surgery / Procedure") || "-"}
-                      </td>
-                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                        {getPatientHistoryRecordValue(record, "Allergy") ||
-                          getPatientHistoryRecordValue(record, "Allergy Type") ||
-                          "-"}
-                      </td>
-                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
-                        {formatUpdatedAt(record.updatedAt)}
-                      </td>
+                    <tr className="border-b border-border last:border-0 hover:bg-surface-muted/70" key={record.id}>
+                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{record.id}</td>
+                      <td className="max-w-64 truncate px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)] font-medium text-foreground">{getPatientHistoryRecordValue(record, "Medical History Notes") || "-"}</td>
+                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{getPatientHistoryRecordValue(record, "Surgery / Procedure") || "-"}</td>
+                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{getPatientHistoryRecordValue(record, "Allergy") || getPatientHistoryRecordValue(record, "Allergy Type") || "-"}</td>
+                      <td className="px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">{formatUpdatedAt(record.updatedAt)}</td>
                       <td className="relative px-[var(--density-table-cell-x)] py-[var(--density-table-cell-y)]">
                         <Button
                           aria-expanded={openMenuId === record.id}
@@ -239,12 +190,8 @@ export function PatientHistoryListPage() {
             <div className="flex min-h-48 flex-col items-center justify-center gap-3 px-4 text-center">
               <FileClock className="h-8 w-8 text-muted-foreground" />
               <div>
-                <div className="text-sm font-medium text-foreground">
-                  No saved patient history yet
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  Save patient history from the Patient History page to show it here.
-                </div>
+                <div className="text-sm font-medium text-foreground">No saved patient history yet</div>
+                <div className="mt-1 text-xs text-muted-foreground">Save patient history from the Patient History page to show it here.</div>
               </div>
               <Button asChild size="sm">
                 <Link href="/patient-history">Add Patient History</Link>

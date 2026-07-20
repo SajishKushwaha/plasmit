@@ -102,47 +102,17 @@ const propertyFieldsByLdt: Record<string, LdtField[]> = {
   "ldt-001": [
     { id: "prop-001", name: "LDT Number", type: "Free text", config: {} },
     { id: "prop-002", name: "Placement date", type: "Date", config: { dateFormat: "DD/MM/YYYY" } },
-    {
-      id: "prop-003",
-      name: "Location of insertion",
-      type: "Dropdown",
-      config: { options: ["Basilic", "Brachial", "Femoral"], selectionMode: "Single" },
-    },
+    { id: "prop-003", name: "Location of insertion", type: "Dropdown", config: { options: ["Basilic", "Brachial", "Femoral"], selectionMode: "Single" } },
   ],
   "ldt-002": [
-    {
-      id: "prop-004",
-      name: "Tube Size",
-      type: "Number",
-      config: { decimalPlaces: 0, min: 6, max: 18, unit: "Fr" },
-    },
+    { id: "prop-004", name: "Tube Size", type: "Number", config: { decimalPlaces: 0, min: 6, max: 18, unit: "Fr" } },
     { id: "prop-005", name: "Insertion Time", type: "Time", config: { timeFormat: "24 hour" } },
-    {
-      id: "prop-006",
-      name: "Secured",
-      type: "Checkbox",
-      config: { checkboxLabel: "Tube secured", checkboxDefault: true },
-    },
+    { id: "prop-006", name: "Secured", type: "Checkbox", config: { checkboxLabel: "Tube secured", checkboxDefault: true } },
   ],
   "ldt-003": [
-    {
-      id: "prop-007",
-      name: "Drain Site",
-      type: "Dropdown",
-      config: { options: ["Left chest", "Right chest"], selectionMode: "Single" },
-    },
-    {
-      id: "prop-008",
-      name: "Drain Size",
-      type: "Number",
-      config: { decimalPlaces: 0, min: 8, max: 36, unit: "Fr" },
-    },
-    {
-      id: "prop-009",
-      name: "Underwater Seal",
-      type: "Checkbox",
-      config: { checkboxLabel: "Seal attached", checkboxDefault: false },
-    },
+    { id: "prop-007", name: "Drain Site", type: "Dropdown", config: { options: ["Left chest", "Right chest"], selectionMode: "Single" } },
+    { id: "prop-008", name: "Drain Size", type: "Number", config: { decimalPlaces: 0, min: 8, max: 36, unit: "Fr" } },
+    { id: "prop-009", name: "Underwater Seal", type: "Checkbox", config: { checkboxLabel: "Seal attached", checkboxDefault: false } },
   ],
 };
 
@@ -164,7 +134,7 @@ function LdtTypeDropdown({
   onChange,
 }: {
   value: LdtType | "";
-  onChange: (_value: LdtType | "") => void;
+  onChange: (value: LdtType | "") => void;
 }) {
   return (
     <select
@@ -188,25 +158,13 @@ function DynamicInput({
 }: {
   field: LdtField;
   value?: FieldValue;
-  onChange: (_value: FieldValue) => void;
+  onChange: (value: FieldValue) => void;
 }) {
   if (field.type === "Date") {
-    return (
-      <Input
-        type="date"
-        value={typeof value === "string" ? value : ""}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
+    return <Input type="date" value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} />;
   }
   if (field.type === "Time") {
-    return (
-      <Input
-        type="time"
-        value={typeof value === "string" ? value : ""}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
+    return <Input type="time" value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} />;
   }
   if (field.type === "Number") {
     return (
@@ -257,13 +215,7 @@ function DynamicInput({
       </label>
     );
   }
-  return (
-    <Input
-      placeholder={`Enter ${field.name.toLowerCase()}`}
-      value={typeof value === "string" ? value : ""}
-      onChange={(event) => onChange(event.target.value)}
-    />
-  );
+  return <Input placeholder={`Enter ${field.name.toLowerCase()}`} value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} />;
 }
 
 function PropertiesDrawer({
@@ -278,17 +230,15 @@ function PropertiesDrawer({
 }: {
   ldt: AddedLdt | null;
   open: boolean;
-  onOpenChange: (_open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
   values: Record<string, FieldValue>;
   barcode: string;
-  onBarcodeChange: (_value: string) => void;
+  onBarcodeChange: (value: string) => void;
   onBarcodeScan: () => void;
-  onValuesChange: (_ldtId: string, _fieldId: string, _value: FieldValue) => void;
+  onValuesChange: (ldtId: string, fieldId: string, value: FieldValue) => void;
 }) {
-  const fields = ldt ? (propertyFieldsByLdt[ldt.id] ?? []) : [];
-  const _mappedBarcodes = scannableLdtItems
-    .filter((item) => item.ldtId === ldt?.id)
-    .map((item) => item.barcode);
+  const fields = ldt ? propertyFieldsByLdt[ldt.id] ?? [] : [];
+  const mappedBarcodes = scannableLdtItems.filter((item) => item.ldtId === ldt?.id).map((item) => item.barcode);
 
   return (
     <Drawer
@@ -347,11 +297,7 @@ function PropertiesDrawer({
               <FieldLabel>{field.name}</FieldLabel>
               <Badge tone="muted">{field.type}</Badge>
             </div>
-            <DynamicInput
-              field={field}
-              value={values[field.id]}
-              onChange={(value) => ldt && onValuesChange(ldt.id, field.id, value)}
-            />
+            <DynamicInput field={field} value={values[field.id]} onChange={(value) => ldt && onValuesChange(ldt.id, field.id, value)} />
           </label>
         ))}
       </div>
@@ -368,18 +314,16 @@ function LdtList({
 }: {
   ldts: AddedLdt[];
   selectedId: string | null;
-  onSelect: (_id: string) => void;
-  onDelete: (_ldt: AddedLdt) => void;
-  onOpenProperties: (_ldt: AddedLdt) => void;
+  onSelect: (id: string) => void;
+  onDelete: (ldt: AddedLdt) => void;
+  onOpenProperties: (ldt: AddedLdt) => void;
 }) {
   return (
     <Card>
       <CardHeader>
         <div>
           <CardTitle>LDT List</CardTitle>
-          <CardDescription>
-            Select an LDT and complete its properties or assessment.
-          </CardDescription>
+          <CardDescription>Select an LDT and complete its properties or assessment.</CardDescription>
         </div>
         <Badge tone="info">{ldts.length} Items</Badge>
       </CardHeader>
@@ -398,9 +342,7 @@ function LdtList({
               tabIndex={0}
               className={[
                 "rounded-md border p-3 transition",
-                selected
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-surface hover:bg-surface-muted",
+                selected ? "border-primary bg-primary/10" : "border-border bg-surface hover:bg-surface-muted",
               ].join(" ")}
               onClick={() => onSelect(ldt.id)}
               onKeyDown={(event) => {
@@ -410,13 +352,7 @@ function LdtList({
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge
-                      tone={
-                        ldt.type === "Line" ? "success" : ldt.type === "Drain" ? "warning" : "info"
-                      }
-                    >
-                      {ldt.type}
-                    </Badge>
+                    <Badge tone={ldt.type === "Line" ? "success" : ldt.type === "Drain" ? "warning" : "info"}>{ldt.type}</Badge>
                     <div className="font-medium text-foreground">{ldt.name}</div>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">Actions</div>
@@ -460,9 +396,7 @@ function LdtManagementWorkspace() {
 
   const handleBarcodeScan = () => {
     const normalizedBarcode = barcode.trim().toUpperCase();
-    const scannedItem = scannableLdtItems.find(
-      (item) => item.barcode.toUpperCase() === normalizedBarcode,
-    );
+    const scannedItem = scannableLdtItems.find((item) => item.barcode.toUpperCase() === normalizedBarcode);
 
     if (!propertiesLdt) {
       toast.error("Open Properties first");
@@ -521,9 +455,7 @@ function LdtManagementWorkspace() {
         <CardHeader>
           <div>
             <CardTitle>Select LDT Type</CardTitle>
-            <CardDescription>
-              Select Line, Tube, or Drain to view the matching list below.
-            </CardDescription>
+            <CardDescription>Select Line, Tube, or Drain to view the matching list below.</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -546,7 +478,7 @@ function LdtManagementWorkspace() {
         ldt={propertiesLdt}
         open={Boolean(propertiesLdt)}
         onOpenChange={(open) => !open && setPropertiesLdt(null)}
-        values={propertiesLdt ? (propertyValuesByLdt[propertiesLdt.id] ?? {}) : {}}
+        values={propertiesLdt ? propertyValuesByLdt[propertiesLdt.id] ?? {} : {}}
         barcode={barcode}
         onBarcodeChange={setBarcode}
         onBarcodeScan={handleBarcodeScan}

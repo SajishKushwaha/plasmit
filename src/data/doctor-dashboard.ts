@@ -27,76 +27,16 @@ export const doctorSidebar = [
   "Settings",
 ];
 
-export const doctorStatuses: DoctorStatus[] = [
-  "Available",
-  "Busy",
-  "In Consultation",
-  "Emergency Call",
-  "Offline",
-];
+export const doctorStatuses: DoctorStatus[] = ["Available", "Busy", "In Consultation", "Emergency Call", "Offline"];
 export const consultationModes: ConsultationMode[] = ["OPD", "Video", "Emergency", "Follow-up"];
 
 export const availabilitySlots = [
-  {
-    id: "slot-1",
-    day: "Mon",
-    time: "08:00",
-    end: "10:30",
-    mode: "OPD" as ConsultationMode,
-    branch: "Main",
-    occupied: 82,
-    capacity: 18,
-  },
-  {
-    id: "slot-2",
-    day: "Mon",
-    time: "11:00",
-    end: "13:00",
-    mode: "Follow-up" as ConsultationMode,
-    branch: "Main",
-    occupied: 54,
-    capacity: 12,
-  },
-  {
-    id: "slot-3",
-    day: "Tue",
-    time: "09:00",
-    end: "11:30",
-    mode: "Video" as ConsultationMode,
-    branch: "Digital",
-    occupied: 38,
-    capacity: 10,
-  },
-  {
-    id: "slot-4",
-    day: "Wed",
-    time: "08:30",
-    end: "12:00",
-    mode: "OPD" as ConsultationMode,
-    branch: "North Wing",
-    occupied: 91,
-    capacity: 22,
-  },
-  {
-    id: "slot-5",
-    day: "Thu",
-    time: "13:30",
-    end: "15:30",
-    mode: "Emergency" as ConsultationMode,
-    branch: "Main",
-    occupied: 68,
-    capacity: 8,
-  },
-  {
-    id: "slot-6",
-    day: "Fri",
-    time: "10:00",
-    end: "14:00",
-    mode: "OPD" as ConsultationMode,
-    branch: "Main",
-    occupied: 73,
-    capacity: 20,
-  },
+  { id: "slot-1", day: "Mon", time: "08:00", end: "10:30", mode: "OPD" as ConsultationMode, branch: "Main", occupied: 82, capacity: 18 },
+  { id: "slot-2", day: "Mon", time: "11:00", end: "13:00", mode: "Follow-up" as ConsultationMode, branch: "Main", occupied: 54, capacity: 12 },
+  { id: "slot-3", day: "Tue", time: "09:00", end: "11:30", mode: "Video" as ConsultationMode, branch: "Digital", occupied: 38, capacity: 10 },
+  { id: "slot-4", day: "Wed", time: "08:30", end: "12:00", mode: "OPD" as ConsultationMode, branch: "North Wing", occupied: 91, capacity: 22 },
+  { id: "slot-5", day: "Thu", time: "13:30", end: "15:30", mode: "Emergency" as ConsultationMode, branch: "Main", occupied: 68, capacity: 8 },
+  { id: "slot-6", day: "Fri", time: "10:00", end: "14:00", mode: "OPD" as ConsultationMode, branch: "Main", occupied: 73, capacity: 20 },
 ];
 
 export const busyHeatmap = [
@@ -162,38 +102,10 @@ export const appointments = [
 ];
 
 export const queue = [
-  {
-    token: "C-018",
-    name: "Meera Iyer",
-    stage: "Vitals complete",
-    eta: "06 min",
-    progress: 72,
-    critical: false,
-  },
-  {
-    token: "E-004",
-    name: "Naseer Khan",
-    stage: "ECG review",
-    eta: "Now",
-    progress: 92,
-    critical: true,
-  },
-  {
-    token: "C-019",
-    name: "Arjun Menon",
-    stage: "Telemed lobby",
-    eta: "14 min",
-    progress: 44,
-    critical: false,
-  },
-  {
-    token: "F-011",
-    name: "Ritu Sharma",
-    stage: "Lab attached",
-    eta: "22 min",
-    progress: 28,
-    critical: false,
-  },
+  { token: "C-018", name: "Meera Iyer", stage: "Vitals complete", eta: "06 min", progress: 72, critical: false },
+  { token: "E-004", name: "Naseer Khan", stage: "ECG review", eta: "Now", progress: 92, critical: true },
+  { token: "C-019", name: "Arjun Menon", stage: "Telemed lobby", eta: "14 min", progress: 44, critical: false },
+  { token: "F-011", name: "Ritu Sharma", stage: "Lab attached", eta: "22 min", progress: 28, critical: false },
 ];
 
 export const analyticsCards = [

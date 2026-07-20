@@ -31,13 +31,7 @@ export const bundleItems: BundleItem[] = [
   emptyLoadingBundle,
 ];
 
-export const bundleCategories: BundleCategory[] = [
-  "Actions",
-  "Forms",
-  "Layout",
-  "Feedback",
-  "Data",
-];
+export const bundleCategories: BundleCategory[] = ["Actions", "Forms", "Layout", "Feedback", "Data"];
 
 export function getBundleItem(itemId?: string) {
   return bundleItems.find((item) => item.id === itemId) ?? bundleItems[0];

@@ -19,8 +19,7 @@ export function AdmissionRequestsWorkspace() {
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<"All" | "Pending" | "Accepted" | "Ready">("Pending");
   const rows = state.requests.filter((request) => {
-    const text =
-      `${request.patient} ${request.uhid} ${request.source} ${request.doctor} ${request.admittingTeam ?? ""} ${request.admissionCategory ?? ""} ${request.type} ${request.ward} ${request.priority} ${request.status} ${request.allergyNote ?? ""} ${request.qrReference ?? ""}`.toLowerCase();
+    const text = `${request.patient} ${request.uhid} ${request.source} ${request.doctor} ${request.admittingTeam ?? ""} ${request.admissionCategory ?? ""} ${request.type} ${request.ward} ${request.priority} ${request.status} ${request.allergyNote ?? ""} ${request.qrReference ?? ""}`.toLowerCase();
     const statusMatch =
       status === "All" ||
       (status === "Pending" && request.status.includes("Pending")) ||
@@ -40,10 +39,7 @@ export function AdmissionRequestsWorkspace() {
         ),
       },
       { header: "Source", accessorKey: "source" },
-      {
-        header: "Admitting Team",
-        cell: ({ row }) => row.original.admittingTeam ?? row.original.doctor,
-      },
+      { header: "Admitting Team", cell: ({ row }) => row.original.admittingTeam ?? row.original.doctor },
       {
         header: "Admission Type",
         cell: ({ row }) => (
@@ -54,10 +50,7 @@ export function AdmissionRequestsWorkspace() {
         ),
       },
       { header: "Ward", accessorKey: "ward" },
-      {
-        header: "Priority",
-        cell: ({ row }) => <AdmissionStatusBadge value={row.original.priority} />,
-      },
+      { header: "Priority", cell: ({ row }) => <AdmissionStatusBadge value={row.original.priority} /> },
       {
         header: "Notes / QR",
         cell: ({ row }) => (
@@ -128,12 +121,7 @@ export function AdmissionRequestsWorkspace() {
           </div>
           <div className="flex flex-wrap gap-2">
             {(["All", "Pending", "Accepted", "Ready"] as const).map((item) => (
-              <Button
-                key={item}
-                size="sm"
-                variant={status === item ? "default" : "outline"}
-                onClick={() => setStatus(item)}
-              >
+              <Button key={item} size="sm" variant={status === item ? "default" : "outline"} onClick={() => setStatus(item)}>
                 {item}
               </Button>
             ))}
@@ -141,18 +129,9 @@ export function AdmissionRequestsWorkspace() {
         </div>
         <div className="grid gap-3 md:grid-cols-4">
           <QueueStat label="Total" value={state.requests.length} />
-          <QueueStat
-            label="Pending"
-            value={state.requests.filter((item) => item.status.includes("Pending")).length}
-          />
-          <QueueStat
-            label="Accepted"
-            value={state.requests.filter((item) => item.status === "Accepted").length}
-          />
-          <QueueStat
-            label="Ready"
-            value={state.requests.filter((item) => item.status === "Ready for Nursing").length}
-          />
+          <QueueStat label="Pending" value={state.requests.filter((item) => item.status.includes("Pending")).length} />
+          <QueueStat label="Accepted" value={state.requests.filter((item) => item.status === "Accepted").length} />
+          <QueueStat label="Ready" value={state.requests.filter((item) => item.status === "Ready for Nursing").length} />
         </div>
         <DataTable data={rows} columns={columns} />
       </CardContent>

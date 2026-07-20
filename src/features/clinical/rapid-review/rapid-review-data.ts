@@ -18,33 +18,11 @@ export type RapidPulseRhythm =
   | "Complete heart block"
   | "Not assessed"
   | "Other";
-export type RapidPulseSource =
-  | "Manual"
-  | "Manual radial pulse"
-  | "Apical pulse"
-  | "Monitor"
-  | "Pulse oximeter"
-  | "Arterial line";
-export type RapidPulseSite =
-  | "Radial"
-  | "Brachial"
-  | "Carotid"
-  | "Femoral"
-  | "Dorsalis pedis"
-  | "Posterior tibial"
-  | "Apical"
-  | "Arterial line";
-export type RapidPulseQuality =
-  | "Normal"
-  | "Weak/thready"
-  | "Bounding"
-  | "Not palpable"
-  | "Unequal peripheral pulses"
-  | "Diminished";
-export type RapidPulseSymptom =
-  "Chest pain" | "Palpitation" | "Dizziness" | "Syncope" | "Shortness of breath";
-export type RapidPulseAction =
-  "Doctor informed" | "ECG requested" | "Repeat vitals" | "No immediate action";
+export type RapidPulseSource = "Manual" | "Manual radial pulse" | "Apical pulse" | "Monitor" | "Pulse oximeter" | "Arterial line";
+export type RapidPulseSite = "Radial" | "Brachial" | "Carotid" | "Femoral" | "Dorsalis pedis" | "Posterior tibial" | "Apical" | "Arterial line";
+export type RapidPulseQuality = "Normal" | "Weak/thready" | "Bounding" | "Not palpable" | "Unequal peripheral pulses" | "Diminished";
+export type RapidPulseSymptom = "Chest pain" | "Palpitation" | "Dizziness" | "Syncope" | "Shortness of breath";
+export type RapidPulseAction = "Doctor informed" | "ECG requested" | "Repeat vitals" | "No immediate action";
 export type RapidEcgRhythm =
   | "Not confirmed"
   | "Sinus rhythm"
@@ -107,8 +85,7 @@ export type RapidObservationSet = {
   spo2: string;
   oxygenFlow: string;
   fio2?: string;
-  deliveryMethod?:
-    "Room air" | "Nasal cannula" | "Simple mask" | "Venturi mask" | "NRBM" | "CPAP" | "Ventilator";
+  deliveryMethod?: "Room air" | "Nasal cannula" | "Simple mask" | "Venturi mask" | "NRBM" | "CPAP" | "Ventilator";
   bloodPressure: string;
   pulse: string;
   monitorHeartRate?: string;
@@ -178,14 +155,9 @@ type AdultObservationRange = {
   max?: number;
 };
 
-type AdultObservationRiskRanges = Partial<
-  Record<Exclude<AdultObservationRiskLevel, "empty">, AdultObservationRange[]>
->;
+type AdultObservationRiskRanges = Partial<Record<Exclude<AdultObservationRiskLevel, "empty">, AdultObservationRange[]>>;
 
-export const adultObservationHours = Array.from(
-  { length: 24 },
-  (_, hour) => `${hour.toString().padStart(2, "0")}:00`,
-);
+export const adultObservationHours = Array.from({ length: 24 }, (_, hour) => `${hour.toString().padStart(2, "0")}:00`);
 
 export const rapidPulseRhythmOptions: RapidPulseRhythm[] = [
   "Regular",
@@ -202,44 +174,11 @@ export const rapidPulseRhythmOptions: RapidPulseRhythm[] = [
   "Not assessed",
   "Other",
 ];
-export const rapidPulseSourceOptions: RapidPulseSource[] = [
-  "Manual radial pulse",
-  "Apical pulse",
-  "Monitor",
-  "Pulse oximeter",
-  "Arterial line",
-];
-export const rapidPulseSiteOptions: RapidPulseSite[] = [
-  "Radial",
-  "Brachial",
-  "Carotid",
-  "Femoral",
-  "Dorsalis pedis",
-  "Posterior tibial",
-  "Apical",
-  "Arterial line",
-];
-export const rapidPulseQualityOptions: RapidPulseQuality[] = [
-  "Normal",
-  "Weak/thready",
-  "Bounding",
-  "Not palpable",
-  "Unequal peripheral pulses",
-  "Diminished",
-];
-export const rapidPulseSymptomOptions: RapidPulseSymptom[] = [
-  "Chest pain",
-  "Palpitation",
-  "Dizziness",
-  "Syncope",
-  "Shortness of breath",
-];
-export const rapidPulseActionOptions: RapidPulseAction[] = [
-  "Doctor informed",
-  "ECG requested",
-  "Repeat vitals",
-  "No immediate action",
-];
+export const rapidPulseSourceOptions: RapidPulseSource[] = ["Manual radial pulse", "Apical pulse", "Monitor", "Pulse oximeter", "Arterial line"];
+export const rapidPulseSiteOptions: RapidPulseSite[] = ["Radial", "Brachial", "Carotid", "Femoral", "Dorsalis pedis", "Posterior tibial", "Apical", "Arterial line"];
+export const rapidPulseQualityOptions: RapidPulseQuality[] = ["Normal", "Weak/thready", "Bounding", "Not palpable", "Unequal peripheral pulses", "Diminished"];
+export const rapidPulseSymptomOptions: RapidPulseSymptom[] = ["Chest pain", "Palpitation", "Dizziness", "Syncope", "Shortness of breath"];
+export const rapidPulseActionOptions: RapidPulseAction[] = ["Doctor informed", "ECG requested", "Repeat vitals", "No immediate action"];
 export const rapidEcgRhythmOptions: RapidEcgRhythm[] = [
   "Not confirmed",
   "Sinus rhythm",
@@ -259,11 +198,7 @@ export const rapidEcgRhythmOptions: RapidEcgRhythm[] = [
   "Other ECG rhythm",
 ];
 
-export const adultObservationChartRows: Array<{
-  vitalType: AdultObservationVitalType;
-  label: string;
-  unit?: string;
-}> = [
+export const adultObservationChartRows: Array<{ vitalType: AdultObservationVitalType; label: string; unit?: string }> = [
   { vitalType: "respiratoryRate", label: "Respiratory Rate", unit: "/min" },
   { vitalType: "oxygenSaturation", label: "O2 Saturation", unit: "%" },
   { vitalType: "oxygenFlowRate", label: "O2 Flow Rate", unit: "L/min" },
@@ -282,10 +217,7 @@ export const adultObservationChartRows: Array<{
   { vitalType: "intervention", label: "Intervention" },
 ];
 
-export const adultObservationRiskPalette: Record<
-  AdultObservationRiskLevel,
-  { label: string; background: string; border: string; text: string }
-> = {
+export const adultObservationRiskPalette: Record<AdultObservationRiskLevel, { label: string; background: string; border: string; text: string }> = {
   critical: { label: "Critical", background: "#d8c7f2", border: "#cbd5e1", text: "#32145f" },
   highRisk: { label: "High Risk", background: "#f5c6c6", border: "#cbd5e1", text: "#7f1d1d" },
   warning: { label: "Warning", background: "#fff4b8", border: "#cbd5e1", text: "#713f12" },
@@ -296,14 +228,8 @@ export const adultObservationRiskPalette: Record<
 export const adultObservationRiskConfig: Record<string, AdultObservationRiskRanges> = {
   respiratoryRate: {
     critical: [{ min: 36 }, { max: 5 }],
-    highRisk: [
-      { min: 26, max: 35 },
-      { min: 6, max: 10 },
-    ],
-    warning: [
-      { min: 21, max: 25 },
-      { min: 11, max: 15 },
-    ],
+    highRisk: [{ min: 26, max: 35 }, { min: 6, max: 10 }],
+    warning: [{ min: 21, max: 25 }, { min: 11, max: 15 }],
     normal: [{ min: 16, max: 20 }],
   },
   oxygenSaturation: {
@@ -326,26 +252,14 @@ export const adultObservationRiskConfig: Record<string, AdultObservationRiskRang
   },
   pulseRate: {
     critical: [{ min: 140 }, { max: 40 }],
-    highRisk: [
-      { min: 120, max: 139 },
-      { min: 41, max: 50 },
-    ],
-    warning: [
-      { min: 100, max: 119 },
-      { min: 51, max: 59 },
-    ],
+    highRisk: [{ min: 120, max: 139 }, { min: 41, max: 50 }],
+    warning: [{ min: 100, max: 119 }, { min: 51, max: 59 }],
     normal: [{ min: 60, max: 99 }],
   },
   monitorHeartRate: {
     critical: [{ min: 140 }, { max: 40 }],
-    highRisk: [
-      { min: 120, max: 139 },
-      { min: 41, max: 50 },
-    ],
-    warning: [
-      { min: 100, max: 119 },
-      { min: 51, max: 59 },
-    ],
+    highRisk: [{ min: 120, max: 139 }, { min: 41, max: 50 }],
+    warning: [{ min: 100, max: 119 }, { min: 51, max: 59 }],
     normal: [{ min: 60, max: 99 }],
   },
   pulseDeficit: {
@@ -356,22 +270,13 @@ export const adultObservationRiskConfig: Record<string, AdultObservationRiskRang
   temperature: {
     critical: [{ min: 39.1 }, { max: 35 }],
     highRisk: [{ min: 38.1, max: 39 }],
-    warning: [
-      { min: 37.6, max: 38 },
-      { min: 35.1, max: 36 },
-    ],
+    warning: [{ min: 37.6, max: 38 }, { min: 35.1, max: 36 }],
     normal: [{ min: 36.1, max: 37.5 }],
   },
   bloodPressure: {
     critical: [{ min: 220 }, { max: 70 }],
-    highRisk: [
-      { min: 180, max: 219 },
-      { min: 71, max: 80 },
-    ],
-    warning: [
-      { min: 160, max: 179 },
-      { min: 81, max: 90 },
-    ],
+    highRisk: [{ min: 180, max: 219 }, { min: 71, max: 80 }],
+    warning: [{ min: 160, max: 179 }, { min: 81, max: 90 }],
     normal: [{ min: 91, max: 159 }],
   },
   painScore: {
@@ -387,15 +292,8 @@ export const adultObservationRiskConfig: Record<string, AdultObservationRiskRang
   },
 };
 
-export function getRiskLevel(
-  vitalType: AdultObservationVitalType,
-  value: string | number | null | undefined,
-): AdultObservationRiskLevel {
-  const hasValue =
-    value !== null &&
-    value !== undefined &&
-    String(value).trim() !== "" &&
-    String(value).trim() !== "--";
+export function getRiskLevel(vitalType: AdultObservationVitalType, value: string | number | null | undefined): AdultObservationRiskLevel {
+  const hasValue = value !== null && value !== undefined && String(value).trim() !== "" && String(value).trim() !== "--";
   if (!hasValue) return "empty";
 
   if (vitalType === "pulseRhythm") return pulseRhythmRiskLevel(String(value));
@@ -407,49 +305,16 @@ export function getRiskLevel(
   const numericValue = parseObservationNumber(vitalType, value);
   if (numericValue === null) return "empty";
 
-  const order: Array<Exclude<AdultObservationRiskLevel, "empty">> = [
-    "critical",
-    "highRisk",
-    "warning",
-    "normal",
-  ];
-  return (
-    order.find((level) => ranges[level]?.some((range) => valueInRange(numericValue, range))) ??
-    "normal"
-  );
+  const order: Array<Exclude<AdultObservationRiskLevel, "empty">> = ["critical", "highRisk", "warning", "normal"];
+  return order.find((level) => ranges[level]?.some((range) => valueInRange(numericValue, range))) ?? "normal";
 }
 
 export function pulseRhythmRiskLevel(value: string | null | undefined): AdultObservationRiskLevel {
-  const rhythm = String(value ?? "")
-    .trim()
-    .toLowerCase();
+  const rhythm = String(value ?? "").trim().toLowerCase();
   if (!rhythm || rhythm === "--" || rhythm === "not assessed") return "empty";
-  if (
-    rhythm.includes("ventricular fibrillation") ||
-    rhythm === "vf" ||
-    rhythm.includes("ventricular tachycardia") ||
-    rhythm === "vt" ||
-    rhythm.includes("complete heart block")
-  )
-    return "critical";
-  if (
-    rhythm === "irregular" ||
-    rhythm === "irregularly irregular" ||
-    rhythm === "af" ||
-    rhythm.includes("atrial fibrillation") ||
-    rhythm.includes("svt") ||
-    rhythm.includes("heart block")
-  )
-    return "highRisk";
-  if (
-    rhythm === "regularly irregular" ||
-    rhythm === "ectopic beats felt" ||
-    rhythm === "other" ||
-    rhythm.includes("flutter") ||
-    rhythm.includes("bradycardia") ||
-    rhythm.includes("tachycardia")
-  )
-    return "warning";
+  if (rhythm.includes("ventricular fibrillation") || rhythm === "vf" || rhythm.includes("ventricular tachycardia") || rhythm === "vt" || rhythm.includes("complete heart block")) return "critical";
+  if (rhythm === "irregular" || rhythm === "irregularly irregular" || rhythm === "af" || rhythm.includes("atrial fibrillation") || rhythm.includes("svt") || rhythm.includes("heart block")) return "highRisk";
+  if (rhythm === "regularly irregular" || rhythm === "ectopic beats felt" || rhythm === "other" || rhythm.includes("flutter") || rhythm.includes("bradycardia") || rhythm.includes("tachycardia")) return "warning";
   return "normal";
 }
 
@@ -463,9 +328,7 @@ export function pulseRhythmRiskScore(value: string | null | undefined) {
 }
 
 export function pulseQualityRiskLevel(value: string | null | undefined): AdultObservationRiskLevel {
-  const quality = String(value ?? "")
-    .trim()
-    .toLowerCase();
+  const quality = String(value ?? "").trim().toLowerCase();
   if (!quality || quality === "--" || quality === "not assessed") return "empty";
   if (quality === "not palpable") return "critical";
   if (quality === "weak/thready" || quality === "unequal peripheral pulses") return "highRisk";
@@ -473,20 +336,14 @@ export function pulseQualityRiskLevel(value: string | null | undefined): AdultOb
   return "normal";
 }
 
-export function pulseDeficitValue(
-  monitorHeartRate: string | number | null | undefined,
-  pulseRate: string | number | null | undefined,
-) {
+export function pulseDeficitValue(monitorHeartRate: string | number | null | undefined, pulseRate: string | number | null | undefined) {
   const monitor = parseObservationNumber("monitorHeartRate", monitorHeartRate ?? "");
   const pulse = parseObservationNumber("pulseRate", pulseRate ?? "");
   if (monitor === null || pulse === null) return null;
   return Math.abs(monitor - pulse);
 }
 
-export function pulseDeficitRiskLevel(
-  monitorHeartRate: string | number | null | undefined,
-  pulseRate: string | number | null | undefined,
-): AdultObservationRiskLevel {
+export function pulseDeficitRiskLevel(monitorHeartRate: string | number | null | undefined, pulseRate: string | number | null | undefined): AdultObservationRiskLevel {
   const deficit = pulseDeficitValue(monitorHeartRate, pulseRate);
   if (deficit === null) return "empty";
   if (deficit >= 20) return "highRisk";
@@ -494,19 +351,14 @@ export function pulseDeficitRiskLevel(
   return "normal";
 }
 
-export function inferFio2FromOxygenSupport(
-  oxygenFlow: string,
-  deliveryMethod?: RapidObservationSet["deliveryMethod"],
-) {
+export function inferFio2FromOxygenSupport(oxygenFlow: string, deliveryMethod?: RapidObservationSet["deliveryMethod"]) {
   const method = deliveryMethod?.toLowerCase() ?? "";
   const flowText = oxygenFlow.toLowerCase();
   const flow = Number.parseFloat(flowText.match(/\d+(\.\d+)?/)?.[0] ?? "");
 
-  if (flowText === "air" || flowText.includes("room air") || method === "room air" || flow === 0)
-    return "21%";
+  if (flowText === "air" || flowText.includes("room air") || method === "room air" || flow === 0) return "21%";
   if (method.includes("nasal")) return `${Math.min(44, 20 + Math.max(1, flow || 1) * 4)}%`;
-  if (method.includes("simple mask"))
-    return `${Math.min(60, Math.max(40, 35 + Math.max(5, flow || 5) * 3))}%`;
+  if (method.includes("simple mask")) return `${Math.min(60, Math.max(40, 35 + Math.max(5, flow || 5) * 3))}%`;
   if (method.includes("venturi")) return flow >= 8 ? "50%" : flow >= 6 ? "40%" : "28%";
   if (method.includes("nrbm")) return flow >= 12 ? "90%" : "80%";
   if (method.includes("cpap") || method.includes("ventilator")) return "40%";
@@ -563,30 +415,14 @@ type HourlyObservationSeed = {
   reviewedAt?: string;
 };
 
-const rapidReviewWeekDates = [
-  "2026-05-21",
-  "2026-05-22",
-  "2026-05-23",
-  "2026-05-24",
-  "2026-05-25",
-  "2026-05-26",
-  "2026-05-27",
-];
+const rapidReviewWeekDates = ["2026-05-21", "2026-05-22", "2026-05-23", "2026-05-24", "2026-05-25", "2026-05-26", "2026-05-27"];
 const rapidReviewLatestDate = rapidReviewWeekDates.at(-1) ?? "2026-05-27";
 
-function createHourlyObservationHistory(
-  prefix: string,
-  seeds: HourlyObservationSeed[],
-  observationDate = rapidReviewLatestDate,
-): RapidObservationSet[] {
+function createHourlyObservationHistory(prefix: string, seeds: HourlyObservationSeed[], observationDate = rapidReviewLatestDate): RapidObservationSet[] {
   return seeds.map((seed) => {
     const hour = seed.hour.toString().padStart(2, "0");
     const pulseRhythm = seed.pulseRhythm ?? defaultPulseRhythm(seed.pulse, seed.responseLevel);
-    const pulseSource =
-      seed.pulseSource ??
-      (seed.responseLevel === "MER Call" || seed.responseLevel === "MDT Review"
-        ? "Monitor"
-        : "Manual radial pulse");
+    const pulseSource = seed.pulseSource ?? (seed.responseLevel === "MER Call" || seed.responseLevel === "MDT Review" ? "Monitor" : "Manual radial pulse");
     return {
       id: `${prefix}-${hour}`,
       observationDate,
@@ -603,13 +439,7 @@ function createHourlyObservationHistory(
       monitorHeartRate: seed.monitorHeartRate ?? defaultMonitorHeartRate(seed.pulse, pulseRhythm),
       pulseRhythm,
       pulseSource,
-      pulseSite:
-        seed.pulseSite ??
-        (pulseSource === "Arterial line"
-          ? "Arterial line"
-          : pulseSource === "Apical pulse"
-            ? "Apical"
-            : "Radial"),
+      pulseSite: seed.pulseSite ?? (pulseSource === "Arterial line" ? "Arterial line" : pulseSource === "Apical pulse" ? "Apical" : "Radial"),
       pulseQuality: seed.pulseQuality ?? defaultPulseQuality(seed.responseLevel),
       pulseSymptoms: seed.pulseSymptoms ?? defaultPulseSymptoms(seed.responseLevel),
       pulseActionTaken: seed.pulseActionTaken ?? defaultPulseAction(seed.responseLevel),
@@ -628,10 +458,7 @@ function createHourlyObservationHistory(
   });
 }
 
-function createWeeklyObservationHistory(
-  prefix: string,
-  seeds: HourlyObservationSeed[],
-): RapidObservationSet[] {
+function createWeeklyObservationHistory(prefix: string, seeds: HourlyObservationSeed[]): RapidObservationSet[] {
   return rapidReviewWeekDates.flatMap((date, dateIndex) => {
     const daysBeforeLatest = rapidReviewWeekDates.length - 1 - dateIndex;
     const daySeeds = seeds.map((seed) => adjustSeedForWeek(seed, daysBeforeLatest));
@@ -641,74 +468,10 @@ function createWeeklyObservationHistory(
 
 function createWeeklyPediatricHistory(prefix: string): RapidObservationSet[] {
   const seeds: HourlyObservationSeed[] = [
-    {
-      hour: 9,
-      recordedBy: "Pediatric Nurse",
-      respiratoryRate: "24",
-      spo2: "95%",
-      oxygenFlow: "Air",
-      deliveryMethod: "Room air",
-      bloodPressure: "104/68",
-      pulse: "98",
-      temperature: "37.0",
-      consciousness: "0",
-      painScore: "2",
-      urineOutput: "Not applicable",
-      dominantZone: "Yellow",
-      responseLevel: "RN Review",
-      note: "Pre-nebulization respiratory observation.",
-    },
-    {
-      hour: 12,
-      recordedBy: "Pediatric Nurse",
-      respiratoryRate: "22",
-      spo2: "96%",
-      oxygenFlow: "Air",
-      deliveryMethod: "Room air",
-      bloodPressure: "104/68",
-      pulse: "94",
-      temperature: "36.9",
-      consciousness: "0",
-      painScore: "1",
-      urineOutput: "Not applicable",
-      dominantZone: "Safe",
-      responseLevel: "Routine",
-      note: "Improving after nebulization.",
-    },
-    {
-      hour: 15,
-      recordedBy: "Pediatric Nurse",
-      respiratoryRate: "20",
-      spo2: "98%",
-      oxygenFlow: "Air",
-      deliveryMethod: "Room air",
-      bloodPressure: "104/68",
-      pulse: "88",
-      temperature: "36.9",
-      consciousness: "0",
-      painScore: "1",
-      urineOutput: "Not applicable",
-      dominantZone: "Safe",
-      responseLevel: "Routine",
-      note: "Observation stable.",
-    },
-    {
-      hour: 18,
-      recordedBy: "Pediatric Nurse",
-      respiratoryRate: "20",
-      spo2: "98%",
-      oxygenFlow: "Air",
-      deliveryMethod: "Room air",
-      bloodPressure: "104/68",
-      pulse: "88",
-      temperature: "36.9",
-      consciousness: "0",
-      painScore: "1",
-      urineOutput: "Not applicable",
-      dominantZone: "Safe",
-      responseLevel: "Routine",
-      note: "Ready for doctor review.",
-    },
+    { hour: 9, recordedBy: "Pediatric Nurse", respiratoryRate: "24", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "104/68", pulse: "98", temperature: "37.0", consciousness: "0", painScore: "2", urineOutput: "Not applicable", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pre-nebulization respiratory observation." },
+    { hour: 12, recordedBy: "Pediatric Nurse", respiratoryRate: "22", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "104/68", pulse: "94", temperature: "36.9", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Improving after nebulization." },
+    { hour: 15, recordedBy: "Pediatric Nurse", respiratoryRate: "20", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "104/68", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Observation stable." },
+    { hour: 18, recordedBy: "Pediatric Nurse", respiratoryRate: "20", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "104/68", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "1", urineOutput: "Not applicable", dominantZone: "Safe", responseLevel: "Routine", note: "Ready for doctor review." },
   ];
   return rapidReviewWeekDates.flatMap((date, dateIndex) => {
     const daysBeforeLatest = rapidReviewWeekDates.length - 1 - dateIndex;
@@ -717,10 +480,7 @@ function createWeeklyPediatricHistory(prefix: string): RapidObservationSet[] {
   });
 }
 
-function adjustSeedForWeek(
-  seed: HourlyObservationSeed,
-  daysBeforeLatest: number,
-): HourlyObservationSeed {
+function adjustSeedForWeek(seed: HourlyObservationSeed, daysBeforeLatest: number): HourlyObservationSeed {
   if (daysBeforeLatest === 0) return seed;
 
   const relief = Math.min(daysBeforeLatest, 4);
@@ -750,19 +510,14 @@ function adjustSeedForWeek(
     reviewStatus: adjustedResponse === "Routine" ? "Reviewed" : seed.reviewStatus,
     reviewedBy: adjustedResponse === "Routine" ? "Auto screening" : seed.reviewedBy,
     reviewedAt: adjustedResponse === "Routine" ? "Same time" : seed.reviewedAt,
-    doctorAction:
-      adjustedResponse === "Routine" ? "Continue routine observation" : seed.doctorAction,
+    doctorAction: adjustedResponse === "Routine" ? "Continue routine observation" : seed.doctorAction,
     note: `${seed.note} Day-${daysBeforeLatest} trend sample.`,
   };
 }
 
-function responseForOlderObservation(
-  responseLevel: RapidResponseLevel,
-  daysBeforeLatest: number,
-): RapidResponseLevel {
+function responseForOlderObservation(responseLevel: RapidResponseLevel, daysBeforeLatest: number): RapidResponseLevel {
   if (daysBeforeLatest >= 4) return "Routine";
-  if (daysBeforeLatest >= 2 && (responseLevel === "MER Call" || responseLevel === "MDT Review"))
-    return "RN Review";
+  if (daysBeforeLatest >= 2 && (responseLevel === "MER Call" || responseLevel === "MDT Review")) return "RN Review";
   if (daysBeforeLatest >= 1 && responseLevel === "MER Call") return "MDT Review";
   return responseLevel;
 }
@@ -799,10 +554,8 @@ function adjustBloodPressure(value: string, relief: number) {
   const systolic = Number.parseFloat(sysText ?? "");
   const diastolic = Number.parseFloat(diaText ?? "");
   if (!Number.isFinite(systolic) || !Number.isFinite(diastolic)) return value;
-  const systolicTarget =
-    systolic < 100 ? systolic + relief * 4 : systolic > 150 ? systolic - relief * 3 : systolic;
-  const diastolicTarget =
-    diastolic < 65 ? diastolic + relief * 2 : diastolic > 90 ? diastolic - relief * 2 : diastolic;
+  const systolicTarget = systolic < 100 ? systolic + relief * 4 : systolic > 150 ? systolic - relief * 3 : systolic;
+  const diastolicTarget = diastolic < 65 ? diastolic + relief * 2 : diastolic > 90 ? diastolic - relief * 2 : diastolic;
   return `${Math.round(systolicTarget)}/${Math.round(diastolicTarget)}`;
 }
 
@@ -875,9 +628,7 @@ function observationShift(hour: number): NonNullable<RapidObservationSet["shift"
   return "Night";
 }
 
-export const rapidRoleAccess: Partial<
-  Record<Role, { summary: string; actions: string[]; readOnly?: boolean }>
-> = {
+export const rapidRoleAccess: Partial<Record<Role, { summary: string; actions: string[]; readOnly?: boolean }>> = {
   "Super Admin": {
     summary: "Full rapid review access across clinical queues, rules, and audit-ready actions.",
     actions: ["Review", "Escalate", "Close", "Print"],
@@ -899,8 +650,7 @@ export const rapidRoleAccess: Partial<
     actions: ["Review", "Escalate", "Print"],
   },
   Nurse: {
-    summary:
-      "Nurse can record RN review, increase observation frequency, and escalate when criteria are met.",
+    summary: "Nurse can record RN review, increase observation frequency, and escalate when criteria are met.",
     actions: ["RN review", "Escalate", "Record observation"],
   },
   Management: {
@@ -910,15 +660,7 @@ export const rapidRoleAccess: Partial<
   },
 };
 
-export const rapidAllowedRoles: Role[] = [
-  "Super Admin",
-  "Hospital Admin",
-  "Doctor",
-  "Doctor OPD",
-  "Doctor IPD",
-  "Nurse",
-  "Management",
-];
+export const rapidAllowedRoles: Role[] = ["Super Admin", "Hospital Admin", "Doctor", "Doctor OPD", "Doctor IPD", "Nurse", "Management"];
 
 export const rapidReviewPatients: RapidReviewPatient[] = [
   {
@@ -940,477 +682,40 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
     urineOutput: "20 ml/hr for 4 hrs",
     reviewDue: "Now",
     observationHistory: createWeeklyObservationHistory("obs-er", [
-      {
-        hour: 0,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "18",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "122/78",
-        pulse: "84",
-        temperature: "36.8",
-        consciousness: "0",
-        painScore: "2",
-        urineOutput: "60 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Stable overnight observation.",
-      },
-      {
-        hour: 1,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "18",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "120/78",
-        pulse: "86",
-        temperature: "36.8",
-        consciousness: "0",
-        painScore: "2",
-        urineOutput: "58 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "No acute concern.",
-      },
-      {
-        hour: 2,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "19",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "120/76",
-        pulse: "88",
-        temperature: "36.9",
-        consciousness: "0",
-        painScore: "2",
-        urineOutput: "56 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Routine hourly vitals.",
-      },
-      {
-        hour: 3,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "18",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "118/76",
-        pulse: "88",
-        temperature: "37.0",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "55 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Observation stable.",
-      },
-      {
-        hour: 4,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "19",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "118/74",
-        pulse: "90",
-        temperature: "37.1",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "52 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Mild fever watch started.",
-      },
-      {
-        hour: 5,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "20",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "116/74",
-        pulse: "92",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "50 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Stable but trending warmer.",
-      },
-      {
-        hour: 6,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "20",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "116/72",
-        pulse: "94",
-        temperature: "37.4",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "48 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Morning review requested.",
-      },
-      {
-        hour: 7,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "21",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "114/72",
-        pulse: "98",
-        temperature: "37.6",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "45 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Yellow respiratory rate, nurse review.",
-      },
-      {
-        hour: 8,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "22",
-        spo2: "95%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "112/70",
-        pulse: "102",
-        temperature: "37.8",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "42 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Pain and respiratory rate increasing.",
-      },
-      {
-        hour: 9,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "23",
-        spo2: "95%",
-        oxygenFlow: "1 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "110/70",
-        pulse: "106",
-        temperature: "38.0",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "40 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Oxygen started by nurse.",
-      },
-      {
-        hour: 10,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "24",
-        spo2: "94%",
-        oxygenFlow: "2 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "108/68",
-        pulse: "110",
-        temperature: "38.1",
-        consciousness: "1",
-        painScore: "6",
-        urineOutput: "36 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Drowsiness reported, repeat observations.",
-      },
-      {
-        hour: 11,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "25",
-        spo2: "94%",
-        oxygenFlow: "2 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "106/68",
-        pulse: "114",
-        temperature: "38.2",
-        consciousness: "1",
-        painScore: "6",
-        urineOutput: "34 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Escalation watch due to persistent yellow zone.",
-      },
-      {
-        hour: 12,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "26",
-        spo2: "93%",
-        oxygenFlow: "3 L/min",
-        deliveryMethod: "Simple mask",
-        bloodPressure: "104/66",
-        pulse: "118",
-        temperature: "38.3",
-        consciousness: "1",
-        painScore: "6",
-        urineOutput: "32 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "MDT criteria emerging.",
-      },
-      {
-        hour: 13,
-        recordedBy: "Shift Coordinator",
-        respiratoryRate: "28",
-        spo2: "92%",
-        oxygenFlow: "4 L/min",
-        deliveryMethod: "Simple mask",
-        bloodPressure: "100/64",
-        pulse: "122",
-        temperature: "38.5",
-        consciousness: "2",
-        painScore: "Unable",
-        urineOutput: "30 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "MDT review requested.",
-      },
-      {
-        hour: 14,
-        recordedBy: "Shift Coordinator",
-        respiratoryRate: "30",
-        spo2: "91%",
-        oxygenFlow: "6 L/min",
-        deliveryMethod: "Simple mask",
-        bloodPressure: "94/60",
-        pulse: "126",
-        temperature: "38.7",
-        consciousness: "2",
-        painScore: "Unable",
-        urineOutput: "28 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Circulation trending down.",
-      },
-      {
-        hour: 15,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "32",
-        spo2: "90%",
-        oxygenFlow: "6 L/min",
-        deliveryMethod: "Simple mask",
-        bloodPressure: "90/58",
-        pulse: "128",
-        temperature: "38.8",
-        consciousness: "2",
-        painScore: "Unable",
-        urineOutput: "25 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Escalation unattended, senior review requested.",
-      },
-      {
-        hour: 16,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "35",
-        spo2: "89%",
-        oxygenFlow: "8 L/min",
-        deliveryMethod: "NRBM",
-        bloodPressure: "86/54",
-        pulse: "134",
-        temperature: "38.9",
-        consciousness: "3",
-        painScore: "Unable",
-        urineOutput: "22 ml/hr",
-        dominantZone: "Purple",
-        responseLevel: "MER Call",
-        note: "Purple zone observation, emergency call.",
-      },
-      {
-        hour: 17,
-        recordedBy: "ER Nurse",
-        respiratoryRate: "36",
-        spo2: "88%",
-        oxygenFlow: "10 L/min",
-        deliveryMethod: "NRBM",
-        bloodPressure: "84/50",
-        pulse: "138",
-        temperature: "39.1",
-        consciousness: "3",
-        painScore: "Unable",
-        urineOutput: "20 ml/hr",
-        dominantZone: "Purple",
-        responseLevel: "MER Call",
-        note: "Critical deterioration with reduced consciousness.",
-      },
-      {
-        hour: 18,
-        recordedBy: "Emergency Team",
-        respiratoryRate: "34",
-        spo2: "89%",
-        oxygenFlow: "10 L/min",
-        deliveryMethod: "NRBM",
-        bloodPressure: "86/52",
-        pulse: "136",
-        temperature: "39.0",
-        consciousness: "3",
-        painScore: "Unable",
-        urineOutput: "18 ml/hr",
-        dominantZone: "Purple",
-        responseLevel: "MER Call",
-        note: "Emergency team at bedside, airway support ongoing.",
-      },
-      {
-        hour: 19,
-        recordedBy: "Emergency Team",
-        respiratoryRate: "32",
-        spo2: "90%",
-        oxygenFlow: "10 L/min",
-        deliveryMethod: "NRBM",
-        bloodPressure: "88/54",
-        pulse: "132",
-        temperature: "38.8",
-        consciousness: "2",
-        painScore: "Unable",
-        urineOutput: "20 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Partial response after intervention.",
-      },
-      {
-        hour: 20,
-        recordedBy: "Emergency Team",
-        respiratoryRate: "30",
-        spo2: "91%",
-        oxygenFlow: "8 L/min",
-        deliveryMethod: "NRBM",
-        bloodPressure: "90/58",
-        pulse: "128",
-        temperature: "38.6",
-        consciousness: "2",
-        painScore: "Unable",
-        urineOutput: "22 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Continue high dependency monitoring.",
-      },
-      {
-        hour: 21,
-        recordedBy: "ICU Nurse",
-        respiratoryRate: "29",
-        spo2: "91%",
-        oxygenFlow: "8 L/min",
-        deliveryMethod: "NRBM",
-        bloodPressure: "92/60",
-        pulse: "126",
-        temperature: "38.5",
-        consciousness: "2",
-        painScore: "Unable",
-        urineOutput: "24 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "ICU transfer being prepared.",
-      },
-      {
-        hour: 22,
-        recordedBy: "ICU Nurse",
-        respiratoryRate: "28",
-        spo2: "92%",
-        oxygenFlow: "6 L/min",
-        deliveryMethod: "Simple mask",
-        bloodPressure: "94/62",
-        pulse: "124",
-        temperature: "38.3",
-        consciousness: "2",
-        painScore: "Unable",
-        urineOutput: "25 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Still high risk after initial treatment.",
-      },
-      {
-        hour: 23,
-        recordedBy: "ICU Nurse",
-        respiratoryRate: "27",
-        spo2: "92%",
-        oxygenFlow: "6 L/min",
-        deliveryMethod: "Simple mask",
-        bloodPressure: "96/64",
-        pulse: "122",
-        temperature: "38.2",
-        consciousness: "2",
-        painScore: "Unable",
-        urineOutput: "26 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Ongoing critical care review required.",
-      },
+      { hour: 0, recordedBy: "ER Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "122/78", pulse: "84", temperature: "36.8", consciousness: "0", painScore: "2", urineOutput: "60 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Stable overnight observation." },
+      { hour: 1, recordedBy: "ER Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "120/78", pulse: "86", temperature: "36.8", consciousness: "0", painScore: "2", urineOutput: "58 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "No acute concern." },
+      { hour: 2, recordedBy: "ER Nurse", respiratoryRate: "19", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "120/76", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "2", urineOutput: "56 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Routine hourly vitals." },
+      { hour: 3, recordedBy: "ER Nurse", respiratoryRate: "18", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "118/76", pulse: "88", temperature: "37.0", consciousness: "0", painScore: "3", urineOutput: "55 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Observation stable." },
+      { hour: 4, recordedBy: "ER Nurse", respiratoryRate: "19", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "118/74", pulse: "90", temperature: "37.1", consciousness: "0", painScore: "3", urineOutput: "52 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Mild fever watch started." },
+      { hour: 5, recordedBy: "ER Nurse", respiratoryRate: "20", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "116/74", pulse: "92", temperature: "37.2", consciousness: "0", painScore: "3", urineOutput: "50 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Stable but trending warmer." },
+      { hour: 6, recordedBy: "ER Nurse", respiratoryRate: "20", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "116/72", pulse: "94", temperature: "37.4", consciousness: "0", painScore: "4", urineOutput: "48 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Morning review requested." },
+      { hour: 7, recordedBy: "ER Nurse", respiratoryRate: "21", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "114/72", pulse: "98", temperature: "37.6", consciousness: "0", painScore: "4", urineOutput: "45 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Yellow respiratory rate, nurse review." },
+      { hour: 8, recordedBy: "ER Nurse", respiratoryRate: "22", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "112/70", pulse: "102", temperature: "37.8", consciousness: "0", painScore: "5", urineOutput: "42 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pain and respiratory rate increasing." },
+      { hour: 9, recordedBy: "ER Nurse", respiratoryRate: "23", spo2: "95%", oxygenFlow: "1 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "110/70", pulse: "106", temperature: "38.0", consciousness: "0", painScore: "5", urineOutput: "40 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Oxygen started by nurse." },
+      { hour: 10, recordedBy: "ER Nurse", respiratoryRate: "24", spo2: "94%", oxygenFlow: "2 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "108/68", pulse: "110", temperature: "38.1", consciousness: "1", painScore: "6", urineOutput: "36 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Drowsiness reported, repeat observations." },
+      { hour: 11, recordedBy: "ER Nurse", respiratoryRate: "25", spo2: "94%", oxygenFlow: "2 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "106/68", pulse: "114", temperature: "38.2", consciousness: "1", painScore: "6", urineOutput: "34 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Escalation watch due to persistent yellow zone." },
+      { hour: 12, recordedBy: "ER Nurse", respiratoryRate: "26", spo2: "93%", oxygenFlow: "3 L/min", deliveryMethod: "Simple mask", bloodPressure: "104/66", pulse: "118", temperature: "38.3", consciousness: "1", painScore: "6", urineOutput: "32 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "MDT criteria emerging." },
+      { hour: 13, recordedBy: "Shift Coordinator", respiratoryRate: "28", spo2: "92%", oxygenFlow: "4 L/min", deliveryMethod: "Simple mask", bloodPressure: "100/64", pulse: "122", temperature: "38.5", consciousness: "2", painScore: "Unable", urineOutput: "30 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "MDT review requested." },
+      { hour: 14, recordedBy: "Shift Coordinator", respiratoryRate: "30", spo2: "91%", oxygenFlow: "6 L/min", deliveryMethod: "Simple mask", bloodPressure: "94/60", pulse: "126", temperature: "38.7", consciousness: "2", painScore: "Unable", urineOutput: "28 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Circulation trending down." },
+      { hour: 15, recordedBy: "ER Nurse", respiratoryRate: "32", spo2: "90%", oxygenFlow: "6 L/min", deliveryMethod: "Simple mask", bloodPressure: "90/58", pulse: "128", temperature: "38.8", consciousness: "2", painScore: "Unable", urineOutput: "25 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Escalation unattended, senior review requested." },
+      { hour: 16, recordedBy: "ER Nurse", respiratoryRate: "35", spo2: "89%", oxygenFlow: "8 L/min", deliveryMethod: "NRBM", bloodPressure: "86/54", pulse: "134", temperature: "38.9", consciousness: "3", painScore: "Unable", urineOutput: "22 ml/hr", dominantZone: "Purple", responseLevel: "MER Call", note: "Purple zone observation, emergency call." },
+      { hour: 17, recordedBy: "ER Nurse", respiratoryRate: "36", spo2: "88%", oxygenFlow: "10 L/min", deliveryMethod: "NRBM", bloodPressure: "84/50", pulse: "138", temperature: "39.1", consciousness: "3", painScore: "Unable", urineOutput: "20 ml/hr", dominantZone: "Purple", responseLevel: "MER Call", note: "Critical deterioration with reduced consciousness." },
+      { hour: 18, recordedBy: "Emergency Team", respiratoryRate: "34", spo2: "89%", oxygenFlow: "10 L/min", deliveryMethod: "NRBM", bloodPressure: "86/52", pulse: "136", temperature: "39.0", consciousness: "3", painScore: "Unable", urineOutput: "18 ml/hr", dominantZone: "Purple", responseLevel: "MER Call", note: "Emergency team at bedside, airway support ongoing." },
+      { hour: 19, recordedBy: "Emergency Team", respiratoryRate: "32", spo2: "90%", oxygenFlow: "10 L/min", deliveryMethod: "NRBM", bloodPressure: "88/54", pulse: "132", temperature: "38.8", consciousness: "2", painScore: "Unable", urineOutput: "20 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Partial response after intervention." },
+      { hour: 20, recordedBy: "Emergency Team", respiratoryRate: "30", spo2: "91%", oxygenFlow: "8 L/min", deliveryMethod: "NRBM", bloodPressure: "90/58", pulse: "128", temperature: "38.6", consciousness: "2", painScore: "Unable", urineOutput: "22 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Continue high dependency monitoring." },
+      { hour: 21, recordedBy: "ICU Nurse", respiratoryRate: "29", spo2: "91%", oxygenFlow: "8 L/min", deliveryMethod: "NRBM", bloodPressure: "92/60", pulse: "126", temperature: "38.5", consciousness: "2", painScore: "Unable", urineOutput: "24 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "ICU transfer being prepared." },
+      { hour: 22, recordedBy: "ICU Nurse", respiratoryRate: "28", spo2: "92%", oxygenFlow: "6 L/min", deliveryMethod: "Simple mask", bloodPressure: "94/62", pulse: "124", temperature: "38.3", consciousness: "2", painScore: "Unable", urineOutput: "25 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Still high risk after initial treatment." },
+      { hour: 23, recordedBy: "ICU Nurse", respiratoryRate: "27", spo2: "92%", oxygenFlow: "6 L/min", deliveryMethod: "Simple mask", bloodPressure: "96/64", pulse: "122", temperature: "38.2", consciousness: "2", painScore: "Unable", urineOutput: "26 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Ongoing critical care review required." },
     ]),
     metrics: [
-      {
-        id: "rr",
-        label: "Respiratory rate",
-        value: "7",
-        unit: "/min",
-        zone: "Red",
-        trend: "Worsening",
-        note: "Below adult observation chart MDT threshold.",
-      },
-      {
-        id: "spo2",
-        label: "O2 saturation",
-        value: "88",
-        unit: "%",
-        zone: "Purple",
-        trend: "Worsening",
-        note: "Needs urgent airway and oxygen review.",
-      },
-      {
-        id: "bp",
-        label: "Blood pressure",
-        value: "84/50",
-        unit: "mmHg",
-        zone: "Purple",
-        trend: "Worsening",
-        note: "Shock-risk blood pressure range.",
-      },
-      {
-        id: "pulse",
-        label: "Pulse rate",
-        value: "132",
-        unit: "/min",
-        zone: "Red",
-        trend: "Worsening",
-        note: "Tachycardia with low BP.",
-      },
-      {
-        id: "temp",
-        label: "Temperature",
-        value: "38.9",
-        unit: "deg C",
-        zone: "Yellow",
-        trend: "Stable",
-        note: "Fever marker.",
-      },
-      {
-        id: "loc",
-        label: "GCS Score",
-        value: "3",
-        unit: "score",
-        zone: "Purple",
-        trend: "Worsening",
-        note: "Difficult to rouse or unresponsive.",
-      },
+      { id: "rr", label: "Respiratory rate", value: "7", unit: "/min", zone: "Red", trend: "Worsening", note: "Below adult observation chart MDT threshold." },
+      { id: "spo2", label: "O2 saturation", value: "88", unit: "%", zone: "Purple", trend: "Worsening", note: "Needs urgent airway and oxygen review." },
+      { id: "bp", label: "Blood pressure", value: "84/50", unit: "mmHg", zone: "Purple", trend: "Worsening", note: "Shock-risk blood pressure range." },
+      { id: "pulse", label: "Pulse rate", value: "132", unit: "/min", zone: "Red", trend: "Worsening", note: "Tachycardia with low BP." },
+      { id: "temp", label: "Temperature", value: "38.9", unit: "deg C", zone: "Yellow", trend: "Stable", note: "Fever marker." },
+      { id: "loc", label: "GCS Score", value: "3", unit: "score", zone: "Purple", trend: "Worsening", note: "Difficult to rouse or unresponsive." },
     ],
-    recommendedActions: [
-      "Place emergency call with location",
-      "Initiate life support as required",
-      "Notify senior doctor",
-      "Increase observations after intervention",
-    ],
+    recommendedActions: ["Place emergency call with location", "Initiate life support as required", "Notify senior doctor", "Increase observations after intervention"],
   },
   {
     id: "rr-003",
@@ -1431,477 +736,40 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
     urineOutput: "25 ml/hr for 4 hrs",
     reviewDue: "12 min",
     observationHistory: createWeeklyObservationHistory("obs-mj", [
-      {
-        hour: 0,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "18",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "132/80",
-        pulse: "86",
-        temperature: "36.8",
-        consciousness: "0",
-        painScore: "2",
-        urineOutput: "48 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Renal ward overnight baseline.",
-      },
-      {
-        hour: 1,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "18",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "132/80",
-        pulse: "88",
-        temperature: "36.9",
-        consciousness: "0",
-        painScore: "2",
-        urineOutput: "47 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Fluid balance stable.",
-      },
-      {
-        hour: 2,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "19",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "134/82",
-        pulse: "88",
-        temperature: "36.9",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "46 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Routine observation.",
-      },
-      {
-        hour: 3,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "19",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "134/82",
-        pulse: "90",
-        temperature: "37.0",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "44 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "No acute symptom.",
-      },
-      {
-        hour: 4,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "19",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "136/82",
-        pulse: "90",
-        temperature: "37.0",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "44 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Renal chart continued.",
-      },
-      {
-        hour: 5,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "20",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "136/84",
-        pulse: "92",
-        temperature: "37.1",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "42 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Early pain trend noted.",
-      },
-      {
-        hour: 6,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "20",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "138/84",
-        pulse: "94",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "42 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Baseline renal ward observation.",
-      },
-      {
-        hour: 7,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "20",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "140/84",
-        pulse: "96",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "40 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Monitor pain and urine output.",
-      },
-      {
-        hour: 8,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "21",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "142/86",
-        pulse: "100",
-        temperature: "37.3",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "38 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Yellow respiratory rate.",
-      },
-      {
-        hour: 9,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "22",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "144/86",
-        pulse: "104",
-        temperature: "37.4",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "36 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Pain and pulse rising.",
-      },
-      {
-        hour: 10,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "22",
-        spo2: "95%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "146/88",
-        pulse: "108",
-        temperature: "37.5",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "34 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "RN review completed, analgesia requested.",
-      },
-      {
-        hour: 11,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "23",
-        spo2: "95%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "148/88",
-        pulse: "112",
-        temperature: "37.5",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "32 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Urine output nearing escalation threshold.",
-      },
-      {
-        hour: 12,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "24",
-        spo2: "94%",
-        oxygenFlow: "1 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "150/90",
-        pulse: "116",
-        temperature: "37.6",
-        consciousness: "0",
-        painScore: "6",
-        urineOutput: "30 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Oxygen and fluid balance review requested.",
-      },
-      {
-        hour: 13,
-        recordedBy: "Shift Coordinator",
-        respiratoryRate: "25",
-        spo2: "94%",
-        oxygenFlow: "1 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "152/90",
-        pulse: "120",
-        temperature: "37.7",
-        consciousness: "0",
-        painScore: "6",
-        urineOutput: "29 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "MDT criteria met by pulse and urine output.",
-      },
-      {
-        hour: 14,
-        recordedBy: "Shift Coordinator",
-        respiratoryRate: "25",
-        spo2: "93%",
-        oxygenFlow: "2 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "154/90",
-        pulse: "122",
-        temperature: "37.7",
-        consciousness: "0",
-        painScore: "6",
-        urineOutput: "28 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Red pulse and low urine output.",
-      },
-      {
-        hour: 15,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "26",
-        spo2: "93%",
-        oxygenFlow: "2 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "156/92",
-        pulse: "124",
-        temperature: "37.8",
-        consciousness: "0",
-        painScore: "7",
-        urineOutput: "27 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "MDT review remains due.",
-      },
-      {
-        hour: 16,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "26",
-        spo2: "93%",
-        oxygenFlow: "2 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "160/92",
-        pulse: "126",
-        temperature: "37.8",
-        consciousness: "0",
-        painScore: "7",
-        urineOutput: "25 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Renal team notified.",
-      },
-      {
-        hour: 17,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "25",
-        spo2: "94%",
-        oxygenFlow: "2 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "158/90",
-        pulse: "124",
-        temperature: "37.7",
-        consciousness: "0",
-        painScore: "7",
-        urineOutput: "26 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Analgesia given, repeat observation planned.",
-      },
-      {
-        hour: 18,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "24",
-        spo2: "94%",
-        oxygenFlow: "1 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "156/88",
-        pulse: "122",
-        temperature: "37.6",
-        consciousness: "0",
-        painScore: "6",
-        urineOutput: "28 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Pulse remains in MDT range.",
-      },
-      {
-        hour: 19,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "23",
-        spo2: "95%",
-        oxygenFlow: "1 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "154/88",
-        pulse: "120",
-        temperature: "37.5",
-        consciousness: "0",
-        painScore: "6",
-        urineOutput: "30 ml/hr",
-        dominantZone: "Red",
-        responseLevel: "MDT Review",
-        note: "Urine output improving but pulse remains high.",
-      },
-      {
-        hour: 20,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "22",
-        spo2: "95%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "150/86",
-        pulse: "118",
-        temperature: "37.4",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "32 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Review response after fluid plan.",
-      },
-      {
-        hour: 21,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "22",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "148/84",
-        pulse: "116",
-        temperature: "37.3",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "34 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Continue renal monitoring.",
-      },
-      {
-        hour: 22,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "21",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "146/84",
-        pulse: "114",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "35 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Pain improving slowly.",
-      },
-      {
-        hour: 23,
-        recordedBy: "Renal Nurse",
-        respiratoryRate: "21",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "144/82",
-        pulse: "112",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "36 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Handover for next renal review.",
-      },
+      { hour: 0, recordedBy: "Renal Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "132/80", pulse: "86", temperature: "36.8", consciousness: "0", painScore: "2", urineOutput: "48 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Renal ward overnight baseline." },
+      { hour: 1, recordedBy: "Renal Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "132/80", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "2", urineOutput: "47 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Fluid balance stable." },
+      { hour: 2, recordedBy: "Renal Nurse", respiratoryRate: "19", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "134/82", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "3", urineOutput: "46 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Routine observation." },
+      { hour: 3, recordedBy: "Renal Nurse", respiratoryRate: "19", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "134/82", pulse: "90", temperature: "37.0", consciousness: "0", painScore: "3", urineOutput: "44 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "No acute symptom." },
+      { hour: 4, recordedBy: "Renal Nurse", respiratoryRate: "19", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "136/82", pulse: "90", temperature: "37.0", consciousness: "0", painScore: "3", urineOutput: "44 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Renal chart continued." },
+      { hour: 5, recordedBy: "Renal Nurse", respiratoryRate: "20", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "136/84", pulse: "92", temperature: "37.1", consciousness: "0", painScore: "3", urineOutput: "42 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Early pain trend noted." },
+      { hour: 6, recordedBy: "Renal Nurse", respiratoryRate: "20", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "138/84", pulse: "94", temperature: "37.2", consciousness: "0", painScore: "4", urineOutput: "42 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Baseline renal ward observation." },
+      { hour: 7, recordedBy: "Renal Nurse", respiratoryRate: "20", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "140/84", pulse: "96", temperature: "37.2", consciousness: "0", painScore: "4", urineOutput: "40 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Monitor pain and urine output." },
+      { hour: 8, recordedBy: "Renal Nurse", respiratoryRate: "21", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "142/86", pulse: "100", temperature: "37.3", consciousness: "0", painScore: "4", urineOutput: "38 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Yellow respiratory rate." },
+      { hour: 9, recordedBy: "Renal Nurse", respiratoryRate: "22", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "144/86", pulse: "104", temperature: "37.4", consciousness: "0", painScore: "5", urineOutput: "36 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pain and pulse rising." },
+      { hour: 10, recordedBy: "Renal Nurse", respiratoryRate: "22", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "146/88", pulse: "108", temperature: "37.5", consciousness: "0", painScore: "5", urineOutput: "34 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "RN review completed, analgesia requested." },
+      { hour: 11, recordedBy: "Renal Nurse", respiratoryRate: "23", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "148/88", pulse: "112", temperature: "37.5", consciousness: "0", painScore: "5", urineOutput: "32 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Urine output nearing escalation threshold." },
+      { hour: 12, recordedBy: "Renal Nurse", respiratoryRate: "24", spo2: "94%", oxygenFlow: "1 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "150/90", pulse: "116", temperature: "37.6", consciousness: "0", painScore: "6", urineOutput: "30 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Oxygen and fluid balance review requested." },
+      { hour: 13, recordedBy: "Shift Coordinator", respiratoryRate: "25", spo2: "94%", oxygenFlow: "1 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "152/90", pulse: "120", temperature: "37.7", consciousness: "0", painScore: "6", urineOutput: "29 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "MDT criteria met by pulse and urine output." },
+      { hour: 14, recordedBy: "Shift Coordinator", respiratoryRate: "25", spo2: "93%", oxygenFlow: "2 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "154/90", pulse: "122", temperature: "37.7", consciousness: "0", painScore: "6", urineOutput: "28 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Red pulse and low urine output." },
+      { hour: 15, recordedBy: "Renal Nurse", respiratoryRate: "26", spo2: "93%", oxygenFlow: "2 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "156/92", pulse: "124", temperature: "37.8", consciousness: "0", painScore: "7", urineOutput: "27 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "MDT review remains due." },
+      { hour: 16, recordedBy: "Renal Nurse", respiratoryRate: "26", spo2: "93%", oxygenFlow: "2 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "160/92", pulse: "126", temperature: "37.8", consciousness: "0", painScore: "7", urineOutput: "25 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Renal team notified." },
+      { hour: 17, recordedBy: "Renal Nurse", respiratoryRate: "25", spo2: "94%", oxygenFlow: "2 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "158/90", pulse: "124", temperature: "37.7", consciousness: "0", painScore: "7", urineOutput: "26 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Analgesia given, repeat observation planned." },
+      { hour: 18, recordedBy: "Renal Nurse", respiratoryRate: "24", spo2: "94%", oxygenFlow: "1 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "156/88", pulse: "122", temperature: "37.6", consciousness: "0", painScore: "6", urineOutput: "28 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Pulse remains in MDT range." },
+      { hour: 19, recordedBy: "Renal Nurse", respiratoryRate: "23", spo2: "95%", oxygenFlow: "1 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "154/88", pulse: "120", temperature: "37.5", consciousness: "0", painScore: "6", urineOutput: "30 ml/hr", dominantZone: "Red", responseLevel: "MDT Review", note: "Urine output improving but pulse remains high." },
+      { hour: 20, recordedBy: "Renal Nurse", respiratoryRate: "22", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "150/86", pulse: "118", temperature: "37.4", consciousness: "0", painScore: "5", urineOutput: "32 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Review response after fluid plan." },
+      { hour: 21, recordedBy: "Renal Nurse", respiratoryRate: "22", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "148/84", pulse: "116", temperature: "37.3", consciousness: "0", painScore: "5", urineOutput: "34 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Continue renal monitoring." },
+      { hour: 22, recordedBy: "Renal Nurse", respiratoryRate: "21", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "146/84", pulse: "114", temperature: "37.2", consciousness: "0", painScore: "5", urineOutput: "35 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pain improving slowly." },
+      { hour: 23, recordedBy: "Renal Nurse", respiratoryRate: "21", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "144/82", pulse: "112", temperature: "37.2", consciousness: "0", painScore: "4", urineOutput: "36 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Handover for next renal review." },
     ]),
     metrics: [
-      {
-        id: "rr",
-        label: "Respiratory rate",
-        value: "26",
-        unit: "/min",
-        zone: "Yellow",
-        trend: "Stable",
-        note: "RN review range.",
-      },
-      {
-        id: "spo2",
-        label: "O2 saturation",
-        value: "93",
-        unit: "%",
-        zone: "Yellow",
-        trend: "Stable",
-        note: "Borderline saturation.",
-      },
-      {
-        id: "bp",
-        label: "Blood pressure",
-        value: "160/92",
-        unit: "mmHg",
-        zone: "Yellow",
-        trend: "Stable",
-        note: "Review medication and fluid status.",
-      },
-      {
-        id: "pulse",
-        label: "Pulse rate",
-        value: "126",
-        unit: "/min",
-        zone: "Red",
-        trend: "Worsening",
-        note: "MDT review range.",
-      },
-      {
-        id: "temp",
-        label: "Temperature",
-        value: "37.8",
-        unit: "deg C",
-        zone: "Safe",
-        trend: "Stable",
-        note: "No fever escalation.",
-      },
-      {
-        id: "pain",
-        label: "Pain score",
-        value: "7",
-        unit: "/10",
-        zone: "Yellow",
-        trend: "Worsening",
-        note: "Needs analgesia review.",
-      },
+      { id: "rr", label: "Respiratory rate", value: "26", unit: "/min", zone: "Yellow", trend: "Stable", note: "RN review range." },
+      { id: "spo2", label: "O2 saturation", value: "93", unit: "%", zone: "Yellow", trend: "Stable", note: "Borderline saturation." },
+      { id: "bp", label: "Blood pressure", value: "160/92", unit: "mmHg", zone: "Yellow", trend: "Stable", note: "Review medication and fluid status." },
+      { id: "pulse", label: "Pulse rate", value: "126", unit: "/min", zone: "Red", trend: "Worsening", note: "MDT review range." },
+      { id: "temp", label: "Temperature", value: "37.8", unit: "deg C", zone: "Safe", trend: "Stable", note: "No fever escalation." },
+      { id: "pain", label: "Pain score", value: "7", unit: "/10", zone: "Yellow", trend: "Worsening", note: "Needs analgesia review." },
     ],
-    recommendedActions: [
-      "MDT review within 30 minutes",
-      "Review fluid balance and renal chart",
-      "Repeat observations after intervention",
-      "Escalate to MER if unattended",
-    ],
+    recommendedActions: ["MDT review within 30 minutes", "Review fluid balance and renal chart", "Repeat observations after intervention", "Escalate to MER if unattended"],
   },
   {
     id: "rr-001",
@@ -1922,477 +790,40 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
     urineOutput: "70 ml/hr",
     reviewDue: "25 min",
     observationHistory: createWeeklyObservationHistory("obs-ak", [
-      {
-        hour: 0,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "17",
-        spo2: "99%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "124/78",
-        pulse: "78",
-        temperature: "36.7",
-        consciousness: "0",
-        painScore: "2",
-        urineOutput: "80 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Post-op overnight stable.",
-      },
-      {
-        hour: 1,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "17",
-        spo2: "99%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "124/78",
-        pulse: "80",
-        temperature: "36.7",
-        consciousness: "0",
-        painScore: "2",
-        urineOutput: "78 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Routine hourly charting.",
-      },
-      {
-        hour: 2,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "18",
-        spo2: "99%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "126/78",
-        pulse: "80",
-        temperature: "36.8",
-        consciousness: "0",
-        painScore: "2",
-        urineOutput: "78 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "No new complaint.",
-      },
-      {
-        hour: 3,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "18",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "126/80",
-        pulse: "82",
-        temperature: "36.8",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "76 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Pain controlled.",
-      },
-      {
-        hour: 4,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "18",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "126/80",
-        pulse: "82",
-        temperature: "36.8",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "75 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Observation stable.",
-      },
-      {
-        hour: 5,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "18",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "126/80",
-        pulse: "84",
-        temperature: "36.9",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "75 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Post-op ward baseline.",
-      },
-      {
-        hour: 6,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "18",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "128/80",
-        pulse: "86",
-        temperature: "36.9",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "74 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Morning round baseline.",
-      },
-      {
-        hour: 7,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "19",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "128/80",
-        pulse: "88",
-        temperature: "37.0",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "74 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "No oxygen requirement.",
-      },
-      {
-        hour: 8,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "19",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "128/78",
-        pulse: "88",
-        temperature: "37.0",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "73 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Stable pre-mobilization.",
-      },
-      {
-        hour: 9,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "20",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "128/78",
-        pulse: "90",
-        temperature: "37.0",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "72 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Physio review planned.",
-      },
-      {
-        hour: 10,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "21",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "130/80",
-        pulse: "92",
-        temperature: "37.1",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "72 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Mild tachypnea after mobilization.",
-      },
-      {
-        hour: 11,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "21",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "130/80",
-        pulse: "94",
-        temperature: "37.1",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "72 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "RN review, encourage breathing exercises.",
-      },
-      {
-        hour: 12,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "22",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "130/80",
-        pulse: "94",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "71 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Pain increased after activity.",
-      },
-      {
-        hour: 13,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "22",
-        spo2: "95%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "130/80",
-        pulse: "96",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "70 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Analgesia reviewed.",
-      },
-      {
-        hour: 14,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "23",
-        spo2: "95%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "130/80",
-        pulse: "96",
-        temperature: "37.3",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "70 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Pain increasing, oxygen still room air.",
-      },
-      {
-        hour: 15,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "24",
-        spo2: "94%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "128/78",
-        pulse: "98",
-        temperature: "37.4",
-        consciousness: "0",
-        painScore: "6",
-        urineOutput: "70 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Pain and respiratory rate need repeat review.",
-      },
-      {
-        hour: 16,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "24",
-        spo2: "94%",
-        oxygenFlow: "1 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "128/78",
-        pulse: "100",
-        temperature: "37.5",
-        consciousness: "0",
-        painScore: "6",
-        urineOutput: "69 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Low-flow oxygen started after nurse review.",
-      },
-      {
-        hour: 17,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "23",
-        spo2: "95%",
-        oxygenFlow: "1 L/min",
-        deliveryMethod: "Nasal cannula",
-        bloodPressure: "128/78",
-        pulse: "100",
-        temperature: "37.4",
-        consciousness: "0",
-        painScore: "6",
-        urineOutput: "70 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Symptoms stable, repeat in one hour.",
-      },
-      {
-        hour: 18,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "23",
-        spo2: "95%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "128/78",
-        pulse: "98",
-        temperature: "37.3",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "70 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Trial back on room air.",
-      },
-      {
-        hour: 19,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "22",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "126/76",
-        pulse: "96",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "5",
-        urineOutput: "71 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Improving after analgesia.",
-      },
-      {
-        hour: 20,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "22",
-        spo2: "96%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "126/76",
-        pulse: "94",
-        temperature: "37.2",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "72 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Continue observation frequency.",
-      },
-      {
-        hour: 21,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "21",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "126/76",
-        pulse: "92",
-        temperature: "37.1",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "72 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Pain settling.",
-      },
-      {
-        hour: 22,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "21",
-        spo2: "97%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "124/76",
-        pulse: "90",
-        temperature: "37.0",
-        consciousness: "0",
-        painScore: "4",
-        urineOutput: "73 ml/hr",
-        dominantZone: "Yellow",
-        responseLevel: "RN Review",
-        note: "Stable handover note.",
-      },
-      {
-        hour: 23,
-        recordedBy: "Ward Nurse",
-        respiratoryRate: "20",
-        spo2: "98%",
-        oxygenFlow: "Air",
-        deliveryMethod: "Room air",
-        bloodPressure: "124/76",
-        pulse: "88",
-        temperature: "36.9",
-        consciousness: "0",
-        painScore: "3",
-        urineOutput: "74 ml/hr",
-        dominantZone: "Safe",
-        responseLevel: "Routine",
-        note: "Returned to routine range after intervention.",
-      },
+      { hour: 0, recordedBy: "Ward Nurse", respiratoryRate: "17", spo2: "99%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "124/78", pulse: "78", temperature: "36.7", consciousness: "0", painScore: "2", urineOutput: "80 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Post-op overnight stable." },
+      { hour: 1, recordedBy: "Ward Nurse", respiratoryRate: "17", spo2: "99%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "124/78", pulse: "80", temperature: "36.7", consciousness: "0", painScore: "2", urineOutput: "78 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Routine hourly charting." },
+      { hour: 2, recordedBy: "Ward Nurse", respiratoryRate: "18", spo2: "99%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "126/78", pulse: "80", temperature: "36.8", consciousness: "0", painScore: "2", urineOutput: "78 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "No new complaint." },
+      { hour: 3, recordedBy: "Ward Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "126/80", pulse: "82", temperature: "36.8", consciousness: "0", painScore: "3", urineOutput: "76 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Pain controlled." },
+      { hour: 4, recordedBy: "Ward Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "126/80", pulse: "82", temperature: "36.8", consciousness: "0", painScore: "3", urineOutput: "75 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Observation stable." },
+      { hour: 5, recordedBy: "Ward Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "126/80", pulse: "84", temperature: "36.9", consciousness: "0", painScore: "3", urineOutput: "75 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Post-op ward baseline." },
+      { hour: 6, recordedBy: "Ward Nurse", respiratoryRate: "18", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "128/80", pulse: "86", temperature: "36.9", consciousness: "0", painScore: "3", urineOutput: "74 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Morning round baseline." },
+      { hour: 7, recordedBy: "Ward Nurse", respiratoryRate: "19", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "128/80", pulse: "88", temperature: "37.0", consciousness: "0", painScore: "3", urineOutput: "74 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "No oxygen requirement." },
+      { hour: 8, recordedBy: "Ward Nurse", respiratoryRate: "19", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "128/78", pulse: "88", temperature: "37.0", consciousness: "0", painScore: "3", urineOutput: "73 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Stable pre-mobilization." },
+      { hour: 9, recordedBy: "Ward Nurse", respiratoryRate: "20", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "128/78", pulse: "90", temperature: "37.0", consciousness: "0", painScore: "3", urineOutput: "72 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Physio review planned." },
+      { hour: 10, recordedBy: "Ward Nurse", respiratoryRate: "21", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "130/80", pulse: "92", temperature: "37.1", consciousness: "0", painScore: "4", urineOutput: "72 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Mild tachypnea after mobilization." },
+      { hour: 11, recordedBy: "Ward Nurse", respiratoryRate: "21", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "130/80", pulse: "94", temperature: "37.1", consciousness: "0", painScore: "4", urineOutput: "72 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "RN review, encourage breathing exercises." },
+      { hour: 12, recordedBy: "Ward Nurse", respiratoryRate: "22", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "130/80", pulse: "94", temperature: "37.2", consciousness: "0", painScore: "4", urineOutput: "71 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pain increased after activity." },
+      { hour: 13, recordedBy: "Ward Nurse", respiratoryRate: "22", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "130/80", pulse: "96", temperature: "37.2", consciousness: "0", painScore: "5", urineOutput: "70 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Analgesia reviewed." },
+      { hour: 14, recordedBy: "Ward Nurse", respiratoryRate: "23", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "130/80", pulse: "96", temperature: "37.3", consciousness: "0", painScore: "5", urineOutput: "70 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pain increasing, oxygen still room air." },
+      { hour: 15, recordedBy: "Ward Nurse", respiratoryRate: "24", spo2: "94%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "128/78", pulse: "98", temperature: "37.4", consciousness: "0", painScore: "6", urineOutput: "70 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pain and respiratory rate need repeat review." },
+      { hour: 16, recordedBy: "Ward Nurse", respiratoryRate: "24", spo2: "94%", oxygenFlow: "1 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "128/78", pulse: "100", temperature: "37.5", consciousness: "0", painScore: "6", urineOutput: "69 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Low-flow oxygen started after nurse review." },
+      { hour: 17, recordedBy: "Ward Nurse", respiratoryRate: "23", spo2: "95%", oxygenFlow: "1 L/min", deliveryMethod: "Nasal cannula", bloodPressure: "128/78", pulse: "100", temperature: "37.4", consciousness: "0", painScore: "6", urineOutput: "70 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Symptoms stable, repeat in one hour." },
+      { hour: 18, recordedBy: "Ward Nurse", respiratoryRate: "23", spo2: "95%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "128/78", pulse: "98", temperature: "37.3", consciousness: "0", painScore: "5", urineOutput: "70 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Trial back on room air." },
+      { hour: 19, recordedBy: "Ward Nurse", respiratoryRate: "22", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "126/76", pulse: "96", temperature: "37.2", consciousness: "0", painScore: "5", urineOutput: "71 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Improving after analgesia." },
+      { hour: 20, recordedBy: "Ward Nurse", respiratoryRate: "22", spo2: "96%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "126/76", pulse: "94", temperature: "37.2", consciousness: "0", painScore: "4", urineOutput: "72 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Continue observation frequency." },
+      { hour: 21, recordedBy: "Ward Nurse", respiratoryRate: "21", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "126/76", pulse: "92", temperature: "37.1", consciousness: "0", painScore: "4", urineOutput: "72 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Pain settling." },
+      { hour: 22, recordedBy: "Ward Nurse", respiratoryRate: "21", spo2: "97%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "124/76", pulse: "90", temperature: "37.0", consciousness: "0", painScore: "4", urineOutput: "73 ml/hr", dominantZone: "Yellow", responseLevel: "RN Review", note: "Stable handover note." },
+      { hour: 23, recordedBy: "Ward Nurse", respiratoryRate: "20", spo2: "98%", oxygenFlow: "Air", deliveryMethod: "Room air", bloodPressure: "124/76", pulse: "88", temperature: "36.9", consciousness: "0", painScore: "3", urineOutput: "74 ml/hr", dominantZone: "Safe", responseLevel: "Routine", note: "Returned to routine range after intervention." },
     ]),
     metrics: [
-      {
-        id: "rr",
-        label: "Respiratory rate",
-        value: "24",
-        unit: "/min",
-        zone: "Yellow",
-        trend: "Stable",
-        note: "Nurse review and repeat vitals.",
-      },
-      {
-        id: "spo2",
-        label: "O2 saturation",
-        value: "94",
-        unit: "%",
-        zone: "Yellow",
-        trend: "Stable",
-        note: "Review O2 requirements.",
-      },
-      {
-        id: "bp",
-        label: "Blood pressure",
-        value: "128/78",
-        unit: "mmHg",
-        zone: "Safe",
-        trend: "Stable",
-        note: "Within safe range.",
-      },
-      {
-        id: "pulse",
-        label: "Pulse rate",
-        value: "98",
-        unit: "/min",
-        zone: "Safe",
-        trend: "Stable",
-        note: "No pulse escalation.",
-      },
-      {
-        id: "temp",
-        label: "Temperature",
-        value: "37.4",
-        unit: "deg C",
-        zone: "Safe",
-        trend: "Stable",
-        note: "Monitor.",
-      },
-      {
-        id: "pain",
-        label: "Pain score",
-        value: "6",
-        unit: "/10",
-        zone: "Yellow",
-        trend: "Worsening",
-        note: "Analgesia review required.",
-      },
+      { id: "rr", label: "Respiratory rate", value: "24", unit: "/min", zone: "Yellow", trend: "Stable", note: "Nurse review and repeat vitals." },
+      { id: "spo2", label: "O2 saturation", value: "94", unit: "%", zone: "Yellow", trend: "Stable", note: "Review O2 requirements." },
+      { id: "bp", label: "Blood pressure", value: "128/78", unit: "mmHg", zone: "Safe", trend: "Stable", note: "Within safe range." },
+      { id: "pulse", label: "Pulse rate", value: "98", unit: "/min", zone: "Safe", trend: "Stable", note: "No pulse escalation." },
+      { id: "temp", label: "Temperature", value: "37.4", unit: "deg C", zone: "Safe", trend: "Stable", note: "Monitor." },
+      { id: "pain", label: "Pain score", value: "6", unit: "/10", zone: "Yellow", trend: "Worsening", note: "Analgesia review required." },
     ],
-    recommendedActions: [
-      "Registered nurse review",
-      "Manage pain and anxiety",
-      "Review oxygen requirement",
-      "Increase observation frequency",
-    ],
+    recommendedActions: ["Registered nurse review", "Manage pain and anxiety", "Review oxygen requirement", "Increase observation frequency"],
   },
   {
     id: "rr-004",
@@ -2414,66 +845,14 @@ export const rapidReviewPatients: RapidReviewPatient[] = [
     reviewDue: "Routine",
     observationHistory: createWeeklyPediatricHistory("obs-ah"),
     metrics: [
-      {
-        id: "rr",
-        label: "Respiratory rate",
-        value: "20",
-        unit: "/min",
-        zone: "Safe",
-        trend: "Improving",
-        note: "Stable.",
-      },
-      {
-        id: "spo2",
-        label: "O2 saturation",
-        value: "98",
-        unit: "%",
-        zone: "Safe",
-        trend: "Improving",
-        note: "Room air.",
-      },
-      {
-        id: "bp",
-        label: "Blood pressure",
-        value: "104/68",
-        unit: "mmHg",
-        zone: "Safe",
-        trend: "Stable",
-        note: "Stable.",
-      },
-      {
-        id: "pulse",
-        label: "Pulse rate",
-        value: "88",
-        unit: "/min",
-        zone: "Safe",
-        trend: "Stable",
-        note: "Stable.",
-      },
-      {
-        id: "temp",
-        label: "Temperature",
-        value: "36.9",
-        unit: "deg C",
-        zone: "Safe",
-        trend: "Stable",
-        note: "Afebrile.",
-      },
-      {
-        id: "pain",
-        label: "Pain score",
-        value: "1",
-        unit: "/10",
-        zone: "Safe",
-        trend: "Improving",
-        note: "Comfortable.",
-      },
+      { id: "rr", label: "Respiratory rate", value: "20", unit: "/min", zone: "Safe", trend: "Improving", note: "Stable." },
+      { id: "spo2", label: "O2 saturation", value: "98", unit: "%", zone: "Safe", trend: "Improving", note: "Room air." },
+      { id: "bp", label: "Blood pressure", value: "104/68", unit: "mmHg", zone: "Safe", trend: "Stable", note: "Stable." },
+      { id: "pulse", label: "Pulse rate", value: "88", unit: "/min", zone: "Safe", trend: "Stable", note: "Stable." },
+      { id: "temp", label: "Temperature", value: "36.9", unit: "deg C", zone: "Safe", trend: "Stable", note: "Afebrile." },
+      { id: "pain", label: "Pain score", value: "1", unit: "/10", zone: "Safe", trend: "Improving", note: "Comfortable." },
     ],
-    recommendedActions: [
-      "Continue routine care",
-      "Repeat observation as ordered",
-      "Discharge only after doctor review",
-    ],
+    recommendedActions: ["Continue routine care", "Repeat observation as ordered", "Discharge only after doctor review"],
   },
 ];
 
@@ -2563,8 +942,7 @@ export const rapidObservationRows: RapidObservationRow[] = [
     yellow: "1-5 L/min",
     red: "6-7 L/min or rapidly increasing need",
     purple: ">=8 L/min or high-flow support with instability",
-    doctorNote:
-      "Confirm device, prescribed target SpO2, and escalation plan if oxygen need is rising.",
+    doctorNote: "Confirm device, prescribed target SpO2, and escalation plan if oxygen need is rising.",
   },
   {
     metric: "FiO2",
@@ -2620,8 +998,7 @@ export const rapidObservationRows: RapidObservationRow[] = [
     yellow: "Ectopic beats, regularly irregular, tachy/brady rhythm",
     red: "AF, SVT, irregularly irregular, heart block",
     purple: "VT, VF, complete heart block with instability",
-    doctorNote:
-      "Request ECG, check electrolytes, symptoms, perfusion, and cardiology escalation need.",
+    doctorNote: "Request ECG, check electrolytes, symptoms, perfusion, and cardiology escalation need.",
   },
   {
     metric: "Pulse quality",
@@ -2637,8 +1014,7 @@ export const rapidObservationRows: RapidObservationRow[] = [
     yellow: "Difficult peripheral pulse or site changed",
     red: "Central/apical pulse needed or unequal site finding",
     purple: "No palpable pulse at appropriate site",
-    doctorNote:
-      "Use central pulse if unstable and document site, quality, symmetry, and escalation.",
+    doctorNote: "Use central pulse if unstable and document site, quality, symmetry, and escalation.",
   },
   {
     metric: "Temperature",
@@ -2662,28 +1038,15 @@ export const rapidObservationRows: RapidObservationRow[] = [
     yellow: "4-6 /10 or increasing pain",
     red: "7-10 /10, uncontrolled, or new severe pain",
     purple: "Severe pain with shock, chest pain, or acute neuro/abdominal concern",
-    doctorNote:
-      "Treat pain, identify cause, reassess response, and escalate new severe pain urgently.",
+    doctorNote: "Treat pain, identify cause, reassess response, and escalate new severe pain urgently.",
   },
 ];
 
 export const consciousnessScores = [
   { score: "0", meaning: "Awake and alert", action: "Continue ordered observations" },
-  {
-    score: "1",
-    meaning: "Occasionally drowsy, easy to rouse",
-    action: "RN review and repeat observations",
-  },
-  {
-    score: "2",
-    meaning: "Frequently drowsy, easy to rouse",
-    action: "MDT review and medication review",
-  },
-  {
-    score: "3",
-    meaning: "Difficult to rouse or unresponsive",
-    action: "MER call and airway support",
-  },
+  { score: "1", meaning: "Occasionally drowsy, easy to rouse", action: "RN review and repeat observations" },
+  { score: "2", meaning: "Frequently drowsy, easy to rouse", action: "MDT review and medication review" },
+  { score: "3", meaning: "Difficult to rouse or unresponsive", action: "MER call and airway support" },
 ];
 
 export function gcsScoreLabel(value: string | number | null | undefined) {

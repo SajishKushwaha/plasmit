@@ -49,19 +49,8 @@ export function FormControlsBundle() {
         Send SMS confirmation
       </label>
       <div className="flex items-center gap-4 text-sm">
-        <label className="flex items-center gap-2">
-          <input
-            name="priority-preview"
-            type="radio"
-            className="h-4 w-4 accent-primary"
-            defaultChecked
-          />
-          Routine
-        </label>
-        <label className="flex items-center gap-2">
-          <input name="priority-preview" type="radio" className="h-4 w-4 accent-primary" />
-          Urgent
-        </label>
+        <label className="flex items-center gap-2"><input name="priority-preview" type="radio" className="h-4 w-4 accent-primary" defaultChecked />Routine</label>
+        <label className="flex items-center gap-2"><input name="priority-preview" type="radio" className="h-4 w-4 accent-primary" />Urgent</label>
       </div>
       <Button className="sm:col-span-2">Save form</Button>
     </form>

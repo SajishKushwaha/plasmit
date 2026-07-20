@@ -13,6 +13,7 @@ export const roles: Role[] = [
   "Nurse ICU",
   "Nurse ICU 2",
   "Blood Bank",
+  "ER Nurse",
   "Receptionist",
   "Lab Technician",
   "Radiologist",

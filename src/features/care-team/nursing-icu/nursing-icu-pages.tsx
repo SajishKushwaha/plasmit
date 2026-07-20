@@ -57,6 +57,11 @@ import type {
   RapidReviewPatient,
   RapidZone,
 } from "@/features/clinical/rapid-review/rapid-review-data";
+import {
+  MobileCommandCard,
+  MobileCommandCardRow,
+  useIcuCommandCenterPatientsSurface,
+} from "@/features/care-team/icu-command-center/patients/icu-patients-surface";
 import { cn } from "@/lib/utils";
 import type { StatusTone } from "@/types";
 import {
@@ -1198,10 +1203,44 @@ export function IcuCommandCenterPatientPage({
     <div className="min-w-0 max-w-full space-y-4 pb-8">
       {patient ? (
         <section
-          className="overflow-x-auto rounded-xl border border-[#7367f0]/40 px-4 py-3 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)]"
+          className="overflow-hidden rounded-xl border border-[#7367f0]/40 px-3 py-3 text-white shadow-[0_8px_20px_rgba(115,103,240,0.24)] sm:px-4 md:overflow-x-auto"
           style={{ background: "linear-gradient(90deg,#7367f0,#5b8def)" }}
         >
-          <div className="flex min-w-max items-center gap-3 text-sm font-semibold text-white/85">
+          <div className="flex flex-col gap-3 md:hidden">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-base font-bold text-white">{patient.patientName}</span>
+              <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-700 shadow-sm">
+                {patient.criticalityScore >= 8 ? "Urgent" : patient.currentStatus}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                MR: {patient.mrn}
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                Age/Sex: {patient.ageGender}
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                Bed: {patient.bedNo}
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                Unit: {patient.unit}
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                Doctor: {patient.admittingDoctor}
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                Nurse: {patient.assignedWardNurse}
+              </span>
+            </div>
+            <Link
+              className="inline-flex h-9 w-full items-center justify-center rounded-xl border border-white/30 bg-white px-4 text-xs font-semibold text-[#7367f0] shadow-sm transition duration-150 hover:bg-white/90"
+              href="/icu-command-center/clinical-workspace/patient-overview"
+            >
+              Back
+            </Link>
+          </div>
+          <div className="hidden min-w-max items-center gap-3 text-sm font-semibold text-white/85 md:flex">
             <span className="pr-1 text-base font-bold text-white">{patient.patientName}</span>
             <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-700 shadow-sm">
               {patient.criticalityScore >= 8 ? "Urgent" : patient.currentStatus}
@@ -1529,20 +1568,20 @@ export function IcuDailyChartPage({ patientId }: { patientId: string }) {
               {patient.ventilatorStatus}
             </StatusPill>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
             <Link
-              className="inline-flex h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex h-9 w-full items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
               href={icuPatientDetailHref(patient.id, "overview")}
             >
               Patient detail
             </Link>
             <Link
-              className="inline-flex h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex h-9 w-full items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
               href="/icu-command-center/critical-care/rounds"
             >
               ICU Rounds
             </Link>
-            <Button variant="outline" onClick={() => window.print()}>
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => window.print()}>
               <Printer className="h-4 w-4" />
               Print
             </Button>
@@ -1652,7 +1691,7 @@ function IcuDailyTabGroup({
       <div className="mb-3">
         <h3 className="text-sm font-bold text-foreground">{title}</h3>
       </div>
-      {children}
+      <div className="min-w-0 overflow-x-auto">{children}</div>
     </section>
   );
 }
@@ -6980,6 +7019,7 @@ function notificationMinutesFromLabel(label: string) {
 }
 
 function PatientSearchCommand({ patients }: { patients: IcuPatient[] }) {
+  const patientsSurface = useIcuCommandCenterPatientsSurface();
   const [query, setQuery] = React.useState("");
   const [risk, setRisk] = React.useState("All risk");
   const [ventilator, setVentilator] = React.useState("All ventilator");
@@ -7053,7 +7093,50 @@ function PatientSearchCommand({ patients }: { patients: IcuPatient[] }) {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      {patientsSurface ? (
+        <div className="space-y-3 md:hidden">
+          {pagination.pageRows.map((patient) => (
+            <MobileCommandCard key={patient.id}>
+              <Link
+                className={cn(
+                  "text-base font-bold hover:underline",
+                  dashboardToneTextClass(patientDashboardTone(patient)),
+                )}
+                href={icuPatientDetailHref(patient.id, "overview")}
+              >
+                {patient.patientName}
+              </Link>
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                {patient.mrn} | {patient.ageGender}
+              </p>
+              <div className="mt-2 space-y-0">
+                <MobileCommandCardRow
+                  label="Bed / unit"
+                  value={`${patient.bedNo} · ${patient.unit}`}
+                />
+                <MobileCommandCardRow label="Ventilation" value={patient.ventilatorStatus} />
+                <MobileCommandCardRow label="Doctor" value={patient.admittingDoctor} />
+                <MobileCommandCardRow label="Nurse" value={patient.assignedWardNurse} />
+              </div>
+              <Button className="mt-3 w-full" size="sm" asChild>
+                <Link href={icuPatientDetailHref(patient.id, "overview")}>Open patient</Link>
+              </Button>
+            </MobileCommandCard>
+          ))}
+          {!pagination.pageRows.length ? (
+            <p className="rounded-md border border-dashed border-slate-200 bg-white px-3 py-10 text-center text-sm font-semibold text-slate-500">
+              No ICU patient matched the selected filters.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div
+        className={cn(
+          "overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm",
+          patientsSurface && "hidden md:block",
+        )}
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] border-collapse text-sm">
             <thead className="border-b border-slate-200 bg-white text-[11px] uppercase text-sky-700">
@@ -7715,6 +7798,7 @@ function SmartBedActionCircleCell({ cell, kind }: { cell: DashboardCell; kind: S
 }
 
 function SmartBedViewCommand() {
+  const patientsSurface = useIcuCommandCenterPatientsSurface();
   const [search, setSearch] = React.useState("");
   const [unit, setUnit] = React.useState("All ICU units");
   const [bedStatus, setBedStatus] = React.useState("All bed status");
@@ -7866,7 +7950,80 @@ function SmartBedViewCommand() {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
+      {patientsSurface ? (
+        <div className="space-y-3 md:hidden">
+          {pagination.pageRows.map((row) => (
+            <MobileCommandCard key={row.id}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  {row.patient ? (
+                    <Link
+                      className={cn(
+                        "text-base font-bold hover:underline",
+                        dashboardToneTextClass(smartBedDashboardTone(row, "risk")),
+                      )}
+                      href={icuPatientDetailHref(row.patient.id, "overview")}
+                    >
+                      {row.patient.patientName}
+                    </Link>
+                  ) : (
+                    <p className="text-base font-bold text-slate-950">No patient assigned</p>
+                  )}
+                  <p className="mt-1 text-xs font-semibold text-slate-600">
+                    {row.bedNo} · {row.unit}
+                  </p>
+                </div>
+                <StatusPill tone={toneForStatus(row.status)}>{row.status}</StatusPill>
+              </div>
+              <div className="mt-2 space-y-0">
+                <MobileCommandCardRow
+                  label="Readiness"
+                  value={row.status === "Available" ? "Ready now" : row.turnaround}
+                />
+                <MobileCommandCardRow
+                  label="Ventilation"
+                  value={row.patient?.ventilatorStatus ?? "—"}
+                />
+                <MobileCommandCardRow label="Device" value={smartBedDeviceLabel(row)} />
+                <MobileCommandCardRow
+                  label="Risk"
+                  value={
+                    row.patient
+                      ? row.patient.criticalityScore >= 8
+                        ? "Critical"
+                        : row.patient.criticalityScore >= 6
+                          ? "High"
+                          : "Stable"
+                      : "—"
+                  }
+                />
+              </div>
+              <Button
+                className="mt-3 w-full"
+                size="sm"
+                variant="outline"
+                type="button"
+                onClick={() => setActiveBedAction({ id: row.id, kind: "status" })}
+              >
+                Bed actions
+              </Button>
+            </MobileCommandCard>
+          ))}
+          {!rows.length ? (
+            <p className="rounded-md border border-dashed border-slate-200 bg-white px-3 py-10 text-center text-sm text-slate-500">
+              No smart bed matched the selected filters.
+            </p>
+          ) : null}
+          <IcuCommandPaginationControls {...pagination} />
+        </div>
+      ) : null}
+
+      <div
+        className={cn(
+          "overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm",
+          patientsSurface && "hidden md:block",
+        )}
+      >
         <div className="flex flex-col gap-2 border-b border-slate-200 px-3 py-2 sm:flex-row sm:items-center sm:justify-end">
           <IcuLegend />
         </div>
@@ -27870,7 +28027,7 @@ function IcuPatientTabLink({
   return (
     <Link
       className={cn(
-        "inline-flex min-h-9 shrink-0 items-center justify-center rounded-xl px-3 text-sm font-semibold outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-sky-300",
+        "inline-flex min-h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-xl px-3 text-sm font-semibold outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-sky-300",
         active
           ? "bg-primary text-white shadow-[0_8px_18px_rgba(37,99,235,0.18)]"
           : "text-slate-600 hover:bg-white hover:text-sky-700",
@@ -27879,6 +28036,34 @@ function IcuPatientTabLink({
     >
       {children}
     </Link>
+  );
+}
+
+function IcuPatientTabsScroll({
+  children,
+  listClassName,
+  shellClassName,
+}: {
+  children: React.ReactNode;
+  listClassName?: string;
+  shellClassName?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "min-w-0 max-w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain [-webkit-overflow-scrolling:touch]",
+        shellClassName,
+      )}
+    >
+      <TabsList
+        className={cn(
+          "flex h-auto w-max max-w-none flex-nowrap justify-start gap-2 rounded-none border-0 bg-transparent p-0",
+          listClassName,
+        )}
+      >
+        {children}
+      </TabsList>
+    </div>
   );
 }
 
@@ -28180,10 +28365,13 @@ function IcuPatientCommandProfile({
     })),
   ].slice(0, 8);
   return (
-    <div className="space-y-4">
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-        <Tabs className="p-0" value={safeInitialTab}>
-          <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-none border-b border-slate-100 bg-slate-50 px-4 py-3">
+    <div className="min-w-0 max-w-full space-y-4">
+      <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+        <Tabs className="min-w-0 max-w-full p-0" value={safeInitialTab}>
+          <IcuPatientTabsScroll
+            listClassName="px-2 py-3 sm:px-4"
+            shellClassName="border-b border-slate-100 bg-slate-50"
+          >
             {visiblePatientTabs.map((tab) => (
               <IcuPatientTabLink
                 active={safeInitialTab === tab.id}
@@ -28193,9 +28381,9 @@ function IcuPatientCommandProfile({
                 {tab.label}
               </IcuPatientTabLink>
             ))}
-          </TabsList>
+          </IcuPatientTabsScroll>
 
-          <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="overview">
+          <TabsContent className="space-y-4 px-3 pb-5 pt-5 sm:px-5" value="overview">
             {initialProfileAction === "verification" ? (
               <IcuPatientProfileVerificationPanel
                 allergyCount={allergyCount}
@@ -28249,9 +28437,12 @@ function IcuPatientCommandProfile({
             <IcuPatientTimeline rows={timeline} />
           </TabsContent>
 
-          <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="monitoring">
-            <Tabs value={initialMonitoringTab}>
-              <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1.5">
+          <TabsContent className="space-y-4 px-3 pb-5 pt-5 sm:px-5" value="monitoring">
+            <Tabs className="min-w-0 max-w-full" value={initialMonitoringTab}>
+              <IcuPatientTabsScroll
+                listClassName="rounded-xl border border-slate-200 bg-slate-50 p-1.5"
+                shellClassName="max-w-full"
+              >
                 <IcuPatientTabLink
                   active={initialMonitoringTab === "monitoring-overview"}
                   href={icuPatientDetailHref(
@@ -28302,7 +28493,7 @@ function IcuPatientCommandProfile({
                 >
                   Device Snapshot
                 </IcuPatientTabLink>
-              </TabsList>
+              </IcuPatientTabsScroll>
 
               <TabsContent className="mt-4 space-y-4" value="monitoring-overview">
                 <IcuPatientMonitoringOverview
@@ -28333,7 +28524,7 @@ function IcuPatientCommandProfile({
             </Tabs>
           </TabsContent>
 
-          <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="results">
+          <TabsContent className="space-y-4 px-3 pb-5 pt-5 sm:px-5" value="results">
             <IcuPatientResultsWorkspace
               initialType={initialResultType}
               rows={resultRows}
@@ -28342,19 +28533,27 @@ function IcuPatientCommandProfile({
             />
           </TabsContent>
 
-          <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="graph">
+          <TabsContent className="space-y-4 px-3 pb-5 pt-5 sm:px-5" value="graph">
             <IcuPatientVitalGraph intakeOutput={patientIoRows} vitals={vitals} />
           </TabsContent>
 
-          <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="orders">
+          <TabsContent className="space-y-4 px-3 pb-5 pt-5 sm:px-5" value="orders">
             <Tabs
+              className="min-w-0 max-w-full"
               value={ordersSubTab}
               onValueChange={(value) => setOrdersSubTab(value as MedicationOrdersSubTab)}
             >
-              <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1.5">
-                <TabsTrigger value="pending-work">Pending Work</TabsTrigger>
-                <TabsTrigger value="medicine-chart">Medicine Chart</TabsTrigger>
-              </TabsList>
+              <IcuPatientTabsScroll
+                listClassName="rounded-xl border border-slate-200 bg-slate-50 p-1.5"
+                shellClassName="max-w-full"
+              >
+                <TabsTrigger className="shrink-0 flex-none" value="pending-work">
+                  Pending Work
+                </TabsTrigger>
+                <TabsTrigger className="shrink-0 flex-none" value="medicine-chart">
+                  Medicine Chart
+                </TabsTrigger>
+              </IcuPatientTabsScroll>
 
               <TabsContent className="mt-4" value="pending-work">
                 <IcuPatientPendingWorkTable
@@ -28370,7 +28569,7 @@ function IcuPatientCommandProfile({
             </Tabs>
           </TabsContent>
 
-          <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="events">
+          <TabsContent className="space-y-4 px-3 pb-5 pt-5 sm:px-5" value="events">
             <IcuPatientEventsWorkspace
               hidePatientSelector
               initialFocus={initialEventFocus}
@@ -28379,11 +28578,11 @@ function IcuPatientCommandProfile({
             />
           </TabsContent>
 
-          <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="shift-summary">
+          <TabsContent className="space-y-4 px-3 pb-5 pt-5 sm:px-5" value="shift-summary">
             <IcuPatientShiftSummaryWorkspace initialFocus={initialShiftFocus} patient={patient} />
           </TabsContent>
 
-          <TabsContent className="space-y-4 px-5 pb-5 pt-5" value="collaborate">
+          <TabsContent className="space-y-4 px-3 pb-5 pt-5 sm:px-5" value="collaborate">
             <IcuPatientCollaborateWorkspace patient={patient} />
           </TabsContent>
         </Tabs>
@@ -45617,6 +45816,7 @@ const icuDischargeRows: IcuDischargeWorkflowRow[] = [
 ];
 
 function TransferDischarge() {
+  const patientsSurface = useIcuCommandCenterPatientsSurface();
   const { queryFocus, queryUnit } = useCommandRouteContext();
   const [search, setSearch] = React.useState("");
   const [unit, setUnit] = React.useState(queryUnit || "All ICU units");
@@ -45764,7 +45964,30 @@ function TransferDischarge() {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
+      {patientsSurface ? (
+        <div className="space-y-3 md:hidden">
+          {pagination.pageRows.map((row) => (
+            <IcuDischargeBoardMobileCard
+              key={row.id}
+              row={row}
+              onOpen={() => setActiveWorkflow({ row, initialTab: "workflow" })}
+            />
+          ))}
+          {!filteredRows.length ? (
+            <p className="rounded-md border border-dashed border-slate-200 bg-white px-3 py-10 text-center text-sm text-slate-500">
+              No ICU discharge workflow matched the selected filters.
+            </p>
+          ) : null}
+          <IcuCommandPaginationControls {...pagination} />
+        </div>
+      ) : null}
+
+      <div
+        className={cn(
+          "overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm",
+          patientsSurface && "hidden md:block",
+        )}
+      >
         <div className="max-h-[650px] overflow-auto">
           <table className="w-full min-w-[1420px] border-collapse bg-white text-sm">
             <thead className="sticky top-0 z-20 bg-white">
@@ -45868,11 +46091,12 @@ export function IcuDischargeSummaryPage({ workflowId }: { workflowId: string }) 
               to {row.destination}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+            <Button className="w-full sm:w-auto" variant="outline" asChild>
               <Link href="/icu-command-center/patients/discharges">Back to discharges</Link>
             </Button>
             <Button
+              className="w-full sm:w-auto"
               variant="outline"
               onClick={() =>
                 downloadIcuDischargeSummaryPdf(
@@ -45891,7 +46115,7 @@ export function IcuDischargeSummaryPage({ workflowId }: { workflowId: string }) 
               <Download className="h-4 w-4" />
               Download PDF
             </Button>
-            <Button asChild>
+            <Button className="w-full sm:w-auto" asChild>
               <Link href={icuPatientDetailHref(row.patient.id, "overview")}>Open patient</Link>
             </Button>
           </div>
@@ -45900,6 +46124,58 @@ export function IcuDischargeSummaryPage({ workflowId }: { workflowId: string }) 
 
       <IcuDischargeSummaryTab row={row} destination={row.destinationType} completion={completion} />
     </div>
+  );
+}
+
+function IcuDischargeBoardMobileCard({
+  row,
+  onOpen,
+}: {
+  row: IcuDischargeWorkflowRow;
+  onOpen: () => void;
+}) {
+  const readiness = dischargeReadiness(row);
+  const clearancePending = Object.values(row.clearances).filter(
+    (value) => value === "Pending" || value === "Blocked",
+  ).length;
+
+  return (
+    <MobileCommandCard>
+      <Link
+        className={cn(
+          "text-base font-bold hover:underline",
+          dashboardToneTextClass(dischargePatientTone(row)),
+        )}
+        href={icuPatientDetailHref(row.patient.id, "overview")}
+      >
+        {row.patient.patientName}
+      </Link>
+      <p className="mt-1 text-xs font-semibold text-slate-600">
+        {row.patient.bedNo} · {row.patient.unit} · {row.patient.mrn}
+      </p>
+      <div className="mt-2 space-y-0">
+        <MobileCommandCardRow label="Order" value={row.orderType} />
+        <MobileCommandCardRow
+          label="Destination"
+          value={`${row.destinationType} → ${row.destination}`}
+        />
+        <MobileCommandCardRow label="Readiness" value={`${readiness}% · ${row.status}`} />
+        <MobileCommandCardRow
+          label="Blockers"
+          value={row.blockers.length ? row.blockers.join("; ") : "Clear"}
+        />
+        <MobileCommandCardRow label="Clearance pending" value={clearancePending} />
+        <MobileCommandCardRow label="Transport" value={`${row.eta} · ${row.transport}`} />
+      </div>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <Button className="w-full sm:flex-1" size="sm" type="button" onClick={onOpen}>
+          Workflow
+        </Button>
+        <Button className="w-full sm:flex-1" size="sm" variant="outline" asChild>
+          <Link href={`/icu-command-center/patients/discharges/${row.id}/summary`}>Summary</Link>
+        </Button>
+      </div>
+    </MobileCommandCard>
   );
 }
 
@@ -46437,7 +46713,7 @@ function IcuDischargeSummaryTab({
   const finalStatus = destination === "Death workflow" ? "Death" : "Alive";
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div className="overflow-hidden rounded-lg border border-primary/20 bg-background">
         <div className="border-b border-border bg-gradient-to-r from-primary/10 via-surface to-success/10 px-4 py-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">

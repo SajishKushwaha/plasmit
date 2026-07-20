@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
+import { redirectToWardNurseRoute } from "@/features/roles/ward-nurse";
 
-export default function UnitAssignedPatientsRoute() {
-  return <NursingIcuModulePage page="smart-bed-view" />;
+export default function WardNurseAssignedPatientsRoute() {
+  redirectToWardNurseRoute("assigned-patients");
 }

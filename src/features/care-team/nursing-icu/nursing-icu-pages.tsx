@@ -94,7 +94,7 @@ import {
   type IcuVital,
 } from "./nursing-icu-data";
 
-type NursingIcuPageId =
+export type NursingIcuPageId =
   | "dashboard"
   | "executive-dashboard"
   | "executive-drilldown"

@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
+import { redirectToWardNurseRoute } from "@/features/roles/ward-nurse";
 
-export default function EscalationDecisionRoute() {
-  return <NursingIcuModulePage page="escalation-center" />;
+export default function WardNurseEscalationDecisionRoute() {
+  redirectToWardNurseRoute("escalation-decision");
 }

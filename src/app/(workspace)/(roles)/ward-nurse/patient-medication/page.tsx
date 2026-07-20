@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
+import { redirectToWardNurseRoute } from "@/features/roles/ward-nurse";
 
-export default function IcuCommandCenterPatientMedicationRoute() {
-  return <NursingIcuModulePage page="patient-medication" />;
+export default function WardNursePatientMedicationRoute() {
+  redirectToWardNurseRoute("patient-medication");
 }

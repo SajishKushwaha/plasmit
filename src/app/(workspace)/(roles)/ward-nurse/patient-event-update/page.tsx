@@ -1,5 +1,5 @@
-import { WardNursePatientEventUpdatePage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
+import { redirectToWardNurseRoute } from "@/features/roles/ward-nurse";
 
-export default function PatientEventUpdateRoute() {
-  return <WardNursePatientEventUpdatePage />;
+export default function WardNursePatientEventUpdateRoute() {
+  redirectToWardNurseRoute("patient-event-update");
 }

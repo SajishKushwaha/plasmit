@@ -7,7 +7,7 @@ Canonical role codes:
 - `HEAD_NURSE`
 - `UNIT_NURSE`
 - `ER_NURSE`
-- `RECEPTIONLIST`
+- `RECEPTIONIST`
 
 ## ICU Admin
 
@@ -77,7 +77,7 @@ Canonical role codes:
 | Dashboard | `/receptionist/emergency-reception` | EmergencyIntake, TriageAssessment, VitalSign, EmergencyPatient |
 | Patient Details | `/receptionist/patient-details` | Patient |
 
-## Receptionlist
+## Receptionist
 
 | Module | Screens / Routes | Primary backend resources |
 |---|---|---|

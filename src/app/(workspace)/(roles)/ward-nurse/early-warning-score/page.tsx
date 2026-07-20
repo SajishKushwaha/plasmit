@@ -2,7 +2,7 @@ import EarlyWarningScoreClient from "./early-warning-score-client";
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export default async function IcuCommandCenterNursingEarlyWarningScoreRoute({
+export default async function WardNurseEarlyWarningScoreRoute({
   searchParams,
 }: {
   searchParams?: PageSearchParams;

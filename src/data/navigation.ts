@@ -624,15 +624,15 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
     ];
   }
 
-  if (role === "Receptionlist") {
+  if (role === "Receptionist") {
     return [
       {
-        id: "receptionlist-reception",
+        id: "receptionist-reception",
         label: "Reception",
         icon: Users,
         route: "/receptionist/patient-details",
         group: "Main",
-        allowedRoles: ["Receptionlist"],
+        allowedRoles: ["Receptionist"],
         status: "ready",
       },
     ];

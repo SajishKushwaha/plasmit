@@ -20,15 +20,16 @@ const UNIT_NURSE_ROLE: Role = "Unit Nurse";
 const HEAD_NURSE_ROLE: Role = "Head Nurse";
 const WARD_NURSE_ROLE: Role = "Ward Nurse";
 const ER_NURSE_ROLE: Role = "ER Nurse";
-const RECEPTIONLIST_ROLE: Role = "Receptionlist";
+const RECEPTIONIST_ROLE: Role = "Receptionist";
 const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
-type AccessScope = "doctor-ipd" | "icu" | "unit-nurse" | "head-nurse" | "ward-nurse" | "er-nurse" | "receptionlist" | "admin";
+type AccessScope = "doctor-ipd" | "icu" | "unit-nurse" | "head-nurse" | "ward-nurse" | "er-nurse" | "receptionist" | "admin";
 
 function readAccessScope(): AccessScope {
   if (typeof window === "undefined") return "admin";
   const savedScope = window.localStorage.getItem(accessScopeKey);
-  if (savedScope === "receptionist") return "receptionlist";
+  if (savedScope === "receptionlist") return "receptionist";
+  if (savedScope === "receptionist") return "receptionist";
   if (
     savedScope === "doctor-ipd" ||
     savedScope === "icu" ||
@@ -36,7 +37,7 @@ function readAccessScope(): AccessScope {
     savedScope === "head-nurse" ||
     savedScope === "ward-nurse" ||
     savedScope === "er-nurse" ||
-    savedScope === "receptionlist"
+    savedScope === "receptionist"
   ) return savedScope;
   return "admin";
 }
@@ -48,7 +49,7 @@ function getAllowedRoles(scope: AccessScope): Role[] {
   if (scope === "head-nurse") return [HEAD_NURSE_ROLE];
   if (scope === "ward-nurse") return [WARD_NURSE_ROLE];
   if (scope === "er-nurse") return [ER_NURSE_ROLE];
-  if (scope === "receptionlist") return [RECEPTIONLIST_ROLE];
+  if (scope === "receptionist") return [RECEPTIONIST_ROLE];
   return allRoles;
 }
 
@@ -61,10 +62,11 @@ function readStoredRole(): Role {
   if (accessScope === "head-nurse") return HEAD_NURSE_ROLE;
   if (accessScope === "ward-nurse") return WARD_NURSE_ROLE;
   if (accessScope === "er-nurse") return ER_NURSE_ROLE;
-  if (accessScope === "receptionlist") return RECEPTIONLIST_ROLE;
+  if (accessScope === "receptionist") return RECEPTIONIST_ROLE;
 
   const saved = window.localStorage.getItem("plasmit-role");
   if (saved === "Doctor") return "Doctor OPD";
+  if (saved === "Receptionlist") return "Receptionist";
   return saved && allRoles.includes(saved as Role) ? (saved as Role) : DEFAULT_ROLE;
 }
 
@@ -98,8 +100,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
                 ? WARD_NURSE_ROLE
                 : nextAccessScope === "er-nurse"
                   ? ER_NURSE_ROLE
-                  : nextAccessScope === "receptionlist"
-                    ? RECEPTIONLIST_ROLE
+                  : nextAccessScope === "receptionist"
+                    ? RECEPTIONIST_ROLE
                     : nextRole;
     window.localStorage.setItem("plasmit-role", lockedRole);
     window.dispatchEvent(new Event(roleChangeEvent));

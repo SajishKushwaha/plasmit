@@ -22,7 +22,7 @@ export type Role =
   | "Quality Audit"
   | "Blood Bank"
   | "ER Nurse"
-  | "Receptionlist"
+  | "Receptionist"
   | "Lab Technician"
   | "Radiologist"
   | "Pharmacist"

@@ -5,9 +5,54 @@ import { icuPatients } from "@/features/care-team/nursing-icu/nursing-icu-data";
 
 type SelectedIcuPatient = (typeof icuPatients)[number];
 
+const activeWardNurseName = "Ward Nurse Kavita";
+
+function getWardAssignedPatients() {
+  const assignedPatients = icuPatients.filter((item) => item.assignedWardNurse === activeWardNurseName);
+  return assignedPatients.length ? assignedPatients : icuPatients;
+}
+
 export default function EarlyWarningScoreClient({ initialPatientId }: { initialPatientId: string }) {
-  const [patientId, setPatientId] = React.useState(initialPatientId);
-  const patient = icuPatients.find((item) => item.id === patientId) ?? null;
+  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+  const assignedPatients = React.useMemo(() => getWardAssignedPatients(), []);
+  const initialAssignedPatientId = assignedPatients.some((item) => item.id === initialPatientId) ? initialPatientId : assignedPatients[0]?.id ?? "";
+  const [patientId, setPatientId] = React.useState(initialAssignedPatientId);
+  const patient = assignedPatients.find((item) => item.id === patientId) ?? null;
+  const iframeSrc = React.useMemo(() => {
+    if (!patient) return "";
+    const params = new URLSearchParams({
+      patientId: patient.id,
+      mrn: patient.mrn,
+      bedNo: patient.bedNo,
+      patientName: patient.patientName,
+      wardNurse: patient.assignedWardNurse,
+    });
+    return `/icu-early-warning-score/index.html?${params.toString()}`;
+  }, [patient]);
+
+  const postSelectedPatient = React.useCallback(() => {
+    if (!patient) return;
+    iframeRef.current?.contentWindow?.postMessage(
+      {
+        type: "WARD_NURSE_EWS_PATIENT_SELECTED",
+        patient: {
+          id: patient.id,
+          mrn: patient.mrn,
+          bedNo: patient.bedNo,
+          patientName: patient.patientName,
+          ageGender: patient.ageGender,
+          criticalityScore: patient.criticalityScore,
+          currentStatus: patient.currentStatus,
+          assignedWardNurse: patient.assignedWardNurse,
+        },
+      },
+      window.location.origin,
+    );
+  }, [patient]);
+
+  React.useEffect(() => {
+    postSelectedPatient();
+  }, [postSelectedPatient]);
 
   return (
     <div className="min-h-[calc(100vh-88px)] space-y-3 bg-slate-50 p-4">
@@ -22,7 +67,7 @@ export default function EarlyWarningScoreClient({ initialPatientId }: { initialP
             value={patientId}
           >
             <option value="">Select patient</option>
-            {icuPatients.map((item) => (
+            {assignedPatients.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.patientName} - {item.bedNo}
               </option>
@@ -35,7 +80,9 @@ export default function EarlyWarningScoreClient({ initialPatientId }: { initialP
         <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
           <iframe
             className="h-[calc(100vh-250px)] min-h-[760px] w-full"
-            src="/icu-early-warning-score/index.html"
+            onLoad={postSelectedPatient}
+            ref={iframeRef}
+            src={iframeSrc}
             title="Early Warning Score"
           />
         </div>

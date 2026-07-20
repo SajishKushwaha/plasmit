@@ -76,10 +76,10 @@ const loginCredentials = [
     route: "/receptionist/emergency-reception",
   },
   {
-    email: "receptionlist@hospital.com",
+    email: "receptionist@hospital.com",
     password: "123456",
-    role: "Receptionlist" as Role,
-    scope: "receptionlist",
+    role: "Receptionist" as Role,
+    scope: "receptionist",
     route: "/receptionist/patient-details",
   },
 ] as const;
@@ -197,7 +197,7 @@ export function LoginPage() {
         router.replace("/receptionist/emergency-reception");
         return;
       }
-      if (savedScope === "receptionlist" || savedScope === "receptionist") {
+      if (savedScope === "receptionist" || savedScope === "receptionlist") {
         router.replace("/receptionist/patient-details");
         return;
       }

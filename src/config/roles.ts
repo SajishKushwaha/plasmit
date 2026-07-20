@@ -30,7 +30,7 @@ export const roleRoutes: Record<Role, string> = {
   "Quality Audit": "/icu-command-center",
   "Blood Bank": "/blood-bank/blood-request",
   "ER Nurse": "/receptionist/emergency-reception",
-  Receptionlist: "/receptionist/patient-details",
+  Receptionist: "/receptionist/patient-details",
   "Lab Technician": "/dashboard",
   Radiologist: "/dashboard",
   Pharmacist: "/dashboard",
@@ -284,20 +284,32 @@ export const roleModuleAccess: Record<Role, {
   "Ward Nurse": {
     allowed: [
       "/icu-command-center/clinical-workspace/patient-overview",
+      "/icu-command-center/nursing/assigned-patients",
+      "/icu-command-center/nursing/bed-ward-nurse-link",
+      "/icu-command-center/nursing/critical-alerts",
+      "/icu-command-center/nursing/escalation-decision",
+      "/icu-command-center/nursing/escalation-tracking",
+      "/icu-command-center/nursing/first-level-review",
       "/icu-command-center/nursing/nurse-entry",
       "/icu-command-center/nursing/intake-output",
       "/icu-command-center/nursing/medicine-receive-verify",
       "/icu-command-center/nursing/order",
       "/icu-command-center/nursing/medication-administration",
+      "/icu-command-center/nursing/nurse-review",
       "/icu-command-center/nursing/early-warning-score",
       "/icu-command-center/nursing/patient-event-update",
+      "/icu-command-center/nursing/patient-medication",
+      "/icu-command-center/nursing/pending-doctor-orders",
+      "/icu-command-center/nursing/pending-medicines",
+      "/icu-command-center/nursing/pending-nursing-tasks",
+      "/icu-command-center/nursing/pending-vitals",
       "/icu-command-center/nursing/shift-handover",
       "/icu-command-center/nursing/shift-pending-summary",
       "/icu-command-center/nursing/raise-issue",
+      "/icu-command-center/nursing/station",
       "/icu-command-center/nursing/tasks-assessments",
       "/icu-command-center/nursing/nursing-notes",
       "/icu-command-center/patients",
-      "/ward-nurse",
     ],
   },
   ICU: {
@@ -344,7 +356,7 @@ export const roleModuleAccess: Record<Role, {
   "ER Nurse": {
     allowed: ["/receptionist", "/patients"],
   },
-  Receptionlist: {
+  Receptionist: {
     allowed: ["/receptionist/patient-details", "/patients"],
   },
   "Lab Technician": {

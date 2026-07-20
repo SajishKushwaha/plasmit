@@ -26,7 +26,7 @@ export const mockRoles: AdminRoleRecord[] = [
   { id: "role-icu", name: "ICU", type: "System", description: "ICU command center, critical care, handover, device, analytics, administration, and patient workflow access.", departmentScope: "ICU Command", status: "Active", userCount: 18, modulesAllowed: 1, permissionCount: 43, protected: true, risk: "High", updatedAt: "Today 14:30" },
   { id: "role-nurse-icu-2", name: "Nurse ICU 2", type: "System", description: "ICU command, worklist, nursing, Radiology MNT, results, and surgery workflow access.", departmentScope: "ICU 2", status: "Active", userCount: 24, modulesAllowed: 8, permissionCount: 25, protected: true, risk: "Medium", updatedAt: "Today 13:50" },
   { id: "role-er-nurse", name: "ER Nurse", type: "Custom", description: "Emergency reception intake and triage workflow.", departmentScope: "Emergency", status: "Active", userCount: 12, modulesAllowed: 2, permissionCount: 18, protected: false, risk: "Medium", updatedAt: "Today 08:15" },
-  { id: "role-receptionlist", name: "Receptionlist", type: "Custom", description: "Front office basic demographic registration workflow.", departmentScope: "Front office", status: "Active", userCount: 22, modulesAllowed: 1, permissionCount: 12, protected: false, risk: "Low", updatedAt: "Today 08:15" },
+  { id: "role-receptionist", name: "Receptionist", type: "Custom", description: "Front office basic demographic registration workflow.", departmentScope: "Front office", status: "Active", userCount: 22, modulesAllowed: 1, permissionCount: 12, protected: false, risk: "Low", updatedAt: "Today 08:15" },
   { id: "role-lab", name: "Lab Technician", type: "Custom", description: "Sample collection and laboratory result entry access.", departmentScope: "Diagnostics", status: "Active", userCount: 16, modulesAllowed: 5, permissionCount: 31, protected: false, risk: "Medium", updatedAt: "16 May 2026" },
   { id: "role-billing", name: "Billing Executive", type: "Custom", description: "OPD/IPD billing, payment, refund request, and package billing.", departmentScope: "Finance", status: "Active", userCount: 14, modulesAllowed: 8, permissionCount: 46, protected: false, risk: "High", updatedAt: "15 May 2026" },
   { id: "role-hr", name: "HR Manager", type: "Custom", description: "Staff profile and HRMS access with restricted security view.", departmentScope: "Administration", status: "Active", userCount: 5, modulesAllowed: 4, permissionCount: 28, protected: false, risk: "Medium", updatedAt: "14 May 2026" },
@@ -272,6 +272,6 @@ export const mockAuditLogs: AuditLog[] = [
 
 export const mockAccessDeniedScenarios = [
   "Doctor trying to open permission matrix",
-  "Receptionlist trying to edit security policy",
+  "Receptionist trying to edit security policy",
   "Management opening hospital setup in read-only mode",
 ];

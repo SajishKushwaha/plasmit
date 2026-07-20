@@ -6,7 +6,7 @@ function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function IcuCommandCenterRoute({
+export default async function WardNurseOrderRoute({
   searchParams,
 }: {
   searchParams?: SearchParams | Promise<SearchParams>;

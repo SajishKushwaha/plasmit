@@ -50,13 +50,13 @@ ER Nurse:
 - `ER_RECEPTION_VIEW`, `ER_TRIAGE_CREATE`, `ER_TRIAGE_UPDATE`
 - `ER_VITALS_CREATE`, `ER_PATIENT_SEARCH`, `ER_PATIENT_VIEW`
 
-Receptionlist:
+Receptionist:
 - `RECEPTION_VIEW`, `BASIC_DEMOGRAPHIC_CREATE`, `BASIC_DEMOGRAPHIC_UPDATE`
 - `PATIENT_SEARCH`, `PATIENT_VIEW`, `PATIENT_CREATE`
 
 ## Matrix
 
-| Permission area | ICU Admin | Doctor IPD | Ward Nurse | Head Nurse | Unit Nurse | ER Nurse | Receptionlist |
+| Permission area | ICU Admin | Doctor IPD | Ward Nurse | Head Nurse | Unit Nurse | ER Nurse | Receptionist |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | View assigned/authorized patients | Yes | Yes | Yes | Yes | Yes | ER scope | Demographic scope |
 | Create patient/admission request | Yes | No | No | Review only | No | Emergency intake | Basic demographic |
@@ -87,7 +87,7 @@ Receptionlist:
 - `HEAD_NURSE`: assigned wards/ICU nursing operations and nurse-managed workflow records.
 - `UNIT_NURSE`: assigned unit patients, unit checklists, unit handovers, and unit equipment only.
 - `ER_NURSE`: emergency reception patients and triage/vitals records only.
-- `RECEPTIONLIST`: front office patient basic demographic records only.
+- `RECEPTIONIST`: front office patient basic demographic records only.
 
 ## Sensitive Action Rules
 

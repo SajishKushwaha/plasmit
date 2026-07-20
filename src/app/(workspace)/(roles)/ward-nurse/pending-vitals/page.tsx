@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/care-team/nursing-icu/nursing-icu-pages";
+import { redirectToWardNurseRoute } from "@/features/roles/ward-nurse";
 
-export default function PendingVitalsRoute() {
-  return <NursingIcuModulePage page="notifications-tasks" />;
+export default function WardNursePendingVitalsRoute() {
+  redirectToWardNurseRoute("pending-vitals");
 }

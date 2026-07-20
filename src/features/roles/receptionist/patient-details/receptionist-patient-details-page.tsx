@@ -72,6 +72,8 @@ const patientDetailTabs = [
   { id: "orders", label: "5. Doctor Orders" },
   { id: "notes", label: "6. ED Notes" },
   { id: "calculator", label: "7. Medical Calculator" },
+  { id: "transfer-out", label: "8. Transfer OUT" },
+  { id: "old-records", label: "9 Patient Old records" },
 ] as const;
 const visiblePatientDetailTabs = patientDetailTabs.filter((tab) => tab.id !== "calculator" || showMedicalCalculator);
 
@@ -87,6 +89,8 @@ const patientDocumentSchema = [
   { tabId: "orders", tabLabel: "5. Doctor Orders", fields: ["Order Name", "Category", "Priority", "Instructions", "Ordered By", "Ordered At", "Acknowledgement"] },
   { tabId: "notes", tabLabel: "6. ED Notes", fields: ["Note Type", "Doctor", "Department", "Created At", "Status", "Preview"] },
   { tabId: "calculator", tabLabel: "7. Medical Calculator", fields: ["Selected Calculator", "Input Summary", "Result", "Interpretation", "Note / Order Action", "FHIR Observation Reference"] },
+  { tabId: "transfer-out", tabLabel: "8. Transfer OUT", fields: ["Referral Unit / Facility", "Accepting Doctor", "Consent Taken", "Checklist Done", "Escort", "Ambulance Type", "Departure Time", "Handover Ack", "Remarks"] },
+  { tabId: "old-records", tabLabel: "9 Patient Old records", fields: ["File Name", "Category", "Uploaded By", "Uploaded At", "Status"] },
 ] as const;
 
 function getInitialEditingPatientRecord() {
@@ -588,39 +592,33 @@ const patientDoctorOrders = [
 const triageCategories = [
   {
     code: "RED",
-    priority: "P1 - Immediate",
-    meaning: "Life-threatening; resuscitation needed",
-    examples: "Cardiac arrest, major trauma, severe breathing difficulty, unresponsive, active seizure",
-    target: "Immediate (0 min)",
-    action: "Resuscitation bay; continuous monitoring; senior EM doctor",
+    priority: "Immediate",
+    meaning: "Life-threatening emergency",
     color: "border-red-200 bg-red-50 text-red-700",
   },
   {
+    code: "ORANGE",
+    priority: "Emergency",
+    meaning: "High-risk emergency care needed",
+    color: "border-orange-200 bg-orange-50 text-orange-700",
+  },
+  {
     code: "YELLOW",
-    priority: "P2 - Urgent",
+    priority: "Urgent",
     meaning: "Serious but stable; can deteriorate",
-    examples: "Chest pain (stable), moderate trauma, high fever with red flags, fractures",
-    target: "Within 15 min",
-    action: "Acute care bay; monitoring; investigations initiated",
     color: "border-yellow-200 bg-yellow-50 text-yellow-700",
   },
   {
     code: "GREEN",
-    priority: "P3 - Non-urgent",
-    meaning: "Minor illness/injury",
-    examples: "Minor wounds, sprains, mild fever, medication refill",
-    target: "Within 30-60 min",
-    action: "Ambulatory / fast-track area",
+    priority: "Semi Urgent",
+    meaning: "Stable illness or injury",
     color: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   {
-    code: "BLACK",
-    priority: "P0 - Deceased",
-    meaning: "Brought dead / no signs of life",
-    examples: "Declared as per protocol",
-    target: "Immediate declaration by doctor",
-    action: "MLC & documentation as per policy",
-    color: "border-slate-300 bg-slate-100 text-slate-700",
+    code: "BLUE",
+    priority: "Non urgent",
+    meaning: "Minor condition; routine care",
+    color: "border-sky-200 bg-sky-50 text-sky-700",
   },
 ];
 
@@ -646,7 +644,21 @@ type TriageUploadedDocument = {
   error?: string;
 };
 
+type PatientOldRecordFile = {
+  id: string;
+  name: string;
+  category: TriageDocumentCategory;
+  type: string;
+  size: number;
+  status: TriageUploadStatus;
+  ocrStatus: TriageOcrStatus;
+  uploadedBy: "Reception" | "ER Nurse";
+  uploadedAt: string;
+};
+
 const triageDocumentCategories: TriageDocumentCategory[] = ["Referral Letter", "Lab Reports", "Radiology", "Prescription", "Consent", "Insurance", "Identity", "Others"];
+const patientOldRecordsKey = "plasmit-patient-old-record-files";
+const patientOldRecordsEvent = "plasmit-patient-old-record-files-change";
 const triageAcceptedMimeTypes = new Set([
   "application/pdf",
   "image/jpeg",
@@ -655,6 +667,38 @@ const triageAcceptedMimeTypes = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 const triageMaxFileSize = 20 * 1024 * 1024;
+
+function readPatientOldRecordFiles() {
+  if (typeof window === "undefined") return [];
+  try {
+    const records = JSON.parse(window.localStorage.getItem(patientOldRecordsKey) ?? "[]");
+    return Array.isArray(records) ? (records as PatientOldRecordFile[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePatientOldRecordFiles(records: PatientOldRecordFile[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(patientOldRecordsKey, JSON.stringify(records));
+  window.dispatchEvent(new Event(patientOldRecordsEvent));
+}
+
+function savePatientOldRecordFile(document: TriageUploadedDocument, uploadedBy: PatientOldRecordFile["uploadedBy"]) {
+  const nextFile: PatientOldRecordFile = {
+    id: document.id,
+    name: document.name,
+    category: document.category,
+    type: document.type,
+    size: document.size,
+    status: "Uploaded",
+    ocrStatus: document.ocrStatus === "Failed" ? "Failed" : "Verification Ready",
+    uploadedBy,
+    uploadedAt: new Date().toLocaleString("en-IN"),
+  };
+  const records = readPatientOldRecordFiles();
+  writePatientOldRecordFiles([nextFile, ...records.filter((record) => record.id !== nextFile.id)].slice(0, 200));
+}
 
 function createTriageId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -816,6 +860,8 @@ function cancelTriageMobileUploadSession(token: string) {
 }
 
 function TriageTab() {
+  const { role } = useRole();
+  const uploadedBy: PatientOldRecordFile["uploadedBy"] = role === "ER Nurse" ? "ER Nurse" : "Reception";
   const [documents, setDocuments] = React.useState<TriageUploadedDocument[]>([]);
   const [selectedCategory, setSelectedCategory] = React.useState<TriageDocumentCategory | "All">("All");
   const [dragActive, setDragActive] = React.useState(false);
@@ -874,7 +920,7 @@ function TriageTab() {
         status: "Ready",
         progress: 0,
         ocrStatus: "Pending",
-        uploadedBy: "ICU Reception",
+        uploadedBy,
         uploadedAt: new Date().toLocaleString("en-IN"),
         file,
         objectUrl: URL.createObjectURL(file),
@@ -915,6 +961,7 @@ function TriageTab() {
       await startTriageOcrJob(document.id);
       await new Promise((resolve) => window.setTimeout(resolve, 220));
       updateDocument(document.id, { ocrStatus: "Verification Ready" });
+      savePatientOldRecordFile(document, uploadedBy);
     }
     setUploading(false);
     toast.success("Reports uploaded and ready for verification.");
@@ -944,7 +991,7 @@ function TriageTab() {
 
   return (
     <div className="mt-2 space-y-3" data-patient-tab="triage">
-      <SectionCard icon={HeartPulse} title="2. ED Triage & Transfer">
+      <SectionCard icon={HeartPulse} title="2. ED Triage">
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <Field label="Date"><Input placeholder="DD / MM / YYYY" /></Field>
@@ -983,26 +1030,23 @@ function TriageTab() {
             </div>
             <div className="rounded-lg border border-border bg-surface-muted p-3">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Emergency</p>
-              <p className="mt-2 text-sm font-semibold text-foreground">ICU handoff ready</p>
-              <p className="text-xs text-muted-foreground">Notify, reserve, and print actions below.</p>
+              <p className="mt-2 text-sm font-semibold text-foreground">Transfer OUT ready</p>
+              <p className="text-xs text-muted-foreground">Notify, reserve, and print actions moved to tab 8.</p>
             </div>
           </div>
 
           <div className="overflow-hidden rounded-lg border border-border">
             <div className="border-b border-border bg-surface-muted px-4 py-3">
               <h3 className="text-sm font-semibold text-foreground">Triage Matrix</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Color-coded ED priority categories and target doctor assessment times.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Colour code as per triage priority.</p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] text-left text-xs">
+              <table className="w-full min-w-[620px] text-left text-xs">
                 <thead className="bg-surface-muted text-muted-foreground">
                   <tr>
-                    <th className="px-3 py-2">Code</th>
+                    <th className="px-3 py-2">Colour Code</th>
                     <th className="px-3 py-2">Priority</th>
                     <th className="px-3 py-2">Category Meaning</th>
-                    <th className="px-3 py-2">Typical Presentations</th>
-                    <th className="px-3 py-2">Doctor Assessment</th>
-                    <th className="px-3 py-2">Area / Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1011,9 +1055,6 @@ function TriageTab() {
                       <td className="px-3 py-2"><span className={`inline-flex rounded-full border px-2 py-1 font-bold ${category.color}`}>{category.code}</span></td>
                       <td className="px-3 py-2 font-semibold text-foreground">{category.priority}</td>
                       <td className="px-3 py-2 text-muted-foreground">{category.meaning}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{category.examples}</td>
-                      <td className="px-3 py-2 font-semibold text-foreground">{category.target}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{category.action}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1182,47 +1223,6 @@ function TriageTab() {
               <p className="mt-1 text-xs text-muted-foreground">Use Browse, Camera, QR, Mobile, Bulk, or drag files into this area.</p>
             </div>
           )}
-        </div>
-      </SectionCard>
-
-      <SectionCard hideIcon icon={ClipboardList} title="Transfer Register">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <Field label="Referral Unit / Facility"><Input placeholder="Cath Lab - Cardiology" /></Field>
-          <Field label="Accepting Doctor"><Input placeholder="Dr. A. Sharma" /></Field>
-          <Field label="Consent Taken">
-            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
-          </Field>
-          <Field label="Checklist Done">
-            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
-          </Field>
-          <Field label="Escort"><Input placeholder="Doctor + Nurse" /></Field>
-          <Field label="Ambulance Type">
-            <select className={selectClass} defaultValue=""><option value="">Select</option><option>ACLS</option><option>BLS</option><option>NA (Internal)</option></select>
-          </Field>
-          <Field label="Departure Time"><Input type="time" /></Field>
-          <Field label="Handover Ack">
-            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
-          </Field>
-          <Field className="md:col-span-2 xl:col-span-4" label="Remarks"><Input placeholder="Door-to-decision 22 min" /></Field>
-        </div>
-      </SectionCard>
-
-      <SectionCard hideIcon icon={AlertTriangle} title="Emergency Actions">
-        <div className="grid gap-2 md:grid-cols-5">
-          <Button type="button" variant="outline" onClick={() => setModal("notify-icu")}>
-            <AlertTriangle className="h-4 w-4" />
-            Notify ICU
-          </Button>
-          <Button type="button" variant="outline" onClick={() => setModal("notify-doctor")}>Notify Doctor</Button>
-          <Button type="button" variant="outline" onClick={() => setModal("notify-nurse")}>Notify Nurse</Button>
-          <Button type="button" variant="outline" onClick={() => setModal("reserve-bed")}>
-            <BedDouble className="h-4 w-4" />
-            Reserve Bed
-          </Button>
-          <Button type="button" variant="outline" onClick={() => printTriagePacket("Emergency Referral Summary", documents)}>
-            <Printer className="h-4 w-4" />
-            Emergency Print
-          </Button>
         </div>
       </SectionCard>
 
@@ -1566,6 +1566,191 @@ function TriageMobilePanel({ onAddDemoFile }: { onAddDemoFile: () => void }) {
           }}>Revoke Session</Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TransferOutTab() {
+  const [modal, setModal] = React.useState<"notify-icu" | "notify-doctor" | "notify-nurse" | "reserve-bed" | null>(null);
+
+  async function notifyTransferAction(action: string) {
+    await sendTriageEmergencyAction(action);
+    toast.success(`${action} sent and audit timeline updated.`);
+    setModal(null);
+  }
+
+  return (
+    <div className="mt-2 space-y-3" data-patient-tab="transfer-out">
+      <SectionCard hideIcon icon={ClipboardList} title="Transfer Register">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <Field label="Referral Unit / Facility"><Input placeholder="Cath Lab - Cardiology" /></Field>
+          <Field label="Accepting Doctor"><Input placeholder="Dr. A. Sharma" /></Field>
+          <Field label="Consent Taken">
+            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
+          </Field>
+          <Field label="Checklist Done">
+            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
+          </Field>
+          <Field label="Escort"><Input placeholder="Doctor + Nurse" /></Field>
+          <Field label="Ambulance Type">
+            <select className={selectClass} defaultValue=""><option value="">Select</option><option>ACLS</option><option>BLS</option><option>NA (Internal)</option></select>
+          </Field>
+          <Field label="Departure Time"><Input type="time" /></Field>
+          <Field label="Handover Ack">
+            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
+          </Field>
+          <Field className="md:col-span-2 xl:col-span-4" label="Remarks"><Input placeholder="Door-to-decision 22 min" /></Field>
+        </div>
+      </SectionCard>
+
+      <SectionCard hideIcon icon={AlertTriangle} title="Emergency Actions">
+        <div className="grid gap-2 md:grid-cols-5">
+          <Button type="button" variant="outline" onClick={() => setModal("notify-icu")}>
+            <AlertTriangle className="h-4 w-4" />
+            Notify ICU
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setModal("notify-doctor")}>Notify Doctor</Button>
+          <Button type="button" variant="outline" onClick={() => setModal("notify-nurse")}>Notify Nurse</Button>
+          <Button type="button" variant="outline" onClick={() => setModal("reserve-bed")}>
+            <BedDouble className="h-4 w-4" />
+            Reserve Bed
+          </Button>
+          <Button type="button" variant="outline" onClick={() => printTriagePacket("Transfer OUT Summary", [])}>
+            <Printer className="h-4 w-4" />
+            Emergency Print
+          </Button>
+        </div>
+      </SectionCard>
+
+      <CenterModal open={Boolean(modal)} onOpenChange={(open) => !open && setModal(null)} title="Confirm Transfer OUT Action">
+        <div className="space-y-4">
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+            <p className="text-sm font-semibold text-foreground">{modal === "reserve-bed" ? "Reserve ICU Bed" : "Send transfer notification"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">This action will be recorded in the transfer audit timeline with timestamp and user context.</p>
+          </div>
+          {modal === "reserve-bed" ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {["ICU-01", "ICU-04", "CCU-02"].map((bed) => (
+                <button className="rounded-lg border border-border bg-background p-3 text-left hover:border-primary" key={bed} onClick={async () => {
+                  await reserveTriageEmergencyBed(bed);
+                  await notifyTransferAction(`${bed} reserved for 20 minutes`);
+                }} type="button">
+                  <p className="text-sm font-semibold text-foreground">{bed}</p>
+                  <p className="text-xs text-muted-foreground">Available • temporary hold</p>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setModal(null)}>Cancel</Button>
+              <Button type="button" onClick={() => notifyTransferAction(modal === "notify-icu" ? "ICU notification" : modal === "notify-doctor" ? "Doctor notification" : "Nurse notification")}>Confirm</Button>
+            </div>
+          )}
+        </div>
+      </CenterModal>
+    </div>
+  );
+}
+
+function PatientOldRecordsTab() {
+  const [records, setRecords] = React.useState<PatientOldRecordFile[]>([]);
+  const [category, setCategory] = React.useState<TriageDocumentCategory | "All">("All");
+
+  React.useEffect(() => {
+    const refresh = () => setRecords(readPatientOldRecordFiles());
+    refresh();
+    window.addEventListener("storage", refresh);
+    window.addEventListener(patientOldRecordsEvent, refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener(patientOldRecordsEvent, refresh);
+    };
+  }, []);
+
+  const filteredRecords = records.filter((record) => category === "All" || record.category === category);
+
+  return (
+    <div className="mt-2 space-y-3" data-patient-tab="old-records">
+      <SectionCard icon={FolderOpen} title="9. Patient Old records">
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Total Files</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{records.length}</p>
+            <p className="text-xs text-muted-foreground">Reception and ER Nurse uploads</p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Reception</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{records.filter((record) => record.uploadedBy === "Reception").length}</p>
+            <p className="text-xs text-muted-foreground">Reception uploaded files</p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">ER Nurse</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{records.filter((record) => record.uploadedBy === "ER Nurse").length}</p>
+            <p className="text-xs text-muted-foreground">ER Nurse uploaded files</p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Category</p>
+            <select className={selectClass} value={category} onChange={(event) => setCategory(event.target.value as TriageDocumentCategory | "All")}>
+              <option>All</option>
+              {triageDocumentCategories.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-lg border border-border">
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Uploaded Files</h3>
+              <p className="text-xs text-muted-foreground">Showing all old records uploaded from Reception or ER Nurse.</p>
+            </div>
+            <Button type="button" variant="outline" onClick={() => setRecords(readPatientOldRecordFiles())}>
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
+
+          {filteredRecords.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[920px] text-left text-sm">
+                <thead className="bg-surface-muted text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">File Name</th>
+                    <th className="px-4 py-3">Category</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Size</th>
+                    <th className="px-4 py-3">Uploaded By</th>
+                    <th className="px-4 py-3">Uploaded At</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">OCR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRecords.map((record) => (
+                    <tr className="border-t border-border" key={record.id}>
+                      <td className="max-w-[260px] truncate px-4 py-3 font-semibold text-foreground">{record.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{record.category}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{record.type || "Unknown"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatTriageFileSize(record.size)}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{record.uploadedBy}</span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{record.uploadedAt}</td>
+                      <td className="px-4 py-3 font-semibold text-foreground">{record.status}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{record.ocrStatus}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-2 text-sm font-semibold text-foreground">No uploaded old records yet.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Upload files from the Triage upload section as Reception or ER Nurse to see them here.</p>
+            </div>
+          )}
+        </div>
+      </SectionCard>
     </div>
   );
 }
@@ -2361,14 +2546,6 @@ function FavoriteRow({
 }
 
 export function PatientDetailsPage({ embedded = false }: { embedded?: boolean }) {
-  const { role } = useRole();
-  const isReceptionlist = role === "Receptionlist";
-  const roleVisiblePatientDetailTabs = React.useMemo(
-    () => isReceptionlist
-      ? visiblePatientDetailTabs.filter((tab) => tab.id === "basic").map((tab) => ({ ...tab, label: "Basic Demographic" }))
-      : visiblePatientDetailTabs,
-    [isReceptionlist],
-  );
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const documentInputRef = React.useRef<HTMLInputElement | null>(null);
   const initialEditingRecord = React.useMemo(() => getInitialEditingPatientRecord(), []);
@@ -2385,17 +2562,11 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   const [previewRecord, setPreviewRecord] = React.useState<PatientRecord | null>(null);
   const [isExtractingDocument, setIsExtractingDocument] = React.useState(false);
   const clinicalBmi = React.useMemo(() => calculateBmi(clinicalHeight, clinicalWeight), [clinicalHeight, clinicalWeight]);
-  const activeTabIndex = roleVisiblePatientDetailTabs.findIndex((tab) => tab.id === activeTab);
+  const activeTabIndex = visiblePatientDetailTabs.findIndex((tab) => tab.id === activeTab);
   const patientGender = editingRecord ? getPatientRecordValue(editingRecord, "Gender") : "";
   const calculatorAge = age || (editingRecord ? getPatientRecordValue(editingRecord, "Age") : "");
   const calculatorHeight = clinicalHeight || (editingRecord ? getPatientRecordValue(editingRecord, "Height") : "");
   const calculatorWeight = clinicalWeight || (editingRecord ? getPatientRecordValue(editingRecord, "Weight") : "");
-
-  React.useEffect(() => {
-    if (isReceptionlist && activeTab !== "basic") {
-      setActiveTab("basic");
-    }
-  }, [activeTab, isReceptionlist]);
 
   React.useEffect(() => {
     if (!editingRecord || !formRef.current) return;
@@ -2439,7 +2610,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
 
   function saveCurrentPatientSection() {
     if (!formRef.current) return null;
-    const currentTab = roleVisiblePatientDetailTabs[activeTabIndex];
+    const currentTab = visiblePatientDetailTabs[activeTabIndex];
     if (!currentTab) return null;
     const section = collectPatientSection(formRef.current, currentTab.id, currentTab.label);
     if (!section.fields.length) return null;
@@ -2461,7 +2632,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         return;
       }
     }
-    const nextTab = roleVisiblePatientDetailTabs[activeTabIndex + 1];
+    const nextTab = visiblePatientDetailTabs[activeTabIndex + 1];
     if (nextTab) {
       setActiveTab(nextTab.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2474,7 +2645,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
     const target = event.target as HTMLElement;
     if (event.key !== "Enter" || target.tagName === "BUTTON" || target.tagName === "TEXTAREA") return;
     event.preventDefault();
-    if (activeTabIndex === roleVisiblePatientDetailTabs.length - 1) {
+    if (activeTabIndex === visiblePatientDetailTabs.length - 1) {
       handlePreview();
       return;
     }
@@ -2618,7 +2789,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
 
       <div className="pt-1">
         <div className="flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1" role="tablist" aria-label="Patient detail sections">
-          {roleVisiblePatientDetailTabs.map((tab) => (
+          {visiblePatientDetailTabs.map((tab) => (
             <button
               aria-selected={activeTab === tab.id}
               className={`h-8 shrink-0 rounded px-3 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${
@@ -2813,6 +2984,10 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
           />
         ) : null}
 
+        {activeTab === "transfer-out" ? <TransferOutTab /> : null}
+
+        {activeTab === "old-records" ? <PatientOldRecordsTab /> : null}
+
       </div>
 
       <div className={embedded ? "sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur" : "sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6"}>
@@ -2830,7 +3005,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
               <RotateCcw className="h-4 w-4" />
               Clear
             </Button>
-            {activeTabIndex === roleVisiblePatientDetailTabs.length - 1 ? (
+            {activeTabIndex === visiblePatientDetailTabs.length - 1 ? (
               <>
                 <Button onClick={handlePreview} size="sm" type="button" variant="outline">
                   <Eye className="h-4 w-4" />

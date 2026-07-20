@@ -9,6 +9,11 @@ import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NativeSelect } from "@/features/operations/admin/admin-shared";
+import {
+  MobileCommandCard,
+  MobileCommandCardRow,
+  useIcuCommandCenterPatientsSurface,
+} from "@/features/care-team/icu-command-center/patients/icu-patients-surface";
 import { cn } from "@/lib/utils";
 import { icuPatients, icuTasks } from "@/features/care-team/nursing-icu/nursing-icu-data";
 
@@ -268,6 +273,7 @@ function FilterRow({
 }
 
 export function UnitStaffAvailabilityPage() {
+  const patientsSurface = useIcuCommandCenterPatientsSurface();
   const [search, setSearch] = React.useState("");
   const [unit, setUnit] = React.useState("All units");
   const [shift, setShift] = React.useState("All shifts");
@@ -369,7 +375,32 @@ export function UnitStaffAvailabilityPage() {
             </TabsList>
 
             <TabsContent className="m-0" value="units">
-              <div className="overflow-x-auto">
+              {patientsSurface ? (
+                <div className="space-y-3 p-3 md:hidden">
+                  {filteredUnitRows.map((row) => (
+                    <MobileCommandCard key={row.unit}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-slate-950">{row.unit}</p>
+                        <StatusPill tone={statusPillTone(row.status)}>{row.status}</StatusPill>
+                      </div>
+                      <div className="mt-2 space-y-0">
+                        <MobileCommandCardRow label="Total beds" value={row.totalBeds} />
+                        <MobileCommandCardRow label="Occupied" value={row.occupiedBeds} />
+                        <MobileCommandCardRow label="Available" value={row.availableBeds} />
+                        <MobileCommandCardRow label="Isolation" value={row.isolationBeds} />
+                        <MobileCommandCardRow label="Ventilator" value={row.ventilatorBeds} />
+                        <MobileCommandCardRow label="Occupancy" value={`${row.occupancy}%`} />
+                      </div>
+                    </MobileCommandCard>
+                  ))}
+                  {!filteredUnitRows.length ? (
+                    <p className="py-10 text-center text-sm text-slate-500">
+                      No ICU unit matched the selected filters.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className={cn("overflow-x-auto", patientsSurface && "hidden md:block")}>
                 <table className="w-full min-w-[1100px] border-collapse text-sm">
                   <thead className="bg-white text-[11px] uppercase tracking-wide text-sky-700">
                     <tr className="border-b border-slate-200">
@@ -411,7 +442,37 @@ export function UnitStaffAvailabilityPage() {
             </TabsContent>
 
             <TabsContent className="m-0" value="nurses">
-              <div className="overflow-x-auto">
+              {patientsSurface ? (
+                <div className="space-y-3 p-3 md:hidden">
+                  {filteredNurseRows.map((row) => (
+                    <MobileCommandCard key={row.employeeId}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-slate-950">{row.name}</p>
+                        <StatusPill tone={statusPillTone(row.availability)}>
+                          {row.availability}
+                        </StatusPill>
+                      </div>
+                      <div className="mt-2 space-y-0">
+                        <MobileCommandCardRow label="Employee ID" value={row.employeeId} />
+                        <MobileCommandCardRow label="Shift" value={row.shift} />
+                        <MobileCommandCardRow
+                          label="Assigned patients"
+                          value={row.assignedPatients}
+                        />
+                        <MobileCommandCardRow label="Max capacity" value={row.maxCapacity} />
+                        <MobileCommandCardRow label="ICU experience" value={row.icuExperience} />
+                        <MobileCommandCardRow label="Workload" value={row.workload} />
+                      </div>
+                    </MobileCommandCard>
+                  ))}
+                  {!filteredNurseRows.length ? (
+                    <p className="py-10 text-center text-sm text-slate-500">
+                      No nurse matched the selected filters.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className={cn("overflow-x-auto", patientsSurface && "hidden md:block")}>
                 <table className="w-full min-w-[1150px] border-collapse text-sm">
                   <thead className="bg-white text-[11px] uppercase tracking-wide text-sky-700">
                     <tr className="border-b border-slate-200">
@@ -455,7 +516,29 @@ export function UnitStaffAvailabilityPage() {
             </TabsContent>
 
             <TabsContent className="m-0" value="equipment">
-              <div className="overflow-x-auto">
+              {patientsSurface ? (
+                <div className="space-y-3 p-3 md:hidden">
+                  {filteredEquipmentRows.map((row) => (
+                    <MobileCommandCard key={row.equipment}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-slate-950">{row.equipment}</p>
+                        <StatusPill tone={statusPillTone(row.status)}>{row.status}</StatusPill>
+                      </div>
+                      <div className="mt-2 space-y-0">
+                        <MobileCommandCardRow label="Total units" value={row.totalUnits} />
+                        <MobileCommandCardRow label="In use" value={row.inUse} />
+                        <MobileCommandCardRow label="Available" value={row.available} />
+                      </div>
+                    </MobileCommandCard>
+                  ))}
+                  {!filteredEquipmentRows.length ? (
+                    <p className="py-10 text-center text-sm text-slate-500">
+                      No equipment matched the selected filters.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className={cn("overflow-x-auto", patientsSurface && "hidden md:block")}>
                 <table className="w-full min-w-[800px] border-collapse text-sm">
                   <thead className="bg-white text-[11px] uppercase tracking-wide text-sky-700">
                     <tr className="border-b border-slate-200">

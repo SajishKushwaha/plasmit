@@ -40,6 +40,7 @@ import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { useIcuCommandCenterPatientsSurface } from "@/features/care-team/icu-command-center/patients/icu-patients-surface";
 import type { StatusTone } from "@/types";
 import { NativeSelect } from "@/features/operations/admin/admin-shared";
 import {
@@ -2481,6 +2482,7 @@ function PatientBoardLoading({ compact }: { compact?: boolean }) {
 }
 
 export function AdmissionWizardWorkspace() {
+  const patientsSurface = useIcuCommandCenterPatientsSurface();
   const [step, setStep] = React.useState(0);
   const [draft, setDraft] = React.useState<AdmissionDraft>(() => createEmptyAdmissionDraft());
   const [created, setCreated] = React.useState<
@@ -2636,34 +2638,52 @@ export function AdmissionWizardWorkspace() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {admissionSteps.map((item, index) => (
-            <button
-              className={cn(
-                "flex w-full items-center gap-3 rounded-md border border-border p-3 text-left transition hover:bg-surface-muted",
-                index === step ? "border-primary bg-primary/5" : "bg-background",
-              )}
-              key={item}
-              type="button"
-              onClick={() => setStep(index)}
-            >
-              <span
-                className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold",
-                  index <= step
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-surface-muted text-muted-foreground",
-                )}
+          {patientsSurface ? (
+            <label className="space-y-1 text-sm lg:hidden">
+              <span className="font-medium text-foreground">Admission step</span>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                value={step}
+                onChange={(event) => setStep(Number(event.target.value))}
               >
-                {index + 1}
-              </span>
-              <span>
-                <span className="block text-sm font-semibold text-foreground">{item}</span>
-                <span className="block text-xs text-muted-foreground">
-                  {index < step ? "Complete" : index === step ? "Active" : "Pending"}
+                {admissionSteps.map((item, index) => (
+                  <option key={item} value={index}>
+                    {index + 1}. {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          <div className={cn("space-y-3", patientsSurface && "hidden lg:block")}>
+            {admissionSteps.map((item, index) => (
+              <button
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-md border border-border p-3 text-left transition hover:bg-surface-muted",
+                  index === step ? "border-primary bg-primary/5" : "bg-background",
+                )}
+                key={item}
+                type="button"
+                onClick={() => setStep(index)}
+              >
+                <span
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold",
+                    index <= step
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface-muted text-muted-foreground",
+                  )}
+                >
+                  {index + 1}
                 </span>
-              </span>
-            </button>
-          ))}
+                <span>
+                  <span className="block text-sm font-semibold text-foreground">{item}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {index < step ? "Complete" : index === step ? "Active" : "Pending"}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
           <MetricTile
             label="Completion"
             value={`${completeness}%`}

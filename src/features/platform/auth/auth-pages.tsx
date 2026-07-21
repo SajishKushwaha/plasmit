@@ -70,16 +70,6 @@ const loginCredentials = [
   },
   {
     email: "ernurse@hospital.com",
-<<<<<<< HEAD
-    password: "123456",
-    role: "ER Nurse" as Role,
-    scope: "er-nurse",
-    route: "/receptionist/emergency-reception",
-  },
-  {
-    email: "receptionist@hospital.com",
-=======
->>>>>>> ward
     password: "123456",
     role: "ER Nurse" as Role,
     scope: "er-nurse",
@@ -207,11 +197,7 @@ export function LoginPage() {
         router.replace("/receptionist/emergency-reception");
         return;
       }
-<<<<<<< HEAD
       if (savedScope === "receptionist" || savedScope === "receptionlist") {
-=======
-      if (savedScope === "receptionist") {
->>>>>>> ward
         router.replace("/receptionist/patient-details");
         return;
       }

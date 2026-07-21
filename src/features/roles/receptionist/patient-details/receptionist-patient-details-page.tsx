@@ -732,7 +732,9 @@ function formatTriageFileSize(bytes: number) {
 }
 
 function serializeUploadedDocument(document: TriageUploadedDocument): TriageUploadedDocument {
-  const { file, objectUrl, ...metadata } = document;
+  const metadata = { ...document };
+  delete metadata.file;
+  delete metadata.objectUrl;
   return metadata;
 }
 
@@ -2973,43 +2975,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   const calculatorHeight = clinicalHeight || (editingRecord ? getPatientRecordValue(editingRecord, "Height") : "");
   const calculatorWeight = clinicalWeight || (editingRecord ? getPatientRecordValue(editingRecord, "Weight") : "");
 
-  React.useEffect(() => {
-    if (!editingRecord || !formRef.current) return;
-    const section = editingRecord.sections.find((item) => item.tabId === activePatientTab);
-    const legacySections = activePatientTab === "basic"
-      ? editingRecord.sections.filter((item) => ["referral", "clinical", "additional"].includes(item.tabId))
-      : [];
-    if (!section && !legacySections.length) return;
-    const mergedSection: PatientRecordSection = {
-      tabId: activePatientTab,
-      tabLabel: visiblePatientDetailTabs.find((tab) => tab.id === activePatientTab)?.label ?? activePatientTab,
-      fields: [...(section?.fields ?? []), ...legacySections.flatMap((item) => item.fields)],
-    };
-
-    applyPatientSection(formRef.current, mergedSection);
-    applyControlledPatientFields(mergedSection);
-  }, [activePatientTab, editingRecord, formKey]);
-
-  function handleDateOfBirthChange(nextDateOfBirth: string) {
-    setDateOfBirth(nextDateOfBirth);
-    setAge(calculateAge(nextDateOfBirth));
-  }
-
-  function availableIdentificationOptions(rowId: string) {
-    const selectedTypes = new Set(identificationRows.filter((row) => row.id !== rowId && row.type).map((row) => row.type));
-    return identificationDocumentOptions.filter((option) => !selectedTypes.has(option.type));
-  }
-
-  function updateIdentificationRowType(rowId: string, type: string) {
-    setIdentificationRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, type } : row)));
-  }
-
-  function addIdentificationRow() {
-    if (identificationRows.length >= identificationDocumentOptions.length) return;
-    setIdentificationRows((rows) => [...rows, { id: `identification-${Date.now()}`, type: "" }]);
-  }
-
-  function applyControlledPatientFields(section: PatientRecordSection) {
+  const applyControlledPatientFields = React.useCallback((section: PatientRecordSection) => {
     const valueFor = (label: string) => getPatientRecordValue({ id: "current", updatedAt: "", sections: [section] }, label);
     if (section.tabId === "basic") {
       const nextArrivalDate = valueFor("Date on which Patient arrives");
@@ -3035,6 +3001,42 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         setClinicalWeight(valueFor("Weight"));
       }
     }
+  }, [isReceptionist]);
+
+  React.useEffect(() => {
+    if (!editingRecord || !formRef.current) return;
+    const section = editingRecord.sections.find((item) => item.tabId === activePatientTab);
+    const legacySections = activePatientTab === "basic"
+      ? editingRecord.sections.filter((item) => ["referral", "clinical", "additional"].includes(item.tabId))
+      : [];
+    if (!section && !legacySections.length) return;
+    const mergedSection: PatientRecordSection = {
+      tabId: activePatientTab,
+      tabLabel: visiblePatientDetailTabs.find((tab) => tab.id === activePatientTab)?.label ?? activePatientTab,
+      fields: [...(section?.fields ?? []), ...legacySections.flatMap((item) => item.fields)],
+    };
+
+    applyPatientSection(formRef.current, mergedSection);
+    queueMicrotask(() => applyControlledPatientFields(mergedSection));
+  }, [activePatientTab, applyControlledPatientFields, editingRecord, formKey]);
+
+  function handleDateOfBirthChange(nextDateOfBirth: string) {
+    setDateOfBirth(nextDateOfBirth);
+    setAge(calculateAge(nextDateOfBirth));
+  }
+
+  function availableIdentificationOptions(rowId: string) {
+    const selectedTypes = new Set(identificationRows.filter((row) => row.id !== rowId && row.type).map((row) => row.type));
+    return identificationDocumentOptions.filter((option) => !selectedTypes.has(option.type));
+  }
+
+  function updateIdentificationRowType(rowId: string, type: string) {
+    setIdentificationRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, type } : row)));
+  }
+
+  function addIdentificationRow() {
+    if (identificationRows.length >= identificationDocumentOptions.length) return;
+    setIdentificationRows((rows) => [...rows, { id: `identification-${Date.now()}`, type: "" }]);
   }
 
   function saveCurrentPatientSection() {

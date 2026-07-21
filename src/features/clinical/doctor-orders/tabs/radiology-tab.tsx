@@ -95,9 +95,10 @@ function buildRadiologySnapshotBlocks(testIds: string[], groupIds: string[]) {
 
 type RadiologyTabProps = {
   defaultTab?: MainTab;
+  hideTabHeader?: boolean;
 };
 
-export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
+export function RadiologyTab({ defaultTab, hideTabHeader = false }: RadiologyTabProps = {}) {
   const searchParams = useSearchParams();
   const requestedRadiologyTab = toRadiologyTab(searchParams.get("radiologyTab"));
   const initialTab = defaultTab ?? requestedRadiologyTab ?? "test-order";
@@ -194,25 +195,27 @@ export function RadiologyTab({ defaultTab }: RadiologyTabProps = {}) {
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MainTab)} className="w-full">
         <Card>
           <CardContent className="space-y-4">
-            <div className="overflow-x-auto pb-1 sm:pb-0">
-              <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
-                {(["test-order", "order-summary", "result-review"] as const).map((tab) => (
-                  <Button
-                    key={tab}
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setActiveTab(tab)}
-                    className={[
-                      "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
-                      activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
-                    ].join(" ")}
-                  >
-                    {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result Review"}
-                  </Button>
-                ))}
+            {hideTabHeader ? null : (
+              <div className="overflow-x-auto pb-1 sm:pb-0">
+                <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
+                  {(["test-order", "order-summary", "result-review"] as const).map((tab) => (
+                    <Button
+                      key={tab}
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setActiveTab(tab)}
+                      className={[
+                        "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
+                        activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+                      ].join(" ")}
+                    >
+                      {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result Review"}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <TabsContent value="test-order" className="mt-0">
               <RadiologyTestOrderTab

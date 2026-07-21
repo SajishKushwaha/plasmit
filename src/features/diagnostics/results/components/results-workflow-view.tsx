@@ -16,6 +16,7 @@ import { resultRecords } from "@/features/diagnostics/results/data/mockResults";
 import type { ResultDepartment, ResultRecord, ResultStatus, ResultValue } from "@/features/diagnostics/results/types";
 
 type DepartmentFilter = ResultDepartment | "all";
+type RadiologyWorkflowTab = "test-order" | "order-summary" | "result-review";
 
 export type ResultsPatientContext = {
   ageSex?: string;
@@ -668,6 +669,7 @@ export function ResultsWorkflowView({
   viewTitle = "Results Center",
   viewDescription = "Laboratory, radiology, and POCT reports organized for IPD review.",
   onAddLaboratoryOrder,
+  showRadiologyOrderTabs = false,
 }: {
   autoOpenAllDepartment?: ResultDepartment;
   autoOpenLatestDateOnly?: boolean;
@@ -680,6 +682,7 @@ export function ResultsWorkflowView({
   viewTitle?: string;
   viewDescription?: string;
   onAddLaboratoryOrder?: (patientContext?: DoctorOrdersPatientContext) => void;
+  showRadiologyOrderTabs?: boolean;
 }) {
   const [activeDepartment, setActiveDepartment] = useState<DepartmentFilter>(criticalOnly ? "all" : defaultDepartment);
   const [query, setQuery] = useState("");
@@ -691,6 +694,7 @@ export function ResultsWorkflowView({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [reportModal, setReportModal] = useState<ReportModalState>(null);
   const [printPayload, setPrintPayload] = useState<PrintPayload | null>(null);
+  const [radiologyWorkflowTab, setRadiologyWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
   const hasAutoOpenedAllDepartment = useRef(false);
   const dateFilterRef = useRef<HTMLDivElement | null>(null);
   const visibleDepartments = useMemo(
@@ -921,7 +925,45 @@ export function ResultsWorkflowView({
         </div>
       </section>
 
-      {groups.length === 0 ? (
+      {showRadiologyOrderTabs && activeDepartment === "radiology" ? (
+        <div className="overflow-x-auto rounded-xl border border-border bg-white p-1 shadow-sm">
+          <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
+            {(["test-order", "order-summary", "result-review"] as const).map((tab) => (
+              <Button
+                className={cn(
+                  "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
+                  radiologyWorkflowTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+                )}
+                key={tab}
+                onClick={() => setRadiologyWorkflowTab(tab)}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result Review"}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {showRadiologyOrderTabs && activeDepartment === "radiology" && radiologyWorkflowTab !== "result-review" ? (
+        <DoctorOrdersPage
+          defaultTab="radiology"
+          onlyTab="radiology"
+          patientContext={patientContext ? {
+            id: patientContext.patientId ?? patientContext.uhid ?? patientContext.mrn ?? "dashboard-patient",
+            name: patientContext.name ?? "Selected patient",
+            uhid: patientContext.uhid,
+            ageSex: patientContext.ageSex,
+            wardBed: patientContext.wardBed ?? patientContext.bed,
+            diagnosis: viewDescription,
+            radiologyPatientId: patientContext.patientId,
+          } : undefined}
+          radiologyDefaultTab={radiologyWorkflowTab}
+          radiologyShowTabHeader={false}
+        />
+      ) : groups.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <div className="text-base font-semibold text-foreground">No reports found</div>

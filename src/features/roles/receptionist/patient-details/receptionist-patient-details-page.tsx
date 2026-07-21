@@ -68,7 +68,19 @@ const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20";
 const decimalPattern = "[0-9]*[.]?[0-9]*";
 const bloodGroupOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Not Known"];
-const countryCodeOptions = ["+91", "+1", "+44", "+61", "+65", "+971", "+974", "+966", "+880", "+94", "+977"];
+const countryCodeOptions = [
+  { country: "India", code: "+91" },
+  { country: "United States", code: "+1" },
+  { country: "United Kingdom", code: "+44" },
+  { country: "Australia", code: "+61" },
+  { country: "Singapore", code: "+65" },
+  { country: "United Arab Emirates", code: "+971" },
+  { country: "Qatar", code: "+974" },
+  { country: "Saudi Arabia", code: "+966" },
+  { country: "Bangladesh", code: "+880" },
+  { country: "Sri Lanka", code: "+94" },
+  { country: "Nepal", code: "+977" },
+];
 const identificationDocumentOptions = [
   { type: "Aadhaar Card", fieldLabel: "Aadhaar Card Number", inputMode: "numeric", maxLength: 12, minLength: 12, pattern: "[0-9]*", title: "Aadhaar card number must contain 12 digits only." },
   { type: "PAN", fieldLabel: "PAN", inputMode: undefined, maxLength: 10, minLength: undefined, pattern: "[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}", title: "PAN must be a 10-character alphanumeric code." },
@@ -96,7 +108,7 @@ const patientHistoryTabOrder: HistoryTab[] = ["medical", "surgical", "medication
 type PatientDetailTab = (typeof patientDetailTabs)[number]["id"];
 
 const patientDocumentSchema = [
-  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["Patient ID / UHID", "Date on which Patient arrives", "First Name", "Middle Name", "Last Name", "Date of Birth", "Age", "Gender", "Marital Status", "Nationality", "Preferred Language", "Permanent Address", "City", "State", "PIN Code", "Current Address", "City", "State", "PIN Code", "Same as permanent", "Mobile Country Code", "Mobile Number", "Alternate Contact Country Code", "Alternate Contact Number", "Whatsapp Country Code", "Whatsapp Number", "Email Address", "Identification Type", "Aadhaar Card Number", "PAN", "Passport Number", "Voter ID Number", "Driving License Number", "Emergency Contact Name", "Relationship to Patient", "Emergency Contact Country Code", "Emergency Contact Number", "Emergency Contact Whatsapp Number", "Emergency Contact Email", "Emergency Contact Identity Document Type", "Emergency Contact Identity Document Number", "ER Nurse Assigned", "Duty Doctor", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Insurance Provider", "Policy Number"] },
+  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["Patient ID / UHID", "Date on which Patient arrives", "First Name", "Middle Name", "Last Name", "Date of Birth", "Age", "Gender", "Marital Status", "Nationality", "Preferred Language", "Permanent Address", "City", "State", "PIN Code", "Current Address", "City", "State", "PIN Code", "Same as permanent", "Mobile Country Code", "Mobile Number", "Alternate Contact Country Code", "Alternate Contact Number", "Whatsapp Country Code", "Whatsapp Number", "Email Address", "Identification Type", "Aadhaar Card Number", "PAN", "Passport Number", "Voter ID Number", "Driving License Number", "Contact Name", "Relationship to Patient", "Contact Country Code", "Contact Number", "Whatsapp Number", "Contact Email", "Identity Document Type", "Identity Document Number", "ER Nurse Assigned", "Duty Doctor", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Insurance Provider", "Policy Number"] },
   { tabId: "triage", tabLabel: "2. Triage", fields: ["Triage Category", "Arrival Time", "Triage Time", "Provisional Diagnosis", "Reason for Transfer", "Referral Unit / Facility", "Accepting Doctor", "Consent Taken", "Checklist Done", "Escort", "Ambulance Type", "Departure Time", "Handover Ack", "Remarks"] },
   { tabId: "nurse-entry", tabLabel: "3. Nurse Entry", fields: ["Patient", "Date", "Time", "Shift", "Recorded by", "Respiratory rate", "O2 saturation", "Blood pressure", "Pulse rate", "Temperature", "GCS score", "Pain score", "Urine output", "Nurse notes"] },
   { tabId: "history", tabLabel: "4. Patient History", fields: ["Past Medical History", "Known Comorbidities", "Past Surgical History", "Current Medications", "Allergy Status", "Allergen and Reaction", "Smoking Status", "Alcohol Use", "Relevant Social History"] },
@@ -546,9 +558,9 @@ function RadioOption({ label, name }: { label: string; name: string }) {
 function CountryCodeSelect({ required = false }: { required?: boolean }) {
   return (
     <select className={selectClass} defaultValue="+91" required={required}>
-      {countryCodeOptions.map((code) => (
-        <option key={code} value={code}>
-          {code}
+      {countryCodeOptions.map((option) => (
+        <option key={option.code} value={option.code}>
+          {option.country} ({option.code})
         </option>
       ))}
     </select>
@@ -3335,9 +3347,34 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                   <Field label="PIN Code">
                     <Input inputMode="numeric" maxLength={6} minLength={6} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Permanent PIN code")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="PIN code must contain 6 digits only." />
                   </Field>
-                  <Field className="md:col-span-2 xl:col-span-6" label="Current Address">
-                    <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Flat / House No., Street, Area" readOnly={sameAsPermanent} value={currentAddress} onChange={(event) => setCurrentAddress(event.target.value)} />
-                  </Field>
+                  <div className="space-y-1.5 md:col-span-2 xl:col-span-6">
+                    <div className="flex min-h-5 items-center justify-between gap-3">
+                      <span className={labelClass}>Current Address</span>
+                      <label className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <input
+                          checked={sameAsPermanent}
+                          className="h-4 w-4 rounded border-border"
+                          name="sameAsPermanent"
+                          onChange={(event) => {
+                            const checked = event.target.checked;
+                            setSameAsPermanent(checked);
+                            if (checked) setCurrentAddress(permanentAddress);
+                          }}
+                          type="checkbox"
+                          value={sameAsPermanent ? "Yes" : "No"}
+                        />
+                        <span>Same as permanent</span>
+                      </label>
+                    </div>
+                    <textarea
+                      aria-label="Current Address"
+                      className={`min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 ${sameAsPermanent ? "bg-muted/50" : "bg-background"}`}
+                      onChange={(event) => setCurrentAddress(event.target.value)}
+                      placeholder="Flat / House No., Street, Area"
+                      readOnly={sameAsPermanent}
+                      value={currentAddress}
+                    />
+                  </div>
                   <Field label="City">
                     <Input />
                   </Field>
@@ -3347,24 +3384,6 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                   <Field label="PIN Code">
                     <Input inputMode="numeric" maxLength={6} minLength={6} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Current PIN code")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="PIN code must contain 6 digits only." />
                   </Field>
-                  <div className="space-y-1.5 md:col-span-2 xl:col-span-3" data-patient-field-group>
-                    <span className={labelClass} data-patient-field-label>Same as permanent</span>
-                    <label className="flex min-h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-foreground">
-                      <input
-                        checked={sameAsPermanent}
-                        className="h-4 w-4 rounded border-border"
-                        name="sameAsPermanent"
-                        onChange={(event) => {
-                          const checked = event.target.checked;
-                          setSameAsPermanent(checked);
-                          if (checked) setCurrentAddress(permanentAddress);
-                        }}
-                        type="checkbox"
-                        value={sameAsPermanent ? "Yes" : "No"}
-                      />
-                      <span>Same as permanent</span>
-                    </label>
-                  </div>
                   <Field label="Mobile Country Code">
                     <CountryCodeSelect required />
                   </Field>
@@ -3444,25 +3463,25 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
               <div className="border-t border-border pt-4">
                 <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Emergency</div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-                  <Field className="xl:col-span-2" label="Emergency Contact Name">
+                  <Field className="xl:col-span-2" label="Contact Name">
                     <Input />
                   </Field>
                   <Field label="Relationship to Patient">
                     <Input />
                   </Field>
-                  <Field label="Emergency Contact Country Code">
+                  <Field label="Contact Country Code">
                     <CountryCodeSelect />
                   </Field>
-                  <Field label="Emergency Contact Number">
-                    <Input inputMode="numeric" maxLength={10} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Emergency contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Emergency contact number must contain 10 digits only." />
+                  <Field label="Contact Number">
+                    <Input inputMode="numeric" maxLength={10} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Contact number must contain 10 digits only." />
                   </Field>
-                  <Field label="Emergency Contact Whatsapp Number">
-                    <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Emergency contact Whatsapp number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Emergency contact Whatsapp number must contain numbers only." />
+                  <Field label="Whatsapp Number">
+                    <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Whatsapp number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Whatsapp number must contain numbers only." />
                   </Field>
-                  <Field className="xl:col-span-2" label="Emergency Contact Email">
+                  <Field className="xl:col-span-2" label="Contact Email">
                     <Input type="email" />
                   </Field>
-                  <Field label="Emergency Contact Identity Document Type">
+                  <Field label="Identity Document Type">
                     <select className={selectClass}>
                       <option value="">Select</option>
                       <option>Aadhaar</option>
@@ -3471,7 +3490,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                       <option>Passport</option>
                     </select>
                   </Field>
-                  <Field className="xl:col-span-2" label="Emergency Contact Identity Document Number">
+                  <Field className="xl:col-span-2" label="Identity Document Number">
                     <Input />
                   </Field>
                 </div>

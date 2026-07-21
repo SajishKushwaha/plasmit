@@ -162,6 +162,14 @@ body {
   background: hsl(var(--primary) / 0.75);
 }
 
+.notes-category-scroll {
+  scrollbar-width: thin;
+}
+
+.notes-category-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
 .mobile-drawer-overlay[data-state="open"] {
   animation: mobileDrawerOverlayIn 160ms ease-out both;
 }

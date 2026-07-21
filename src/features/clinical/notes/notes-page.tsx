@@ -1588,41 +1588,27 @@ function AllNotesOverview({
 }) {
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-border bg-white p-2 pb-2 shadow-sm">
+      <div className="rounded-lg border border-border bg-white p-1.5 shadow-sm">
         <div
           aria-label="Clinical note categories"
-          className="horizontal-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden pb-4 shadow-[inset_-28px_0_20px_-18px_rgba(15,23,42,0.30)] [scrollbar-gutter:stable]"
+          className="notes-category-scroll horizontal-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden pb-2 [scrollbar-gutter:stable]"
         >
           {notesCategories.map((category) => {
-            const Icon = category.icon;
-            const noteCount = allNotes.filter((note) => note.category === category.label).length;
             return (
               <button
                 aria-label={`Open ${getCategoryDisplayLabel(category.label)}`}
                 className={cn(
-                  "group flex h-11 shrink-0 items-center gap-2 rounded-md border border-transparent bg-transparent px-3 text-left text-sm font-semibold text-muted-foreground transition",
-                  "hover:border-primary/30 hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "group flex h-8 shrink-0 items-center rounded-md border border-border bg-white px-3 text-left text-sm font-semibold text-muted-foreground shadow-sm transition",
+                  "hover:border-primary/35 hover:bg-primary-soft hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 )}
                 key={category.id}
                 onClick={() => onOpenCategory(category.id)}
                 type="button"
               >
-                <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-md", category.soft, category.accent)}>
-                  <Icon className="h-4 w-4" />
-                </span>
                 <span className="whitespace-nowrap">{getCategoryDisplayLabel(category.label)}</span>
-                <span className={cn("ml-1 rounded-full px-2 py-0.5 text-xs font-bold", category.soft, category.accent)}>
-                  {noteCount}
-                </span>
-                <span className={cn("flex items-center text-xs font-semibold opacity-0 transition group-hover:opacity-100", category.accent)}>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </span>
               </button>
             );
           })}
-        </div>
-        <div aria-hidden="true" className="mt-1 h-1.5 rounded-full bg-muted">
-          <div className="h-full w-28 rounded-full bg-primary/65 shadow-sm" />
         </div>
       </div>
 

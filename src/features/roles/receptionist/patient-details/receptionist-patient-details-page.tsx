@@ -44,14 +44,20 @@ import { calculatorDefinitions, initialCalculatorValues, validateCalculator, typ
 import {
   applyPatientSection,
   collectPatientSection,
-  findPatientRecord,
+  findPatientRecord as findSharedPatientRecord,
   getPatientRecordValue,
-  readPatientRecords,
-  upsertPatientRecordSection,
-  writePatientRecords,
+  readPatientRecords as readSharedPatientRecords,
+  upsertPatientRecordSection as upsertSharedPatientRecordSection,
+  writePatientRecords as writeSharedPatientRecords,
   type PatientRecord,
   type PatientRecordSection,
 } from "@/features/patient-list/patient-records";
+import {
+  findPatientRecord as findReceptionistPatientRecord,
+  readPatientRecords as readReceptionistPatientRecords,
+  upsertPatientRecordSection as upsertReceptionistPatientRecordSection,
+  writePatientRecords as writeReceptionistPatientRecords,
+} from "@/features/roles/receptionist/patient-details/receptionist-patient-records";
 
 const fieldClass = "space-y-1.5";
 const labelClass = "text-xs font-medium text-foreground";
@@ -62,6 +68,14 @@ const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20";
 const decimalPattern = "[0-9]*[.]?[0-9]*";
 const bloodGroupOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Not Known"];
+const countryCodeOptions = ["+91", "+1", "+44", "+61", "+65", "+971", "+974", "+966", "+880", "+94", "+977"];
+const identificationDocumentOptions = [
+  { type: "Aadhaar Card", fieldLabel: "Aadhaar Card Number", inputMode: "numeric", maxLength: 12, minLength: 12, pattern: "[0-9]*", title: "Aadhaar card number must contain 12 digits only." },
+  { type: "PAN", fieldLabel: "PAN", inputMode: undefined, maxLength: 10, minLength: undefined, pattern: "[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}", title: "PAN must be a 10-character alphanumeric code." },
+  { type: "Passport", fieldLabel: "Passport Number", inputMode: undefined, maxLength: 20, minLength: undefined, pattern: undefined, title: "Enter passport number." },
+  { type: "Voter ID", fieldLabel: "Voter ID Number", inputMode: undefined, maxLength: 20, minLength: undefined, pattern: undefined, title: "Enter voter ID number." },
+  { type: "Driving License", fieldLabel: "Driving License Number", inputMode: undefined, maxLength: 20, minLength: undefined, pattern: undefined, title: "Enter driving license number." },
+] as const;
 const showQuickUpload = false;
 const showMedicalCalculator = true;
 const patientDetailTabs = [
@@ -73,7 +87,7 @@ const patientDetailTabs = [
   { id: "notes", label: "6. ED Notes" },
   { id: "calculator", label: "7. Medical Calculator" },
   { id: "transfer-out", label: "8. Transfer OUT" },
-  { id: "old-records", label: "9 Patient Old records" },
+  { id: "patient-old-records", label: "9. Patient Old records" },
 ] as const;
 const visiblePatientDetailTabs = patientDetailTabs.filter((tab) => tab.id !== "calculator" || showMedicalCalculator);
 
@@ -82,7 +96,7 @@ const patientHistoryTabOrder: HistoryTab[] = ["medical", "surgical", "medication
 type PatientDetailTab = (typeof patientDetailTabs)[number]["id"];
 
 const patientDocumentSchema = [
-  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["MRN / Patient ID", "UHID", "Patient Name", "Date of Birth", "Age", "Gender", "Blood Group", "Contact Number", "Email ID", "Address", "City", "State", "PIN Code", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Referral Notes"] },
+  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["Patient ID / UHID", "Date on which Patient arrives", "First Name", "Middle Name", "Last Name", "Date of Birth", "Age", "Gender", "Marital Status", "Nationality", "Preferred Language", "Permanent Address", "City", "State", "PIN Code", "Current Address", "City", "State", "PIN Code", "Same as permanent", "Mobile Country Code", "Mobile Number", "Alternate Contact Country Code", "Alternate Contact Number", "Whatsapp Country Code", "Whatsapp Number", "Email Address", "Identification Type", "Aadhaar Card Number", "PAN", "Passport Number", "Voter ID Number", "Driving License Number", "Emergency Contact Name", "Relationship to Patient", "Emergency Contact Country Code", "Emergency Contact Number", "Emergency Contact Whatsapp Number", "Emergency Contact Email", "Emergency Contact Identity Document Type", "Emergency Contact Identity Document Number", "ER Nurse Assigned", "Duty Doctor", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Insurance Provider", "Policy Number"] },
   { tabId: "triage", tabLabel: "2. Triage", fields: ["Triage Category", "Arrival Time", "Triage Time", "Provisional Diagnosis", "Reason for Transfer", "Referral Unit / Facility", "Accepting Doctor", "Consent Taken", "Checklist Done", "Escort", "Ambulance Type", "Departure Time", "Handover Ack", "Remarks"] },
   { tabId: "nurse-entry", tabLabel: "3. Nurse Entry", fields: ["Patient", "Date", "Time", "Shift", "Recorded by", "Respiratory rate", "O2 saturation", "Blood pressure", "Pulse rate", "Temperature", "GCS score", "Pain score", "Urine output", "Nurse notes"] },
   { tabId: "history", tabLabel: "4. Patient History", fields: ["Past Medical History", "Known Comorbidities", "Past Surgical History", "Current Medications", "Allergy Status", "Allergen and Reaction", "Smoking Status", "Alcohol Use", "Relevant Social History"] },
@@ -90,13 +104,13 @@ const patientDocumentSchema = [
   { tabId: "notes", tabLabel: "6. ED Notes", fields: ["Note Type", "Doctor", "Department", "Created At", "Status", "Preview"] },
   { tabId: "calculator", tabLabel: "7. Medical Calculator", fields: ["Selected Calculator", "Input Summary", "Result", "Interpretation", "Note / Order Action", "FHIR Observation Reference"] },
   { tabId: "transfer-out", tabLabel: "8. Transfer OUT", fields: ["Referral Unit / Facility", "Accepting Doctor", "Consent Taken", "Checklist Done", "Escort", "Ambulance Type", "Departure Time", "Handover Ack", "Remarks"] },
-  { tabId: "old-records", tabLabel: "9 Patient Old records", fields: ["File Name", "Category", "Uploaded By", "Uploaded At", "Status"] },
+  { tabId: "patient-old-records", tabLabel: "9. Patient Old records", fields: ["Document Name", "Category", "Uploaded By", "Uploaded At", "Upload Status", "OCR Status"] },
 ] as const;
 
-function getInitialEditingPatientRecord() {
+function getInitialEditingPatientRecord(findRecord: (id: string) => PatientRecord | null) {
   if (typeof window === "undefined") return null;
   const recordId = new URLSearchParams(window.location.search).get("edit");
-  return recordId ? findPatientRecord(recordId) : null;
+  return recordId ? findRecord(recordId) : null;
 }
 
 function calculateAge(dateOfBirth: string) {
@@ -147,6 +161,11 @@ function textDateToParts(value: string) {
 
 function datePartsToText(day: number, month: number, year: number) {
   return `${String(day).padStart(2, "0")}/${String(month + 1).padStart(2, "0")}/${year}`;
+}
+
+function getCurrentDateText() {
+  const today = new Date();
+  return datePartsToText(today.getDate(), today.getMonth(), today.getFullYear());
 }
 
 function daysInMonth(month: number, year: number) {
@@ -243,14 +262,6 @@ function YearRangePicker({
   );
 }
 
-function calculateBmi(height: string, weight: string) {
-  const heightCm = Number(height);
-  const weightKg = Number(weight);
-  if (!heightCm || !weightKg) return "";
-  const heightMeters = heightCm / 100;
-  return (weightKg / (heightMeters * heightMeters)).toFixed(1);
-}
-
 function validateNumericInput(event: React.FormEvent<HTMLInputElement>, label: string, allowDecimal = false) {
   const input = event.currentTarget;
   const value = input.value.trim();
@@ -282,6 +293,14 @@ function preventInvalidNumericPaste(event: React.ClipboardEvent<HTMLInputElement
   if (!numberPattern.test(nextValue)) {
     event.preventDefault();
   }
+}
+
+function calculateBmi(height: string, weight: string) {
+  const heightCm = Number(height);
+  const weightKg = Number(weight);
+  if (!heightCm || !weightKg) return "";
+  const heightMeters = heightCm / 100;
+  return (weightKg / (heightMeters * heightMeters)).toFixed(1);
 }
 
 function DateTextInput({
@@ -524,6 +543,18 @@ function RadioOption({ label, name }: { label: string; name: string }) {
   );
 }
 
+function CountryCodeSelect({ required = false }: { required?: boolean }) {
+  return (
+    <select className={selectClass} defaultValue="+91" required={required}>
+      {countryCodeOptions.map((code) => (
+        <option key={code} value={code}>
+          {code}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function SectionCard({
   title,
   icon: Icon,
@@ -593,32 +624,32 @@ const triageCategories = [
   {
     code: "RED",
     priority: "Immediate",
-    meaning: "Life-threatening emergency",
+    meaning: "Immediate care required",
     color: "border-red-200 bg-red-50 text-red-700",
   },
   {
     code: "ORANGE",
     priority: "Emergency",
-    meaning: "High-risk emergency care needed",
+    meaning: "Emergency care required",
     color: "border-orange-200 bg-orange-50 text-orange-700",
   },
   {
     code: "YELLOW",
     priority: "Urgent",
-    meaning: "Serious but stable; can deteriorate",
+    meaning: "Urgent care required",
     color: "border-yellow-200 bg-yellow-50 text-yellow-700",
   },
   {
     code: "GREEN",
     priority: "Semi Urgent",
-    meaning: "Stable illness or injury",
+    meaning: "Semi urgent care required",
     color: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
   {
     code: "BLUE",
-    priority: "Non urgent",
-    meaning: "Minor condition; routine care",
-    color: "border-sky-200 bg-sky-50 text-sky-700",
+    priority: "Non Urgent",
+    meaning: "Non urgent care",
+    color: "border-blue-200 bg-blue-50 text-blue-700",
   },
 ];
 
@@ -644,21 +675,9 @@ type TriageUploadedDocument = {
   error?: string;
 };
 
-type PatientOldRecordFile = {
-  id: string;
-  name: string;
-  category: TriageDocumentCategory;
-  type: string;
-  size: number;
-  status: TriageUploadStatus;
-  ocrStatus: TriageOcrStatus;
-  uploadedBy: "Reception" | "ER Nurse";
-  uploadedAt: string;
-};
-
+const patientUploadedDocumentsKey = "plasmit-patient-uploaded-documents";
+const patientUploadedDocumentsEvent = "plasmit-patient-uploaded-documents-change";
 const triageDocumentCategories: TriageDocumentCategory[] = ["Referral Letter", "Lab Reports", "Radiology", "Prescription", "Consent", "Insurance", "Identity", "Others"];
-const patientOldRecordsKey = "plasmit-patient-old-record-files";
-const patientOldRecordsEvent = "plasmit-patient-old-record-files-change";
 const triageAcceptedMimeTypes = new Set([
   "application/pdf",
   "image/jpeg",
@@ -667,38 +686,6 @@ const triageAcceptedMimeTypes = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 const triageMaxFileSize = 20 * 1024 * 1024;
-
-function readPatientOldRecordFiles() {
-  if (typeof window === "undefined") return [];
-  try {
-    const records = JSON.parse(window.localStorage.getItem(patientOldRecordsKey) ?? "[]");
-    return Array.isArray(records) ? (records as PatientOldRecordFile[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writePatientOldRecordFiles(records: PatientOldRecordFile[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(patientOldRecordsKey, JSON.stringify(records));
-  window.dispatchEvent(new Event(patientOldRecordsEvent));
-}
-
-function savePatientOldRecordFile(document: TriageUploadedDocument, uploadedBy: PatientOldRecordFile["uploadedBy"]) {
-  const nextFile: PatientOldRecordFile = {
-    id: document.id,
-    name: document.name,
-    category: document.category,
-    type: document.type,
-    size: document.size,
-    status: "Uploaded",
-    ocrStatus: document.ocrStatus === "Failed" ? "Failed" : "Verification Ready",
-    uploadedBy,
-    uploadedAt: new Date().toLocaleString("en-IN"),
-  };
-  const records = readPatientOldRecordFiles();
-  writePatientOldRecordFiles([nextFile, ...records.filter((record) => record.id !== nextFile.id)].slice(0, 200));
-}
 
 function createTriageId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -742,6 +729,42 @@ function formatTriageFileSize(bytes: number) {
   const units = ["B", "KB", "MB", "GB"];
   const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   return `${(bytes / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+function serializeUploadedDocument(document: TriageUploadedDocument): TriageUploadedDocument {
+  const { file, objectUrl, ...metadata } = document;
+  return metadata;
+}
+
+function readSharedUploadedDocuments() {
+  if (typeof window === "undefined") return [];
+  try {
+    const records = JSON.parse(window.localStorage.getItem(patientUploadedDocumentsKey) ?? "[]");
+    return Array.isArray(records) ? (records as TriageUploadedDocument[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSharedUploadedDocuments(documents: TriageUploadedDocument[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(patientUploadedDocumentsKey, JSON.stringify(documents.map(serializeUploadedDocument)));
+  window.dispatchEvent(new Event(patientUploadedDocumentsEvent));
+}
+
+function addSharedUploadedDocuments(documents: TriageUploadedDocument[]) {
+  if (!documents.length) return;
+  const existing = readSharedUploadedDocuments();
+  const nextDocuments = documents.map(serializeUploadedDocument);
+  writeSharedUploadedDocuments([...nextDocuments, ...existing.filter((document) => !nextDocuments.some((item) => item.id === document.id))]);
+}
+
+function updateSharedUploadedDocument(documentId: string, update: Partial<TriageUploadedDocument>) {
+  writeSharedUploadedDocuments(readSharedUploadedDocuments().map((document) => (document.id === documentId ? { ...document, ...update } : document)));
+}
+
+function removeSharedUploadedDocument(documentId: string) {
+  writeSharedUploadedDocuments(readSharedUploadedDocuments().filter((document) => document.id !== documentId));
 }
 
 function parseTriageQr(value: string) {
@@ -860,8 +883,6 @@ function cancelTriageMobileUploadSession(token: string) {
 }
 
 function TriageTab() {
-  const { role } = useRole();
-  const uploadedBy: PatientOldRecordFile["uploadedBy"] = role === "ER Nurse" ? "ER Nurse" : "Reception";
   const [documents, setDocuments] = React.useState<TriageUploadedDocument[]>([]);
   const [selectedCategory, setSelectedCategory] = React.useState<TriageDocumentCategory | "All">("All");
   const [dragActive, setDragActive] = React.useState(false);
@@ -920,7 +941,7 @@ function TriageTab() {
         status: "Ready",
         progress: 0,
         ocrStatus: "Pending",
-        uploadedBy,
+        uploadedBy: "ER Nurse",
         uploadedAt: new Date().toLocaleString("en-IN"),
         file,
         objectUrl: URL.createObjectURL(file),
@@ -929,11 +950,13 @@ function TriageTab() {
 
     if (!nextDocuments.length) return;
     setDocuments((current) => [...nextDocuments, ...current]);
+    addSharedUploadedDocuments(nextDocuments);
     toast.success(`${nextDocuments.length} document(s) added.`);
   }
 
   function updateDocument(documentId: string, update: Partial<TriageUploadedDocument>) {
     setDocuments((current) => current.map((document) => (document.id === documentId ? { ...document, ...update } : document)));
+    updateSharedUploadedDocument(documentId, update);
   }
 
   async function uploadAll() {
@@ -961,7 +984,6 @@ function TriageTab() {
       await startTriageOcrJob(document.id);
       await new Promise((resolve) => window.setTimeout(resolve, 220));
       updateDocument(document.id, { ocrStatus: "Verification Ready" });
-      savePatientOldRecordFile(document, uploadedBy);
     }
     setUploading(false);
     toast.success("Reports uploaded and ready for verification.");
@@ -972,15 +994,10 @@ function TriageTab() {
     const removed = documents.find((document) => document.id === removeDocumentId);
     if (removed?.objectUrl) URL.revokeObjectURL(removed.objectUrl);
     setDocuments((current) => current.filter((document) => document.id !== removeDocumentId));
+    removeSharedUploadedDocument(removeDocumentId);
     setRemoveDocumentId(null);
     setPreviewDocumentId(null);
     toast.success("Document removed.");
-  }
-
-  async function notifyEmergency(action: string) {
-    await sendTriageEmergencyAction(action);
-    toast.success(`${action} sent and audit timeline updated.`);
-    setModal(null);
   }
 
   function onDrop(event: React.DragEvent<HTMLElement>, category?: TriageDocumentCategory) {
@@ -991,7 +1008,7 @@ function TriageTab() {
 
   return (
     <div className="mt-2 space-y-3" data-patient-tab="triage">
-      <SectionCard icon={HeartPulse} title="2. ED Triage">
+      <SectionCard icon={HeartPulse} title="2. ED Triage & Transfer">
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <Field label="Date"><Input placeholder="DD / MM / YYYY" /></Field>
@@ -1030,15 +1047,15 @@ function TriageTab() {
             </div>
             <div className="rounded-lg border border-border bg-surface-muted p-3">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Emergency</p>
-              <p className="mt-2 text-sm font-semibold text-foreground">Transfer OUT ready</p>
-              <p className="text-xs text-muted-foreground">Notify, reserve, and print actions moved to tab 8.</p>
+              <p className="mt-2 text-sm font-semibold text-foreground">ICU handoff ready</p>
+              <p className="text-xs text-muted-foreground">Notify, reserve, and print actions below.</p>
             </div>
           </div>
 
           <div className="overflow-hidden rounded-lg border border-border">
             <div className="border-b border-border bg-surface-muted px-4 py-3">
               <h3 className="text-sm font-semibold text-foreground">Triage Matrix</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Colour code as per triage priority.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Color-coded ED priority categories.</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[620px] text-left text-xs">
@@ -1226,17 +1243,6 @@ function TriageTab() {
         </div>
       </SectionCard>
 
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => setModal("print")}>
-          <Printer className="h-4 w-4" />
-          Print
-        </Button>
-        <Button type="button" variant="outline" onClick={() => toast.success("Current triage draft saved. Next patient queue is ready.")}>
-          <RefreshCw className="h-4 w-4" />
-          Open Next Patient
-        </Button>
-      </div>
-
       <CenterModal open={modal === "camera"} onOpenChange={(open) => !open && setModal(null)} title="Camera Capture" description="Capture a referral report photo and attach it to the triage document list.">
         <TriageCameraPanel onAddFile={(file, category) => addFiles([file], category)} onClose={() => setModal(null)} />
       </CenterModal>
@@ -1274,44 +1280,6 @@ function TriageTab() {
             <Button type="button" variant="outline" onClick={() => toast.info("Pause/Resume queue control is ready for backend upload workers.")}>Pause / Resume</Button>
             <Button type="button" variant="outline" onClick={() => toast.info("Retry failed files queued.")}>Retry Failed</Button>
           </div>
-        </div>
-      </CenterModal>
-
-      <CenterModal open={modal === "print"} onOpenChange={(open) => !open && setModal(null)} title="Print Triage Packet">
-        <div className="grid gap-2 sm:grid-cols-2">
-          {["Uploaded Document List", "Referral Summary", "Patient Labels", "Temporary Admission Sheet", "Emergency Summary"].map((label) => (
-            <Button key={label} type="button" variant="outline" onClick={() => printTriagePacket(label, documents)}>
-              <Printer className="h-4 w-4" />
-              Print {label}
-            </Button>
-          ))}
-        </div>
-      </CenterModal>
-
-      <CenterModal open={Boolean(modal && ["notify-icu", "notify-doctor", "notify-nurse", "reserve-bed"].includes(modal))} onOpenChange={(open) => !open && setModal(null)} title="Confirm Emergency Action">
-        <div className="space-y-4">
-          <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
-            <p className="text-sm font-semibold text-foreground">{modal === "reserve-bed" ? "Reserve ICU Bed" : "Send emergency notification"}</p>
-            <p className="mt-1 text-sm text-muted-foreground">This action will be recorded in the triage audit timeline with timestamp and user context.</p>
-          </div>
-          {modal === "reserve-bed" ? (
-            <div className="grid gap-3 sm:grid-cols-3">
-              {["ICU-01", "ICU-04", "CCU-02"].map((bed) => (
-                <button className="rounded-lg border border-border bg-background p-3 text-left hover:border-primary" key={bed} onClick={async () => {
-                  await reserveTriageEmergencyBed(bed);
-                  await notifyEmergency(`${bed} reserved for 20 minutes`);
-                }} type="button">
-                  <p className="text-sm font-semibold text-foreground">{bed}</p>
-                  <p className="text-xs text-muted-foreground">Available • temporary hold</p>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setModal(null)}>Cancel</Button>
-              <Button type="button" onClick={() => notifyEmergency(modal === "notify-icu" ? "ICU notification" : modal === "notify-doctor" ? "Doctor notification" : "Nurse notification")}>Confirm</Button>
-            </div>
-          )}
         </div>
       </CenterModal>
 
@@ -1366,6 +1334,591 @@ function TriageTab() {
         </div>
       </CenterModal>
     </div>
+  );
+}
+
+function TransferOutTab() {
+  const [modal, setModal] = React.useState<TriageModal>(null);
+  const documents: TriageUploadedDocument[] = [];
+
+  async function notifyEmergency(action: string) {
+    await sendTriageEmergencyAction(action);
+    toast.success(`${action} sent and transfer-out audit updated.`);
+    setModal(null);
+  }
+
+  return (
+    <div className="mt-2 space-y-3" data-patient-tab="transfer-out">
+      <SectionCard hideIcon icon={ClipboardList} title="8. Transfer OUT">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <Field label="Referral Unit / Facility"><Input placeholder="Cath Lab - Cardiology" /></Field>
+          <Field label="Accepting Doctor"><Input placeholder="Dr. A. Sharma" /></Field>
+          <Field label="Consent Taken">
+            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
+          </Field>
+          <Field label="Checklist Done">
+            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
+          </Field>
+          <Field label="Escort"><Input placeholder="Doctor + Nurse" /></Field>
+          <Field label="Ambulance Type">
+            <select className={selectClass} defaultValue=""><option value="">Select</option><option>ACLS</option><option>BLS</option><option>NA (Internal)</option></select>
+          </Field>
+          <Field label="Departure Time"><Input type="time" /></Field>
+          <Field label="Handover Ack">
+            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
+          </Field>
+          <Field className="md:col-span-2 xl:col-span-4" label="Remarks"><Input placeholder="Door-to-decision 22 min" /></Field>
+        </div>
+      </SectionCard>
+
+      <SectionCard hideIcon icon={AlertTriangle} title="Transfer OUT Actions">
+        <div className="grid gap-2 md:grid-cols-5">
+          <Button type="button" variant="outline" onClick={() => setModal("notify-icu")}>
+            <AlertTriangle className="h-4 w-4" />
+            Notify ICU
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setModal("notify-doctor")}>Notify Doctor</Button>
+          <Button type="button" variant="outline" onClick={() => setModal("notify-nurse")}>Notify Nurse</Button>
+          <Button type="button" variant="outline" onClick={() => setModal("reserve-bed")}>
+            <BedDouble className="h-4 w-4" />
+            Reserve Bed
+          </Button>
+          <Button type="button" variant="outline" onClick={() => printTriagePacket("Transfer OUT Summary", documents)}>
+            <Printer className="h-4 w-4" />
+            Emergency Print
+          </Button>
+        </div>
+      </SectionCard>
+
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button type="button" variant="outline" onClick={() => setModal("print")}>
+          <Printer className="h-4 w-4" />
+          Print
+        </Button>
+        <Button type="button" variant="outline" onClick={() => toast.success("Transfer OUT draft saved. Next patient queue is ready.")}>
+          <RefreshCw className="h-4 w-4" />
+          Open Next Patient
+        </Button>
+      </div>
+
+      <CenterModal open={modal === "print"} onOpenChange={(open) => !open && setModal(null)} title="Print Transfer OUT Packet">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {["Uploaded Document List", "Referral Summary", "Patient Labels", "Temporary Admission Sheet", "Emergency Summary"].map((label) => (
+            <Button key={label} type="button" variant="outline" onClick={() => printTriagePacket(label, documents)}>
+              <Printer className="h-4 w-4" />
+              Print {label}
+            </Button>
+          ))}
+        </div>
+      </CenterModal>
+
+      <CenterModal open={Boolean(modal && ["notify-icu", "notify-doctor", "notify-nurse", "reserve-bed"].includes(modal))} onOpenChange={(open) => !open && setModal(null)} title="Confirm Transfer OUT Action">
+        <div className="space-y-4">
+          <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+            <p className="text-sm font-semibold text-foreground">{modal === "reserve-bed" ? "Reserve ICU Bed" : "Send transfer-out notification"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">This action will be recorded in the transfer-out audit timeline with timestamp and user context.</p>
+          </div>
+          {modal === "reserve-bed" ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {["ICU-01", "ICU-04", "CCU-02"].map((bed) => (
+                <button className="rounded-lg border border-border bg-background p-3 text-left hover:border-primary" key={bed} onClick={async () => {
+                  await reserveTriageEmergencyBed(bed);
+                  await notifyEmergency(`${bed} reserved for 20 minutes`);
+                }} type="button">
+                  <p className="text-sm font-semibold text-foreground">{bed}</p>
+                  <p className="text-xs text-muted-foreground">Available • temporary hold</p>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setModal(null)}>Cancel</Button>
+              <Button type="button" onClick={() => notifyEmergency(modal === "notify-icu" ? "ICU notification" : modal === "notify-doctor" ? "Doctor notification" : "Nurse notification")}>Confirm</Button>
+            </div>
+          )}
+        </div>
+      </CenterModal>
+    </div>
+  );
+}
+
+function PatientOldRecordsTab() {
+  const [records, setRecords] = React.useState<TriageUploadedDocument[]>(() => readSharedUploadedDocuments());
+  const [selectedCategory, setSelectedCategory] = React.useState<TriageDocumentCategory | "All">("All");
+  const [selectedUploader, setSelectedUploader] = React.useState<"All" | "Receptionist" | "ER Nurse">("All");
+  const visibleRecords = records.filter((record) => {
+    const categoryMatch = selectedCategory === "All" || record.category === selectedCategory;
+    const uploaderMatch = selectedUploader === "All" || record.uploadedBy === selectedUploader;
+    return categoryMatch && uploaderMatch;
+  });
+
+  React.useEffect(() => {
+    function refreshRecords() {
+      setRecords(readSharedUploadedDocuments());
+    }
+
+    refreshRecords();
+    window.addEventListener("storage", refreshRecords);
+    window.addEventListener(patientUploadedDocumentsEvent, refreshRecords);
+    return () => {
+      window.removeEventListener("storage", refreshRecords);
+      window.removeEventListener(patientUploadedDocumentsEvent, refreshRecords);
+    };
+  }, []);
+
+  return (
+    <div className="mt-2 space-y-3" data-patient-tab="patient-old-records">
+      <SectionCard hideIcon icon={FolderOpen} title="9. Patient Old records">
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Total Files</p>
+            <p className="mt-2 text-xl font-semibold text-foreground">{records.length}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Reception Uploads</p>
+            <p className="mt-2 text-xl font-semibold text-foreground">{records.filter((record) => record.uploadedBy === "Receptionist").length}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">ER Nurse Uploads</p>
+            <p className="mt-2 text-xl font-semibold text-foreground">{records.filter((record) => record.uploadedBy === "ER Nurse").length}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Uploaded</p>
+            <p className="mt-2 text-xl font-semibold text-foreground">{records.filter((record) => record.status === "Uploaded").length}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_220px_220px]">
+          <div className="rounded-md border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground">
+            Showing {visibleRecords.length} of {records.length} uploaded files
+          </div>
+          <select className={selectClass} value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value as TriageDocumentCategory | "All")}>
+            <option>All</option>
+            {triageDocumentCategories.map((category) => <option key={category}>{category}</option>)}
+          </select>
+          <select className={selectClass} value={selectedUploader} onChange={(event) => setSelectedUploader(event.target.value as "All" | "Receptionist" | "ER Nurse")}>
+            <option>All</option>
+            <option>Receptionist</option>
+            <option>ER Nurse</option>
+          </select>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-lg border border-border">
+          <div className="grid min-w-[900px] grid-cols-[minmax(0,1.4fr)_150px_140px_180px_120px_140px] gap-3 border-b border-border bg-surface-muted px-4 py-3 text-xs font-semibold uppercase text-muted-foreground">
+            <span>Document Name</span>
+            <span>Category</span>
+            <span>Uploaded By</span>
+            <span>Uploaded At</span>
+            <span>Status</span>
+            <span>OCR</span>
+          </div>
+          {visibleRecords.length ? (
+            <div className="max-w-full overflow-x-auto">
+              <div className="min-w-[900px] divide-y divide-border">
+                {visibleRecords.map((record) => (
+                  <div className="grid grid-cols-[minmax(0,1.4fr)_150px_140px_180px_120px_140px] gap-3 px-4 py-3 text-sm" key={record.id}>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-foreground">{record.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{record.type || "Unknown type"} • {formatTriageFileSize(record.size)}</p>
+                    </div>
+                    <span className="text-muted-foreground">{record.category}</span>
+                    <span className="font-medium text-foreground">{record.uploadedBy}</span>
+                    <span className="text-muted-foreground">{record.uploadedAt}</span>
+                    <span className="font-medium text-foreground">{record.status}</span>
+                    <span className="text-muted-foreground">{record.ocrStatus}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-2 text-sm font-semibold text-foreground">No uploaded old records yet.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Files uploaded by Receptionist or ER Nurse will appear here.</p>
+            </div>
+          )}
+        </div>
+      </SectionCard>
+    </div>
+  );
+}
+
+function TriageUploadReportsSection() {
+  const [documents, setDocuments] = React.useState<TriageUploadedDocument[]>([]);
+  const [selectedCategory, setSelectedCategory] = React.useState<TriageDocumentCategory | "All">("All");
+  const [dragActive, setDragActive] = React.useState(false);
+  const [errors, setErrors] = React.useState<string[]>([]);
+  const [uploading, setUploading] = React.useState(false);
+  const [modal, setModal] = React.useState<TriageModal>(null);
+  const [previewDocumentId, setPreviewDocumentId] = React.useState<string | null>(null);
+  const [removeDocumentId, setRemoveDocumentId] = React.useState<string | null>(null);
+  const browseInputRef = React.useRef<HTMLInputElement | null>(null);
+  const bulkInputRef = React.useRef<HTMLInputElement | null>(null);
+  const uploadCancelRef = React.useRef(false);
+  const visibleDocuments = selectedCategory === "All" ? documents : documents.filter((document) => document.category === selectedCategory);
+  const previewDocument = documents.find((document) => document.id === previewDocumentId) ?? null;
+  const removeDocument = documents.find((document) => document.id === removeDocumentId) ?? null;
+  const validUploadCount = documents.filter((document) => document.status !== "Failed").length;
+
+  React.useEffect(() => () => {
+    documents.forEach((document) => {
+      if (document.objectUrl) URL.revokeObjectURL(document.objectUrl);
+    });
+  }, [documents]);
+
+  function pushError(message: string) {
+    setErrors((current) => [...current.slice(-3), message]);
+    toast.error(message);
+  }
+
+  function addFiles(input: FileList | File[] | null, forcedCategory?: TriageDocumentCategory) {
+    if (!input?.length) return;
+    const duplicateKeys = new Set(documents.map((document) => `${document.originalName}:${document.size}`));
+    const nextDocuments: TriageUploadedDocument[] = [];
+
+    Array.from(input).forEach((file) => {
+      const safeName = sanitizeTriageFileName(file.name);
+      const validationError = validateTriageFile(file, safeName);
+      const duplicateKey = `${safeName}:${file.size}`;
+      if (validationError) {
+        pushError(validationError);
+        return;
+      }
+      if (duplicateKeys.has(duplicateKey)) {
+        pushError(`${safeName}: duplicate file skipped.`);
+        return;
+      }
+      duplicateKeys.add(duplicateKey);
+      nextDocuments.push({
+        id: createTriageId("basic-doc"),
+        name: safeName,
+        originalName: safeName,
+        category: forcedCategory ?? (selectedCategory === "All" ? detectTriageCategory(safeName) : selectedCategory),
+        type: file.type || inferTriageMimeType(safeName),
+        size: file.size,
+        status: "Ready",
+        progress: 0,
+        ocrStatus: "Pending",
+        uploadedBy: "Receptionist",
+        uploadedAt: new Date().toLocaleString("en-IN"),
+        file,
+        objectUrl: URL.createObjectURL(file),
+      });
+    });
+
+    if (!nextDocuments.length) return;
+    setDocuments((current) => [...nextDocuments, ...current]);
+    addSharedUploadedDocuments(nextDocuments);
+    toast.success(`${nextDocuments.length} document(s) added.`);
+  }
+
+  function updateDocument(documentId: string, update: Partial<TriageUploadedDocument>) {
+    setDocuments((current) => current.map((document) => (document.id === documentId ? { ...document, ...update } : document)));
+    updateSharedUploadedDocument(documentId, update);
+  }
+
+  async function uploadAll() {
+    const uploadableDocuments = documents.filter((document) => document.status !== "Uploaded" && document.status !== "Failed");
+    if (!uploadableDocuments.length) {
+      toast.warning("Select at least one valid report before upload.");
+      return;
+    }
+    setUploading(true);
+    uploadCancelRef.current = false;
+    for (const document of uploadableDocuments) {
+      updateDocument(document.id, { status: "Uploading", progress: 8, error: undefined });
+      for (const progress of [22, 44, 68, 86, 100]) {
+        await new Promise((resolve) => window.setTimeout(resolve, 140));
+        if (uploadCancelRef.current) {
+          updateDocument(document.id, { status: "Ready", error: "Upload cancelled" });
+          setUploading(false);
+          return;
+        }
+        updateDocument(document.id, { progress });
+      }
+      await requestTriageSignedUpload(document);
+      await uploadTriageDocumentToApi(document);
+      updateDocument(document.id, { status: "Uploaded", ocrStatus: "Processing" });
+      await startTriageOcrJob(document.id);
+      await new Promise((resolve) => window.setTimeout(resolve, 220));
+      updateDocument(document.id, { ocrStatus: "Verification Ready" });
+    }
+    setUploading(false);
+    toast.success("Reports uploaded and ready for verification.");
+  }
+
+  function removeConfirmed() {
+    if (!removeDocumentId) return;
+    const removed = documents.find((document) => document.id === removeDocumentId);
+    if (removed?.objectUrl) URL.revokeObjectURL(removed.objectUrl);
+    setDocuments((current) => current.filter((document) => document.id !== removeDocumentId));
+    removeSharedUploadedDocument(removeDocumentId);
+    setRemoveDocumentId(null);
+    setPreviewDocumentId(null);
+    toast.success("Document removed.");
+  }
+
+  function onDrop(event: React.DragEvent<HTMLElement>, category?: TriageDocumentCategory) {
+    event.preventDefault();
+    setDragActive(false);
+    addFiles(event.dataTransfer.files, category);
+  }
+
+  return (
+    <>
+      <SectionCard hideIcon icon={Upload} title="Upload Reports">
+        <input
+          ref={browseInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          accept="application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={(event) => {
+            addFiles(event.target.files);
+            event.currentTarget.value = "";
+          }}
+        />
+        <input
+          ref={bulkInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          accept="application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={(event) => {
+            addFiles(event.target.files);
+            event.currentTarget.value = "";
+          }}
+        />
+        <div
+          className={`rounded-lg border border-dashed p-5 text-center transition ${dragActive ? "border-primary bg-primary/5" : "border-border bg-surface-muted/50"}`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragActive(true);
+          }}
+          onDragLeave={(event) => {
+            event.preventDefault();
+            setDragActive(false);
+          }}
+          onDrop={(event) => onDrop(event)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              browseInputRef.current?.click();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          <Upload className="mx-auto h-10 w-10 text-primary" />
+          <p className="mt-3 text-base font-semibold text-foreground">Drop triage and referral reports here</p>
+          <p className="mt-1 text-sm text-muted-foreground">PDF, JPG, PNG, DOC, DOCX • Max 20 MB per file</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-5">
+            <Button type="button" onClick={() => browseInputRef.current?.click()}>
+              <Upload className="h-4 w-4" />
+              Browse
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setModal("camera")}>
+              <Camera className="h-4 w-4" />
+              Camera
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setModal("qr")}>
+              <QrCode className="h-4 w-4" />
+              QR
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setModal("mobile")}>
+              <Smartphone className="h-4 w-4" />
+              Mobile
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setModal("bulk")}>
+              <FolderOpen className="h-4 w-4" />
+              Bulk
+            </Button>
+          </div>
+          {errors.length ? (
+            <div className="mx-auto mt-4 max-w-2xl space-y-1 text-left">
+              {errors.map((error) => (
+                <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-xs font-semibold text-danger" key={error}>{error}</p>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-4">
+          <button
+            className={`rounded-md border px-3 py-2 text-left text-sm font-semibold transition ${selectedCategory === "All" ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-surface-muted"}`}
+            onClick={() => setSelectedCategory("All")}
+            type="button"
+          >
+            All ({documents.length})
+          </button>
+          {triageDocumentCategories.map((category) => (
+            <button
+              className={`rounded-md border px-3 py-2 text-left text-sm font-semibold transition ${selectedCategory === category ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:bg-surface-muted"}`}
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragActive(true);
+              }}
+              onDrop={(event) => onDrop(event, category)}
+              type="button"
+            >
+              {category} ({documents.filter((document) => document.category === category).length})
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-lg border border-border">
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Uploaded File List</h3>
+              <p className="text-xs text-muted-foreground">{selectedCategory === "All" ? "Showing all categories" : `Filtered by ${selectedCategory}`}</p>
+            </div>
+            <Button disabled={!validUploadCount || uploading} type="button" onClick={uploadAll}>
+              <Upload className="h-4 w-4" />
+              {validUploadCount ? `Upload ${validUploadCount} Reports` : "Upload Reports"}
+            </Button>
+          </div>
+          {visibleDocuments.length ? (
+            <div className="divide-y divide-border">
+              {visibleDocuments.map((document) => (
+                <div className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_160px_140px_140px_160px]" key={document.id}>
+                  <button className="min-w-0 text-left" onClick={() => setPreviewDocumentId(document.id)} type="button">
+                    <p className="truncate text-sm font-semibold text-foreground">{document.name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{document.type || "Unknown type"} • {formatTriageFileSize(document.size)} • {document.uploadedBy}</p>
+                    {document.error ? <p className="mt-1 text-xs font-semibold text-danger">{document.error}</p> : null}
+                  </button>
+                  <select className={selectClass} value={document.category} onChange={(event) => updateDocument(document.id, { category: event.target.value as TriageDocumentCategory })}>
+                    {triageDocumentCategories.map((category) => <option key={category}>{category}</option>)}
+                  </select>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground">{document.status}</p>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${document.progress}%` }} />
+                    </div>
+                  </div>
+                  <p className="text-xs font-semibold text-muted-foreground">{document.ocrStatus}</p>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button aria-label="Preview document" size="icon" type="button" variant="outline" onClick={() => setPreviewDocumentId(document.id)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button aria-label="Download document" disabled={!document.objectUrl} size="icon" type="button" variant="outline" onClick={() => {
+                      if (!document.objectUrl) return;
+                      const link = window.document.createElement("a");
+                      link.href = document.objectUrl;
+                      link.download = document.name;
+                      link.click();
+                    }}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button aria-label="Remove document" size="icon" type="button" variant="outline" onClick={() => setRemoveDocumentId(document.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-2 text-sm font-semibold text-foreground">{selectedCategory === "All" ? "No documents selected yet." : `No ${selectedCategory} documents yet.`}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Use Browse, Camera, QR, Mobile, Bulk, or drag files into this area.</p>
+            </div>
+          )}
+        </div>
+      </SectionCard>
+
+      <CenterModal open={modal === "camera"} onOpenChange={(open) => !open && setModal(null)} title="Camera Capture" description="Capture a referral report photo and attach it to the document list.">
+        <TriageCameraPanel onAddFile={(file, category) => addFiles([file], category)} onClose={() => setModal(null)} />
+      </CenterModal>
+
+      <CenterModal open={modal === "qr"} onOpenChange={(open) => !open && setModal(null)} title="Referral QR Scanner" description="Scan camera preview or enter referral QR data manually.">
+        <TriageQrPanel onApply={(message) => {
+          toast.success(message);
+          setModal(null);
+        }} />
+      </CenterModal>
+
+      <CenterModal open={modal === "mobile"} onOpenChange={(open) => !open && setModal(null)} title="Mobile Upload Session" description="Generate a short-lived QR/link for attendant phone uploads.">
+        <TriageMobilePanel onAddDemoFile={() => {
+          const demo = new File(["mobile referral image"], `mobile-referral-${Date.now()}.jpg`, { type: "image/jpeg" });
+          addFiles([demo], "Referral Letter");
+        }} />
+      </CenterModal>
+
+      <CenterModal open={modal === "bulk"} onOpenChange={(open) => !open && setModal(null)} title="Bulk Upload" description="Select many files, auto-categorize them, then preserve successful uploads if one fails.">
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">Bulk queue controls</p>
+            <p className="mt-1 text-sm text-muted-foreground">Files are categorized by filename and validated before entering the upload list.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" onClick={() => bulkInputRef.current?.click()}>
+              <FolderOpen className="h-4 w-4" />
+              Select Files
+            </Button>
+            <Button type="button" variant="outline" onClick={() => {
+              const demo = new File(["bulk referral content"], `bulk-referral-${Date.now()}.pdf`, { type: "application/pdf" });
+              addFiles([demo], "Referral Letter");
+              toast.success("Demo bulk report added.");
+            }}>Add Demo Bulk File</Button>
+            <Button type="button" variant="outline" onClick={() => toast.info("Pause/Resume queue control is ready for backend upload workers.")}>Pause / Resume</Button>
+            <Button type="button" variant="outline" onClick={() => toast.info("Retry failed files queued.")}>Retry Failed</Button>
+          </div>
+        </div>
+      </CenterModal>
+
+      <CenterModal open={Boolean(previewDocument)} onOpenChange={(open) => !open && setPreviewDocumentId(null)} title="Report Preview" description="Preview, verification, category, download, and delete actions.">
+        {previewDocument ? (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-surface-muted p-4">
+              <p className="text-base font-semibold text-foreground">{previewDocument.name}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{previewDocument.category} • {formatTriageFileSize(previewDocument.size)} • {previewDocument.uploadedAt}</p>
+            </div>
+            {previewDocument.objectUrl && previewDocument.type.startsWith("image/") ? (
+              <img alt={previewDocument.name} className="max-h-[56vh] w-full rounded-lg border border-border object-contain" src={previewDocument.objectUrl} />
+            ) : previewDocument.objectUrl && previewDocument.type === "application/pdf" ? (
+              <iframe className="h-[56vh] w-full rounded-lg border border-border" src={previewDocument.objectUrl} title={previewDocument.name} />
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Preview is not available for this file type. Use download instead.</div>
+            )}
+            <div className="grid gap-3 sm:grid-cols-4">
+              <select className={selectClass} value={previewDocument.category} onChange={(event) => updateDocument(previewDocument.id, { category: event.target.value as TriageDocumentCategory })}>
+                {triageDocumentCategories.map((category) => <option key={category}>{category}</option>)}
+              </select>
+              <Button type="button" variant="outline" onClick={() => updateDocument(previewDocument.id, { ocrStatus: "Verification Ready" })}>
+                <CheckCircle2 className="h-4 w-4" />
+                Verify
+              </Button>
+              <Button disabled={!previewDocument.objectUrl} type="button" variant="outline" onClick={() => {
+                if (!previewDocument.objectUrl) return;
+                const link = window.document.createElement("a");
+                link.href = previewDocument.objectUrl;
+                link.download = previewDocument.name;
+                link.click();
+              }}>
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setRemoveDocumentId(previewDocument.id)}>
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </CenterModal>
+
+      <CenterModal open={Boolean(removeDocument)} onOpenChange={(open) => !open && setRemoveDocumentId(null)} title="Delete Uploaded Report">
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">Delete <span className="font-semibold text-foreground">{removeDocument?.name}</span>? This confirmation prevents accidental removal from the report list.</p>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setRemoveDocumentId(null)}>Cancel</Button>
+            <Button type="button" onClick={removeConfirmed}>Delete</Button>
+          </div>
+        </div>
+      </CenterModal>
+    </>
   );
 }
 
@@ -1570,191 +2123,6 @@ function TriageMobilePanel({ onAddDemoFile }: { onAddDemoFile: () => void }) {
   );
 }
 
-function TransferOutTab() {
-  const [modal, setModal] = React.useState<"notify-icu" | "notify-doctor" | "notify-nurse" | "reserve-bed" | null>(null);
-
-  async function notifyTransferAction(action: string) {
-    await sendTriageEmergencyAction(action);
-    toast.success(`${action} sent and audit timeline updated.`);
-    setModal(null);
-  }
-
-  return (
-    <div className="mt-2 space-y-3" data-patient-tab="transfer-out">
-      <SectionCard hideIcon icon={ClipboardList} title="Transfer Register">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <Field label="Referral Unit / Facility"><Input placeholder="Cath Lab - Cardiology" /></Field>
-          <Field label="Accepting Doctor"><Input placeholder="Dr. A. Sharma" /></Field>
-          <Field label="Consent Taken">
-            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
-          </Field>
-          <Field label="Checklist Done">
-            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
-          </Field>
-          <Field label="Escort"><Input placeholder="Doctor + Nurse" /></Field>
-          <Field label="Ambulance Type">
-            <select className={selectClass} defaultValue=""><option value="">Select</option><option>ACLS</option><option>BLS</option><option>NA (Internal)</option></select>
-          </Field>
-          <Field label="Departure Time"><Input type="time" /></Field>
-          <Field label="Handover Ack">
-            <select className={selectClass} defaultValue=""><option value="">Select</option><option>Y</option><option>N</option></select>
-          </Field>
-          <Field className="md:col-span-2 xl:col-span-4" label="Remarks"><Input placeholder="Door-to-decision 22 min" /></Field>
-        </div>
-      </SectionCard>
-
-      <SectionCard hideIcon icon={AlertTriangle} title="Emergency Actions">
-        <div className="grid gap-2 md:grid-cols-5">
-          <Button type="button" variant="outline" onClick={() => setModal("notify-icu")}>
-            <AlertTriangle className="h-4 w-4" />
-            Notify ICU
-          </Button>
-          <Button type="button" variant="outline" onClick={() => setModal("notify-doctor")}>Notify Doctor</Button>
-          <Button type="button" variant="outline" onClick={() => setModal("notify-nurse")}>Notify Nurse</Button>
-          <Button type="button" variant="outline" onClick={() => setModal("reserve-bed")}>
-            <BedDouble className="h-4 w-4" />
-            Reserve Bed
-          </Button>
-          <Button type="button" variant="outline" onClick={() => printTriagePacket("Transfer OUT Summary", [])}>
-            <Printer className="h-4 w-4" />
-            Emergency Print
-          </Button>
-        </div>
-      </SectionCard>
-
-      <CenterModal open={Boolean(modal)} onOpenChange={(open) => !open && setModal(null)} title="Confirm Transfer OUT Action">
-        <div className="space-y-4">
-          <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
-            <p className="text-sm font-semibold text-foreground">{modal === "reserve-bed" ? "Reserve ICU Bed" : "Send transfer notification"}</p>
-            <p className="mt-1 text-sm text-muted-foreground">This action will be recorded in the transfer audit timeline with timestamp and user context.</p>
-          </div>
-          {modal === "reserve-bed" ? (
-            <div className="grid gap-3 sm:grid-cols-3">
-              {["ICU-01", "ICU-04", "CCU-02"].map((bed) => (
-                <button className="rounded-lg border border-border bg-background p-3 text-left hover:border-primary" key={bed} onClick={async () => {
-                  await reserveTriageEmergencyBed(bed);
-                  await notifyTransferAction(`${bed} reserved for 20 minutes`);
-                }} type="button">
-                  <p className="text-sm font-semibold text-foreground">{bed}</p>
-                  <p className="text-xs text-muted-foreground">Available • temporary hold</p>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setModal(null)}>Cancel</Button>
-              <Button type="button" onClick={() => notifyTransferAction(modal === "notify-icu" ? "ICU notification" : modal === "notify-doctor" ? "Doctor notification" : "Nurse notification")}>Confirm</Button>
-            </div>
-          )}
-        </div>
-      </CenterModal>
-    </div>
-  );
-}
-
-function PatientOldRecordsTab() {
-  const [records, setRecords] = React.useState<PatientOldRecordFile[]>([]);
-  const [category, setCategory] = React.useState<TriageDocumentCategory | "All">("All");
-
-  React.useEffect(() => {
-    const refresh = () => setRecords(readPatientOldRecordFiles());
-    refresh();
-    window.addEventListener("storage", refresh);
-    window.addEventListener(patientOldRecordsEvent, refresh);
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener(patientOldRecordsEvent, refresh);
-    };
-  }, []);
-
-  const filteredRecords = records.filter((record) => category === "All" || record.category === category);
-
-  return (
-    <div className="mt-2 space-y-3" data-patient-tab="old-records">
-      <SectionCard icon={FolderOpen} title="9. Patient Old records">
-        <div className="grid gap-3 md:grid-cols-4">
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Total Files</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{records.length}</p>
-            <p className="text-xs text-muted-foreground">Reception and ER Nurse uploads</p>
-          </div>
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Reception</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{records.filter((record) => record.uploadedBy === "Reception").length}</p>
-            <p className="text-xs text-muted-foreground">Reception uploaded files</p>
-          </div>
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">ER Nurse</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{records.filter((record) => record.uploadedBy === "ER Nurse").length}</p>
-            <p className="text-xs text-muted-foreground">ER Nurse uploaded files</p>
-          </div>
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Category</p>
-            <select className={selectClass} value={category} onChange={(event) => setCategory(event.target.value as TriageDocumentCategory | "All")}>
-              <option>All</option>
-              {triageDocumentCategories.map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="mt-4 overflow-hidden rounded-lg border border-border">
-          <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Uploaded Files</h3>
-              <p className="text-xs text-muted-foreground">Showing all old records uploaded from Reception or ER Nurse.</p>
-            </div>
-            <Button type="button" variant="outline" onClick={() => setRecords(readPatientOldRecordFiles())}>
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
-
-          {filteredRecords.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] text-left text-sm">
-                <thead className="bg-surface-muted text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3">File Name</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Size</th>
-                    <th className="px-4 py-3">Uploaded By</th>
-                    <th className="px-4 py-3">Uploaded At</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">OCR</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRecords.map((record) => (
-                    <tr className="border-t border-border" key={record.id}>
-                      <td className="max-w-[260px] truncate px-4 py-3 font-semibold text-foreground">{record.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{record.category}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{record.type || "Unknown"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatTriageFileSize(record.size)}</td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{record.uploadedBy}</span>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{record.uploadedAt}</td>
-                      <td className="px-4 py-3 font-semibold text-foreground">{record.status}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{record.ocrStatus}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-8 text-center">
-              <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
-              <p className="mt-2 text-sm font-semibold text-foreground">No uploaded old records yet.</p>
-              <p className="mt-1 text-xs text-muted-foreground">Upload files from the Triage upload section as Reception or ER Nurse to see them here.</p>
-            </div>
-          )}
-        </div>
-      </SectionCard>
-    </div>
-  );
-}
-
 function DoctorOrdersTab() {
   return (
     <div className="mt-2" data-patient-tab="orders">
@@ -1954,7 +2322,12 @@ function PatientDetailsPreview({
     const section = record.sections.find((item) => item.tabId === tab.id);
     return section ?? { tabId: tab.id, tabLabel: tab.label, fields: [] };
   });
-  const patientName = getPatientRecordValue(record, "Patient Name") || "Patient details preview";
+  const patientName =
+    getPatientRecordValue(record, "Patient Name") ||
+    [getPatientRecordValue(record, "First Name"), getPatientRecordValue(record, "Middle Name"), getPatientRecordValue(record, "Last Name")]
+      .filter(Boolean)
+      .join(" ") ||
+    "Patient details preview";
 
   return (
     <div className="rounded-lg border border-border bg-surface-muted p-3 sm:p-5">
@@ -2546,14 +2919,45 @@ function FavoriteRow({
 }
 
 export function PatientDetailsPage({ embedded = false }: { embedded?: boolean }) {
+  const { role } = useRole();
+  const isReceptionist = role === "Receptionist";
+  const recordStore = React.useMemo(
+    () => isReceptionist
+      ? {
+          find: findReceptionistPatientRecord,
+          read: readReceptionistPatientRecords,
+          upsertSection: upsertReceptionistPatientRecordSection,
+          write: writeReceptionistPatientRecords,
+        }
+      : {
+          find: findSharedPatientRecord,
+          read: readSharedPatientRecords,
+          upsertSection: upsertSharedPatientRecordSection,
+          write: writeSharedPatientRecords,
+        },
+    [isReceptionist],
+  );
+  const roleVisiblePatientDetailTabs = React.useMemo(
+    () => isReceptionist
+      ? visiblePatientDetailTabs
+          .filter((tab) => tab.id === "basic" || tab.id === "patient-old-records")
+          .map((tab) => (tab.id === "basic" ? { ...tab, label: "Basic Demographic" } : tab))
+      : visiblePatientDetailTabs,
+    [isReceptionist],
+  );
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const documentInputRef = React.useRef<HTMLInputElement | null>(null);
-  const initialEditingRecord = React.useMemo(() => getInitialEditingPatientRecord(), []);
+  const initialEditingRecord = React.useMemo(() => getInitialEditingPatientRecord(recordStore.find), [recordStore]);
   const [activeTab, setActiveTab] = React.useState<PatientDetailTab>("basic");
   const [activeHistoryTab, setActiveHistoryTab] = React.useState<HistoryTab>("medical");
+  const [arrivalDate, setArrivalDate] = React.useState(() => getCurrentDateText());
   const [dateOfBirth, setDateOfBirth] = React.useState("");
   const [age, setAge] = React.useState("");
   const [bloodGroup, setBloodGroup] = React.useState("");
+  const [permanentAddress, setPermanentAddress] = React.useState("");
+  const [currentAddress, setCurrentAddress] = React.useState("");
+  const [sameAsPermanent, setSameAsPermanent] = React.useState(false);
+  const [identificationRows, setIdentificationRows] = React.useState([{ id: "identification-1", type: "" }]);
   const [clinicalHeight, setClinicalHeight] = React.useState("");
   const [clinicalWeight, setClinicalWeight] = React.useState("");
   const [formKey, setFormKey] = React.useState(0);
@@ -2562,7 +2966,8 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   const [previewRecord, setPreviewRecord] = React.useState<PatientRecord | null>(null);
   const [isExtractingDocument, setIsExtractingDocument] = React.useState(false);
   const clinicalBmi = React.useMemo(() => calculateBmi(clinicalHeight, clinicalWeight), [clinicalHeight, clinicalWeight]);
-  const activeTabIndex = visiblePatientDetailTabs.findIndex((tab) => tab.id === activeTab);
+  const activePatientTab = roleVisiblePatientDetailTabs.some((tab) => tab.id === activeTab) ? activeTab : "basic";
+  const activeTabIndex = roleVisiblePatientDetailTabs.findIndex((tab) => tab.id === activePatientTab);
   const patientGender = editingRecord ? getPatientRecordValue(editingRecord, "Gender") : "";
   const calculatorAge = age || (editingRecord ? getPatientRecordValue(editingRecord, "Age") : "");
   const calculatorHeight = clinicalHeight || (editingRecord ? getPatientRecordValue(editingRecord, "Height") : "");
@@ -2570,29 +2975,45 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
 
   React.useEffect(() => {
     if (!editingRecord || !formRef.current) return;
-    const section = editingRecord.sections.find((item) => item.tabId === activeTab);
-    const legacySections = activeTab === "basic"
+    const section = editingRecord.sections.find((item) => item.tabId === activePatientTab);
+    const legacySections = activePatientTab === "basic"
       ? editingRecord.sections.filter((item) => ["referral", "clinical", "additional"].includes(item.tabId))
       : [];
     if (!section && !legacySections.length) return;
     const mergedSection: PatientRecordSection = {
-      tabId: activeTab,
-      tabLabel: visiblePatientDetailTabs.find((tab) => tab.id === activeTab)?.label ?? activeTab,
+      tabId: activePatientTab,
+      tabLabel: visiblePatientDetailTabs.find((tab) => tab.id === activePatientTab)?.label ?? activePatientTab,
       fields: [...(section?.fields ?? []), ...legacySections.flatMap((item) => item.fields)],
     };
 
     applyPatientSection(formRef.current, mergedSection);
     applyControlledPatientFields(mergedSection);
-  }, [activeTab, editingRecord, formKey]);
+  }, [activePatientTab, editingRecord, formKey]);
 
   function handleDateOfBirthChange(nextDateOfBirth: string) {
     setDateOfBirth(nextDateOfBirth);
     setAge(calculateAge(nextDateOfBirth));
   }
 
+  function availableIdentificationOptions(rowId: string) {
+    const selectedTypes = new Set(identificationRows.filter((row) => row.id !== rowId && row.type).map((row) => row.type));
+    return identificationDocumentOptions.filter((option) => !selectedTypes.has(option.type));
+  }
+
+  function updateIdentificationRowType(rowId: string, type: string) {
+    setIdentificationRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, type } : row)));
+  }
+
+  function addIdentificationRow() {
+    if (identificationRows.length >= identificationDocumentOptions.length) return;
+    setIdentificationRows((rows) => [...rows, { id: `identification-${Date.now()}`, type: "" }]);
+  }
+
   function applyControlledPatientFields(section: PatientRecordSection) {
     const valueFor = (label: string) => getPatientRecordValue({ id: "current", updatedAt: "", sections: [section] }, label);
     if (section.tabId === "basic") {
+      const nextArrivalDate = valueFor("Date on which Patient arrives");
+      setArrivalDate(nextArrivalDate || getCurrentDateText());
       const nextDateOfBirth = valueFor("Date of Birth");
       if (nextDateOfBirth) {
         setDateOfBirth(nextDateOfBirth);
@@ -2601,20 +3022,28 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         setAge(valueFor("Age"));
       }
       setBloodGroup(valueFor("Blood Group"));
-      const confirmedBloodGroup = valueFor("Blood Group (Reconfirm)");
-      if (confirmedBloodGroup) setBloodGroup(confirmedBloodGroup);
-      setClinicalHeight(valueFor("Height"));
-      setClinicalWeight(valueFor("Weight"));
+      const nextPermanentAddress = valueFor("Permanent Address") || valueFor("Address");
+      const nextCurrentAddress = valueFor("Current Address");
+      const nextSameAsPermanent = valueFor("Same as permanent") === "Yes";
+      setPermanentAddress(nextPermanentAddress);
+      setSameAsPermanent(nextSameAsPermanent);
+      setCurrentAddress(nextSameAsPermanent ? nextPermanentAddress : nextCurrentAddress);
+      if (!isReceptionist) {
+        const confirmedBloodGroup = valueFor("Blood Group (Reconfirm)");
+        if (confirmedBloodGroup) setBloodGroup(confirmedBloodGroup);
+        setClinicalHeight(valueFor("Height"));
+        setClinicalWeight(valueFor("Weight"));
+      }
     }
   }
 
   function saveCurrentPatientSection() {
     if (!formRef.current) return null;
-    const currentTab = visiblePatientDetailTabs[activeTabIndex];
+    const currentTab = roleVisiblePatientDetailTabs[activeTabIndex];
     if (!currentTab) return null;
     const section = collectPatientSection(formRef.current, currentTab.id, currentTab.label);
     if (!section.fields.length) return null;
-    const savedRecord = upsertPatientRecordSection(editingRecordId, section);
+    const savedRecord = recordStore.upsertSection(editingRecordId, section);
     setEditingRecordId(savedRecord.id);
     setEditingRecord(savedRecord);
     return savedRecord;
@@ -2623,7 +3052,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   function goToNextTab() {
     if (!formRef.current?.reportValidity()) return;
     saveCurrentPatientSection();
-    if (activeTab === "history") {
+    if (activePatientTab === "history") {
       const historyTabIndex = patientHistoryTabOrder.indexOf(activeHistoryTab);
       const nextHistoryTab = patientHistoryTabOrder[historyTabIndex + 1];
       if (nextHistoryTab) {
@@ -2632,7 +3061,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         return;
       }
     }
-    const nextTab = visiblePatientDetailTabs[activeTabIndex + 1];
+    const nextTab = roleVisiblePatientDetailTabs[activeTabIndex + 1];
     if (nextTab) {
       setActiveTab(nextTab.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2645,7 +3074,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
     const target = event.target as HTMLElement;
     if (event.key !== "Enter" || target.tagName === "BUTTON" || target.tagName === "TEXTAREA") return;
     event.preventDefault();
-    if (activeTabIndex === visiblePatientDetailTabs.length - 1) {
+    if (activeTabIndex === roleVisiblePatientDetailTabs.length - 1) {
       handlePreview();
       return;
     }
@@ -2696,15 +3125,20 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         ),
       };
       setEditingRecord(nextRecord);
-      writePatientRecords(readPatientRecords().map((record) => (record.id === nextRecord.id ? nextRecord : record)));
+      recordStore.write(recordStore.read().map((record) => (record.id === nextRecord.id ? nextRecord : record)));
       return nextRecord;
     });
   }
 
   function handleClear() {
+    setArrivalDate(getCurrentDateText());
     setDateOfBirth("");
     setAge("");
     setBloodGroup("");
+    setPermanentAddress("");
+    setCurrentAddress("");
+    setSameAsPermanent(false);
+    setIdentificationRows([{ id: "identification-1", type: "" }]);
     setClinicalHeight("");
     setClinicalWeight("");
     setEditingRecordId(null);
@@ -2737,10 +3171,10 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         return;
       }
 
-      const id = editingRecordId || `patient-${Date.now()}`;
+      const id = editingRecordId || `${isReceptionist ? "receptionist-patient" : "patient"}-${Date.now()}`;
       const nextRecord: PatientRecord = { id, updatedAt: new Date().toISOString(), sections };
-      const records = readPatientRecords();
-      writePatientRecords([nextRecord, ...records.filter((record) => record.id !== id)]);
+      const records = recordStore.read();
+      recordStore.write([nextRecord, ...records.filter((record) => record.id !== id)]);
       setEditingRecordId(id);
       setEditingRecord(nextRecord);
       setActiveTab("basic");
@@ -2789,11 +3223,11 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
 
       <div className="pt-1">
         <div className="flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1" role="tablist" aria-label="Patient detail sections">
-          {visiblePatientDetailTabs.map((tab) => (
+          {roleVisiblePatientDetailTabs.map((tab) => (
             <button
-              aria-selected={activeTab === tab.id}
+              aria-selected={activePatientTab === tab.id}
               className={`h-8 shrink-0 rounded px-3 text-xs font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${
-                activeTab === tab.id ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                activePatientTab === tab.id ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -2805,8 +3239,283 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
           ))}
         </div>
 
-        {activeTab === "basic" ? (
+        {activePatientTab === "basic" ? (
           <div className="mt-2 space-y-3" data-patient-tab="basic">
+          {isReceptionist ? (
+          <>
+          <SectionCard icon={UserRound} title="1. Basic Demographics">
+            <div className="space-y-5">
+              <div>
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Personal Details</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                <Field label="Patient ID / UHID">
+                  <Input />
+                </Field>
+                <Field className="xl:col-span-2" label="Date on which Patient arrives">
+                  <DateTextInput onChange={setArrivalDate} required value={arrivalDate} />
+                </Field>
+                <Field label="First Name">
+                  <Input required />
+                </Field>
+                <Field label="Middle Name">
+                  <Input />
+                </Field>
+                <Field label="Last Name">
+                  <Input required />
+                </Field>
+                <Field label="Date of Birth">
+                  <DateTextInput onChange={handleDateOfBirthChange} required value={dateOfBirth} />
+                </Field>
+                <Field label="Age">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      inputMode="numeric"
+                      min="0"
+                      onBeforeInput={(event) => preventInvalidNumericInput(event)}
+                      onInput={(event) => validateNumericInput(event, "Age")}
+                      onChange={(event) => setAge(event.target.value)}
+                      onPaste={(event) => preventInvalidNumericPaste(event)}
+                      pattern="[0-9]*"
+                      required
+                      title="Age must contain numbers only."
+                      value={age}
+                    />
+                    <span className="text-xs text-muted-foreground">Years</span>
+                  </div>
+                </Field>
+                <Field label="Gender">
+                  <select className={selectClass} required>
+                    <option value="">Select</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Transgender / Other</option>
+                  </select>
+                </Field>
+                <Field label="Marital Status">
+                  <select className={selectClass} required>
+                    <option value="">Select</option>
+                    <option>Single</option>
+                    <option>Married</option>
+                    <option>Divorced</option>
+                    <option>Widowed</option>
+                  </select>
+                </Field>
+                <Field label="Nationality">
+                  <Input defaultValue="Indian" />
+                </Field>
+                <Field label="Preferred Language">
+                  <Input />
+                </Field>
+              </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Contact Information</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                  <Field className="md:col-span-2 xl:col-span-6" label="Permanent Address">
+                    <textarea
+                      className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      onChange={(event) => {
+                        const nextAddress = event.target.value;
+                        setPermanentAddress(nextAddress);
+                        if (sameAsPermanent) setCurrentAddress(nextAddress);
+                      }}
+                      placeholder="Flat / House No., Street, Area"
+                      value={permanentAddress}
+                    />
+                  </Field>
+                  <Field label="City">
+                    <Input />
+                  </Field>
+                  <Field label="State">
+                    <Input />
+                  </Field>
+                  <Field label="PIN Code">
+                    <Input inputMode="numeric" maxLength={6} minLength={6} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Permanent PIN code")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="PIN code must contain 6 digits only." />
+                  </Field>
+                  <Field className="md:col-span-2 xl:col-span-6" label="Current Address">
+                    <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Flat / House No., Street, Area" readOnly={sameAsPermanent} value={currentAddress} onChange={(event) => setCurrentAddress(event.target.value)} />
+                  </Field>
+                  <Field label="City">
+                    <Input />
+                  </Field>
+                  <Field label="State">
+                    <Input />
+                  </Field>
+                  <Field label="PIN Code">
+                    <Input inputMode="numeric" maxLength={6} minLength={6} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Current PIN code")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="PIN code must contain 6 digits only." />
+                  </Field>
+                  <div className="space-y-1.5 md:col-span-2 xl:col-span-3" data-patient-field-group>
+                    <span className={labelClass} data-patient-field-label>Same as permanent</span>
+                    <label className="flex min-h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-foreground">
+                      <input
+                        checked={sameAsPermanent}
+                        className="h-4 w-4 rounded border-border"
+                        name="sameAsPermanent"
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setSameAsPermanent(checked);
+                          if (checked) setCurrentAddress(permanentAddress);
+                        }}
+                        type="checkbox"
+                        value={sameAsPermanent ? "Yes" : "No"}
+                      />
+                      <span>Same as permanent</span>
+                    </label>
+                  </div>
+                  <Field label="Mobile Country Code">
+                    <CountryCodeSelect required />
+                  </Field>
+                  <Field label="Mobile Number">
+                    <Input inputMode="numeric" maxLength={10} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Mobile number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="Mobile number must contain 10 digits only." />
+                  </Field>
+                  <Field label="Alternate Contact Country Code">
+                    <CountryCodeSelect />
+                  </Field>
+                  <Field label="Alternate Contact Number">
+                    <Input inputMode="numeric" maxLength={10} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Alternate contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Alternate contact number must contain 10 digits only." />
+                  </Field>
+                  <Field label="Whatsapp Country Code">
+                    <CountryCodeSelect />
+                  </Field>
+                  <Field label="Whatsapp Number">
+                    <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Whatsapp number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Whatsapp number must contain numbers only." />
+                  </Field>
+                  <Field className="md:col-span-2" label="Email Address">
+                    <Input type="email" />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Identification & Documentation</div>
+                <div className="space-y-3">
+                  {identificationRows.map((row, index) => {
+                    const selectedIdentification = identificationDocumentOptions.find((option) => option.type === row.type);
+                    return (
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6" key={row.id}>
+                        <Field label="Identification Type">
+                          <select className={selectClass} onChange={(event) => updateIdentificationRowType(row.id, event.target.value)} required={index === 0} value={row.type}>
+                            <option value="">Select</option>
+                            {availableIdentificationOptions(row.id).map((option) => (
+                              <option key={option.type} value={option.type}>
+                                {option.type}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        {selectedIdentification ? (
+                          <Field className="xl:col-span-2" label={selectedIdentification.fieldLabel}>
+                            <Input
+                              inputMode={selectedIdentification.inputMode}
+                              maxLength={selectedIdentification.maxLength}
+                              minLength={selectedIdentification.minLength}
+                              onBeforeInput={selectedIdentification.inputMode === "numeric" ? (event) => preventInvalidNumericInput(event) : undefined}
+                              onInput={selectedIdentification.inputMode === "numeric" ? (event) => validateNumericInput(event, selectedIdentification.fieldLabel) : undefined}
+                              onPaste={selectedIdentification.inputMode === "numeric" ? (event) => preventInvalidNumericPaste(event) : undefined}
+                              pattern={selectedIdentification.pattern}
+                              required={index === 0}
+                              title={selectedIdentification.title}
+                            />
+                          </Field>
+                        ) : null}
+                        {index === identificationRows.length - 1 ? (
+                          <div className="flex items-end">
+                            <Button
+                              aria-label="Add identification row"
+                              disabled={identificationRows.length >= identificationDocumentOptions.length}
+                              onClick={addIdentificationRow}
+                              size="icon"
+                              type="button"
+                              variant="outline"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Emergency</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                  <Field className="xl:col-span-2" label="Emergency Contact Name">
+                    <Input />
+                  </Field>
+                  <Field label="Relationship to Patient">
+                    <Input />
+                  </Field>
+                  <Field label="Emergency Contact Country Code">
+                    <CountryCodeSelect />
+                  </Field>
+                  <Field label="Emergency Contact Number">
+                    <Input inputMode="numeric" maxLength={10} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Emergency contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Emergency contact number must contain 10 digits only." />
+                  </Field>
+                  <Field label="Emergency Contact Whatsapp Number">
+                    <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Emergency contact Whatsapp number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Emergency contact Whatsapp number must contain numbers only." />
+                  </Field>
+                  <Field className="xl:col-span-2" label="Emergency Contact Email">
+                    <Input type="email" />
+                  </Field>
+                  <Field label="Emergency Contact Identity Document Type">
+                    <select className={selectClass}>
+                      <option value="">Select</option>
+                      <option>Aadhaar</option>
+                      <option>Driving Licence</option>
+                      <option>PAN</option>
+                      <option>Passport</option>
+                    </select>
+                  </Field>
+                  <Field className="xl:col-span-2" label="Emergency Contact Identity Document Number">
+                    <Input />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Reception, Referral & Existing Details</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                  <Field className="xl:col-span-2" label="ER Nurse Assigned">
+                    <Input />
+                  </Field>
+                  <Field className="xl:col-span-2" label="Duty Doctor">
+                    <Input />
+                  </Field>
+                  <Field label="Referred By (Dr. / Facility Name)"><Input /></Field>
+                  <Field label="Referred From"><Input /></Field>
+                  <Field label="Referral Contact"><Input /></Field>
+                  <div className="space-y-1.5 md:col-span-2" data-patient-field-group>
+                    <span className={labelClass} data-patient-field-label>Referral Type</span>
+                    <div className="flex min-h-9 flex-wrap items-center gap-x-4 gap-y-1">
+                      <RadioOption label="Self" name="referralType" />
+                      <RadioOption label="Doctor" name="referralType" />
+                      <RadioOption label="Hospital / Facility" name="referralType" />
+                      <RadioOption label="Others" name="referralType" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Insurance Details</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                  <Field className="xl:col-span-2" label="Insurance Provider">
+                    <Input />
+                  </Field>
+                  <Field className="xl:col-span-2" label="Policy Number">
+                    <Input />
+                  </Field>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+          <TriageUploadReportsSection />
+          </>
+          ) : (
+          <>
           <SectionCard icon={UserRound} title="1. Basic Demographics">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
               <Field label="MRN / Patient ID">
@@ -2954,28 +3663,30 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
               <Field className="md:col-span-2 xl:col-span-5" label="Notes"><Input placeholder="Enter additional clinical notes" /></Field>
             </div>
           </SectionCard>
+          </>
+          )}
           </div>
         ) : null}
 
-        {activeTab === "triage" ? <TriageTab /> : null}
+        {activePatientTab === "triage" ? <TriageTab /> : null}
 
-        {activeTab === "nurse-entry" ? (
+        {activePatientTab === "nurse-entry" ? (
           <div className="mt-2" data-patient-tab="nurse-entry">
             <NursingIcuModulePage page="vitals" />
           </div>
         ) : null}
 
-        {activeTab === "history" ? (
+        {activePatientTab === "history" ? (
           <div className="mt-1" data-patient-tab="history">
             <PatientHistoryPage activeTab={activeHistoryTab} embedded onTabChange={setActiveHistoryTab} />
           </div>
         ) : null}
 
-        {activeTab === "orders" ? <DoctorOrdersTab /> : null}
+        {activePatientTab === "orders" ? <DoctorOrdersTab /> : null}
 
-        {activeTab === "notes" ? <DoctorNotesTab /> : null}
+        {activePatientTab === "notes" ? <DoctorNotesTab /> : null}
 
-        {showMedicalCalculator && activeTab === "calculator" ? (
+        {showMedicalCalculator && activePatientTab === "calculator" ? (
           <MedicalCalculatorWorkspace
             age={calculatorAge}
             gender={patientGender}
@@ -2984,9 +3695,9 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
           />
         ) : null}
 
-        {activeTab === "transfer-out" ? <TransferOutTab /> : null}
+        {activePatientTab === "transfer-out" ? <TransferOutTab /> : null}
 
-        {activeTab === "old-records" ? <PatientOldRecordsTab /> : null}
+        {activePatientTab === "patient-old-records" ? <PatientOldRecordsTab /> : null}
 
       </div>
 
@@ -3005,7 +3716,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
               <RotateCcw className="h-4 w-4" />
               Clear
             </Button>
-            {activeTabIndex === visiblePatientDetailTabs.length - 1 ? (
+            {activeTabIndex === roleVisiblePatientDetailTabs.length - 1 ? (
               <>
                 <Button onClick={handlePreview} size="sm" type="button" variant="outline">
                   <Eye className="h-4 w-4" />

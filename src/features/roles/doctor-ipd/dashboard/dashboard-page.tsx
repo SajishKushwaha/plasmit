@@ -152,11 +152,12 @@ export function DoctorIpdDashboardPage() {
       </CenterModal>
 
       <CenterModal
-        className="h-[min(88dvh,900px)] w-[min(96vw,1560px)]"
+        bodyClassName="overflow-hidden p-0"
+        className="h-[min(92dvh,760px)] w-[min(96vw,1180px)]"
         description={radiologyOrderPatient ? `${radiologyOrderPatient.name} | ${radiologyOrderPatient.bed} | ${radiologyOrderPatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setRadiologyOrderPatient(null)}
         open={Boolean(radiologyOrderPatient)}
-        title="Radiology Result Review"
+        title="Diagnosis Result"
       >
         {radiologyOrderPatient ? <RadiologyResultReview patient={radiologyOrderPatient} /> : null}
       </CenterModal>

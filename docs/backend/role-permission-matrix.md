@@ -87,7 +87,11 @@ Receptionist:
 - `HEAD_NURSE`: assigned wards/ICU nursing operations and nurse-managed workflow records.
 - `UNIT_NURSE`: assigned unit patients, unit checklists, unit handovers, and unit equipment only.
 - `ER_NURSE`: emergency reception patients and triage/vitals records only.
+<<<<<<< HEAD
 - `RECEPTIONIST`: front office patient basic demographic records only.
+=======
+- `RECEPTIONLIST`: front office patient basic demographic records only.
+>>>>>>> ward
 
 ## Sensitive Action Rules
 

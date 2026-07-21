@@ -68,6 +68,14 @@ const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20";
 const decimalPattern = "[0-9]*[.]?[0-9]*";
 const bloodGroupOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Not Known"];
+const countryCodeOptions = ["+91", "+1", "+44", "+61", "+65", "+971", "+974", "+966", "+880", "+94", "+977"];
+const identificationDocumentOptions = [
+  { type: "Aadhaar Card", fieldLabel: "Aadhaar Card Number", inputMode: "numeric", maxLength: 12, minLength: 12, pattern: "[0-9]*", title: "Aadhaar card number must contain 12 digits only." },
+  { type: "PAN", fieldLabel: "PAN", inputMode: undefined, maxLength: 10, minLength: undefined, pattern: "[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}", title: "PAN must be a 10-character alphanumeric code." },
+  { type: "Passport", fieldLabel: "Passport Number", inputMode: undefined, maxLength: 20, minLength: undefined, pattern: undefined, title: "Enter passport number." },
+  { type: "Voter ID", fieldLabel: "Voter ID Number", inputMode: undefined, maxLength: 20, minLength: undefined, pattern: undefined, title: "Enter voter ID number." },
+  { type: "Driving License", fieldLabel: "Driving License Number", inputMode: undefined, maxLength: 20, minLength: undefined, pattern: undefined, title: "Enter driving license number." },
+] as const;
 const showQuickUpload = false;
 const showMedicalCalculator = true;
 const patientDetailTabs = [
@@ -88,7 +96,7 @@ const patientHistoryTabOrder: HistoryTab[] = ["medical", "surgical", "medication
 type PatientDetailTab = (typeof patientDetailTabs)[number]["id"];
 
 const patientDocumentSchema = [
-  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["MRN / Patient ID", "UHID", "Date on which Patient arrives", "Patient Name", "Date of Birth", "Age", "Gender", "Blood Group", "Identity Document Type", "Identity Document Number", "Insurance Number", "Insurance Provider", "Policy Number", "Country Code", "Contact Number", "Alternative Contact Number", "Whatsapp Number", "Email Address", "Permanent Address", "Current Address", "Same as permanent", "City", "State", "PIN Code", "Nationality", "Preferred Language", "Emergency Contact Name", "Emergency Contact Number", "Relationship to Patient", "Emergency Contact Country Code", "Emergency Contact Whatsapp Number", "Emergency Contact Email", "Emergency Contact Identity Document Type", "Emergency Contact Identity Document Number", "ER Nurse Assigned", "Duty Doctor", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Referral Notes"] },
+  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["Patient ID / UHID", "Date on which Patient arrives", "First Name", "Middle Name", "Last Name", "Date of Birth", "Age", "Gender", "Marital Status", "Nationality", "Preferred Language", "Permanent Address", "City", "State", "PIN Code", "Current Address", "City", "State", "PIN Code", "Same as permanent", "Mobile Country Code", "Mobile Number", "Alternate Contact Country Code", "Alternate Contact Number", "Whatsapp Country Code", "Whatsapp Number", "Email Address", "Identification Type", "Aadhaar Card Number", "PAN", "Passport Number", "Voter ID Number", "Driving License Number", "Emergency Contact Name", "Relationship to Patient", "Emergency Contact Country Code", "Emergency Contact Number", "Emergency Contact Whatsapp Number", "Emergency Contact Email", "Emergency Contact Identity Document Type", "Emergency Contact Identity Document Number", "ER Nurse Assigned", "Duty Doctor", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Insurance Provider", "Policy Number"] },
   { tabId: "triage", tabLabel: "2. Triage", fields: ["Triage Category", "Arrival Time", "Triage Time", "Provisional Diagnosis", "Reason for Transfer", "Referral Unit / Facility", "Accepting Doctor", "Consent Taken", "Checklist Done", "Escort", "Ambulance Type", "Departure Time", "Handover Ack", "Remarks"] },
   { tabId: "nurse-entry", tabLabel: "3. Nurse Entry", fields: ["Patient", "Date", "Time", "Shift", "Recorded by", "Respiratory rate", "O2 saturation", "Blood pressure", "Pulse rate", "Temperature", "GCS score", "Pain score", "Urine output", "Nurse notes"] },
   { tabId: "history", tabLabel: "4. Patient History", fields: ["Past Medical History", "Known Comorbidities", "Past Surgical History", "Current Medications", "Allergy Status", "Allergen and Reaction", "Smoking Status", "Alcohol Use", "Relevant Social History"] },
@@ -532,6 +540,18 @@ function RadioOption({ label, name }: { label: string; name: string }) {
       <input className={radioInputClass} name={name} type="radio" />
       <span className="leading-5">{label}</span>
     </label>
+  );
+}
+
+function CountryCodeSelect({ required = false }: { required?: boolean }) {
+  return (
+    <select className={selectClass} defaultValue="+91" required={required}>
+      {countryCodeOptions.map((code) => (
+        <option key={code} value={code}>
+          {code}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -2302,7 +2322,12 @@ function PatientDetailsPreview({
     const section = record.sections.find((item) => item.tabId === tab.id);
     return section ?? { tabId: tab.id, tabLabel: tab.label, fields: [] };
   });
-  const patientName = getPatientRecordValue(record, "Patient Name") || "Patient details preview";
+  const patientName =
+    getPatientRecordValue(record, "Patient Name") ||
+    [getPatientRecordValue(record, "First Name"), getPatientRecordValue(record, "Middle Name"), getPatientRecordValue(record, "Last Name")]
+      .filter(Boolean)
+      .join(" ") ||
+    "Patient details preview";
 
   return (
     <div className="rounded-lg border border-border bg-surface-muted p-3 sm:p-5">
@@ -2932,6 +2957,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   const [permanentAddress, setPermanentAddress] = React.useState("");
   const [currentAddress, setCurrentAddress] = React.useState("");
   const [sameAsPermanent, setSameAsPermanent] = React.useState(false);
+  const [identificationRows, setIdentificationRows] = React.useState([{ id: "identification-1", type: "" }]);
   const [clinicalHeight, setClinicalHeight] = React.useState("");
   const [clinicalWeight, setClinicalWeight] = React.useState("");
   const [formKey, setFormKey] = React.useState(0);
@@ -2978,6 +3004,20 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   function handleDateOfBirthChange(nextDateOfBirth: string) {
     setDateOfBirth(nextDateOfBirth);
     setAge(calculateAge(nextDateOfBirth));
+  }
+
+  function availableIdentificationOptions(rowId: string) {
+    const selectedTypes = new Set(identificationRows.filter((row) => row.id !== rowId && row.type).map((row) => row.type));
+    return identificationDocumentOptions.filter((option) => !selectedTypes.has(option.type));
+  }
+
+  function updateIdentificationRowType(rowId: string, type: string) {
+    setIdentificationRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, type } : row)));
+  }
+
+  function addIdentificationRow() {
+    if (identificationRows.length >= identificationDocumentOptions.length) return;
+    setIdentificationRows((rows) => [...rows, { id: `identification-${Date.now()}`, type: "" }]);
   }
 
   function applyControlledPatientFields(section: PatientRecordSection) {
@@ -3109,6 +3149,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
     setPermanentAddress("");
     setCurrentAddress("");
     setSameAsPermanent(false);
+    setIdentificationRows([{ id: "identification-1", type: "" }]);
     setClinicalHeight("");
     setClinicalWeight("");
     setEditingRecordId(null);
@@ -3215,17 +3256,22 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
           <>
           <SectionCard icon={UserRound} title="1. Basic Demographics">
             <div className="space-y-5">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-                <Field label="MRN / Patient ID">
-                  <Input />
-                </Field>
-                <Field label="UHID">
+              <div>
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Personal Details</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                <Field label="Patient ID / UHID">
                   <Input />
                 </Field>
                 <Field className="xl:col-span-2" label="Date on which Patient arrives">
                   <DateTextInput onChange={setArrivalDate} required value={arrivalDate} />
                 </Field>
-                <Field className="xl:col-span-2" label="Patient Name">
+                <Field label="First Name">
+                  <Input required />
+                </Field>
+                <Field label="Middle Name">
+                  <Input />
+                </Field>
+                <Field label="Last Name">
                   <Input required />
                 </Field>
                 <Field label="Date of Birth">
@@ -3248,82 +3294,60 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                     <span className="text-xs text-muted-foreground">Years</span>
                   </div>
                 </Field>
-                <div className="space-y-2" data-patient-field-group>
-                  <span className={labelClass} data-patient-field-label>Gender</span>
-                  <div className="flex flex-wrap gap-4 pt-2">
-                    <RadioOption label="Male" name="gender" />
-                    <RadioOption label="Female" name="gender" />
-                    <RadioOption label="Other" name="gender" />
-                  </div>
-                </div>
-                <Field label="Blood Group">
-                  <select className={selectClass} value={bloodGroup} onChange={(event) => setBloodGroup(event.target.value)}>
+                <Field label="Gender">
+                  <select className={selectClass} required>
                     <option value="">Select</option>
-                    {bloodGroupOptions.map((bloodGroup) => (
-                      <option key={bloodGroup}>{bloodGroup}</option>
-                    ))}
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Transgender / Other</option>
+                  </select>
+                </Field>
+                <Field label="Marital Status">
+                  <select className={selectClass} required>
+                    <option value="">Select</option>
+                    <option>Single</option>
+                    <option>Married</option>
+                    <option>Divorced</option>
+                    <option>Widowed</option>
                   </select>
                 </Field>
                 <Field label="Nationality">
-                  <Input />
+                  <Input defaultValue="Indian" />
                 </Field>
                 <Field label="Preferred Language">
                   <Input />
                 </Field>
               </div>
-
-              <div className="border-t border-border pt-4">
-                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Identity and Insurance</div>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                  <Field label="Identity Document Type">
-                    <select className={selectClass} required>
-                      <option value="">Select</option>
-                      <option>Aadhaar</option>
-                      <option>Driving Licence</option>
-                      <option>PAN</option>
-                      <option>Passport</option>
-                    </select>
-                  </Field>
-                  <Field className="xl:col-span-2" label="Identity Document Number">
-                    <Input required />
-                  </Field>
-                  <Field label="Insurance Number">
-                    <Input />
-                  </Field>
-                  <Field label="Insurance Provider">
-                    <Input />
-                  </Field>
-                  <Field label="Policy Number">
-                    <Input />
-                  </Field>
-                </div>
               </div>
 
               <div className="border-t border-border pt-4">
-                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Contact and Address</div>
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Contact Information</div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-                  <Field label="Country Code">
-                    <Input defaultValue="+91" />
+                  <Field className="md:col-span-2 xl:col-span-6" label="Permanent Address">
+                    <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Flat / House No., Street, Area" value={permanentAddress} onChange={(event) => setPermanentAddress(event.target.value)} />
                   </Field>
-                  <Field label="Contact Number">
-                    <Input inputMode="numeric" maxLength={15} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="Contact number must contain numbers only." />
+                  <Field label="City">
+                    <Input />
                   </Field>
-                  <Field label="Alternative Contact Number">
-                    <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Alternative contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Alternative contact number must contain numbers only." />
+                  <Field label="State">
+                    <Input />
                   </Field>
-                  <Field label="Whatsapp Number">
-                    <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Whatsapp number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Whatsapp number must contain numbers only." />
+                  <Field label="PIN Code">
+                    <Input inputMode="numeric" maxLength={6} minLength={6} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Permanent PIN code")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="PIN code must contain 6 digits only." />
                   </Field>
-                  <Field className="md:col-span-2" label="Email Address">
-                    <Input type="email" />
+                  <Field className="md:col-span-2 xl:col-span-6" label="Current Address">
+                    <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Flat / House No., Street, Area" readOnly={sameAsPermanent} value={currentAddress} onChange={(event) => setCurrentAddress(event.target.value)} />
                   </Field>
-                  <Field className="md:col-span-2 xl:col-span-3" label="Permanent Address">
-                    <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" value={permanentAddress} onChange={(event) => setPermanentAddress(event.target.value)} />
+                  <Field label="City">
+                    <Input />
                   </Field>
-                  <Field className="md:col-span-2 xl:col-span-3" label="Current Address">
-                    <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" readOnly={sameAsPermanent} value={currentAddress} onChange={(event) => setCurrentAddress(event.target.value)} />
+                  <Field label="State">
+                    <Input />
                   </Field>
-                  <div className="space-y-1.5" data-patient-field-group>
+                  <Field label="PIN Code">
+                    <Input inputMode="numeric" maxLength={6} minLength={6} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Current PIN code")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="PIN code must contain 6 digits only." />
+                  </Field>
+                  <div className="space-y-1.5 md:col-span-2 xl:col-span-3" data-patient-field-group>
                     <span className={labelClass} data-patient-field-label>Same as permanent</span>
                     <label className="flex min-h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-foreground">
                       <input
@@ -3341,32 +3365,96 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                       <span>Same as permanent</span>
                     </label>
                   </div>
-                  <Field label="City">
-                    <Input />
+                  <Field label="Mobile Country Code">
+                    <CountryCodeSelect required />
                   </Field>
-                  <Field label="State">
-                    <Input />
+                  <Field label="Mobile Number">
+                    <Input inputMode="numeric" maxLength={10} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Mobile number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="Mobile number must contain 10 digits only." />
                   </Field>
-                  <Field label="PIN Code">
-                    <Input inputMode="numeric" maxLength={6} minLength={6} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "PIN code")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="PIN code must contain 6 digits only." />
+                  <Field label="Alternate Contact Country Code">
+                    <CountryCodeSelect />
+                  </Field>
+                  <Field label="Alternate Contact Number">
+                    <Input inputMode="numeric" maxLength={10} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Alternate contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Alternate contact number must contain 10 digits only." />
+                  </Field>
+                  <Field label="Whatsapp Country Code">
+                    <CountryCodeSelect />
+                  </Field>
+                  <Field label="Whatsapp Number">
+                    <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Whatsapp number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Whatsapp number must contain numbers only." />
+                  </Field>
+                  <Field className="md:col-span-2" label="Email Address">
+                    <Input type="email" />
                   </Field>
                 </div>
               </div>
 
               <div className="border-t border-border pt-4">
-                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Emergency Contact</div>
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Identification & Documentation</div>
+                <div className="space-y-3">
+                  {identificationRows.map((row, index) => {
+                    const selectedIdentification = identificationDocumentOptions.find((option) => option.type === row.type);
+                    return (
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6" key={row.id}>
+                        <Field label="Identification Type">
+                          <select className={selectClass} onChange={(event) => updateIdentificationRowType(row.id, event.target.value)} required={index === 0} value={row.type}>
+                            <option value="">Select</option>
+                            {availableIdentificationOptions(row.id).map((option) => (
+                              <option key={option.type} value={option.type}>
+                                {option.type}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        {selectedIdentification ? (
+                          <Field className="xl:col-span-2" label={selectedIdentification.fieldLabel}>
+                            <Input
+                              inputMode={selectedIdentification.inputMode}
+                              maxLength={selectedIdentification.maxLength}
+                              minLength={selectedIdentification.minLength}
+                              onBeforeInput={selectedIdentification.inputMode === "numeric" ? (event) => preventInvalidNumericInput(event) : undefined}
+                              onInput={selectedIdentification.inputMode === "numeric" ? (event) => validateNumericInput(event, selectedIdentification.fieldLabel) : undefined}
+                              onPaste={selectedIdentification.inputMode === "numeric" ? (event) => preventInvalidNumericPaste(event) : undefined}
+                              pattern={selectedIdentification.pattern}
+                              required={index === 0}
+                              title={selectedIdentification.title}
+                            />
+                          </Field>
+                        ) : null}
+                        {index === identificationRows.length - 1 ? (
+                          <div className="flex items-end">
+                            <Button
+                              aria-label="Add identification row"
+                              disabled={identificationRows.length >= identificationDocumentOptions.length}
+                              onClick={addIdentificationRow}
+                              size="icon"
+                              type="button"
+                              variant="outline"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Emergency</div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
                   <Field className="xl:col-span-2" label="Emergency Contact Name">
                     <Input />
                   </Field>
-                  <Field label="Emergency Contact Country Code">
-                    <Input defaultValue="+91" />
-                  </Field>
-                  <Field label="Emergency Contact Number">
-                    <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Emergency contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Emergency contact number must contain numbers only." />
-                  </Field>
                   <Field label="Relationship to Patient">
                     <Input />
+                  </Field>
+                  <Field label="Emergency Contact Country Code">
+                    <CountryCodeSelect />
+                  </Field>
+                  <Field label="Emergency Contact Number">
+                    <Input inputMode="numeric" maxLength={10} minLength={10} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Emergency contact number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Emergency contact number must contain 10 digits only." />
                   </Field>
                   <Field label="Emergency Contact Whatsapp Number">
                     <Input inputMode="numeric" maxLength={15} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Emergency contact Whatsapp number")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" title="Emergency contact Whatsapp number must contain numbers only." />
@@ -3390,7 +3478,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
               </div>
 
               <div className="border-t border-border pt-4">
-                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">ER Staff Details</div>
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Reception, Referral & Existing Details</div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
                   <Field className="xl:col-span-2" label="ER Nurse Assigned">
                     <Input />
@@ -3410,7 +3498,18 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                       <RadioOption label="Others" name="referralType" />
                     </div>
                   </div>
-                  <Field className="md:col-span-2 xl:col-span-4" label="Referral Notes"><Input placeholder="Enter referral notes (if any)" /></Field>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Insurance Details</div>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                  <Field className="xl:col-span-2" label="Insurance Provider">
+                    <Input />
+                  </Field>
+                  <Field className="xl:col-span-2" label="Policy Number">
+                    <Input />
+                  </Field>
                 </div>
               </div>
             </div>

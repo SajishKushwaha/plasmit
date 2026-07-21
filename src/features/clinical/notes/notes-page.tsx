@@ -1588,26 +1588,39 @@ function AllNotesOverview({
 }) {
   return (
     <div className="space-y-4">
-      <div className="horizontal-scrollbar grid grid-flow-col auto-cols-[220px] gap-4 overflow-x-auto pb-3 sm:auto-cols-[240px]">
-        {notesCategories.map((category) => {
-          const Icon = category.icon;
-          return (
-            <button
-              className="group flex min-h-36 flex-col rounded-lg border border-border bg-surface p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
-              key={category.id}
-              onClick={() => onOpenCategory(category.id)}
-              type="button"
-            >
-              <span className={cn("flex h-10 w-10 items-center justify-center rounded-full", category.soft, category.accent)}>
-                <Icon className="h-5 w-5" />
-              </span>
-              <span className="mt-4 block text-sm font-semibold">{getCategoryDisplayLabel(category.label)}</span>
-              <span className={cn("mt-auto flex items-center gap-1 pt-5 text-xs font-semibold", category.accent)}>
-                {allNotes.filter((note) => note.category === category.label).length} Notes <ChevronRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-              </span>
-            </button>
-          );
-        })}
+      <div className="rounded-lg border border-border bg-white p-2 pb-1 shadow-sm">
+        <div
+          aria-label="Clinical note categories"
+          className="horizontal-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden pb-3 shadow-[inset_-28px_0_20px_-18px_rgba(15,23,42,0.30)] [scrollbar-gutter:stable]"
+        >
+          {notesCategories.map((category) => {
+            const Icon = category.icon;
+            const noteCount = allNotes.filter((note) => note.category === category.label).length;
+            return (
+              <button
+                aria-label={`Open ${getCategoryDisplayLabel(category.label)}`}
+                className={cn(
+                  "group flex h-11 shrink-0 items-center gap-2 rounded-md border border-transparent bg-transparent px-3 text-left text-sm font-semibold text-muted-foreground transition",
+                  "hover:border-primary/30 hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                )}
+                key={category.id}
+                onClick={() => onOpenCategory(category.id)}
+                type="button"
+              >
+                <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-md", category.soft, category.accent)}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="whitespace-nowrap">{getCategoryDisplayLabel(category.label)}</span>
+                <span className={cn("ml-1 rounded-full px-2 py-0.5 text-xs font-bold", category.soft, category.accent)}>
+                  {noteCount}
+                </span>
+                <span className={cn("flex items-center text-xs font-semibold opacity-0 transition group-hover:opacity-100", category.accent)}>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <NotesFilterPanel

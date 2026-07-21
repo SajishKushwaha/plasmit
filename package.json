@@ -9,7 +9,6 @@
     "preview": "npm run build && npm run start",
     "start": "next start",
     "lint": "eslint .",
-    "format": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

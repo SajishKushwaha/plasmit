@@ -1588,10 +1588,10 @@ function AllNotesOverview({
 }) {
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-border bg-white p-2 pb-1 shadow-sm">
+      <div className="rounded-lg border border-border bg-white p-2 pb-2 shadow-sm">
         <div
           aria-label="Clinical note categories"
-          className="horizontal-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden pb-3 shadow-[inset_-28px_0_20px_-18px_rgba(15,23,42,0.30)] [scrollbar-gutter:stable]"
+          className="horizontal-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden pb-4 shadow-[inset_-28px_0_20px_-18px_rgba(15,23,42,0.30)] [scrollbar-gutter:stable]"
         >
           {notesCategories.map((category) => {
             const Icon = category.icon;
@@ -1620,6 +1620,9 @@ function AllNotesOverview({
               </button>
             );
           })}
+        </div>
+        <div aria-hidden="true" className="mt-1 h-1.5 rounded-full bg-muted">
+          <div className="h-full w-28 rounded-full bg-primary/65 shadow-sm" />
         </div>
       </div>
 

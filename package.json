@@ -9,6 +9,7 @@
     "preview": "npm run build && npm run start",
     "start": "next start",
     "lint": "eslint .",
+    "format:check": "node -e \"console.log('No formatter configured; skipping format check.')\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

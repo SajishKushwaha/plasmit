@@ -7,11 +7,7 @@ Canonical role codes:
 - `HEAD_NURSE`
 - `UNIT_NURSE`
 - `ER_NURSE`
-<<<<<<< HEAD
 - `RECEPTIONIST`
-=======
-- `RECEPTIONLIST`
->>>>>>> ward
 
 ## ICU Admin
 

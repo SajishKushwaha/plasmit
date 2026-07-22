@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, BedDouble, Check, ChevronDown, Plus, RotateCcw, Save, Send, UserPlus, UserRound, X } from "lucide-react";
+import { ArrowRight, BedDouble, Check, ChevronDown, Plus, RotateCcw, Save, Send, Trash2, UserPlus, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -11,24 +11,59 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type AdmissionPath = "new" | "transfer";
-type StepKey = "Patient" | "Patient Status" | "Bed & Device" | "Medication" | "Review";
+type StepKey = "Patient" | "Patient Status" | "Medication" | "Review";
 type PatientHistoryTab = "Past Medical History" | "Past Surgical History" | "Medication History" | "Allergy History" | "Social History";
-type IdentityDocumentType = "Aadhaar Card" | "Driving Licence" | "Passport";
+type IdentityDocumentType = "Aadhaar Card" | "PAN" | "Passport" | "Voter ID" | "Driving Licence";
+type IdentityRow = {
+  id: string;
+  type: string;
+  value: string;
+};
 
 type IcuAdmissionDraft = {
   uhid: string;
   patientName: string;
+  registrationDate: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
   dateOfBirth: string;
   age: string;
   gender: string;
+  maritalStatus: string;
+  nationality: string;
+  preferredLanguage: string;
   identityDocumentType: string;
   identityDocumentValue: string;
+  permanentAddress: string;
+  permanentCity: string;
+  permanentState: string;
+  permanentPinCode: string;
+  currentAddress: string;
+  currentCity: string;
+  currentState: string;
+  currentPinCode: string;
+  sameAsPermanent: string;
+  mobileCountryCode: string;
+  mobileNumber: string;
+  alternateCountryCode: string;
+  alternateNumber: string;
+  whatsappCountryCode: string;
+  whatsappNumber: string;
   contactNumber: string;
   email: string;
   address: string;
   state: string;
   city: string;
   pinCode: string;
+  emergencyContactName: string;
+  emergencyRelationship: string;
+  emergencyCountryCode: string;
+  emergencyContactNumber: string;
+  emergencyWhatsappNumber: string;
+  emergencyEmail: string;
+  emergencyIdentityDocumentType: string;
+  emergencyIdentityDocumentNumber: string;
   referredBy: string;
   referredFrom: string;
   referralContact: string;
@@ -103,9 +138,17 @@ type IcuAdmissionBedOption = {
   note: string;
 };
 
-const admissionSteps: StepKey[] = ["Patient", "Patient Status", "Bed & Device", "Medication", "Review"];
+const admissionSteps: StepKey[] = ["Patient", "Patient Status", "Medication", "Review"];
 const patientHistoryTabs: PatientHistoryTab[] = ["Past Medical History", "Past Surgical History", "Medication History", "Allergy History", "Social History"];
-const identityDocumentTypes: IdentityDocumentType[] = ["Aadhaar Card", "Driving Licence", "Passport"];
+const identityDocumentTypes: IdentityDocumentType[] = ["Aadhaar Card", "PAN", "Passport", "Voter ID", "Driving Licence"];
+const countryCodeOptions = ["India (+91)", "United States (+1)", "United Kingdom (+44)", "United Arab Emirates (+971)", "Singapore (+65)"];
+const identityDocumentConfigs: Record<IdentityDocumentType, { fieldLabel: string; inputMode: "numeric" | "text"; maxLength: number; minLength?: number; pattern?: string; title?: string }> = {
+  "Aadhaar Card": { fieldLabel: "Aadhaar Card Number", inputMode: "numeric", maxLength: 12, minLength: 12, pattern: "[0-9]*", title: "Aadhaar number must contain 12 digits only." },
+  "PAN": { fieldLabel: "PAN", inputMode: "text", maxLength: 10 },
+  "Passport": { fieldLabel: "Passport Number", inputMode: "text", maxLength: 20 },
+  "Voter ID": { fieldLabel: "Voter ID Number", inputMode: "text", maxLength: 20 },
+  "Driving Licence": { fieldLabel: "Driving License Number", inputMode: "text", maxLength: 20 },
+};
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Not Known"];
 const comorbidityOptions = ["Hypertension", "Diabetes Mellitus", "Ischemic Heart Disease", "COPD / Asthma", "CKD", "Hypothyroidism", "Malignancy", "Others"];
 const patientStatusOptions = ["ER Stabilization", "Ward Deterioration", "Post-op Recovery", "Critical Observation", "Ventilator Support", "NIV Support", "Transfer Pending", "Other"];
@@ -138,17 +181,47 @@ const selectClass =
 const emptyDraft: IcuAdmissionDraft = {
   uhid: "",
   patientName: "",
+  registrationDate: "",
+  firstName: "",
+  middleName: "",
+  lastName: "",
   dateOfBirth: "",
   age: "",
   gender: "",
+  maritalStatus: "",
+  nationality: "Indian",
+  preferredLanguage: "",
   identityDocumentType: "",
   identityDocumentValue: "",
+  permanentAddress: "",
+  permanentCity: "",
+  permanentState: "",
+  permanentPinCode: "",
+  currentAddress: "",
+  currentCity: "",
+  currentState: "",
+  currentPinCode: "",
+  sameAsPermanent: "",
+  mobileCountryCode: "India (+91)",
+  mobileNumber: "",
+  alternateCountryCode: "India (+91)",
+  alternateNumber: "",
+  whatsappCountryCode: "India (+91)",
+  whatsappNumber: "",
   contactNumber: "",
   email: "",
   address: "",
   state: "",
   city: "",
   pinCode: "",
+  emergencyContactName: "",
+  emergencyRelationship: "",
+  emergencyCountryCode: "India (+91)",
+  emergencyContactNumber: "",
+  emergencyWhatsappNumber: "",
+  emergencyEmail: "",
+  emergencyIdentityDocumentType: "",
+  emergencyIdentityDocumentNumber: "",
   referredBy: "",
   referredFrom: "",
   referralContact: "",
@@ -336,6 +409,35 @@ function Field({ children, className, label }: { children: React.ReactNode; clas
   );
 }
 
+function CountryCodeSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <select className={selectClass} onChange={(event) => onChange(event.target.value)} value={value}>
+      {countryCodeOptions.map((option) => (
+        <option key={option}>{option}</option>
+      ))}
+    </select>
+  );
+}
+
+function DateTextInput({ onChange, required = false, value }: { onChange: (value: string) => void; required?: boolean; value: string }) {
+  return (
+    <Input
+      className={inputClass}
+      inputMode="numeric"
+      maxLength={10}
+      onBeforeInput={(event) => {
+        const data = (event.nativeEvent as InputEvent).data ?? "";
+        if (data && !/^\d+$/.test(data)) event.preventDefault();
+      }}
+      onChange={(event) => onChange(formatDateInput(event.target.value))}
+      onPaste={preventInvalidNumericPaste}
+      placeholder="DD / MM / YYYY"
+      required={required}
+      value={value}
+    />
+  );
+}
+
 function SegmentedGender({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
     <div className="grid h-10 grid-cols-3 overflow-hidden rounded-md border border-input bg-white shadow-sm">
@@ -502,6 +604,8 @@ export function IcuAdmissionPage() {
   const [allergyType, setAllergyType] = React.useState("");
   const [otherAllergyType, setOtherAllergyType] = React.useState("");
   const [draft, setDraft] = React.useState<IcuAdmissionDraft>(emptyDraft);
+  const [identificationRows, setIdentificationRows] = React.useState<IdentityRow[]>([{ id: "icu-identification-1", type: "", value: "" }]);
+  const [emergencyIdentificationRows, setEmergencyIdentificationRows] = React.useState<IdentityRow[]>([{ id: "icu-emergency-identification-1", type: "", value: "" }]);
   const [patientQuery, setPatientQuery] = React.useState("");
   const activeStep = admissionSteps[step];
   const completeness = Math.max(10, Math.round(((step + (admissionPath ? 1 : 0) + (draft.patientName ? 1 : 0)) / (admissionSteps.length + 2)) * 100));
@@ -528,6 +632,77 @@ export function IcuAdmissionPage() {
     setDraft((current) => ({ ...current, [field]: value }));
   }
 
+  function availableIdentityDocumentTypes(rows: IdentityRow[], rowId: string) {
+    const selectedTypes = new Set(rows.filter((row) => row.id !== rowId).map((row) => row.type).filter(Boolean));
+    return identityDocumentTypes.filter((documentType) => !selectedTypes.has(documentType));
+  }
+
+  function updateIdentificationRow(rowId: string, update: Partial<IdentityRow>) {
+    setIdentificationRows((current) => current.map((row) => (row.id === rowId ? { ...row, ...update } : row)));
+  }
+
+  function updateEmergencyIdentificationRow(rowId: string, update: Partial<IdentityRow>) {
+    setEmergencyIdentificationRows((current) => current.map((row) => (row.id === rowId ? { ...row, ...update } : row)));
+  }
+
+  function addIdentificationRow() {
+    setIdentificationRows((current) =>
+      current.length >= identityDocumentTypes.length ? current : [...current, { id: `icu-identification-${Date.now()}`, type: "", value: "" }],
+    );
+  }
+
+  function addEmergencyIdentificationRow() {
+    setEmergencyIdentificationRows((current) =>
+      current.length >= identityDocumentTypes.length ? current : [...current, { id: `icu-emergency-identification-${Date.now()}`, type: "", value: "" }],
+    );
+  }
+
+  function removeIdentificationRow(rowId: string) {
+    setIdentificationRows((current) => (current.length === 1 ? current.map((row) => ({ ...row, type: "", value: "" })) : current.filter((row) => row.id !== rowId)));
+  }
+
+  function removeEmergencyIdentificationRow(rowId: string) {
+    setEmergencyIdentificationRows((current) => (current.length === 1 ? current.map((row) => ({ ...row, type: "", value: "" })) : current.filter((row) => row.id !== rowId)));
+  }
+
+  function updatePatientNamePart(field: "firstName" | "middleName" | "lastName", value: string) {
+    setDraft((current) => {
+      const nextDraft = { ...current, [field]: value };
+      const patientName = [nextDraft.firstName, nextDraft.middleName, nextDraft.lastName].filter(Boolean).join(" ");
+      return { ...nextDraft, patientName };
+    });
+  }
+
+  function updatePermanentAddressField(field: "permanentAddress" | "permanentCity" | "permanentState" | "permanentPinCode", value: string) {
+    setDraft((current) => {
+      const legacyFieldMap = {
+        permanentAddress: "address",
+        permanentCity: "city",
+        permanentPinCode: "pinCode",
+        permanentState: "state",
+      } as const;
+      const nextDraft = { ...current, [field]: value, [legacyFieldMap[field]]: value };
+      if (current.sameAsPermanent !== "Yes") return nextDraft;
+      const matchingCurrentField = field.replace("permanent", "current") as "currentAddress" | "currentCity" | "currentState" | "currentPinCode";
+      return { ...nextDraft, [matchingCurrentField]: value };
+    });
+  }
+
+  function updateSameAsPermanent(checked: boolean) {
+    setDraft((current) => ({
+      ...current,
+      sameAsPermanent: checked ? "Yes" : "",
+      ...(checked
+        ? {
+            currentAddress: current.permanentAddress,
+            currentCity: current.permanentCity,
+            currentState: current.permanentState,
+            currentPinCode: current.permanentPinCode,
+          }
+        : {}),
+    }));
+  }
+
   function updateIdentityDocumentType(value: string) {
     setDraft((current) => ({ ...current, identityDocumentType: value, identityDocumentValue: "" }));
   }
@@ -538,7 +713,22 @@ export function IcuAdmissionPage() {
       return {
         ...current,
         identityDocumentValue: value,
-        ...(fetchedAddress ?? {}),
+        ...(fetchedAddress
+          ? {
+              address: fetchedAddress.address,
+              city: fetchedAddress.city,
+              currentAddress: current.sameAsPermanent === "Yes" ? fetchedAddress.address : current.currentAddress,
+              currentCity: current.sameAsPermanent === "Yes" ? fetchedAddress.city : current.currentCity,
+              currentPinCode: current.sameAsPermanent === "Yes" ? fetchedAddress.pinCode : current.currentPinCode,
+              currentState: current.sameAsPermanent === "Yes" ? fetchedAddress.state : current.currentState,
+              permanentAddress: fetchedAddress.address,
+              permanentCity: fetchedAddress.city,
+              permanentPinCode: fetchedAddress.pinCode,
+              permanentState: fetchedAddress.state,
+              pinCode: fetchedAddress.pinCode,
+              state: fetchedAddress.state,
+            }
+          : {}),
       };
     });
   }
@@ -553,7 +743,21 @@ export function IcuAdmissionPage() {
       toast.error("Enter Aadhaar number first.");
       return;
     }
-    setDraft((current) => ({ ...current, ...fetchedAddress }));
+    setDraft((current) => ({
+      ...current,
+      address: fetchedAddress.address,
+      city: fetchedAddress.city,
+      currentAddress: current.sameAsPermanent === "Yes" ? fetchedAddress.address : current.currentAddress,
+      currentCity: current.sameAsPermanent === "Yes" ? fetchedAddress.city : current.currentCity,
+      currentPinCode: current.sameAsPermanent === "Yes" ? fetchedAddress.pinCode : current.currentPinCode,
+      currentState: current.sameAsPermanent === "Yes" ? fetchedAddress.state : current.currentState,
+      permanentAddress: fetchedAddress.address,
+      permanentCity: fetchedAddress.city,
+      permanentPinCode: fetchedAddress.pinCode,
+      permanentState: fetchedAddress.state,
+      pinCode: fetchedAddress.pinCode,
+      state: fetchedAddress.state,
+    }));
     toast.success("Address fetched from Aadhaar.");
   }
 
@@ -606,6 +810,8 @@ export function IcuAdmissionPage() {
 
   function resetDraft() {
     setDraft(emptyDraft);
+    setIdentificationRows([{ id: "icu-identification-1", type: "", value: "" }]);
+    setEmergencyIdentificationRows([{ id: "icu-emergency-identification-1", type: "", value: "" }]);
     setAdmissionPath(null);
     setPatientQuery("");
     setStep(0);
@@ -835,144 +1041,312 @@ export function IcuAdmissionPage() {
                         <CardTitle>1. Basic Demographics</CardTitle>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-3 md:grid-cols-6 xl:grid-cols-12">
-                        <Field className="md:col-span-2 xl:col-span-2" label="UHID / MRN">
-                          <Input className={inputClass} placeholder="Auto-assign" value={draft.uhid} onChange={(event) => updateField("uhid", event.target.value)} />
-                        </Field>
-                        <Field className="md:col-span-4 xl:col-span-4" label="Patient Name">
-                          <Input className={inputClass} placeholder="Full name" required value={draft.patientName} onChange={(event) => updateField("patientName", event.target.value)} />
-                        </Field>
-                        <Field className="md:col-span-2 xl:col-span-2" label="Date of Birth">
-                          <Input
-                            className={inputClass}
-                            inputMode="numeric"
-                            maxLength={10}
-                            onBeforeInput={preventInvalidNumericInput}
-                            onChange={(event) => updateDateOfBirth(event.target.value)}
-                            onPaste={preventInvalidNumericPaste}
-                            placeholder="DD / MM / YYYY"
-                            required
-                            value={draft.dateOfBirth}
-                          />
-                        </Field>
-                        <Field className="md:col-span-2 xl:col-span-2" label="Age">
-                          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                            <Input
-                              className={inputClass}
-                              inputMode="numeric"
-                              onBeforeInput={preventInvalidNumericInput}
-                              onChange={(event) => updateField("age", event.target.value)}
-                              onPaste={preventInvalidNumericPaste}
-                              pattern="[0-9]*"
-                              value={draft.age}
-                            />
-                            <span className="text-xs font-medium text-muted-foreground">Years</span>
-                          </div>
-                        </Field>
-                        <Field className="md:col-span-2 xl:col-span-2" label="Gender">
-                          <SegmentedGender value={draft.gender} onChange={(value) => updateField("gender", value)} />
-                        </Field>
-
-                        <Field className="md:col-span-2 xl:col-span-3" label="ID Proof">
-                          <select className={selectClass} value={draft.identityDocumentType} onChange={(event) => updateIdentityDocumentType(event.target.value)}>
-                            <option value="">Select</option>
-                            {identityDocumentTypes.map((documentType) => <option key={documentType}>{documentType}</option>)}
-                          </select>
-                        </Field>
-                        {draft.identityDocumentType ? (
-                          <Field className="md:col-span-2 xl:col-span-3" label={`${draft.identityDocumentType} Number`}>
-                            <Input
-                              className={inputClass}
-                              inputMode={draft.identityDocumentType === "Aadhaar Card" ? "numeric" : "text"}
-                              maxLength={draft.identityDocumentType === "Aadhaar Card" ? 12 : 20}
-                              placeholder={`Enter ${draft.identityDocumentType.toLowerCase()} number`}
-                              value={draft.identityDocumentValue}
-                              onChange={(event) => updateIdentityDocumentValue(event.target.value)}
-                            />
+                    <CardContent className="space-y-5">
+                      <div>
+                        <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Personal Details</div>
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                          <Field label="Patient ID / UHID">
+                            <Input className={inputClass} placeholder="Auto-assign" value={draft.uhid} onChange={(event) => updateField("uhid", event.target.value)} />
                           </Field>
-                        ) : null}
-                        <Field className="md:col-span-2 xl:col-span-3" label="Contact Number">
-                          <Input
-                            className={inputClass}
-                            inputMode="numeric"
-                            maxLength={15}
-                            onBeforeInput={preventInvalidNumericInput}
-                            onChange={(event) => updateField("contactNumber", event.target.value)}
-                            onPaste={preventInvalidNumericPaste}
-                            placeholder="Phone number"
-                            required
-                            value={draft.contactNumber}
-                          />
-                        </Field>
-                        <Field className="md:col-span-2 xl:col-span-3" label="Email ID">
-                          <Input className={inputClass} placeholder="Email address" type="email" value={draft.email} onChange={(event) => updateField("email", event.target.value)} />
-                        </Field>
-                        <Field className="md:col-span-6 xl:col-span-6" label="Address">
-                          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-                            <Input
-                              className={inputClass}
-                              placeholder="Address"
-                              value={draft.address}
-                              onFocus={() => {
-                                if (!draft.address && draft.identityDocumentType === "Aadhaar Card" && draft.identityDocumentValue.trim()) fillAddressFromAadhaar();
-                              }}
-                              onChange={(event) => updateField("address", event.target.value)}
-                            />
-                            <Button className="h-10 whitespace-nowrap" type="button" variant="outline" onClick={fillAddressFromAadhaar}>
-                              Fetch from Aadhaar
-                            </Button>
-                          </div>
-                        </Field>
+                          <Field className="xl:col-span-2" label="Registration Date">
+                            <DateTextInput required value={draft.registrationDate} onChange={(value) => updateField("registrationDate", value)} />
+                          </Field>
+                          <Field label="First Name">
+                            <Input className={inputClass} required value={draft.firstName} onChange={(event) => updatePatientNamePart("firstName", event.target.value)} />
+                          </Field>
+                          <Field label="Middle Name">
+                            <Input className={inputClass} value={draft.middleName} onChange={(event) => updatePatientNamePart("middleName", event.target.value)} />
+                          </Field>
+                          <Field label="Last Name">
+                            <Input className={inputClass} required value={draft.lastName} onChange={(event) => updatePatientNamePart("lastName", event.target.value)} />
+                          </Field>
+                          <Field label="Date of Birth">
+                            <DateTextInput required value={draft.dateOfBirth} onChange={updateDateOfBirth} />
+                          </Field>
+                          <Field label="Age">
+                            <div className="flex items-center gap-2">
+                              <Input className={inputClass} inputMode="numeric" onBeforeInput={preventInvalidNumericInput} onChange={(event) => updateField("age", event.target.value)} onPaste={preventInvalidNumericPaste} pattern="[0-9]*" value={draft.age} />
+                              <span className="text-xs font-medium text-muted-foreground">Years</span>
+                            </div>
+                          </Field>
+                          <Field label="Gender">
+                            <select className={selectClass} required value={draft.gender} onChange={(event) => updateField("gender", event.target.value)}>
+                              <option value="">Select</option>
+                              <option>Male</option>
+                              <option>Female</option>
+                              <option>Transgender / Other</option>
+                            </select>
+                          </Field>
+                          <Field label="Marital Status">
+                            <select className={selectClass} value={draft.maritalStatus} onChange={(event) => updateField("maritalStatus", event.target.value)}>
+                              <option value="">Select</option>
+                              <option>Single</option>
+                              <option>Married</option>
+                              <option>Divorced</option>
+                              <option>Widowed</option>
+                            </select>
+                          </Field>
+                          <Field label="Nationality">
+                            <Input className={inputClass} value={draft.nationality} onChange={(event) => updateField("nationality", event.target.value)} />
+                          </Field>
+                          <Field label="Preferred Language">
+                            <Input className={inputClass} value={draft.preferredLanguage} onChange={(event) => updateField("preferredLanguage", event.target.value)} />
+                          </Field>
+                        </div>
+                      </div>
 
-                        <Field className="md:col-span-2 xl:col-span-3" label="State">
-                          <Input className={inputClass} placeholder="State" value={draft.state} onChange={(event) => updateField("state", event.target.value)} />
-                        </Field>
-                        <Field className="md:col-span-2 xl:col-span-3" label="City">
-                          <Input className={inputClass} placeholder="City" value={draft.city} onChange={(event) => updateField("city", event.target.value)} />
-                        </Field>
-                        <Field className="md:col-span-2 xl:col-span-2" label="PIN Code">
-                          <Input
-                            className={inputClass}
-                            inputMode="numeric"
-                            maxLength={6}
-                            onBeforeInput={preventInvalidNumericInput}
-                            onChange={(event) => updateField("pinCode", event.target.value)}
-                            onPaste={preventInvalidNumericPaste}
-                            placeholder="PIN code"
-                            value={draft.pinCode}
-                          />
-                        </Field>
-                        <Field className="md:col-span-3 xl:col-span-4" label="Referred By (Dr. / Facility Name)">
-                          <Input className={inputClass} value={draft.referredBy} onChange={(event) => updateField("referredBy", event.target.value)} />
-                        </Field>
-                        <Field className="md:col-span-3 xl:col-span-4" label="Referred From">
-                          <Input className={inputClass} value={draft.referredFrom} onChange={(event) => updateField("referredFrom", event.target.value)} />
-                        </Field>
-                        <Field className="md:col-span-3 xl:col-span-3" label="Referral Contact">
-                          <Input className={inputClass} value={draft.referralContact} onChange={(event) => updateField("referralContact", event.target.value)} />
-                        </Field>
-                        <div className="min-w-0 space-y-1.5 md:col-span-3 xl:col-span-5">
-                          <span className={labelClass}>Referral Type</span>
-                          <div className="flex min-h-10 flex-wrap items-center gap-x-4 gap-y-2">
-                            {["Self", "Doctor", "Hospital / Facility", "Others"].map((referralType) => (
-                              <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground" key={referralType}>
-                                <input
-                                  checked={draft.referralType === referralType}
-                                  className="h-4 w-4 shrink-0"
-                                  name="icuReferralType"
-                                  type="radio"
-                                  onChange={() => updateField("referralType", referralType)}
-                                />
-                                <span>{referralType}</span>
+                      <div className="border-t border-border pt-4">
+                        <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Contact Information</div>
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                          <Field className="md:col-span-2 xl:col-span-6" label="Permanent Address">
+                            <textarea className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" placeholder="Flat / House No., Street, Area" value={draft.permanentAddress} onChange={(event) => updatePermanentAddressField("permanentAddress", event.target.value)} />
+                          </Field>
+                          <Field label="City">
+                            <Input className={inputClass} value={draft.permanentCity} onChange={(event) => updatePermanentAddressField("permanentCity", event.target.value)} />
+                          </Field>
+                          <Field label="State">
+                            <Input className={inputClass} value={draft.permanentState} onChange={(event) => updatePermanentAddressField("permanentState", event.target.value)} />
+                          </Field>
+                          <Field label="PIN Code">
+                            <Input className={inputClass} inputMode="numeric" maxLength={6} onBeforeInput={preventInvalidNumericInput} onChange={(event) => updatePermanentAddressField("permanentPinCode", event.target.value)} onPaste={preventInvalidNumericPaste} pattern="[0-9]*" value={draft.permanentPinCode} />
+                          </Field>
+                          <div className="space-y-1.5 md:col-span-2 xl:col-span-6">
+                            <div className="flex min-h-5 flex-wrap items-center gap-3">
+                              <span className={labelClass}>Current Address</span>
+                              <label className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                <input checked={draft.sameAsPermanent === "Yes"} className="h-4 w-4 rounded border-border" onChange={(event) => updateSameAsPermanent(event.target.checked)} type="checkbox" />
+                                <span>Same as permanent</span>
                               </label>
-                            ))}
+                            </div>
+                            <textarea className={cn("min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20", draft.sameAsPermanent === "Yes" ? "bg-muted/50" : "bg-background")} placeholder="Flat / House No., Street, Area" readOnly={draft.sameAsPermanent === "Yes"} value={draft.currentAddress} onChange={(event) => updateField("currentAddress", event.target.value)} />
                           </div>
+                          <Field label="City">
+                            <Input className={inputClass} readOnly={draft.sameAsPermanent === "Yes"} value={draft.currentCity} onChange={(event) => updateField("currentCity", event.target.value)} />
+                          </Field>
+                          <Field label="State">
+                            <Input className={inputClass} readOnly={draft.sameAsPermanent === "Yes"} value={draft.currentState} onChange={(event) => updateField("currentState", event.target.value)} />
+                          </Field>
+                          <Field label="PIN Code">
+                            <Input className={inputClass} inputMode="numeric" maxLength={6} onBeforeInput={preventInvalidNumericInput} onChange={(event) => updateField("currentPinCode", event.target.value)} onPaste={preventInvalidNumericPaste} pattern="[0-9]*" readOnly={draft.sameAsPermanent === "Yes"} value={draft.currentPinCode} />
+                          </Field>
+                          <Field label="Mobile Country Code">
+                            <CountryCodeSelect value={draft.mobileCountryCode} onChange={(value) => updateField("mobileCountryCode", value)} />
+                          </Field>
+                          <Field label="Mobile Number">
+                            <Input className={inputClass} inputMode="numeric" maxLength={10} onBeforeInput={preventInvalidNumericInput} onChange={(event) => { updateField("mobileNumber", event.target.value); updateField("contactNumber", event.target.value); }} onPaste={preventInvalidNumericPaste} pattern="[0-9]*" required value={draft.mobileNumber} />
+                          </Field>
+                          <Field label="Alternate Contact Country Code">
+                            <CountryCodeSelect value={draft.alternateCountryCode} onChange={(value) => updateField("alternateCountryCode", value)} />
+                          </Field>
+                          <Field label="Alternate Contact Number">
+                            <Input className={inputClass} inputMode="numeric" maxLength={10} onBeforeInput={preventInvalidNumericInput} onChange={(event) => updateField("alternateNumber", event.target.value)} onPaste={preventInvalidNumericPaste} pattern="[0-9]*" value={draft.alternateNumber} />
+                          </Field>
+                          <Field label="Whatsapp Country Code">
+                            <CountryCodeSelect value={draft.whatsappCountryCode} onChange={(value) => updateField("whatsappCountryCode", value)} />
+                          </Field>
+                          <Field label="Whatsapp Number">
+                            <Input className={inputClass} inputMode="numeric" maxLength={15} onBeforeInput={preventInvalidNumericInput} onChange={(event) => updateField("whatsappNumber", event.target.value)} onPaste={preventInvalidNumericPaste} pattern="[0-9]*" value={draft.whatsappNumber} />
+                          </Field>
+                          <Field className="md:col-span-2" label="Email Address">
+                            <Input className={inputClass} type="email" value={draft.email} onChange={(event) => updateField("email", event.target.value)} />
+                          </Field>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-border pt-4">
+                        <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Identification & Documentation</div>
+                        <div className="space-y-3">
+                          {identificationRows.map((row, index) => {
+                            const selectedIdentification = identityDocumentConfigs[row.type as IdentityDocumentType];
+                            return (
+                              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6" key={row.id}>
+                                <Field label="Identification Type">
+                                  <select
+                                    className={selectClass}
+                                    onChange={(event) => {
+                                      updateIdentificationRow(row.id, { type: event.target.value, value: "" });
+                                      if (index === 0) updateIdentityDocumentType(event.target.value);
+                                    }}
+                                    required={index === 0}
+                                    value={row.type}
+                                  >
+                                    <option value="">Select</option>
+                                    {availableIdentityDocumentTypes(identificationRows, row.id).map((documentType) => <option key={documentType}>{documentType}</option>)}
+                                  </select>
+                                </Field>
+                                {selectedIdentification ? (
+                                  <Field className="xl:col-span-2" label={selectedIdentification.fieldLabel}>
+                                    <Input
+                                      className={inputClass}
+                                      inputMode={selectedIdentification.inputMode}
+                                      maxLength={selectedIdentification.maxLength}
+                                      minLength={selectedIdentification.minLength}
+                                      onBeforeInput={selectedIdentification.inputMode === "numeric" ? preventInvalidNumericInput : undefined}
+                                      onChange={(event) => {
+                                        updateIdentificationRow(row.id, { value: event.target.value });
+                                        if (index === 0) updateIdentityDocumentValue(event.target.value);
+                                      }}
+                                      onPaste={selectedIdentification.inputMode === "numeric" ? preventInvalidNumericPaste : undefined}
+                                      pattern={selectedIdentification.pattern}
+                                      required={index === 0}
+                                      title={selectedIdentification.title}
+                                      value={row.value}
+                                    />
+                                  </Field>
+                                ) : null}
+                                <div className="flex items-end gap-2">
+                                  {index === identificationRows.length - 1 ? (
+                                    <Button aria-label="Add identification row" disabled={identificationRows.length >= identityDocumentTypes.length} onClick={addIdentificationRow} size="icon" type="button" variant="outline">
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  ) : null}
+                                  <Button aria-label="Delete identification row" className="text-danger" onClick={() => removeIdentificationRow(row.id)} size="icon" type="button" variant="outline">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-border pt-4">
+                        <div className="mb-3 text-xs font-semibold uppercase text-muted-foreground">Emergency</div>
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                          <Field className="xl:col-span-2" label="Contact Name">
+                            <Input className={inputClass} value={draft.emergencyContactName} onChange={(event) => updateField("emergencyContactName", event.target.value)} />
+                          </Field>
+                          <Field label="Relationship to Patient">
+                            <Input className={inputClass} value={draft.emergencyRelationship} onChange={(event) => updateField("emergencyRelationship", event.target.value)} />
+                          </Field>
+                          <Field label="Contact Country Code">
+                            <CountryCodeSelect value={draft.emergencyCountryCode} onChange={(value) => updateField("emergencyCountryCode", value)} />
+                          </Field>
+                          <Field label="Contact Number">
+                            <Input className={inputClass} inputMode="numeric" maxLength={10} onBeforeInput={preventInvalidNumericInput} onChange={(event) => updateField("emergencyContactNumber", event.target.value)} onPaste={preventInvalidNumericPaste} pattern="[0-9]*" value={draft.emergencyContactNumber} />
+                          </Field>
+                          <Field label="Whatsapp Number">
+                            <Input className={inputClass} inputMode="numeric" maxLength={15} onBeforeInput={preventInvalidNumericInput} onChange={(event) => updateField("emergencyWhatsappNumber", event.target.value)} onPaste={preventInvalidNumericPaste} pattern="[0-9]*" value={draft.emergencyWhatsappNumber} />
+                          </Field>
+                          <Field className="xl:col-span-2" label="Contact Email">
+                            <Input className={inputClass} type="email" value={draft.emergencyEmail} onChange={(event) => updateField("emergencyEmail", event.target.value)} />
+                          </Field>
+                        </div>
+                        <div className="mt-3 space-y-3">
+                          {emergencyIdentificationRows.map((row, index) => {
+                            const selectedIdentification = identityDocumentConfigs[row.type as IdentityDocumentType];
+                            return (
+                              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6" key={row.id}>
+                                <Field label="Identification Type">
+                                  <select
+                                    className={selectClass}
+                                    onChange={(event) => {
+                                      updateEmergencyIdentificationRow(row.id, { type: event.target.value, value: "" });
+                                      if (index === 0) updateField("emergencyIdentityDocumentType", event.target.value);
+                                    }}
+                                    value={row.type}
+                                  >
+                                    <option value="">Select</option>
+                                    {availableIdentityDocumentTypes(emergencyIdentificationRows, row.id).map((documentType) => <option key={documentType}>{documentType}</option>)}
+                                  </select>
+                                </Field>
+                                {selectedIdentification ? (
+                                  <Field className="xl:col-span-2" label={index === 0 ? "Identity Document Number" : selectedIdentification.fieldLabel}>
+                                    <Input
+                                      className={inputClass}
+                                      inputMode={selectedIdentification.inputMode}
+                                      maxLength={selectedIdentification.maxLength}
+                                      minLength={selectedIdentification.minLength}
+                                      onBeforeInput={selectedIdentification.inputMode === "numeric" ? preventInvalidNumericInput : undefined}
+                                      onChange={(event) => {
+                                        updateEmergencyIdentificationRow(row.id, { value: event.target.value });
+                                        if (index === 0) updateField("emergencyIdentityDocumentNumber", event.target.value);
+                                      }}
+                                      onPaste={selectedIdentification.inputMode === "numeric" ? preventInvalidNumericPaste : undefined}
+                                      pattern={selectedIdentification.pattern}
+                                      title={selectedIdentification.title}
+                                      value={row.value}
+                                    />
+                                  </Field>
+                                ) : null}
+                                <div className="flex items-end gap-2">
+                                  {index === emergencyIdentificationRows.length - 1 ? (
+                                    <Button aria-label="Add emergency identification row" disabled={emergencyIdentificationRows.length >= identityDocumentTypes.length} onClick={addEmergencyIdentificationRow} size="icon" type="button" variant="outline">
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  ) : null}
+                                  <Button aria-label="Delete emergency identification row" className="text-danger" onClick={() => removeEmergencyIdentificationRow(row.id)} size="icon" type="button" variant="outline">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                   ) : null}
+
+                  {admissionPath === "new" ? (
+                    <Card>
+                      <CardHeader className="bg-surface-muted/60">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-primary">
+                            <BedDouble className="h-4 w-4" />
+                          </span>
+                          <CardTitle>Bed & Device</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          <SelectField label="ICU unit" value={draft.unit} onChange={updateAdmissionUnit} options={icuUnits} />
+                          <Field label="Available bed">
+                            <select className={selectClass} value={draft.bedNo} onChange={(event) => updateField("bedNo", event.target.value)}>
+                              {availableAdmissionBedOptions.length ? (
+                                availableAdmissionBedOptions.map((bedNo) => (
+                                  <option key={bedNo} value={bedNo}>{admissionBedLabel(bedNo)}</option>
+                                ))
+                              ) : (
+                                <option value="">No available bed in {draft.unit}</option>
+                              )}
+                            </select>
+                          </Field>
+                          <SelectField label="Ventilator / Oxygen" value={draft.ventilator} onChange={(value) => updateField("ventilator", value)} options={["Room air", "Oxygen mask", "NIV support", "Invasive ventilation", "Weaning trial"]} />
+                          <Field label="Devices">
+                            <Input className={inputClass} placeholder="Monitor, pump, ventilator..." value={draft.devices} onChange={(event) => updateField("devices", event.target.value)} />
+                          </Field>
+                          <SelectField label="Unit Nurse" value={draft.nurse} onChange={(value) => updateField("nurse", value)} options={["Priya", "Unit Nurse Priya", "Unit Nurse Meera", "Unit Nurse Sana", "Ward Nurse Kavita", "Ward Nurse Arjun", "Ward Nurse Neha"]} />
+                          <SelectField label="Admitting Doctor" value={draft.doctor} onChange={(value) => updateField("doctor", value)} options={["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma"]} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : null}
+
+
+                </div>
+              ) : null}
+
+              {step === 1 ? (
+                <div className="space-y-3">
+                  <Card>
+                    <CardContent className="p-4">
+                      <AdmissionReadinessChecklist selected={selectedReadiness} onToggle={toggleReadiness} />
+                    </CardContent>
+                  </Card>
+
+                  <AdmissionFormSection title="Clinical Status" description="Current admission condition, recovery direction, risk, and isolation requirement.">
+                    <Field label="Primary ICU Diagnosis">
+                      <Input className={inputClass} placeholder="Diagnosis" value={draft.diagnosis} onChange={(event) => updateField("diagnosis", event.target.value)} />
+                    </Field>
+                    <SelectField label="Clinical Status" value={draft.condition} onChange={(value) => updateField("condition", value)} options={["Critical", "Stable", "Guarded"]} />
+                    <SelectField label="Current Patient Status" value={draft.recoveryStatus} onChange={(value) => updateField("recoveryStatus", value)} options={patientStatusOptions} />
+                    <SelectField label="Risk Level" value={draft.risk} onChange={(value) => updateField("risk", value)} options={["High", "Medium", "Low"]} />
+                    <SelectField label="Isolation Required" value={draft.isolation} onChange={(value) => updateField("isolation", value)} options={["No", "Yes"]} />
+                    <Field label="ER Handover By">
+                      <Input className={inputClass} placeholder="Nurse name" value={draft.handoverBy} onChange={(event) => updateField("handoverBy", event.target.value)} />
+                    </Field>
+                  </AdmissionFormSection>
 
                   {admissionPath === "new" ? (
                   <Card>
@@ -1574,23 +1948,6 @@ export function IcuAdmissionPage() {
                     ) : null}
                   </Card>
                   ) : null}
-                </div>
-              ) : null}
-
-              {step === 1 ? (
-                <div className="space-y-3">
-                  <AdmissionFormSection title="Clinical Status" description="Current admission condition, recovery direction, risk, and isolation requirement.">
-                    <Field label="Primary ICU Diagnosis">
-                      <Input className={inputClass} placeholder="Diagnosis" value={draft.diagnosis} onChange={(event) => updateField("diagnosis", event.target.value)} />
-                    </Field>
-                    <SelectField label="Clinical Status" value={draft.condition} onChange={(value) => updateField("condition", value)} options={["Critical", "Stable", "Guarded"]} />
-                    <SelectField label="Current Patient Status" value={draft.recoveryStatus} onChange={(value) => updateField("recoveryStatus", value)} options={patientStatusOptions} />
-                    <SelectField label="Risk Level" value={draft.risk} onChange={(value) => updateField("risk", value)} options={["High", "Medium", "Low"]} />
-                    <SelectField label="Isolation Required" value={draft.isolation} onChange={(value) => updateField("isolation", value)} options={["No", "Yes"]} />
-                    <Field label="ER Handover By">
-                      <Input className={inputClass} placeholder="Nurse name" value={draft.handoverBy} onChange={(event) => updateField("handoverBy", event.target.value)} />
-                    </Field>
-                  </AdmissionFormSection>
 
                   <AdmissionFormSection title="Investigations & Plan" description="Pending reports and immediate ICU care plan.">
                     <TextAreaField className="xl:col-span-1" label="Pending Investigations" value={draft.pendingInvestigations} onChange={(value) => updateField("pendingInvestigations", value)} placeholder="Lab, radiology, cultures, ABG, pending reports..." />
@@ -1600,32 +1957,6 @@ export function IcuAdmissionPage() {
               ) : null}
 
               {step === 2 ? (
-                <StepPlaceholder icon={BedDouble} title="3. Bed & Device">
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    <SelectField label="ICU unit" value={draft.unit} onChange={updateAdmissionUnit} options={icuUnits} />
-                    <Field label="Available bed">
-                      <select className={selectClass} value={draft.bedNo} onChange={(event) => updateField("bedNo", event.target.value)}>
-                        {availableAdmissionBedOptions.length ? (
-                          availableAdmissionBedOptions.map((bedNo) => (
-                            <option key={bedNo} value={bedNo}>{admissionBedLabel(bedNo)}</option>
-                          ))
-                        ) : (
-                          <option value="">No available bed in {draft.unit}</option>
-                        )}
-                      </select>
-                    </Field>
-                    <SelectField label="Ventilator / Oxygen" value={draft.ventilator} onChange={(value) => updateField("ventilator", value)} options={["Room air", "Oxygen mask", "NIV support", "Invasive ventilation", "Weaning trial"]} />
-                    <Field label="Devices">
-                      <Input className={inputClass} placeholder="Monitor, pump, ventilator..." value={draft.devices} onChange={(event) => updateField("devices", event.target.value)} />
-                    </Field>
-                    <SelectField label="Unit Nurse" value={draft.nurse} onChange={(value) => updateField("nurse", value)} options={["Priya", "Unit Nurse Priya", "Unit Nurse Meera", "Unit Nurse Sana", "Ward Nurse Kavita", "Ward Nurse Arjun", "Ward Nurse Neha"]} />
-                    <SelectField label="Admitting Doctor" value={draft.doctor} onChange={(value) => updateField("doctor", value)} options={["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma"]} />
-                    <AdmissionReadinessChecklist selected={selectedReadiness} onToggle={toggleReadiness} />
-                  </div>
-                </StepPlaceholder>
-              ) : null}
-
-              {step === 3 ? (
                 <div className="space-y-3">
                   <AdmissionFormSection title="Medication Reconciliation" description="Past, current, and high-alert medicines captured before ICU receive.">
                     <TextAreaField label="Past Medication" value={draft.pastMedication} onChange={(value) => updateField("pastMedication", value)} placeholder="Home medicines, previous hospital medicines, stopped medicines..." />
@@ -1648,8 +1979,8 @@ export function IcuAdmissionPage() {
                 </div>
               ) : null}
 
-              {step === 4 ? (
-                <StepPlaceholder icon={Check} title="5. Review">
+              {step === 3 ? (
+                <StepPlaceholder icon={Check} title="4. Review">
                   <div className="grid gap-3 md:grid-cols-2">
                     {[
                       ["Patient", [["Patient", draft.patientName || "-"], ["UHID / MRN", draft.uhid || "Auto assign"], ["Age / gender", [draft.age, draft.gender].filter(Boolean).join(" / ") || "-"], ["Contact", draft.contactNumber || "-"]]],

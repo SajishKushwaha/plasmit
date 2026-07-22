@@ -255,12 +255,20 @@ export function MobileNavigation() {
                       const Icon = item.icon;
                       const hasChildren = Boolean(item.children?.length);
                       const childActive = item.children?.some((child) => childIsActive(child, pathname, currentSearch)) ?? false;
-                      const moreSpecificRouteActive = visibleItems.some((candidate) => (
-                        candidate.id !== item.id &&
-                        candidate.route.startsWith(`${item.route}/`) &&
-                        (routeIsActive(candidate.route, pathname, currentSearch) || pathname.startsWith(`${candidate.route.split("?")[0]}/`))
-                      ));
-                      const active = routeIsActive(item.route, pathname, currentSearch) || childActive || (!moreSpecificRouteActive && item.route !== "/dashboard" && pathname.startsWith(`${item.route.split("?")[0]}/`));
+                      const [itemPath = "/"] = item.route.split("#");
+                      const [itemRoutePath = "/"] = itemPath.split("?");
+                      const moreSpecificRouteActive = visibleItems.some((candidate) => {
+                        if (candidate.id === item.id) return false;
+                        const [candidatePath = "/"] = candidate.route.split("#");
+                        const [candidateRoutePath = "/", candidateRouteSearch = ""] = candidatePath.split("?");
+                        const candidateSearchActive = Boolean(candidateRouteSearch) && pathname === candidateRoutePath && routeSearchMatches(candidateRouteSearch, currentSearch);
+                        return (
+                          (candidate.route.startsWith(`${item.route}/`) &&
+                            (routeIsActive(candidate.route, pathname, currentSearch) || pathname.startsWith(`${candidate.route.split("?")[0]}/`))) ||
+                          (candidateSearchActive && candidateRoutePath === itemRoutePath)
+                        );
+                      });
+                      const active = (!moreSpecificRouteActive && routeIsActive(item.route, pathname, currentSearch)) || childActive || (!moreSpecificRouteActive && item.route !== "/dashboard" && pathname.startsWith(`${item.route.split("?")[0]}/`));
                       const expanded = openItems[item.id] ?? active;
 
                       if (hasChildren) {

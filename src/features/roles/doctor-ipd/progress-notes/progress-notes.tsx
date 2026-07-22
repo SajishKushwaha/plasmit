@@ -77,7 +77,7 @@ type ProgressNotesPanelProps = {
 };
 
 export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatient, tone }: ProgressNotesPanelProps) {
-  const [activeKind, setActiveKind] = React.useState<ProgressNoteKind>("doctor");
+  const [activeKind, setActiveKind] = React.useState<ProgressNoteKind>("care-plan");
   const [drawerKind, setDrawerKind] = React.useState<ProgressNoteKind | null>(null);
   const [editingNoteId, setEditingNoteId] = React.useState<string | null>(null);
   const [fullNote, setFullNote] = React.useState<ProgressNote | null>(null);
@@ -138,7 +138,7 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
     setEditingNoteId(null);
     setFullNote(null);
     setSelectedNoteId(null);
-    setForm(createInitialForm(patient));
+    setForm(createInitialForm(patient, "care-plan"));
   }, [patient.id, patient]);
 
   React.useEffect(() => {
@@ -158,16 +158,11 @@ export function ProgressNotesPanel({ compact = false, patient, rapidReviewPatien
         <div className={cn("flex flex-col gap-3 border border-border bg-white shadow-sm lg:flex-row lg:items-center lg:justify-between", compact ? "rounded-t-lg border-x-0 border-t-0 px-4 py-3" : "rounded-xl px-4 py-3")}>
           <div className="overflow-x-auto">
             <div className="inline-flex min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
-              <ProgressListTab active={activeKind === "doctor"} compact={compact} label="Doctor Notes" onClick={() => setActiveKind("doctor")} />
-              <ProgressListTab active={activeKind === "care-plan"} compact={compact} label="Care Plans" onClick={() => setActiveKind("care-plan")} />
+              <ProgressListTab active={activeKind === "care-plan"} compact={compact} label="Care Plan" onClick={() => setActiveKind("care-plan")} />
             </div>
           </div>
 
           <div className="flex flex-wrap justify-end gap-2">
-            <Button className={cn("rounded-md bg-primary font-extrabold text-primary-foreground shadow-sm hover:bg-primary/90", compact ? "h-10 px-4 text-sm" : "h-12 px-6 text-base")} type="button" onClick={() => openDrawer("doctor")}>
-              <Plus className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
-               Doctor Note
-            </Button>
             <Button className={cn("rounded-md border-[#8e94a4] font-extrabold text-[#202533]", compact ? "h-10 px-4 text-sm" : "h-12 px-5 text-base")} type="button" variant="outline" onClick={() => openDrawer("care-plan")}>
               <Plus className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
                Care Plan

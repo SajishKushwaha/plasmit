@@ -80,7 +80,7 @@ const loginCredentials = [
     password: "receptionist123",
     role: "Receptionist" as Role,
     scope: "receptionist",
-    route: "/receptionist/patient-details",
+    route: "/receptionist",
   },
 ] as const;
 
@@ -198,7 +198,7 @@ export function LoginPage() {
         return;
       }
       if (savedScope === "receptionist" || savedScope === "receptionlist") {
-        router.replace("/receptionist/patient-details");
+        router.replace("/receptionist");
         return;
       }
       const savedRole = window.localStorage.getItem("plasmit-role") as Role | null;

@@ -101,7 +101,7 @@ export function PatientMobileCard({
       <div className="grid grid-cols-6 gap-2 border-t border-[#f1f5f9] px-3 py-3">
         <MobileDashboardAction badge={labBadge} icon={FlaskConical} label={`Open laboratory results for ${patient.name}`} onClick={onOpenLabResults} tone="dark" />
         <MobileDashboardAction badge={medicationBadge} icon={Pill} label={`Open medication and intervention for ${patient.name}`} onClick={onOpenMedication} tone="dark" />
-        <MobileDashboardAction icon={ClipboardList} label={`Open progress note for ${patient.name}`} onClick={onOpenProgressNote} tone="dark" />
+        <MobileDashboardAction icon={ClipboardList} label={`Open add progress for ${patient.name}`} onClick={onOpenProgressNote} tone="dark" />
         <MobileDashboardAction icon={FileText} label={`Open radiology report for ${patient.name}`} onClick={onOpenRadiology} tone="dark" />
         <MobileDashboardAction icon={Activity} label={`Open events for ${patient.name}`} onClick={onOpenEvents} tone="red" />
         <MobileDashboardAction icon={PhoneCall} label={`Open collaborate for ${patient.name}`} onClick={onOpenCollaborate} tone="blue" />

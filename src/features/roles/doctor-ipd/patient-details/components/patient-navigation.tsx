@@ -15,7 +15,7 @@ export function PatientNavigation() {
         <PatientTab icon={HeartPulse} label="Vitals" value="vitals" />
         <PatientTab icon={ClipboardCheck} label="Assessment" value="assessment" />
         <PatientTab icon={FilePenLine} label="Add Progress" value="add-progress" />
-        <PatientTab icon={ClipboardCheck} label="Progress Note" value="shift-summary" />
+        <PatientTab icon={ClipboardCheck} label="Careplan" value="shift-summary" />
         <PatientTab icon={ChartNoAxesCombined} label="Orders" value="orders" />
         <PatientTab icon={ChartNoAxesCombined} label="Intake Output" value="Intake Output" />
       </TabsList>

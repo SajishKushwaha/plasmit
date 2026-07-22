@@ -627,10 +627,28 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
   if (role === "Receptionist") {
     return [
       {
+        id: "receptionist-dashboard",
+        label: "Dashboard",
+        icon: LayoutDashboard,
+        route: "/receptionist",
+        group: "Main",
+        allowedRoles: ["Receptionist"],
+        status: "ready",
+      },
+      {
         id: "receptionist-reception",
         label: "Reception",
         icon: Users,
         route: "/receptionist/patient-details",
+        group: "Main",
+        allowedRoles: ["Receptionist"],
+        status: "ready",
+      },
+      {
+        id: "receptionist-save-draft",
+        label: "Save Draft",
+        icon: FileText,
+        route: "/receptionist/patient-details?view=saved-drafts",
         group: "Main",
         allowedRoles: ["Receptionist"],
         status: "ready",

@@ -146,7 +146,7 @@ export function DoctorIpdDashboardPage() {
         description={shiftSummaryPatient ? `${shiftSummaryPatient.name} | ${shiftSummaryPatient.bed} | ${shiftSummaryPatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setShiftSummaryPatient(null)}
         open={Boolean(shiftSummaryPatient)}
-        title="Progress Note"
+        title="Add Progress"
       >
         {shiftSummaryPatient ? <ProgressNoteModalContent patient={shiftSummaryPatient} /> : null}
       </CenterModal>

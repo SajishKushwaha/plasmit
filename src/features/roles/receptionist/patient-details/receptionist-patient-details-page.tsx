@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   BedDouble,
@@ -53,6 +54,7 @@ import {
   type PatientRecordSection,
 } from "@/features/patient-list/patient-records";
 import {
+  deletePatientRecord as deleteReceptionistPatientRecord,
   findPatientRecord as findReceptionistPatientRecord,
   readPatientRecords as readReceptionistPatientRecords,
   upsertPatientRecordSection as upsertReceptionistPatientRecordSection,
@@ -106,9 +108,10 @@ const visiblePatientDetailTabs = patientDetailTabs.filter((tab) => tab.id !== "c
 const patientHistoryTabOrder: HistoryTab[] = ["medical", "surgical", "medication", "allergy", "social"];
 
 type PatientDetailTab = (typeof patientDetailTabs)[number]["id"];
+type IdentificationRow = { id: string; type: string };
 
 const patientDocumentSchema = [
-  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["Patient ID / UHID", "Date on which Patient arrives", "First Name", "Middle Name", "Last Name", "Date of Birth", "Age", "Gender", "Marital Status", "Nationality", "Preferred Language", "Permanent Address", "City", "State", "PIN Code", "Current Address", "City", "State", "PIN Code", "Same as permanent", "Mobile Country Code", "Mobile Number", "Alternate Contact Country Code", "Alternate Contact Number", "Whatsapp Country Code", "Whatsapp Number", "Email Address", "Identification Type", "Aadhaar Card Number", "PAN", "Passport Number", "Voter ID Number", "Driving License Number", "Contact Name", "Relationship to Patient", "Contact Country Code", "Contact Number", "Whatsapp Number", "Contact Email", "Identity Document Type", "Identity Document Number", "ER Nurse Assigned", "Duty Doctor", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Insurance Provider", "Policy Number"] },
+  { tabId: "basic", tabLabel: "1. Basic Demographics", fields: ["Patient ID / UHID", "Registration Date", "First Name", "Middle Name", "Last Name", "Date of Birth", "Age", "Gender", "Marital Status", "Nationality", "Preferred Language", "Permanent Address", "City", "State", "PIN Code", "Current Address", "City", "State", "PIN Code", "Same as permanent", "Mobile Country Code", "Mobile Number", "Alternate Contact Country Code", "Alternate Contact Number", "Whatsapp Country Code", "Whatsapp Number", "Email Address", "Identification Type", "Aadhaar Card Number", "PAN", "Passport Number", "Voter ID Number", "Driving License Number", "Contact Name", "Relationship to Patient", "Contact Country Code", "Contact Number", "Whatsapp Number", "Contact Email", "Identification Type", "Identity Document Number", "ER Nurse Assigned", "Duty Doctor", "Referred By (Dr. / Facility Name)", "Referred From", "Referral Type", "Referral Contact", "Insurance Provider", "Policy Number"] },
   { tabId: "triage", tabLabel: "2. Triage", fields: ["Triage Category", "Arrival Time", "Triage Time", "Provisional Diagnosis", "Reason for Transfer", "Referral Unit / Facility", "Accepting Doctor", "Consent Taken", "Checklist Done", "Escort", "Ambulance Type", "Departure Time", "Handover Ack", "Remarks"] },
   { tabId: "nurse-entry", tabLabel: "3. Nurse Entry", fields: ["Patient", "Date", "Time", "Shift", "Recorded by", "Respiratory rate", "O2 saturation", "Blood pressure", "Pulse rate", "Temperature", "GCS score", "Pain score", "Urine output", "Nurse notes"] },
   { tabId: "history", tabLabel: "4. Patient History", fields: ["Past Medical History", "Known Comorbidities", "Past Surgical History", "Current Medications", "Allergy Status", "Allergen and Reaction", "Smoking Status", "Alcohol Use", "Relevant Social History"] },
@@ -543,6 +546,159 @@ function Field({
       <span className={labelClass}>{label}</span>
       {children}
     </label>
+  );
+}
+
+function patientRecordSummary(record: PatientRecord) {
+  const firstName = getPatientRecordValue(record, "First Name");
+  const lastName = getPatientRecordValue(record, "Last Name");
+  const name = [firstName, lastName].filter(Boolean).join(" ") || getPatientRecordValue(record, "Patient Name") || "Unnamed Patient";
+  return {
+    name,
+    uhid: getPatientRecordValue(record, "Patient ID / UHID") || getPatientRecordValue(record, "UHID") || record.id,
+    phone: getPatientRecordValue(record, "Mobile Number") || "Not recorded",
+    doctor: getPatientRecordValue(record, "Duty Doctor") || "Duty doctor not assigned",
+  };
+}
+
+function ReceptionistSavedDraftsView({
+  onDeleteRecord,
+  records,
+  onOpenRecord,
+  onNewPatient,
+}: {
+  onDeleteRecord: (record: PatientRecord) => void;
+  records: PatientRecord[];
+  onOpenRecord: (record: PatientRecord) => void;
+  onNewPatient: () => void;
+}) {
+  return (
+    <div className="mt-3 space-y-3">
+      <Card>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="text-base">Saved Draft Patient Details</CardTitle>
+            <CardDescription>Open a draft to continue Reception patient registration.</CardDescription>
+          </div>
+          <Button onClick={onNewPatient} size="sm" type="button">
+            <Plus className="h-4 w-4" />
+            New Patient Details
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {records.map((record) => {
+            const summary = patientRecordSummary(record);
+            return (
+              <div
+                className="grid w-full gap-2 rounded-lg border border-border bg-white p-3 transition hover:border-primary/35 hover:bg-primary-soft/40 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+                key={record.id}
+              >
+                <button className="text-left" onClick={() => onOpenRecord(record)} type="button">
+                  <span className="block text-sm font-bold text-foreground">{summary.name}</span>
+                  <span className="block text-xs text-muted-foreground">{summary.uhid}</span>
+                </button>
+                <span className="text-sm text-muted-foreground">{summary.phone}</span>
+                <span className="text-sm text-muted-foreground">{summary.doctor}</span>
+                <span className="flex items-center justify-start gap-2 md:justify-end">
+                  <Button onClick={() => onOpenRecord(record)} size="sm" type="button" variant="outline">
+                    <Eye className="h-4 w-4" />
+                    View
+                  </Button>
+                  <Button className="text-danger" onClick={() => onDeleteRecord(record)} size="sm" type="button" variant="outline">
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </span>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ReceptionistDraftDemographyModal({
+  editing,
+  onDelete,
+  onFieldChange,
+  onOpenForm,
+  onSave,
+  onSetEditing,
+  record,
+}: {
+  editing: boolean;
+  onDelete: () => void;
+  onFieldChange: (fieldIndex: number, value: string) => void;
+  onOpenForm: () => void;
+  onSave: () => void;
+  onSetEditing: (editing: boolean) => void;
+  record: PatientRecord;
+}) {
+  const basicSection = record.sections.find((section) => section.tabId === "basic");
+  const fields = basicSection?.fields ?? [];
+  const summary = patientRecordSummary(record);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border bg-surface-muted p-3">
+        <div className="text-sm font-bold text-foreground">{summary.name}</div>
+        <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
+          <span>{summary.uhid}</span>
+          <span>{summary.phone}</span>
+          <span>{summary.doctor}</span>
+        </div>
+      </div>
+
+      <div className="max-h-[58vh] overflow-y-auto pr-1">
+        {fields.length ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            {fields.map((field, index) => (
+              <label className="space-y-1.5 rounded-lg border border-border bg-white p-3" key={`${field.label}-${index}`}>
+                <span className="block text-xs font-semibold uppercase text-muted-foreground">{field.label}</span>
+                {editing ? (
+                  <textarea
+                    className="min-h-10 w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    onChange={(event) => onFieldChange(index, event.target.value)}
+                    value={field.value}
+                  />
+                ) : (
+                  <span className="block min-h-6 text-sm font-medium text-foreground">{field.value}</span>
+                )}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-border px-3 py-8 text-center text-sm text-muted-foreground">
+            No demography data filled yet.
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col-reverse gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <Button className="text-danger" onClick={onDelete} type="button" variant="outline">
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </Button>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <Button onClick={onOpenForm} type="button" variant="outline">
+            <FileText className="h-4 w-4" />
+            Open in Form
+          </Button>
+          {editing ? (
+            <Button onClick={onSave} type="button">
+              <Save className="h-4 w-4" />
+              Save Changes
+            </Button>
+          ) : (
+            <Button onClick={() => onSetEditing(true)} type="button">
+              <Eye className="h-4 w-4" />
+              Edit
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -2933,6 +3089,8 @@ function FavoriteRow({
 }
 
 export function PatientDetailsPage({ embedded = false }: { embedded?: boolean }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { role } = useRole();
   const isReceptionist = role === "Receptionist";
   const recordStore = React.useMemo(
@@ -2940,12 +3098,14 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
       ? {
           find: findReceptionistPatientRecord,
           read: readReceptionistPatientRecords,
+          delete: deleteReceptionistPatientRecord,
           upsertSection: upsertReceptionistPatientRecordSection,
           write: writeReceptionistPatientRecords,
         }
       : {
           find: findSharedPatientRecord,
           read: readSharedPatientRecords,
+          delete: (id: string) => writeSharedPatientRecords(readSharedPatientRecords().filter((record) => record.id !== id)),
           upsertSection: upsertSharedPatientRecordSection,
           write: writeSharedPatientRecords,
         },
@@ -2971,12 +3131,17 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   const [permanentAddress, setPermanentAddress] = React.useState("");
   const [currentAddress, setCurrentAddress] = React.useState("");
   const [sameAsPermanent, setSameAsPermanent] = React.useState(false);
-  const [identificationRows, setIdentificationRows] = React.useState([{ id: "identification-1", type: "" }]);
+  const [identificationRows, setIdentificationRows] = React.useState<IdentificationRow[]>([{ id: "identification-1", type: "" }]);
+  const [emergencyIdentificationRows, setEmergencyIdentificationRows] = React.useState<IdentificationRow[]>([{ id: "emergency-identification-1", type: "" }]);
   const [clinicalHeight, setClinicalHeight] = React.useState("");
   const [clinicalWeight, setClinicalWeight] = React.useState("");
   const [formKey, setFormKey] = React.useState(0);
   const [editingRecordId, setEditingRecordId] = React.useState<string | null>(initialEditingRecord?.id ?? null);
   const [editingRecord, setEditingRecord] = React.useState<PatientRecord | null>(initialEditingRecord);
+  const [savedDraftsOpen, setSavedDraftsOpen] = React.useState(false);
+  const [savedDraftRecords, setSavedDraftRecords] = React.useState<PatientRecord[]>(() => recordStore.read());
+  const [selectedDraftRecord, setSelectedDraftRecord] = React.useState<PatientRecord | null>(null);
+  const [draftModalEditing, setDraftModalEditing] = React.useState(false);
   const [previewRecord, setPreviewRecord] = React.useState<PatientRecord | null>(null);
   const [isExtractingDocument, setIsExtractingDocument] = React.useState(false);
   const clinicalBmi = React.useMemo(() => calculateBmi(clinicalHeight, clinicalWeight), [clinicalHeight, clinicalWeight]);
@@ -2987,10 +3152,30 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   const calculatorHeight = clinicalHeight || (editingRecord ? getPatientRecordValue(editingRecord, "Height") : "");
   const calculatorWeight = clinicalWeight || (editingRecord ? getPatientRecordValue(editingRecord, "Weight") : "");
 
+  React.useEffect(() => {
+    setSavedDraftsOpen(searchParams.get("view") === "saved-drafts");
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    setSavedDraftRecords(recordStore.read());
+  }, [recordStore]);
+
+  React.useEffect(() => {
+    const recordId = searchParams.get("edit");
+    if (!recordId) return;
+    const record = recordStore.find(recordId);
+    if (!record) return;
+    setSavedDraftsOpen(false);
+    setEditingRecordId(record.id);
+    setEditingRecord(record);
+    setActiveTab("basic");
+    setFormKey((current) => current + 1);
+  }, [recordStore, searchParams]);
+
   const applyControlledPatientFields = React.useCallback((section: PatientRecordSection) => {
     const valueFor = (label: string) => getPatientRecordValue({ id: "current", updatedAt: "", sections: [section] }, label);
     if (section.tabId === "basic") {
-      const nextArrivalDate = valueFor("Date on which Patient arrives");
+      const nextArrivalDate = valueFor("Registration Date") || valueFor("Date on which Patient arrives");
       setArrivalDate(nextArrivalDate || getCurrentDateText());
       const nextDateOfBirth = valueFor("Date of Birth");
       if (nextDateOfBirth) {
@@ -3042,13 +3227,43 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
     return identificationDocumentOptions.filter((option) => !selectedTypes.has(option.type));
   }
 
+  function availableEmergencyIdentificationOptions(rowId: string) {
+    const selectedTypes = new Set(emergencyIdentificationRows.filter((row) => row.id !== rowId && row.type).map((row) => row.type));
+    return identificationDocumentOptions.filter((option) => !selectedTypes.has(option.type));
+  }
+
   function updateIdentificationRowType(rowId: string, type: string) {
     setIdentificationRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, type } : row)));
+  }
+
+  function updateEmergencyIdentificationRowType(rowId: string, type: string) {
+    setEmergencyIdentificationRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, type } : row)));
   }
 
   function addIdentificationRow() {
     if (identificationRows.length >= identificationDocumentOptions.length) return;
     setIdentificationRows((rows) => [...rows, { id: `identification-${Date.now()}`, type: "" }]);
+  }
+
+  function addEmergencyIdentificationRow() {
+    if (emergencyIdentificationRows.length >= identificationDocumentOptions.length) return;
+    setEmergencyIdentificationRows((rows) => [...rows, { id: `emergency-identification-${Date.now()}`, type: "" }]);
+  }
+
+  function removeIdentificationRow(rowId: string) {
+    setIdentificationRows((rows) => rows.length > 1 ? rows.filter((row) => row.id !== rowId) : [{ id: "identification-1", type: "" }]);
+  }
+
+  function removeEmergencyIdentificationRow(rowId: string) {
+    setEmergencyIdentificationRows((rows) => rows.length > 1 ? rows.filter((row) => row.id !== rowId) : [{ id: "emergency-identification-1", type: "" }]);
+  }
+
+  function openSavedDraftsView() {
+    setSavedDraftRecords(recordStore.read());
+    setSavedDraftsOpen(true);
+    if (isReceptionist) {
+      router.push("/receptionist/patient-details?view=saved-drafts");
+    }
   }
 
   function saveCurrentPatientSection() {
@@ -3103,6 +3318,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
   function handleSaveDraft() {
     saveCurrentPatientSection();
     toast.success("Patient details draft saved locally.");
+    if (isReceptionist) openSavedDraftsView();
   }
 
   function handlePreview() {
@@ -3153,6 +3369,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
     setCurrentAddress("");
     setSameAsPermanent(false);
     setIdentificationRows([{ id: "identification-1", type: "" }]);
+    setEmergencyIdentificationRows([{ id: "emergency-identification-1", type: "" }]);
     setClinicalHeight("");
     setClinicalWeight("");
     setEditingRecordId(null);
@@ -3161,6 +3378,79 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
     setFormKey((current) => current + 1);
     setActiveTab("basic");
     toast.info("Patient details form cleared.");
+  }
+
+  function handleNewPatientDetails() {
+    handleClear();
+    setSavedDraftsOpen(false);
+    if (isReceptionist) router.push("/receptionist/patient-details");
+  }
+
+  function openSavedDraft(record: PatientRecord) {
+    setSelectedDraftRecord(record);
+    setDraftModalEditing(false);
+  }
+
+  function openSelectedDraftInForm(record: PatientRecord) {
+    setSelectedDraftRecord(null);
+    setDraftModalEditing(false);
+    setSavedDraftsOpen(false);
+    router.push(`/receptionist/patient-details?edit=${record.id}`);
+    setEditingRecordId(record.id);
+    setEditingRecord(record);
+    setActiveTab("basic");
+    setFormKey((current) => current + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleDraftModalFieldChange(fieldIndex: number, value: string) {
+    setSelectedDraftRecord((currentRecord) => {
+      if (!currentRecord) return currentRecord;
+      const nextRecord: PatientRecord = {
+        ...currentRecord,
+        updatedAt: new Date().toISOString(),
+        sections: currentRecord.sections.map((section) =>
+          section.tabId === "basic"
+            ? {
+                ...section,
+                fields: section.fields.map((field, index) => (index === fieldIndex ? { ...field, value } : field)),
+              }
+            : section,
+        ),
+      };
+      setSavedDraftRecords((records) => records.map((record) => (record.id === nextRecord.id ? nextRecord : record)));
+      return nextRecord;
+    });
+  }
+
+  function saveSelectedDraftModal() {
+    if (!selectedDraftRecord) return;
+    recordStore.write(recordStore.read().map((record) => (record.id === selectedDraftRecord.id ? selectedDraftRecord : record)));
+    setSavedDraftRecords(recordStore.read());
+    setEditingRecord((currentRecord) => currentRecord?.id === selectedDraftRecord.id ? selectedDraftRecord : currentRecord);
+    setDraftModalEditing(false);
+    toast.success("Draft patient details updated.");
+  }
+
+  function deleteDraftRecord(record: PatientRecord) {
+    recordStore.delete(record.id);
+    setSavedDraftRecords(recordStore.read());
+    if (editingRecordId === record.id) {
+      setEditingRecordId(null);
+      setEditingRecord(null);
+    }
+    if (selectedDraftRecord?.id === record.id) {
+      setSelectedDraftRecord(null);
+      setDraftModalEditing(false);
+    }
+    toast.success("Draft patient details deleted.");
+  }
+
+  function deleteSelectedDraftModal() {
+    if (!selectedDraftRecord) return;
+    deleteDraftRecord(selectedDraftRecord);
+    setSelectedDraftRecord(null);
+    setDraftModalEditing(false);
   }
 
   async function handleDocumentFile(document: File | undefined) {
@@ -3235,6 +3525,37 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         {previewRecord ? <PatientDetailsPreview record={previewRecord} onFieldChange={handlePreviewFieldChange} /> : null}
       </CenterModal>
 
+      <CenterModal
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedDraftRecord(null);
+            setDraftModalEditing(false);
+          }
+        }}
+        open={Boolean(selectedDraftRecord)}
+        title="Saved Draft Demography"
+      >
+        {selectedDraftRecord ? (
+          <ReceptionistDraftDemographyModal
+            editing={draftModalEditing}
+            onDelete={deleteSelectedDraftModal}
+            onFieldChange={handleDraftModalFieldChange}
+            onOpenForm={() => openSelectedDraftInForm(selectedDraftRecord)}
+            onSave={saveSelectedDraftModal}
+            onSetEditing={setDraftModalEditing}
+            record={selectedDraftRecord}
+          />
+        ) : null}
+      </CenterModal>
+
+      {savedDraftsOpen && isReceptionist ? (
+        <ReceptionistSavedDraftsView
+          onDeleteRecord={deleteDraftRecord}
+          records={savedDraftRecords}
+          onNewPatient={handleNewPatientDetails}
+          onOpenRecord={openSavedDraft}
+        />
+      ) : (
       <div className="pt-1">
         <div className="flex gap-1 overflow-x-auto rounded-md bg-surface-muted p-1" role="tablist" aria-label="Patient detail sections">
           {roleVisiblePatientDetailTabs.map((tab) => (
@@ -3265,7 +3586,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                 <Field label="Patient ID / UHID">
                   <Input />
                 </Field>
-                <Field className="xl:col-span-2" label="Date on which Patient arrives">
+                <Field className="xl:col-span-2" label="Registration Date">
                   <DateTextInput onChange={setArrivalDate} required value={arrivalDate} />
                 </Field>
                 <Field label="First Name">
@@ -3348,7 +3669,7 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                     <Input inputMode="numeric" maxLength={6} minLength={6} onBeforeInput={(event) => preventInvalidNumericInput(event)} onInput={(event) => validateNumericInput(event, "Permanent PIN code")} onPaste={(event) => preventInvalidNumericPaste(event)} pattern="[0-9]*" required title="PIN code must contain 6 digits only." />
                   </Field>
                   <div className="space-y-1.5 md:col-span-2 xl:col-span-6">
-                    <div className="flex min-h-5 items-center justify-between gap-3">
+                    <div className="flex min-h-5 flex-wrap items-center gap-3">
                       <span className={labelClass}>Current Address</span>
                       <label className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         <input
@@ -3440,8 +3761,8 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                             />
                           </Field>
                         ) : null}
-                        {index === identificationRows.length - 1 ? (
-                          <div className="flex items-end">
+                        <div className="flex items-end gap-2">
+                          {index === identificationRows.length - 1 ? (
                             <Button
                               aria-label="Add identification row"
                               disabled={identificationRows.length >= identificationDocumentOptions.length}
@@ -3452,8 +3773,18 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
-                          </div>
-                        ) : null}
+                          ) : null}
+                          <Button
+                            aria-label="Delete identification row"
+                            className="text-danger"
+                            onClick={() => removeIdentificationRow(row.id)}
+                            size="icon"
+                            type="button"
+                            variant="outline"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -3481,18 +3812,63 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
                   <Field className="xl:col-span-2" label="Contact Email">
                     <Input type="email" />
                   </Field>
-                  <Field label="Identity Document Type">
-                    <select className={selectClass}>
-                      <option value="">Select</option>
-                      <option>Aadhaar</option>
-                      <option>Driving Licence</option>
-                      <option>PAN</option>
-                      <option>Passport</option>
-                    </select>
-                  </Field>
-                  <Field className="xl:col-span-2" label="Identity Document Number">
-                    <Input />
-                  </Field>
+                </div>
+                <div className="mt-3 space-y-3">
+                  {emergencyIdentificationRows.map((row, index) => {
+                    const selectedIdentification = identificationDocumentOptions.find((option) => option.type === row.type);
+                    return (
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6" key={row.id}>
+                        <Field label="Identification Type">
+                          <select className={selectClass} onChange={(event) => updateEmergencyIdentificationRowType(row.id, event.target.value)} value={row.type}>
+                            <option value="">Select</option>
+                            {availableEmergencyIdentificationOptions(row.id).map((option) => (
+                              <option key={option.type} value={option.type}>
+                                {option.type}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        {selectedIdentification ? (
+                          <Field className="xl:col-span-2" label={index === 0 ? "Identity Document Number" : selectedIdentification.fieldLabel}>
+                            <Input
+                              inputMode={selectedIdentification.inputMode}
+                              maxLength={selectedIdentification.maxLength}
+                              minLength={selectedIdentification.minLength}
+                              onBeforeInput={selectedIdentification.inputMode === "numeric" ? (event) => preventInvalidNumericInput(event) : undefined}
+                              onInput={selectedIdentification.inputMode === "numeric" ? (event) => validateNumericInput(event, "Identity document number") : undefined}
+                              onPaste={selectedIdentification.inputMode === "numeric" ? (event) => preventInvalidNumericPaste(event) : undefined}
+                              pattern={selectedIdentification.pattern}
+                              title={selectedIdentification.title}
+                            />
+                          </Field>
+                        ) : null}
+                        <div className="flex items-end gap-2">
+                          {index === emergencyIdentificationRows.length - 1 ? (
+                            <Button
+                              aria-label="Add emergency identification row"
+                              disabled={emergencyIdentificationRows.length >= identificationDocumentOptions.length}
+                              onClick={addEmergencyIdentificationRow}
+                              size="icon"
+                              type="button"
+                              variant="outline"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                          <Button
+                            aria-label="Delete emergency identification row"
+                            className="text-danger"
+                            onClick={() => removeEmergencyIdentificationRow(row.id)}
+                            size="icon"
+                            type="button"
+                            variant="outline"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -3721,7 +4097,9 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
         {activePatientTab === "patient-old-records" ? <PatientOldRecordsTab /> : null}
 
       </div>
+      )}
 
+      {!savedDraftsOpen ? (
       <div className={embedded ? "sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur" : "sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6"}>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Button onClick={handleCancel} size="sm" type="button" variant="outline">
@@ -3733,9 +4111,9 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
               <Save className="h-4 w-4" />
               Save Draft
             </Button>
-            <Button onClick={handleClear} size="sm" type="button" variant="outline">
+            <Button onClick={handleNewPatientDetails} size="sm" type="button" variant="outline">
               <RotateCcw className="h-4 w-4" />
-              Clear
+              New Patient Details
             </Button>
             {activeTabIndex === roleVisiblePatientDetailTabs.length - 1 ? (
               <>
@@ -3750,13 +4128,14 @@ export function PatientDetailsPage({ embedded = false }: { embedded?: boolean })
               </>
             ) : (
               <Button onClick={goToNextTab} size="sm" type="button">
-                Save & Continue
+                Generate Record
                 <Send className="h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
       </div>
+      ) : null}
     </form>
   );
 }

@@ -91,7 +91,7 @@ export function PatientRow({
       <td className="h-[74px] px-3 py-2 text-center"><VitalPill {...patient.temperature} onClick={onOpenVitals} /></td>
       <td className="h-[74px] px-3 py-2 text-center"><RoundActionButton icon={FlaskConical} tone="dark" label={`Open laboratory results for ${patient.name}`} onClick={onOpenLabResults} /></td>
       <td className="h-[74px] px-3 py-2 text-center"><RoundActionButton icon={Pill} tone="dark" label={`Open medication and intervention for ${patient.name}`} onClick={onOpenMedication} /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><RoundActionButton icon={ClipboardList} tone="dark" label={`Open progress note for ${patient.name}`} onClick={onOpenProgressNote} /></td>
+      <td className="h-[74px] px-3 py-2 text-center"><RoundActionButton icon={ClipboardList} tone="dark" label={`Open add progress for ${patient.name}`} onClick={onOpenProgressNote} /></td>
       <td className="h-[74px] px-3 py-2 text-center"><RoundActionButton icon={FileText} tone="dark" label={`Open radiology report for ${patient.name}`} onClick={onOpenRadiology} /></td>
       <td className="h-[74px] px-3 py-2 text-center"><RoundActionButton dataTestId={`doctor-ipd-events-${patient.id}`} icon={Activity} tone="red" label={`Open events for ${patient.name}`} onClick={onOpenEvents} /></td>
       <td className="h-[74px] px-3 py-2 text-center"><RoundActionButton icon={PhoneCall} tone="blue" label={`Open collaborate for ${patient.name}`} onClick={onOpenCollaborate} /></td>

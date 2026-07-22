@@ -1,9 +1,16 @@
 "use client";
 
-import { ProgressNotesPanel } from "@/features/roles/doctor-ipd/progress-notes";
+import * as React from "react";
+
+import { NotesPage } from "@/features/clinical/notes/notes-page";
 import type { DoctorIpdPatient } from "@/features/roles/doctor-ipd/dashboard/dashboard.types";
-import { patientTone } from "@/features/roles/doctor-ipd/dashboard/dashboard.utils";
 
 export function ProgressNoteModalContent({ patient }: { patient: DoctorIpdPatient }) {
-  return <ProgressNotesPanel compact patient={patient} tone={patientTone(patient)} />;
+  return (
+    <div className="h-full overflow-y-auto bg-surface-muted/30 px-4 pb-5 pt-2" data-patient-id={patient.id}>
+      <React.Suspense fallback={<div className="rounded-md border border-border bg-white p-4 text-sm font-semibold text-muted-foreground">Loading add progress...</div>}>
+        <NotesPage />
+      </React.Suspense>
+    </div>
+  );
 }

@@ -33,7 +33,7 @@ function routeIsActive(route: string, pathname: string, currentHash: string, cur
   const routeCurrentHash = routeHash ? `#${routeHash}` : "";
   return pathname === routePathname
     && routeSearchMatches(routeSearch, currentSearch)
-    && (routeCurrentHash ? currentHash === routeCurrentHash : !currentHash);
+    && (routeCurrentHash ? currentHash === routeCurrentHash : (!currentHash || Boolean(routeSearch)));
 }
 
 function childIsActive(child: NavigationChildItem, pathname: string, currentHash: string, currentSearch = ""): boolean {
@@ -212,8 +212,9 @@ export function AppSidebar({
                   const moreSpecificRouteActive = visibleItems.some((candidate) => {
                     if (candidate.id === item.id) return false;
                     const [candidatePath = "/", candidateHash] = candidate.route.split("#");
-                    const [candidateRoutePath = "/"] = candidatePath.split("?");
+                    const [candidateRoutePath = "/", candidateRouteSearch = ""] = candidatePath.split("?");
                     const candidateRouteHash = candidateHash ? `#${candidateHash}` : "";
+                    const candidateSearchActive = Boolean(candidateRouteSearch) && pathname === candidateRoutePath && routeSearchMatches(candidateRouteSearch, currentSearch);
                     const candidateMatches =
                       pathname === candidateRoutePath ||
                       (!candidateRouteHash && candidateRoutePath !== "/dashboard" && candidateRoutePath !== "/doctor-dashboard" && pathname.startsWith(`${candidateRoutePath}/`));
@@ -221,11 +222,11 @@ export function AppSidebar({
                     return (
                       candidateMatches &&
                       (!candidateRouteHash || currentHash === candidateRouteHash) &&
-                      candidateRoutePath.startsWith(`${itemRoutePath}/`)
+                      (candidateRoutePath.startsWith(`${itemRoutePath}/`) || (candidateSearchActive && candidateRoutePath === itemRoutePath))
                     );
                   });
                   const active =
-                    exactRouteActive ||
+                    (!moreSpecificRouteActive && exactRouteActive) ||
                     childActive ||
                     (!moreSpecificRouteActive &&
                       !itemRouteHash &&

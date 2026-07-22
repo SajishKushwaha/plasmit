@@ -1185,7 +1185,17 @@ function priorityRank(priority: Note["priority"]) {
   return priority === "High" ? 0 : priority === "Medium" ? 1 : 2;
 }
 
-export function NotesPage() {
+type NotesPageProps = {
+  autoOpenNewNote?: boolean;
+  initialMedicalNoteSection?: MedicalNoteSection;
+  initialNewNoteCategory?: NoteCategory;
+};
+
+export function NotesPage({
+  autoOpenNewNote = false,
+  initialMedicalNoteSection = "ED Notes",
+  initialNewNoteCategory = "Nurse Notes",
+}: NotesPageProps = {}) {
   const searchParams = useSearchParams();
   const [notes, setNotes] = React.useState<Note[]>(() => initialNotes.map(normalizeNote));
   const [notesLoaded, setNotesLoaded] = React.useState(false);
@@ -1213,10 +1223,20 @@ export function NotesPage() {
   const [filterLockedCategory, setFilterLockedCategory] = React.useState<NoteCategory | null>(null);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [viewingNote, setViewingNote] = React.useState<Note | null>(null);
+  const autoOpenedNewNoteRef = React.useRef(false);
   const activeCategory = categories.find((item) => item.id === activeTab);
   const requestedCategory = searchParams.get("category");
   const requestedSpecialty = searchParams.get("specialty");
   const filtersRequested = searchParams.get("filters") === "open";
+
+  React.useEffect(() => {
+    if (!autoOpenNewNote || autoOpenedNewNoteRef.current) return;
+    autoOpenedNewNoteRef.current = true;
+    setEditingNote(null);
+    setNewNoteCategory(initialNewNoteCategory);
+    setNewMedicalNoteSection(initialMedicalNoteSection);
+    setNewNoteOpen(true);
+  }, [autoOpenNewNote, initialMedicalNoteSection, initialNewNoteCategory]);
 
   React.useEffect(() => {
     const nextCategory = categories.find((item) => item.id === requestedCategory);
@@ -2170,17 +2190,23 @@ function FilterView(props: {
   );
 }
 
-function NewNoteModal({
+export function NewNoteModal({
   editingNote,
   initialCategory,
+  initialEncounterId = "ENC123456789",
   initialMedicalNoteSection,
+  initialPatientId = "10000098",
+  initialPatientName = "John Doe",
   onOpenChange,
   onSave,
   open,
 }: {
   editingNote: Note | null;
   initialCategory: NoteCategory;
+  initialEncounterId?: string;
   initialMedicalNoteSection: MedicalNoteSection;
+  initialPatientId?: string;
+  initialPatientName?: string;
   onOpenChange: (open: boolean) => void;
   onSave: (note: Omit<Note, "id" | "date">) => void;
   open: boolean;
@@ -2229,8 +2255,8 @@ function NewNoteModal({
   const [medicalAssessment, setMedicalAssessment] = React.useState("");
   const [plan, setPlan] = React.useState("");
   const [practitionerId, setPractitionerId] = React.useState("");
-  const [patientId, setPatientId] = React.useState("10000098");
-  const [encounterId, setEncounterId] = React.useState("ENC123456789");
+  const [patientId, setPatientId] = React.useState(initialPatientId);
+  const [encounterId, setEncounterId] = React.useState(initialEncounterId);
   const [serviceDateTime, setServiceDateTime] = React.useState(toDateTimeLocalValue());
   const [authenticatedSigner, setAuthenticatedSigner] = React.useState("");
   const [amendmentReason, setAmendmentReason] = React.useState("");
@@ -2343,8 +2369,8 @@ function NewNoteModal({
     setMedicalAssessment(editingNote?.medicalAssessment ?? "");
     setPlan(editingNote?.plan ?? "");
     setPractitionerId(editingNote?.practitionerId ?? "");
-    setPatientId(editingNote?.patientId ?? "10000098");
-    setEncounterId(editingNote?.encounterId ?? "ENC123456789");
+    setPatientId(editingNote?.patientId ?? initialPatientId);
+    setEncounterId(editingNote?.encounterId ?? initialEncounterId);
     setServiceDateTime(editingNote?.serviceDateTime ?? toDateTimeLocalValue());
     setAuthenticatedSigner(editingNote?.authenticatedSigner ?? editingNote?.signedBy ?? editingNote?.author ?? defaultAuthor);
     setAmendmentReason("");
@@ -2375,7 +2401,7 @@ function NewNoteModal({
         ].filter(Boolean).join(" "),
     });
     setAdmission({ ...emptyAdmissionDocumentation, ...editingNote?.admission });
-  }, [editingNote, initialCategory, initialMedicalNoteSection, open]);
+  }, [editingNote, initialCategory, initialEncounterId, initialMedicalNoteSection, initialPatientId, open]);
 
   function changeSpecialty(value: string) {
     setSpecialty(value);
@@ -2590,7 +2616,7 @@ function NewNoteModal({
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border bg-surface-muted/30 px-3 py-2">
             <div className="text-xs">
               <span className="text-muted-foreground">Patient</span>
-              <span className="ml-2 font-semibold">John Doe</span>
+              <span className="ml-2 font-semibold">{initialPatientName}</span>
               <span className="ml-2 text-muted-foreground">#{patientId}</span>
             </div>
             <div className="text-xs">

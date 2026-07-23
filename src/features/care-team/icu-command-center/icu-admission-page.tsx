@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { writeIcuAdmissionReservation } from "@/features/care-team/icu-command-center/icu-admission-reservation";
 import { cn } from "@/lib/utils";
 
 type AdmissionPath = "new" | "transfer";
-type StepKey = "Patient" | "Patient Status" | "Medication" | "Review";
+type StepKey = "Patient" | "Bed & Device" | "Patient Status" | "Medication" | "Review";
 type PatientHistoryTab = "Past Medical History" | "Past Surgical History" | "Medication History" | "Allergy History" | "Social History";
 type IdentityDocumentType = "Aadhaar Card" | "PAN" | "Passport" | "Voter ID" | "Driving Licence";
 type IdentityRow = {
@@ -128,6 +129,29 @@ type ExistingAdmissionPatient = {
   bedNo: string;
   doctor: string;
   nurse: string;
+  pastMedicalHistory: string;
+  pastSurgicalHistoryStatus: string;
+  pastSurgicalHistory: string;
+  medicationHistory: string;
+  allergyHistory: string;
+  socialHistory: string;
+  comorbidities: string[];
+  bloodGroupReconfirm: string;
+  height: string;
+  weight: string;
+  allergies: string;
+  comorbiditiesText: string;
+  smokingStatus: string;
+  alcoholUse: string;
+  advanceDirective: string;
+  clinicalNotes: string;
+  pastMedication: string;
+  currentMedication: string;
+  allergy: string;
+  highAlertMedications: string;
+  otherRelevantInformation: string;
+  procedures: string;
+  nursingNotes: string;
 };
 
 type IcuAdmissionBedOption = {
@@ -138,7 +162,7 @@ type IcuAdmissionBedOption = {
   note: string;
 };
 
-const admissionSteps: StepKey[] = ["Patient", "Patient Status", "Medication", "Review"];
+const admissionSteps: StepKey[] = ["Patient", "Bed & Device", "Patient Status", "Medication", "Review"];
 const patientHistoryTabs: PatientHistoryTab[] = ["Past Medical History", "Past Surgical History", "Medication History", "Allergy History", "Social History"];
 const identityDocumentTypes: IdentityDocumentType[] = ["Aadhaar Card", "PAN", "Passport", "Voter ID", "Driving Licence"];
 const countryCodeOptions = ["India (+91)", "United States (+1)", "United Kingdom (+44)", "United Arab Emirates (+971)", "Singapore (+65)"];
@@ -301,6 +325,29 @@ const existingAdmissionPatients: ExistingAdmissionPatient[] = [
     bedNo: "ICU-C05",
     doctor: "Dr. Sameer Mehta",
     nurse: "Unit Nurse Priya",
+    pastMedicalHistory: "Type 2 diabetes mellitus for 11 years; hypertension with recent poor intake.",
+    pastSurgicalHistoryStatus: "No",
+    pastSurgicalHistory: "",
+    medicationHistory: "Metformin and amlodipine at home; broad-spectrum antibiotic started in ED.",
+    allergyHistory: "No known drug allergy documented during emergency triage.",
+    socialHistory: "Lives with family; no current tobacco or alcohol use reported by attendant.",
+    comorbidities: ["Hypertension", "Diabetes Mellitus"],
+    bloodGroupReconfirm: "B+",
+    height: "168",
+    weight: "74",
+    allergies: "No known drug allergy",
+    comorbiditiesText: "Diabetes Mellitus, Hypertension",
+    smokingStatus: "Never",
+    alcoholUse: "No",
+    advanceDirective: "Not Known",
+    clinicalNotes: "Arrived from ED on oxygen support with sepsis bundle started.",
+    pastMedication: "Metformin 500 mg BD, Amlodipine 5 mg OD",
+    currentMedication: "IV fluids, Piperacillin-tazobactam, Noradrenaline as per ED order",
+    allergy: "No known drug allergy",
+    highAlertMedications: "Noradrenaline infusion",
+    otherRelevantInformation: "Blood culture sent; MAP target and urine output monitoring required.",
+    procedures: "Peripheral IV lines secured; urinary catheter placed in ED.",
+    nursingNotes: "Receive with shock precautions, strict intake-output, and hourly vitals.",
   },
   {
     id: "icu-existing-002",
@@ -317,6 +364,29 @@ const existingAdmissionPatients: ExistingAdmissionPatient[] = [
     bedNo: "RICU-02",
     doctor: "Dr. Imran Shah",
     nurse: "Unit Nurse Meera",
+    pastMedicalHistory: "COPD with recurrent exacerbations; ischemic heart disease under follow-up.",
+    pastSurgicalHistoryStatus: "No",
+    pastSurgicalHistory: "",
+    medicationHistory: "Home inhalers, oral steroids during flare, and bronchodilator nebulization on ward.",
+    allergyHistory: "Sulfa allergy reported by patient.",
+    socialHistory: "Past smoker with long pack-year history; quit several years ago.",
+    comorbidities: ["COPD / Asthma", "Ischemic Heart Disease"],
+    bloodGroupReconfirm: "O+",
+    height: "172",
+    weight: "68",
+    allergies: "Sulfa allergy",
+    comorbiditiesText: "COPD, Ischemic Heart Disease",
+    smokingStatus: "Former",
+    alcoholUse: "Occasional",
+    advanceDirective: "No",
+    clinicalNotes: "Ward deterioration with rising work of breathing; NIV support planned.",
+    pastMedication: "Tiotropium inhaler, Salbutamol inhaler PRN, Aspirin 75 mg OD",
+    currentMedication: "Nebulization, IV steroid, antibiotic cover, NIV support",
+    allergy: "Sulfa allergy",
+    highAlertMedications: "None currently",
+    otherRelevantInformation: "Monitor CO2 retention and NIV mask tolerance.",
+    procedures: "NIV initiated on ward before transfer request.",
+    nursingNotes: "Respiratory ICU receive with continuous SpO2 and ABG follow-up.",
   },
   {
     id: "icu-existing-003",
@@ -333,6 +403,29 @@ const existingAdmissionPatients: ExistingAdmissionPatient[] = [
     bedNo: "CTICU-04",
     doctor: "Dr. Aman Verma",
     nurse: "Unit Nurse Sana",
+    pastMedicalHistory: "Triple vessel coronary artery disease; hypertension.",
+    pastSurgicalHistoryStatus: "Yes",
+    pastSurgicalHistory: "CABG performed today with uncomplicated immediate recovery.",
+    medicationHistory: "Post-operative cardiac medicines and analgesia continued from OT recovery.",
+    allergyHistory: "No known allergy recorded.",
+    socialHistory: "Lives with spouse; no current smoking reported.",
+    comorbidities: ["Hypertension", "Ischemic Heart Disease"],
+    bloodGroupReconfirm: "A+",
+    height: "160",
+    weight: "62",
+    allergies: "No known allergy recorded",
+    comorbiditiesText: "Hypertension, Ischemic Heart Disease",
+    smokingStatus: "Never",
+    alcoholUse: "No",
+    advanceDirective: "No",
+    clinicalNotes: "Post CABG monitoring from OT recovery; drain and line watch required.",
+    pastMedication: "Aspirin, statin, beta blocker before surgery",
+    currentMedication: "Post-op analgesia, antibiotic prophylaxis, insulin sliding scale if required",
+    allergy: "No known allergy recorded",
+    highAlertMedications: "Insulin sliding scale if ordered",
+    otherRelevantInformation: "Chest drain output and hemodynamic monitoring needed.",
+    procedures: "CABG, arterial line, central line, urinary catheter, chest drains.",
+    nursingNotes: "Receive from OT recovery with post-cardiac surgery checklist.",
   },
 ];
 
@@ -610,6 +703,7 @@ export function IcuAdmissionPage() {
   const activeStep = admissionSteps[step];
   const completeness = Math.max(10, Math.round(((step + (admissionPath ? 1 : 0) + (draft.patientName ? 1 : 0)) / (admissionSteps.length + 2)) * 100));
   const patientChip = draft.patientName ? `${draft.patientName} | ${draft.uhid || "MRN pending"}` : "No patient selected";
+  const hasSelectedPatient = Boolean(draft.patientName.trim());
   const bmi = React.useMemo(() => calculateBmi(draft.height, draft.weight), [draft.height, draft.weight]);
   const availableAdmissionBedOptions = React.useMemo(() => getAssignableAdmissionBedsForUnit(draft.unit).map((bed) => bed.bedNo), [draft.unit]);
   const selectedReadiness = React.useMemo(() => getReadinessValues(draft.readiness), [draft.readiness]);
@@ -618,6 +712,8 @@ export function IcuAdmissionPage() {
       ? admissionPath === "new"
         ? Boolean(draft.patientName.trim() && draft.dateOfBirth.trim() && draft.gender.trim() && draft.contactNumber.trim())
         : Boolean(admissionPath && draft.patientName.trim())
+      : step === 1
+        ? hasSelectedPatient
       : true;
   const filteredPatients = React.useMemo(() => {
     const query = patientQuery.trim().toLowerCase();
@@ -800,11 +896,37 @@ export function IcuAdmissionPage() {
       bedNo: patient.bedNo,
       doctor: patient.doctor,
       nurse: patient.nurse,
+      pastMedicalHistory: patient.pastMedicalHistory,
+      pastSurgicalHistoryStatus: patient.pastSurgicalHistoryStatus,
+      pastSurgicalHistory: patient.pastSurgicalHistory,
+      medicationHistory: patient.medicationHistory,
+      allergyHistory: patient.allergyHistory,
+      socialHistory: patient.socialHistory,
+      comorbidities: patient.comorbidities,
+      bloodGroupReconfirm: patient.bloodGroupReconfirm,
+      height: patient.height,
+      weight: patient.weight,
+      allergies: patient.allergies,
+      comorbiditiesText: patient.comorbiditiesText,
+      smokingStatus: patient.smokingStatus,
+      alcoholUse: patient.alcoholUse,
+      advanceDirective: patient.advanceDirective,
+      clinicalNotes: patient.clinicalNotes,
+      pastMedication: patient.pastMedication,
+      currentMedication: patient.currentMedication,
+      medication: patient.currentMedication,
+      allergy: patient.allergy,
+      highAlertMedications: patient.highAlertMedications,
+      otherRelevantInformation: patient.otherRelevantInformation,
+      procedures: patient.procedures,
+      nursingNotes: patient.nursingNotes,
       handoverBy: `${patient.source} team`,
       pendingInvestigations: "Pending investigation list to be updated after admission review",
       plannedCareTreatment: "ICU monitoring, nursing care plan, medication reconciliation, and consultant review",
     }));
     setPatientQuery(patient.patientName);
+    setPatientHistoryOpen(true);
+    setPhysicalClinicalOpen(true);
     toast.success(`${patient.patientName} selected for ICU admission.`);
   }
 
@@ -819,7 +941,27 @@ export function IcuAdmissionPage() {
   }
 
   function saveDraft() {
+    if (step === 1 && draft.patientName.trim() && draft.bedNo.trim()) {
+      reserveAdmissionBed();
+    }
     toast.success("ICU admission draft saved.");
+  }
+
+  function reserveAdmissionBed() {
+    writeIcuAdmissionReservation({
+      id: `${draft.uhid || draft.patientName}-${draft.bedNo}`.replace(/\s+/g, "-").toLowerCase(),
+      patientName: draft.patientName,
+      uhid: draft.uhid || "MRN pending",
+      bedNo: draft.bedNo,
+      unit: draft.unit,
+      status: "Reserved",
+      reservedAt: new Date().toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    });
   }
 
   function continueFlow() {
@@ -835,9 +977,13 @@ export function IcuAdmissionPage() {
       toast.error("Patient name, date of birth, gender, and contact number are required.");
       return;
     }
+    if (step === 1 && draft.patientName.trim() && draft.bedNo.trim()) {
+      reserveAdmissionBed();
+      toast.success(`${draft.bedNo} reserved for ${draft.patientName}.`);
+    }
     if (step < admissionSteps.length - 1) {
       setStep((current) => current + 1);
-      toast.success(`${activeStep} saved.`);
+      if (step !== 1) toast.success(`${activeStep} saved.`);
       return;
     }
     toast.success("ICU admission wizard completed.");
@@ -1288,14 +1434,19 @@ export function IcuAdmissionPage() {
                   </Card>
                   ) : null}
 
-                  {admissionPath === "new" ? (
+                </div>
+              ) : null}
+
+              {step === 1 ? (
+                <div className="space-y-3">
+                  {hasSelectedPatient ? (
                     <Card>
                       <CardHeader className="bg-surface-muted/60">
                         <div className="flex items-center gap-2">
                           <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-primary">
                             <BedDouble className="h-4 w-4" />
                           </span>
-                          <CardTitle>Bed & Device</CardTitle>
+                          <CardTitle>2. Bed & Device</CardTitle>
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -1321,13 +1472,15 @@ export function IcuAdmissionPage() {
                         </div>
                       </CardContent>
                     </Card>
-                  ) : null}
-
-
+                  ) : (
+                    <StepPlaceholder icon={BedDouble} title="2. Bed & Device">
+                      <p className="text-sm text-muted-foreground">Select or create a patient first.</p>
+                    </StepPlaceholder>
+                  )}
                 </div>
               ) : null}
 
-              {step === 1 ? (
+              {step === 2 ? (
                 <div className="space-y-3">
                   <Card>
                     <CardContent className="p-4">
@@ -1348,7 +1501,7 @@ export function IcuAdmissionPage() {
                     </Field>
                   </AdmissionFormSection>
 
-                  {admissionPath === "new" ? (
+                  {hasSelectedPatient ? (
                   <Card>
                     <CardHeader className="bg-surface-muted/60">
                       <button className="flex w-full flex-wrap items-center justify-between gap-3 text-left" type="button" onClick={() => setPatientHistoryOpen((current) => !current)}>
@@ -1862,7 +2015,7 @@ export function IcuAdmissionPage() {
                   </Card>
                   ) : null}
 
-                  {admissionPath === "new" ? (
+                  {hasSelectedPatient ? (
                   <Card>
                     <CardHeader>
                       <button className="flex w-full items-center justify-between gap-3 text-left" type="button" onClick={() => setPhysicalClinicalOpen((current) => !current)}>
@@ -1956,7 +2109,7 @@ export function IcuAdmissionPage() {
                 </div>
               ) : null}
 
-              {step === 2 ? (
+              {step === 3 ? (
                 <div className="space-y-3">
                   <AdmissionFormSection title="Medication Reconciliation" description="Past, current, and high-alert medicines captured before ICU receive.">
                     <TextAreaField label="Past Medication" value={draft.pastMedication} onChange={(value) => updateField("pastMedication", value)} placeholder="Home medicines, previous hospital medicines, stopped medicines..." />
@@ -1979,8 +2132,8 @@ export function IcuAdmissionPage() {
                 </div>
               ) : null}
 
-              {step === 3 ? (
-                <StepPlaceholder icon={Check} title="4. Review">
+              {step === 4 ? (
+                <StepPlaceholder icon={Check} title="5. Review">
                   <div className="grid gap-3 md:grid-cols-2">
                     {[
                       ["Patient", [["Patient", draft.patientName || "-"], ["UHID / MRN", draft.uhid || "Auto assign"], ["Age / gender", [draft.age, draft.gender].filter(Boolean).join(" / ") || "-"], ["Contact", draft.contactNumber || "-"]]],

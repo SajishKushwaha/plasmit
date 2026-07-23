@@ -71,6 +71,13 @@ import { IntakeOutputWorkspace } from "@/features/care-team/nursing-icu/componen
 import { VentilationChartWorkspace } from "@/features/care-team/nursing-icu/components/ventilation-chart";
 import { NotesPage } from "@/features/clinical/notes/notes-page";
 import { FamilyCommunicationWorkspace } from "@/features/care-team/nursing-icu/components/family-communication-workspace";
+import {
+  clearIcuAdmissionReservation,
+  ICU_ADMISSION_RESERVATION_EVENT,
+  readIcuAdmissionReservation,
+  writeIcuAdmissionReservation,
+  type IcuAdmissionReservation,
+} from "@/features/care-team/icu-command-center/icu-admission-reservation";
 import { getNursingRolePermission } from "@/data/icu-nursing-role-permissions";
 import {
   activityLogs,
@@ -2003,11 +2010,92 @@ function FilterPanel({
   );
 }
 
+function useIcuAdmissionReservedBed() {
+  const [reservedBed, setReservedBed] = React.useState<IcuAdmissionReservation | null>(() => readIcuAdmissionReservation());
+
+  React.useEffect(() => {
+    const handleReservationEvent = (event: Event) => {
+      setReservedBed((event as CustomEvent<IcuAdmissionReservation | null>).detail ?? readIcuAdmissionReservation());
+    };
+    const handleStorageEvent = (event: StorageEvent) => {
+      if (event.key?.includes("plasmit-icu-admission-reservation")) {
+        setReservedBed(readIcuAdmissionReservation());
+      }
+    };
+
+    window.addEventListener(ICU_ADMISSION_RESERVATION_EVENT, handleReservationEvent);
+    window.addEventListener("storage", handleStorageEvent);
+    return () => {
+      window.removeEventListener(ICU_ADMISSION_RESERVATION_EVENT, handleReservationEvent);
+      window.removeEventListener("storage", handleStorageEvent);
+    };
+  }, []);
+
+  function cancelReservedBed() {
+    clearIcuAdmissionReservation();
+    setReservedBed(null);
+    toast.success("Reserved ICU bed cancelled.");
+  }
+
+  function acceptReservedBed() {
+    if (!reservedBed) return;
+    const acceptedReservation: IcuAdmissionReservation = { ...reservedBed, status: "Accepted" };
+    writeIcuAdmissionReservation(acceptedReservation);
+    setReservedBed(acceptedReservation);
+    toast.success(`${reservedBed.bedNo} accepted for ${reservedBed.patientName}.`);
+  }
+
+  return { acceptReservedBed, cancelReservedBed, reservedBed };
+}
+
+function ReservedAdmissionBedCard({
+  onAccept,
+  onCancel,
+  reservation,
+}: {
+  onAccept: () => void;
+  onCancel: () => void;
+  reservation: IcuAdmissionReservation;
+}) {
+  const accepted = reservation.status === "Accepted";
+
+  return (
+    <Card className={cn("overflow-hidden", accepted ? "border-emerald-200 bg-emerald-50/70" : "border-amber-200 bg-amber-50/70")}>
+      <CardContent className="grid gap-3 p-3 md:grid-cols-[minmax(180px,1.4fr)_minmax(140px,0.8fr)_120px_auto] md:items-center">
+        <div className="min-w-0">
+          <div className={cn("text-xs font-bold uppercase", accepted ? "text-emerald-700" : "text-amber-700")}>{accepted ? "Accepted bed" : "Reserved bed"}</div>
+          <div className="mt-1 truncate text-sm font-black text-slate-950">{reservation.patientName}</div>
+          <div className="mt-0.5 truncate text-xs font-semibold text-slate-600">{reservation.uhid} | {reservation.unit}</div>
+        </div>
+        <div>
+          <div className={cn("text-xs font-bold uppercase", accepted ? "text-emerald-700" : "text-amber-700")}>Bed number</div>
+          <div className="mt-1 text-sm font-black text-slate-950">{reservation.bedNo}</div>
+        </div>
+        <StatusPill tone={accepted ? "success" : "warning"}>{reservation.status}</StatusPill>
+        <div className="flex flex-wrap gap-2 justify-self-start md:justify-self-end">
+          {!accepted ? (
+            <Button size="sm" type="button" onClick={onAccept}>
+              <CheckCircle2 className="h-4 w-4" />
+              Accept
+            </Button>
+          ) : null}
+          <Button size="sm" type="button" variant="outline" onClick={onCancel}>
+            <X className="h-4 w-4" />
+            Cancel
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function Dashboard({ patients }: { patients: IcuPatient[] }) {
   const [query, setQuery] = React.useState("");
   const [riskFilter, setRiskFilter] = React.useState("All status");
   const [unitFilter, setUnitFilter] = React.useState("All units");
+  const { acceptReservedBed, cancelReservedBed, reservedBed } = useIcuAdmissionReservedBed();
   const occupiedBeds = icuPatients.length;
+
   const visiblePatients = patients.filter((patient) => {
     const text = `${patient.patientName} ${patient.bedNo} ${patient.mrn} ${patient.diagnosis} ${patient.unit} ${patient.currentStatus}`.toLowerCase();
     const matchesQuery = text.includes(query.toLowerCase());
@@ -2032,6 +2120,10 @@ function Dashboard({ patients }: { patients: IcuPatient[] }) {
   const filterSummary = `${visiblePatients.length} patient(s) visible${activeFilterCount ? ` | ${activeFilterCount} filter(s) active` : ""}`;
   return (
     <div className="space-y-3">
+      {reservedBed ? (
+        <ReservedAdmissionBedCard reservation={reservedBed} onAccept={acceptReservedBed} onCancel={cancelReservedBed} />
+      ) : null}
+
       <CollapsibleCommandPanel summary={filterSummary} title="Census, search & filters">
         <div className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2">
           <DashboardCommandMetric label="ICU census" value={`${occupiedBeds}/24`} tone="info" />
@@ -3832,6 +3924,7 @@ function PatientSearchCommand({ patients }: { patients: IcuPatient[] }) {
   const [query, setQuery] = React.useState("");
   const [risk, setRisk] = React.useState("All risk");
   const [ventilator, setVentilator] = React.useState("All ventilator");
+  const { acceptReservedBed, cancelReservedBed, reservedBed } = useIcuAdmissionReservedBed();
   const rows = patients.filter((patient) => {
     const searchable = `${patient.patientName} ${patient.mrn} ${patient.bedNo} ${patient.diagnosis} ${patient.admittingDoctor} ${patient.assignedWardNurse}`.toLowerCase();
     const matchesQuery = searchable.includes(query.toLowerCase());
@@ -3863,6 +3956,10 @@ function PatientSearchCommand({ patients }: { patients: IcuPatient[] }) {
           </Link>
         </Button>
       </div>
+
+      {reservedBed ? (
+        <ReservedAdmissionBedCard reservation={reservedBed} onAccept={acceptReservedBed} onCancel={cancelReservedBed} />
+      ) : null}
 
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">

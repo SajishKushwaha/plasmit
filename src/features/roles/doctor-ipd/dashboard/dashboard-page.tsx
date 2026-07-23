@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CenterModal } from "@/components/ui/center-modal";
 import { DashboardPagination } from "@/features/roles/doctor-ipd/dashboard/components/dashboard-pagination";
 import { DashboardToolbar } from "@/features/roles/doctor-ipd/dashboard/components/dashboard-toolbar";
+import { PatientIconDashboard } from "@/features/roles/doctor-ipd/dashboard/components/patient-icon-dashboard";
 import { PatientTable } from "@/features/roles/doctor-ipd/dashboard/components/patient-table";
 import { DashboardCollaborateTimeline as DashboardCollaborateModalContent } from "@/features/roles/doctor-ipd/dashboard/modals/collaborate-modal";
 import { DashboardEventsPopup as DashboardEventsModalContent } from "@/features/roles/doctor-ipd/dashboard/modals/events-modal";
@@ -23,6 +24,7 @@ const patientsPerPage = 10;
 
 export function DoctorIpdDashboardPage() {
   const router = useRouter();
+  const [dashboardView, setDashboardView] = React.useState<"dashboard-1" | "dashboard-2">("dashboard-1");
   const [search, setSearch] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [shiftSummaryPatient, setShiftSummaryPatient] = React.useState<DoctorIpdPatient | null>(null);
@@ -74,7 +76,9 @@ export function DoctorIpdDashboardPage() {
   return (
     <div className="space-y-4 py-4">
       <DashboardToolbar
+        dashboardView={dashboardView}
         filteredCount={filteredPatients.length}
+        onDashboardViewChange={setDashboardView}
         onExportExcel={exportExcel}
         onSearchChange={(value) => {
           setSearch(value);
@@ -83,20 +87,33 @@ export function DoctorIpdDashboardPage() {
         search={search}
       />
 
-      <Card className="overflow-hidden rounded-md border-slate-200 shadow-sm">
-        <CardContent className="p-0">
-          <PatientTable
-            patients={visiblePatients}
-            onOpenCollaborate={setCollaboratePatient}
-            onOpenEvents={setEventPatient}
-            onOpenLabResults={setLabResultsPatient}
-            onOpenMedication={setMedicationPatient}
-            onOpenProgressNote={setShiftSummaryPatient}
-            onOpenRadiology={openRadiologyResultReview}
-            onOpenVitals={setVitalsPatient}
-          />
-        </CardContent>
-      </Card>
+      {dashboardView === "dashboard-1" ? (
+        <Card className="overflow-hidden rounded-md border-slate-200 shadow-sm">
+          <CardContent className="p-0">
+            <PatientTable
+              patients={visiblePatients}
+              onOpenCollaborate={setCollaboratePatient}
+              onOpenEvents={setEventPatient}
+              onOpenLabResults={setLabResultsPatient}
+              onOpenMedication={setMedicationPatient}
+              onOpenProgressNote={setShiftSummaryPatient}
+              onOpenRadiology={openRadiologyResultReview}
+              onOpenVitals={setVitalsPatient}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <PatientIconDashboard
+          patients={visiblePatients}
+          onOpenCollaborate={setCollaboratePatient}
+          onOpenEvents={setEventPatient}
+          onOpenLabResults={setLabResultsPatient}
+          onOpenMedication={setMedicationPatient}
+          onOpenProgressNote={setShiftSummaryPatient}
+          onOpenRadiology={openRadiologyResultReview}
+          onOpenVitals={setVitalsPatient}
+        />
+      )}
 
       <DashboardPagination
         filteredCount={filteredPatients.length}
@@ -146,7 +163,7 @@ export function DoctorIpdDashboardPage() {
         description={shiftSummaryPatient ? `${shiftSummaryPatient.name} | ${shiftSummaryPatient.bed} | ${shiftSummaryPatient.diagnosis}` : undefined}
         onOpenChange={(open) => !open && setShiftSummaryPatient(null)}
         open={Boolean(shiftSummaryPatient)}
-        title="Add Progress"
+        title="Add Progress Note"
       >
         {shiftSummaryPatient ? <ProgressNoteModalContent patient={shiftSummaryPatient} /> : null}
       </CenterModal>

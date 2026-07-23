@@ -303,16 +303,20 @@ function getVitalsChartMinWidth(pointCount: number, baseWidth = 760) {
 function HorizontalVitalsChart({
   children,
   className,
+  onScroll,
   pointCount,
   baseWidth,
+  scrollRef,
 }: {
   children: React.ReactNode;
   className: string;
+  onScroll?: React.UIEventHandler<HTMLDivElement>;
   pointCount: number;
   baseWidth?: number;
+  scrollRef?: React.Ref<HTMLDivElement>;
 }) {
   return (
-    <div className={cn("overflow-x-auto overflow-y-hidden", className)}>
+    <div className={cn("overflow-x-auto overflow-y-hidden", className)} onScroll={onScroll} ref={scrollRef}>
       <div className="h-full" style={{ minWidth: getVitalsChartMinWidth(pointCount, baseWidth) }}>
         {children}
       </div>
@@ -1096,6 +1100,8 @@ type VitalsGraphOneLegend = {
 
 function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { data: CombinedReviewGraphPoint[]; graphOnly?: boolean; onlySection?: string }) {
   const [activeGlucoseGraph, setActiveGlucoseGraph] = React.useState<"india" | "foreign">("india");
+  const graphScrollNodesRef = React.useRef<Record<string, HTMLDivElement | null>>({});
+  const graphScrollSyncingRef = React.useRef(false);
   const chartData = buildVitalsGraphOneData(data);
   const activeGlucoseConfig = activeGlucoseGraph === "india"
     ? {
@@ -1120,6 +1126,22 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
       ticks: [0, 3, 6, 9, 12, 15, 18],
       yAxisId: "foreign" as const,
     };
+  const setGraphScrollNode = React.useCallback((key: string) => (node: HTMLDivElement | null) => {
+    graphScrollNodesRef.current[key] = node;
+  }, []);
+  const syncGraphScroll = React.useCallback((sourceKey: string): React.UIEventHandler<HTMLDivElement> => (event) => {
+    if (graphScrollSyncingRef.current) return;
+
+    const source = event.currentTarget;
+    graphScrollSyncingRef.current = true;
+    Object.entries(graphScrollNodesRef.current).forEach(([key, node]) => {
+      if (!node || key === sourceKey || node.scrollLeft === source.scrollLeft) return;
+      node.scrollLeft = source.scrollLeft;
+    });
+    window.requestAnimationFrame(() => {
+      graphScrollSyncingRef.current = false;
+    });
+  }, []);
 
   if (!chartData.length) {
     return <EmptyState icon={BarChart3} title="Vitals Graph 1 unavailable" description="No observation data matched the selected date and time filter." />;
@@ -1140,7 +1162,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="CVS"
             >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <HorizontalVitalsChart className="h-full" onScroll={syncGraphScroll("CVS")} pointCount={chartData.length} scrollRef={setGraphScrollNode("CVS")}>
                 <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1169,7 +1191,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Respiration"
             >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <HorizontalVitalsChart className="h-full" onScroll={syncGraphScroll("Respiration")} pointCount={chartData.length} scrollRef={setGraphScrollNode("Respiration")}>
                 <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1195,7 +1217,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Infection"
             >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <HorizontalVitalsChart className="h-full" onScroll={syncGraphScroll("Infection")} pointCount={chartData.length} scrollRef={setGraphScrollNode("Infection")}>
                 <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1220,7 +1242,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Neuro / Pain"
             >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <HorizontalVitalsChart className="h-full" onScroll={syncGraphScroll("Neuro / Pain")} pointCount={chartData.length} scrollRef={setGraphScrollNode("Neuro / Pain")}>
                 <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: 14, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1246,7 +1268,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Glucose"
             >
-              <HorizontalVitalsChart className="h-full" pointCount={chartData.length}>
+              <HorizontalVitalsChart className="h-full" onScroll={syncGraphScroll("Glucose")} pointCount={chartData.length} scrollRef={setGraphScrollNode("Glucose")}>
                 <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData} margin={{ left: -8, right: -8, top: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1273,7 +1295,7 @@ function VitalsGraphOneReference({ data, graphOnly = false, onlySection }: { dat
               subtitle=""
               title="Intake / Output"
             >
-              <RapidReviewIntakeOutputGraph data={data} showLabels={!graphOnly} />
+              <RapidReviewIntakeOutputGraph data={data} onScroll={syncGraphScroll("Intake / Output")} scrollRef={setGraphScrollNode("Intake / Output")} showLabels={!graphOnly} />
             </VitalsGraphOneSection>
           )}
 
@@ -1878,7 +1900,17 @@ function AllVitalsFluidBalanceSectionCard({
   );
 }
 
-function RapidReviewIntakeOutputGraph({ data, showLabels = true }: { data: CombinedReviewGraphPoint[]; showLabels?: boolean }) {
+function RapidReviewIntakeOutputGraph({
+  data,
+  onScroll,
+  scrollRef,
+  showLabels = true,
+}: {
+  data: CombinedReviewGraphPoint[];
+  onScroll?: React.UIEventHandler<HTMLDivElement>;
+  scrollRef?: React.Ref<HTMLDivElement>;
+  showLabels?: boolean;
+}) {
   const width = Math.max(640, data.length * 56);
   const height = 260;
   const pad = 34;
@@ -1892,7 +1924,7 @@ function RapidReviewIntakeOutputGraph({ data, showLabels = true }: { data: Combi
   const maxVolume = Math.max(40, ...intakeValues, ...outputValues);
 
   return (
-    <div className="overflow-x-auto rounded-md border border-border bg-background p-3">
+    <div className="overflow-x-auto rounded-md border border-border bg-background p-3" onScroll={onScroll} ref={scrollRef}>
       <svg className="block" height={height} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
         <line stroke="#cbd5e1" strokeDasharray="4 4" x1={pad} x2={width - pad} y1={baseline} y2={baseline} />
         {data.map((point, index) => {

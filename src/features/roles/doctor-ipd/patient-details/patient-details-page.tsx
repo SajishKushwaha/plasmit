@@ -255,7 +255,7 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
             />
           </TabsContent>
           <TabsContent className="mt-0" value="Intake Output">
-            <IntakeOutputPage key={patient.id} />
+            <IntakeOutputPage hidePatientStrip key={patient.id} />
           </TabsContent>
         </div>
       </Tabs>

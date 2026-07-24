@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
 export type Role =
+  | "Admin"
   | "Super Admin"
   | "Hospital Admin"
   | "Doctor"

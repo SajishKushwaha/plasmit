@@ -46,7 +46,7 @@ export function PatientIconDashboard({
             <HeaderCell className="h-14 w-[230px] min-w-[230px]">Diagnosis</HeaderCell>
             <HeaderCell className="h-14">HR (bpm)</HeaderCell>
             <HeaderCell className="h-14">SpO2 (%)</HeaderCell>
-            <HeaderCell className="h-14">BP (mmHg)</HeaderCell>
+            <HeaderCell className="h-14 min-w-[112px]">BP (mmHg)</HeaderCell>
             <HeaderCell className="h-14">Temperature<br />(°C)</HeaderCell>
             <HeaderCell className="h-14">Lab Results</HeaderCell>
             <HeaderCell className="h-14">Medication &<br />Intervention</HeaderCell>
@@ -114,7 +114,7 @@ function PatientIconDashboardRow({
       </td>
       <td className="h-[74px] px-3 py-2 text-center"><Dashboard2VitalCircle label="HR" onClick={onOpenVitals} tone={patient.hr.tone} value={patient.hr.value} /></td>
       <td className="h-[74px] px-3 py-2 text-center"><Dashboard2VitalCircle label="SpO2" onClick={onOpenVitals} tone={patient.spo2.tone} value={patient.spo2.value} /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2VitalCircle label="BP" onClick={onOpenVitals} tone={bpTone(patient)} value={bpValue(patient)} /></td>
+      <td className="h-[74px] min-w-[112px] px-3 py-2 text-center"><Dashboard2VitalCircle wide label="BP" onClick={onOpenVitals} tone={bpTone(patient)} value={bpValue(patient)} /></td>
       <td className="h-[74px] px-3 py-2 text-center"><Dashboard2VitalCircle label="Temperature" onClick={onOpenVitals} tone={patient.temperature.tone} value={patient.temperature.value} /></td>
       <td className="h-[74px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={FlaskConical} label={`Open laboratory results for ${patient.name}`} onClick={onOpenLabResults} tone="dark" /></td>
       <td className="h-[74px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={Pill} label={`Open medication and intervention for ${patient.name}`} onClick={onOpenMedication} tone="dark" /></td>
@@ -135,17 +135,20 @@ function Dashboard2VitalCircle({
   onClick,
   tone,
   value,
+  wide = false,
 }: {
   label: string;
   onClick: () => void;
   tone: VitalTone;
   value: string | number;
+  wide?: boolean;
 }) {
   return (
     <button
       aria-label={`${label} ${value}`}
       className={cn(
-        "inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-[4px] bg-white text-sm font-extrabold text-slate-950 shadow-sm transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40 active:scale-95 sm:h-[56px] sm:w-[56px] sm:text-base",
+        "inline-flex shrink-0 items-center justify-center rounded-full border-[4px] bg-white text-sm font-extrabold text-slate-950 shadow-sm transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40 active:scale-95 sm:text-base",
+        wide ? "h-[56px] min-w-[76px] px-3 sm:h-[60px] sm:min-w-[84px]" : "h-[56px] w-[56px] sm:h-[60px] sm:w-[60px]",
         tone === "red" && "border-[#ff0808]",
         tone === "orange" && "border-[#ffa600]",
         tone === "green" && "border-[#e5e7eb]",

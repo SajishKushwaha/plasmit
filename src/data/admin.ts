@@ -19,6 +19,7 @@ export const mockAuthMessages = {
 };
 
 export const mockRoles: AdminRoleRecord[] = [
+  { id: "role-admin", name: "Admin", type: "System", description: "Dedicated admin dashboard access for departments, users, roles, and organisation branding.", departmentScope: "Admin dashboard", status: "Active", userCount: 1, modulesAllowed: 1, permissionCount: 32, protected: true, risk: "High", updatedAt: "Today 10:00" },
   { id: "role-super", name: "Super Admin", type: "System", description: "Complete platform administration with protected access.", departmentScope: "All departments", status: "Active", userCount: 3, modulesAllowed: 24, permissionCount: 148, protected: true, risk: "Critical", updatedAt: "Today 09:20" },
   { id: "role-hadmin", name: "Hospital Admin", type: "System", description: "Hospital operations, setup, users, and non-destructive security controls.", departmentScope: "All departments", status: "Active", userCount: 8, modulesAllowed: 18, permissionCount: 112, protected: true, risk: "High", updatedAt: "Yesterday 18:05" },
   { id: "role-doctor", name: "Doctor", type: "System", description: "Clinical workflow access with protected patient data boundaries.", departmentScope: "Mapped clinical departments", status: "Active", userCount: 64, modulesAllowed: 9, permissionCount: 52, protected: true, risk: "Medium", updatedAt: "18 May 2026" },
@@ -191,6 +192,7 @@ export const mockDepartments: DepartmentRecord[] = [
 ];
 
 export const mockUsers: UserRecord[] = [
+  { id: "user-admin", employeeCode: "EMP-1000", name: "Admin User", email: "hospital_admin@gmail.com", mobile: "+91 98765 43120", roleIds: ["role-admin"], departmentIds: ["dept-fin"], designation: "Admin", status: "Active", lastLoginAt: "Today 10:42", locked: false, failedLogins: 0 },
   { id: "user-001", employeeCode: "EMP-1001", name: "Ananya Sharma", email: "ananya.sharma@plasmit.care", mobile: "+91 98765 43120", roleIds: ["role-hadmin"], departmentIds: ["dept-fin"], designation: "Hospital Administrator", status: "Active", lastLoginAt: "Today 10:42", locked: false, failedLogins: 0 },
   { id: "user-002", employeeCode: "EMP-1044", name: "Dr. Kavita Rao", email: "kavita.rao@plasmit.care", mobile: "+91 98990 12001", roleIds: ["role-doctor"], departmentIds: ["dept-card"], designation: "Senior Consultant", status: "Active", lastLoginAt: "Today 09:58", locked: false, failedLogins: 1 },
   { id: "user-003", employeeCode: "EMP-1188", name: "Nisha Thomas", email: "nisha.thomas@plasmit.care", mobile: "+91 98220 55218", roleIds: ["role-nurse"], departmentIds: ["dept-emrg"], designation: "Nursing Supervisor", status: "Active", lastLoginAt: "Today 08:36", locked: false, failedLogins: 0 },

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Activity, BarChart3, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock, Filter, HeartPulse, RefreshCcw, Search, Table2, UsersRound } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, ChevronLeft, ChevronRight, Clock, HeartPulse, RefreshCcw, Search, Table2, UsersRound } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Badge } from "@/components/ui/badge";
@@ -932,7 +932,6 @@ function VitalsGraphWorkspace({
   const [endTime, setEndTime] = React.useState("");
   const [timeInterval, setTimeInterval] = React.useState("All times");
   const [activeGraphSection, setActiveGraphSection] = React.useState("All");
-  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const dateFilteredData = data.filter((point) => {
     if (startDate && point.date < startDate) return false;
     if (endDate && point.date > endDate) return false;
@@ -942,91 +941,48 @@ function VitalsGraphWorkspace({
   const filteredData = dateFilteredData.filter((point) => graphPointMatchesTimeInterval(point, timeInterval, startTime, endTime, latestDateTime));
   const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
   const visibleData = invalidDateRange ? [] : filteredData;
-  const dateSummary = startDate
-    ? `${formatDateLabel(startDate)}${endDate ? ` - ${formatDateLabel(endDate)}` : " - Select end date"}`
-    : "All dates";
-  const timeSummary = timeInterval === "Custom time range" && (startTime || endTime)
-    ? `${startTime || "--:--"} - ${endTime || "--:--"}`
-    : timeInterval;
-
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="p-3">
-          <button
-            aria-expanded={filtersOpen}
-            className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-surface-muted px-3 py-2 text-left transition hover:bg-surface-muted/80 focus:outline-none focus:ring-2 focus:ring-ring/20"
-            onClick={() => setFiltersOpen((current) => !current)}
-            type="button"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <Filter className="h-4 w-4 shrink-0 text-primary" />
-              <span>
-                <span className="block text-sm font-semibold text-foreground">Filter</span>
-                <span className="block truncate text-xs text-muted-foreground">{dateSummary} | {timeSummary}</span>
-              </span>
-            </span>
-            <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition", filtersOpen && "rotate-180")} />
-          </button>
-
-          {filtersOpen ? (
-            <div className="mt-3">
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="w-full sm:w-[290px]">
-                  <DateRangeCalendar
-                    endDate={endDate}
-                    maxDate={availableDates.at(-1)}
-                    minDate={availableDates[0]}
+        <CardContent className="px-3 py-2">
+          <div className="flex flex-wrap items-end gap-2">
+              <div className="w-full sm:w-[280px]">
+                <DateRangeCalendar
+                  endDate={endDate}
+                  maxDate={availableDates.at(-1)}
+                  minDate={availableDates[0]}
+                  onChange={(start, end) => {
+                    setStartDate(start);
+                    setEndDate(end);
+                  }}
+                  startDate={startDate}
+                />
+              </div>
+              <label className="w-full space-y-1 text-sm sm:w-[210px]">
+                <span className="font-medium text-foreground">Time interval</span>
+                <select
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                  onChange={(event) => setTimeInterval(event.target.value)}
+                  value={timeInterval}
+                >
+                  {patientVitalsTimeIntervals.map((interval) => (
+                    <option key={interval} value={interval}>{interval}</option>
+                  ))}
+                </select>
+              </label>
+              {timeInterval === "Custom time range" ? (
+                <div className="w-full sm:w-[260px]">
+                  <TimeRangePicker
+                    endTime={endTime}
                     onChange={(start, end) => {
-                      setStartDate(start);
-                      setEndDate(end);
+                      setStartTime(start);
+                      setEndTime(end);
                     }}
-                    startDate={startDate}
+                    startTime={startTime}
                   />
                 </div>
-                <label className="w-full space-y-1 text-sm sm:w-[220px]">
-                  <span className="font-medium text-foreground">Time interval</span>
-                  <select
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
-                    onChange={(event) => setTimeInterval(event.target.value)}
-                    value={timeInterval}
-                  >
-                    {patientVitalsTimeIntervals.map((interval) => (
-                      <option key={interval} value={interval}>{interval}</option>
-                    ))}
-                  </select>
-                </label>
-                {timeInterval === "Custom time range" ? (
-                  <div className="w-full sm:w-[260px]">
-                    <TimeRangePicker
-                      endTime={endTime}
-                      onChange={(start, end) => {
-                        setStartTime(start);
-                        setEndTime(end);
-                      }}
-                      startTime={startTime}
-                    />
-                  </div>
-                ) : null}
-              </div>
-              <div className="mt-3 border-t border-border pt-3">
-                {/* <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Date-wise time interval</div>
-                <div className="flex flex-wrap gap-2">
-                  {rollingVitalsTimeIntervals.map((interval) => (
-                    <Button
-                      key={interval}
-                      onClick={() => setTimeInterval(interval)}
-                      size="sm"
-                      type="button"
-                      variant={timeInterval === interval ? "default" : "outline"}
-                    >
-                      {interval.replace("Last ", "")}
-                    </Button>
-                  ))}
-                </div> */}
-              </div>
-            </div>
-          ) : null}
+              ) : null}
+          </div>
           {invalidDateRange ? (
             <div className="mt-3 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
               Start date cannot be after end date.
@@ -1338,10 +1294,16 @@ function VitalsGraphOneSection({
         </div>
       ) : null}
       {!graphOnly ? (
-        <div className="border-b border-border bg-surface-muted p-4 lg:border-b-0 lg:border-r">
+        <div className="border-b border-border bg-surface-muted px-3 py-2 lg:hidden">
           <h4 className="text-sm font-semibold text-foreground">{title}</h4>
           {subtitle ? <p className="mt-1 text-xs leading-4 text-muted-foreground">{subtitle}</p> : null}
-          <div className={cn("mt-4", useMobilePairedLegend ? "grid grid-cols-2 gap-x-3 gap-y-2.5 lg:block lg:space-y-2.5" : "space-y-2.5")}>
+        </div>
+      ) : null}
+      {!graphOnly ? (
+        <div className="order-3 border-t border-border bg-surface-muted p-4 lg:order-none lg:border-r lg:border-t-0">
+          <h4 className="hidden text-sm font-semibold text-foreground lg:block">{title}</h4>
+          {subtitle ? <p className="mt-1 hidden text-xs leading-4 text-muted-foreground lg:block">{subtitle}</p> : null}
+          <div className={cn("lg:mt-4", useMobilePairedLegend ? "grid grid-cols-2 gap-x-3 gap-y-2.5 lg:block lg:space-y-2.5" : "space-y-2.5")}>
             {legends.map((legend, index) => {
               const content = (
                 <>
@@ -1379,7 +1341,7 @@ function VitalsGraphOneSection({
           </div>
         </div>
       ) : null}
-      <div className={cn("min-w-0 p-3", graphOnly ? "h-[220px]" : title === "Intake / Output" ? "h-[330px]" : "h-[250px]")}>
+      <div className={cn("order-2 min-w-0 p-3 lg:order-none", graphOnly ? "h-[220px]" : title === "Intake / Output" ? "h-[330px]" : "h-[250px]")}>
         {children}
       </div>
     </div>

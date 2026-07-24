@@ -9,6 +9,7 @@ import type { Role } from "@/types";
  * Role Routes: Maps roles to their default dashboard/landing route
  */
 export const roleRoutes: Record<Role, string> = {
+  Admin: "/admin-dashboard",
   "Super Admin": "/dashboard",
   "Hospital Admin": "/dashboard",
   Doctor: "/doctor-dashboard",
@@ -181,6 +182,10 @@ export const roleModuleAccess: Record<Role, {
   blocked?: string[];
   features?: string[];
 }> = {
+  Admin: {
+    allowed: ["*"],
+    features: ["MANAGE_USERS", "MANAGE_ROLES", "MANAGE_DEPARTMENTS", "ADMIN_SETTINGS"],
+  },
   "Super Admin": {
     allowed: ["*"], // Access to all modules
   },
@@ -434,7 +439,7 @@ export function hasPermission(role: Role, permission: string): boolean {
     return doctorPermissions.includes(permission);
   }
   
-  if (role === "Super Admin" || role === "Hospital Admin" || role === "Management") {
+  if (role === "Admin" || role === "Super Admin" || role === "Hospital Admin" || role === "Management") {
     return true; // Admins have all permissions
   }
   
@@ -449,7 +454,7 @@ export function getPermissionsForRole(role: Role): string[] {
     return doctorPermissions;
   }
   
-  if (role === "Super Admin" || role === "Hospital Admin" || role === "Management") {
+  if (role === "Admin" || role === "Super Admin" || role === "Hospital Admin" || role === "Management") {
     return [...doctorPermissions, ...adminPermissions]; // All permissions
   }
   

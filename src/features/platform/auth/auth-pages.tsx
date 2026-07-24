@@ -43,9 +43,16 @@ const loginCredentials = [
   {
     email: "admin@hospital.com",
     password: "admin123",
-    role: "Hospital Admin" as Role,
+    role: "Admin" as Role,
+    scope: "admin-full",
+    route: "/admin-dashboard",
+  },
+  {
+    email: "hospital_admin@gmail.com",
+    password: "admin123",
+    role: "Admin" as Role,
     scope: "admin",
-    route: "/dashboard",
+    route: "/admin-dashboard",
   },
   {
     email: "unitnurse@hospital.com",

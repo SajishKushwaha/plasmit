@@ -1436,7 +1436,7 @@ export function NotesPage({
   };
 
   return (
-    <div className="notes-select-safe min-w-0 space-y-4 py-4">
+    <div className="notes-select-safe min-w-0 space-y-4 py-4 [&_*]:!rounded-none">
 
       {notice ? (
         <div className="flex items-center justify-between rounded-md border border-success/25 bg-success/10 px-3 py-2 text-xs text-success">
@@ -1608,28 +1608,21 @@ function AllNotesOverview({
 }) {
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-border bg-white p-1.5 shadow-sm">
-        <div
-          aria-label="Clinical note categories"
-          className="notes-category-scroll horizontal-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden pb-2 [scrollbar-gutter:stable]"
-        >
-          {notesCategories.map((category) => {
-            return (
-              <button
-                aria-label={`Open ${getCategoryDisplayLabel(category.label)}`}
-                className={cn(
-                  "group flex h-8 shrink-0 items-center rounded-md border border-border bg-white px-3 text-left text-sm font-semibold text-muted-foreground shadow-sm transition",
-                  "hover:border-primary/35 hover:bg-primary-soft hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                )}
-                key={category.id}
-                onClick={() => onOpenCategory(category.id)}
-                type="button"
-              >
-                <span className="whitespace-nowrap">{getCategoryDisplayLabel(category.label)}</span>
-              </button>
-            );
-          })}
-        </div>
+      <div
+        aria-label="Clinical note categories"
+        className="notes-category-scroll horizontal-scrollbar flex gap-5 overflow-x-auto overflow-y-hidden pb-1 text-sm font-semibold text-muted-foreground"
+      >
+        {notesCategories.map((category) => (
+          <button
+            aria-label={`Open ${getCategoryDisplayLabel(category.label)}`}
+            className="shrink-0 whitespace-nowrap bg-transparent p-0 text-left font-semibold text-muted-foreground shadow-none transition hover:text-primary focus-visible:outline-none"
+            key={category.id}
+            onClick={() => onOpenCategory(category.id)}
+            type="button"
+          >
+            {getCategoryDisplayLabel(category.label)}
+          </button>
+        ))}
       </div>
 
       <NotesFilterPanel

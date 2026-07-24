@@ -1,6 +1,7 @@
 import type { Role } from "@/types";
 
 export const roles: Role[] = [
+  "Admin",
   "Super Admin",
   "Hospital Admin",
   "Doctor OPD",

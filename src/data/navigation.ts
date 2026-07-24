@@ -42,6 +42,7 @@ import type { NavigationItem, Role } from "@/types";
 const wardNurseDefaultRoute = "/icu-command-center/clinical-workspace/patient-overview";
 
 export const icuCommandSwitcherRoles: Role[] = [
+  "Admin",
   "Hospital Admin",
   "ICU",
   "Nurse ICU 2",
@@ -61,6 +62,15 @@ export const navigationItems: NavigationItem[] = [
     route: "/dashboard",
     group: "Command",
     allowedRoles: ["Super Admin", "Hospital Admin", "Nurse", "Lab Technician", "Radiologist", "Pharmacist", "Billing Executive", "HR Manager", "Management"],
+    status: "ready",
+  },
+  {
+    id: "admin-dashboard",
+    label: "Admin Dashboard",
+    icon: UserCog,
+    route: "/admin-dashboard",
+    group: "Admin",
+    allowedRoles: ["Admin"],
     status: "ready",
   },
 
@@ -517,6 +527,10 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
 
   if (role === "Super Admin") {
     return roleItems.filter((item) => ["nursing", "radiology-mnt", "results", "surgery"].includes(item.id));
+  }
+
+  if (role === "Admin") {
+    return roleItems.filter((item) => item.id === "admin-dashboard");
   }
 
   if (role === "Nurse") {

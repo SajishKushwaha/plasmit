@@ -13,7 +13,8 @@ type RoleContextValue = {
 
 const RoleContext = React.createContext<RoleContextValue | null>(null);
 
-const DEFAULT_ROLE: Role = "Hospital Admin";
+const DEFAULT_ROLE: Role = "Admin";
+const ADMIN_ROLE: Role = "Admin";
 const DOCTOR_IPD_ROLE: Role = "Doctor IPD";
 const ICU_ROLE: Role = "ICU";
 const UNIT_NURSE_ROLE: Role = "Unit Nurse";
@@ -23,7 +24,7 @@ const ER_NURSE_ROLE: Role = "ER Nurse";
 const RECEPTIONIST_ROLE: Role = "Receptionist";
 const accessScopeKey = "plasmit-access-scope";
 const roleChangeEvent = "plasmit-role-change";
-type AccessScope = "doctor-ipd" | "icu" | "unit-nurse" | "head-nurse" | "ward-nurse" | "er-nurse" | "receptionist" | "admin";
+type AccessScope = "doctor-ipd" | "icu" | "unit-nurse" | "head-nurse" | "ward-nurse" | "er-nurse" | "receptionist" | "admin" | "admin-full";
 
 function readAccessScope(): AccessScope {
   if (typeof window === "undefined") return "admin";
@@ -37,7 +38,8 @@ function readAccessScope(): AccessScope {
     savedScope === "head-nurse" ||
     savedScope === "ward-nurse" ||
     savedScope === "er-nurse" ||
-    savedScope === "receptionist"
+    savedScope === "receptionist" ||
+    savedScope === "admin-full"
   ) return savedScope;
   return "admin";
 }
@@ -50,6 +52,7 @@ function getAllowedRoles(scope: AccessScope): Role[] {
   if (scope === "ward-nurse") return [WARD_NURSE_ROLE];
   if (scope === "er-nurse") return [ER_NURSE_ROLE];
   if (scope === "receptionist") return [RECEPTIONIST_ROLE];
+  if (scope === "admin") return [ADMIN_ROLE];
   return allRoles;
 }
 
@@ -63,6 +66,7 @@ function readStoredRole(): Role {
   if (accessScope === "ward-nurse") return WARD_NURSE_ROLE;
   if (accessScope === "er-nurse") return ER_NURSE_ROLE;
   if (accessScope === "receptionist") return RECEPTIONIST_ROLE;
+  if (accessScope === "admin") return ADMIN_ROLE;
 
   const saved = window.localStorage.getItem("plasmit-role");
   if (saved === "Doctor") return "Doctor OPD";
@@ -102,6 +106,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
                   ? ER_NURSE_ROLE
                   : nextAccessScope === "receptionist"
                     ? RECEPTIONIST_ROLE
+                    : nextAccessScope === "admin"
+                      ? ADMIN_ROLE
                     : nextRole;
     window.localStorage.setItem("plasmit-role", lockedRole);
     window.dispatchEvent(new Event(roleChangeEvent));

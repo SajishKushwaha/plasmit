@@ -572,6 +572,29 @@ function ReceptionistSavedDraftsView({
   onOpenRecord: (record: PatientRecord) => void;
   onNewPatient: () => void;
 }) {
+  const [draftSearch, setDraftSearch] = React.useState("");
+
+  const filteredDrafts = React.useMemo(() => {
+    const searchText = draftSearch.trim().toLowerCase();
+    const searchDigits = draftSearch.replace(/\D/g, "");
+    const draftSummaries = records.map((record) => ({ record, summary: patientRecordSummary(record) }));
+
+    if (!searchText && !searchDigits) {
+      return draftSummaries;
+    }
+
+    return draftSummaries.filter(({ summary }) => {
+      const patientName = summary.name.toLowerCase();
+      const phone = summary.phone.toLowerCase();
+      const phoneDigits = summary.phone.replace(/\D/g, "");
+
+      return (
+        (searchText ? patientName.includes(searchText) || phone.includes(searchText) : false) ||
+        (searchDigits ? phoneDigits.includes(searchDigits) : false)
+      );
+    });
+  }, [draftSearch, records]);
+
   return (
     <div className="mt-3 space-y-3">
       <Card>
@@ -585,9 +608,19 @@ function ReceptionistSavedDraftsView({
             New Patient Details
           </Button>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {records.map((record) => {
-            const summary = patientRecordSummary(record);
+        <CardContent className="space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-10"
+              onChange={(event) => setDraftSearch(event.target.value)}
+              placeholder="Search saved draft by patient name or phone number..."
+              type="search"
+              value={draftSearch}
+            />
+          </div>
+          {filteredDrafts.length > 0 ? (
+            filteredDrafts.map(({ record, summary }) => {
             return (
               <div
                 className="grid w-full gap-2 rounded-lg border border-border bg-white p-3 transition hover:border-primary/35 hover:bg-primary-soft/40 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
@@ -611,7 +644,12 @@ function ReceptionistSavedDraftsView({
                 </span>
               </div>
             );
-          })}
+            })
+          ) : (
+            <div className="rounded-lg border border-dashed border-border bg-slate-50 px-4 py-8 text-center text-sm font-semibold text-muted-foreground">
+              No saved draft found for this patient name or phone number.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

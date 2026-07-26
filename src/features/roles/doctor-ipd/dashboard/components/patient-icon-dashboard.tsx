@@ -98,8 +98,8 @@ function PatientIconDashboardRow({
   const tone = patientTone(patient);
 
   return (
-    <tr className={cn("h-[74px] border-b border-slate-100 font-semibold", patientToneRowClass(tone))}>
-      <td className={cn("sticky left-0 z-40 h-[74px] w-[190px] min-w-[190px] border-r border-slate-200 px-3 py-2 shadow-[8px_0_14px_rgba(15,23,42,0.04)]", patientToneCellClass(tone))}>
+    <tr className={cn("h-[86px] border-b border-slate-100 font-semibold", patientToneRowClass(tone))}>
+      <td className={cn("sticky left-0 z-40 h-[86px] w-[190px] min-w-[190px] border-r border-slate-200 px-3 py-2 shadow-[8px_0_14px_rgba(15,23,42,0.04)]", patientToneCellClass(tone))}>
         <span aria-hidden className="pointer-events-none absolute inset-0 z-0 bg-white" />
         <span aria-hidden className={cn("pointer-events-none absolute inset-y-0 left-0 z-20 w-1", patientToneStripeClass(tone))} />
         <Link className="relative z-10 flex min-h-[58px] flex-col justify-center rounded-md px-1 py-1 pl-2 transition hover:bg-slate-50" href={`/doctor-ipd/patients/${patient.id}`}>
@@ -107,21 +107,21 @@ function PatientIconDashboardRow({
           <div className="mt-0.5 break-words font-semibold leading-4 text-slate-700">{patient.bed}</div>
         </Link>
       </td>
-      <td className="h-[74px] w-[230px] min-w-[230px] px-3 py-2 text-center font-medium text-slate-800">
+      <td className="h-[86px] w-[230px] min-w-[230px] px-3 py-2 text-center font-medium text-slate-800">
         <Link className="flex min-h-12 items-center justify-center rounded-md px-2 py-1 leading-4 transition hover:bg-slate-100" href={`/doctor-ipd/patients/${patient.id}?tab=clinical-examination`}>
           {patient.diagnosis}
         </Link>
       </td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2VitalCircle label="HR" onClick={onOpenVitals} tone={patient.hr.tone} value={patient.hr.value} /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2VitalCircle label="SpO2" onClick={onOpenVitals} tone={patient.spo2.tone} value={patient.spo2.value} /></td>
-      <td className="h-[74px] min-w-[112px] px-3 py-2 text-center"><Dashboard2VitalCircle wide label="BP" onClick={onOpenVitals} tone={bpTone(patient)} value={bpValue(patient)} /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2VitalCircle label="Temperature" onClick={onOpenVitals} tone={patient.temperature.tone} value={patient.temperature.value} /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={FlaskConical} label={`Open laboratory results for ${patient.name}`} onClick={onOpenLabResults} tone="dark" /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={Pill} label={`Open medication and intervention for ${patient.name}`} onClick={onOpenMedication} tone="dark" /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={ClipboardList} label={`Open add progress note for ${patient.name}`} onClick={onOpenProgressNote} tone="dark" /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={FileText} label={`Open radiology report for ${patient.name}`} onClick={onOpenRadiology} tone="dark" /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={Activity} label={`Open events for ${patient.name}`} onClick={onOpenEvents} tone="event" /></td>
-      <td className="h-[74px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={PhoneCall} label={`Open collaborate for ${patient.name}`} onClick={onOpenCollaborate} tone="collaborate" /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2VitalCircle label="HR" onClick={onOpenVitals} tone={patient.hr.tone} value={patient.hr.value} /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2VitalCircle label="SpO2" onClick={onOpenVitals} tone={patient.spo2.tone} value={patient.spo2.value} /></td>
+      <td className="h-[86px] min-w-[96px] px-3 py-2 text-center"><Dashboard2VitalCircle label="BP" onClick={onOpenVitals} tone={bpTone(patient)} value={bpValue(patient)} /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2VitalCircle label="Temperature" onClick={onOpenVitals} tone={patient.temperature.tone} value={patient.temperature.value} /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={FlaskConical} label={`Open laboratory results for ${patient.name}`} onClick={onOpenLabResults} tone="dark" /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={Pill} label={`Open medication and intervention for ${patient.name}`} onClick={onOpenMedication} tone="dark" /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={ClipboardList} label={`Open add progress note for ${patient.name}`} onClick={onOpenProgressNote} tone="dark" /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={FileText} label={`Open radiology report for ${patient.name}`} onClick={onOpenRadiology} tone="dark" /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={Activity} label={`Open events for ${patient.name}`} onClick={onOpenEvents} tone="event" /></td>
+      <td className="h-[86px] px-3 py-2 text-center"><Dashboard2ActionCircle icon={PhoneCall} label={`Open collaborate for ${patient.name}`} onClick={onOpenCollaborate} tone="collaborate" /></td>
     </tr>
   );
 }
@@ -135,20 +135,17 @@ function Dashboard2VitalCircle({
   onClick,
   tone,
   value,
-  wide = false,
 }: {
   label: string;
   onClick: () => void;
   tone: VitalTone;
   value: string | number;
-  wide?: boolean;
 }) {
   return (
     <button
       aria-label={`${label} ${value}`}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full border-[4px] bg-white text-sm font-extrabold text-slate-950 shadow-sm transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40 active:scale-95 sm:text-base",
-        wide ? "h-[56px] min-w-[76px] px-3 sm:h-[60px] sm:min-w-[84px]" : "h-[56px] w-[56px] sm:h-[60px] sm:w-[60px]",
+        "inline-flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl border-[4px] bg-white px-1 text-sm font-extrabold leading-none text-slate-950 shadow-sm transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40 active:scale-95 sm:h-[72px] sm:w-[72px]",
         tone === "red" && "border-[#ff0808]",
         tone === "orange" && "border-[#ffa600]",
         tone === "green" && "border-[#e5e7eb]",
@@ -156,7 +153,7 @@ function Dashboard2VitalCircle({
       onClick={onClick}
       type="button"
     >
-      {value}
+      <span className="block max-w-full truncate whitespace-nowrap">{value}</span>
     </button>
   );
 }
@@ -176,7 +173,7 @@ function Dashboard2ActionCircle({
     <button
       aria-label={label}
       className={cn(
-        "inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-[#1f1f1f] text-white shadow-[0_8px_16px_rgba(15,23,42,0.18)] transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40 active:scale-95 sm:h-[56px] sm:w-[56px]",
+        "inline-flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-[#1f1f1f] text-white shadow-[0_8px_16px_rgba(15,23,42,0.18)] transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-slate-400/40 active:scale-95 sm:h-[72px] sm:w-[72px]",
         tone === "event" && "border-[4px] border-[#ff0808]",
         tone === "collaborate" && "border-[4px] border-[#2563eb]",
       )}

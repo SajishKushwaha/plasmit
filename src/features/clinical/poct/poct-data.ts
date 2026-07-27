@@ -33,11 +33,11 @@ export const poctUsers = ["Nurse John", "Nurse Asha", "Nurse Neha", "Dr. Smith",
 
 export const poctTests: PoctTest[] = [
   { id: "blood-glucose", name: "Blood Glucose", unit: "mg/dL", labMasterCode: "LAB-POCT-001", equipment: "Glucometer" },
-  { id: "spo2", name: "SpO2", unit: "%", labMasterCode: "LAB-POCT-002", equipment: "Pulse oximeter" },
-  { id: "blood-pressure", name: "Blood Pressure", unit: "mmHg", labMasterCode: "LAB-POCT-003", equipment: "Digital BP monitor" },
+ 
+ 
   { id: "blood-gas", name: "Blood gas and electrolytes analysis", unit: "value", labMasterCode: "LAB-POCT-004", equipment: "Blood gas analyzer" },
   { id: "act", name: "Activated clotting time", unit: "sec", labMasterCode: "LAB-POCT-005", equipment: "ACT analyzer" },
-  { id: "oxygen-saturation", name: "Oxygen saturation", unit: "%", labMasterCode: "LAB-POCT-006", equipment: "Oximetry analyzer" },
+  
   { id: "hemoglobin", name: "Hemoglobin/Hematocrit", unit: "g/dL", labMasterCode: "LAB-POCT-007", equipment: "Hemoglobin analyzer" },
   { id: "cardiac-markers", name: "Rapid cardiac markers diagnosis", unit: "ng/mL", labMasterCode: "LAB-POCT-008", equipment: "Rapid cardiac marker reader" },
   { id: "urine-strips", name: "Urine strips (Dipstick)", unit: "value", labMasterCode: "LAB-POCT-009", equipment: "Urine strip reader" },

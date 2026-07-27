@@ -374,6 +374,7 @@ type CategoryConfig = {
 };
 
 type NoteTableActions = {
+  isReadOnly: (note: Note) => boolean;
   onDelete: (note: Note) => void;
   onEdit: (note: Note) => void;
   onStatusChange: (note: Note, status: NoteStatus) => void;
@@ -688,7 +689,7 @@ const categories: CategoryConfig[] = [
 const notesCategories = categories;
 
 function getCategoryDisplayLabel(category: string) {
-  return category === "Surgery Notes" ? "Surgical Notes" : category;
+  return category === "Surgery Notes" || category === "Surgical Notes" ? "Surgeon Notes" : category;
 }
 
 const initialNotes: Note[] = [
@@ -1189,12 +1190,16 @@ type NotesPageProps = {
   autoOpenNewNote?: boolean;
   initialMedicalNoteSection?: MedicalNoteSection;
   initialNewNoteCategory?: NoteCategory;
+  readOnlyCategories?: NoteCategory[];
+  readOnlyMedicalNoteSections?: MedicalNoteSection[];
 };
 
 export function NotesPage({
   autoOpenNewNote = false,
   initialMedicalNoteSection = "ED Notes",
   initialNewNoteCategory = "Nurse Notes",
+  readOnlyCategories = [],
+  readOnlyMedicalNoteSections = [],
 }: NotesPageProps = {}) {
   const searchParams = useSearchParams();
   const [notes, setNotes] = React.useState<Note[]>(() => initialNotes.map(normalizeNote));
@@ -1218,8 +1223,8 @@ export function NotesPage({
   const [noteId, setNoteId] = React.useState("");
   const [notice, setNotice] = React.useState("");
   const [newNoteOpen, setNewNoteOpen] = React.useState(false);
-  const [newNoteCategory, setNewNoteCategory] = React.useState<NoteCategory>("Nurse Notes");
-  const [newMedicalNoteSection, setNewMedicalNoteSection] = React.useState<MedicalNoteSection>("ED Notes");
+  const [newNoteCategory, setNewNoteCategory] = React.useState<NoteCategory>(initialNewNoteCategory);
+  const [newMedicalNoteSection, setNewMedicalNoteSection] = React.useState<MedicalNoteSection>(initialMedicalNoteSection);
   const [filterLockedCategory, setFilterLockedCategory] = React.useState<NoteCategory | null>(null);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [viewingNote, setViewingNote] = React.useState<Note | null>(null);
@@ -1228,6 +1233,18 @@ export function NotesPage({
   const requestedCategory = searchParams.get("category");
   const requestedSpecialty = searchParams.get("specialty");
   const filtersRequested = searchParams.get("filters") === "open";
+  const isNoteReadOnly = React.useCallback(
+    (note: Note) =>
+      readOnlyCategories.includes(note.category) ||
+      (note.category === "Medical Notes" && readOnlyMedicalNoteSections.includes(note.medicalNoteSection ?? "ED Notes")),
+    [readOnlyCategories, readOnlyMedicalNoteSections],
+  );
+  const isCategoryReadOnly = React.useCallback(
+    (noteCategory: NoteCategory, medicalNoteSection?: MedicalNoteSection) =>
+      readOnlyCategories.includes(noteCategory) ||
+      (noteCategory === "Medical Notes" && readOnlyMedicalNoteSections.includes(medicalNoteSection ?? "ED Notes")),
+    [readOnlyCategories, readOnlyMedicalNoteSections],
+  );
 
   React.useEffect(() => {
     if (!autoOpenNewNote || autoOpenedNewNoteRef.current) return;
@@ -1362,9 +1379,14 @@ export function NotesPage({
     }
   }
 
-  function openNewNote(category?: NoteCategory, medicalNoteSection: MedicalNoteSection = "ED Notes") {
+  function openNewNote(category?: NoteCategory, medicalNoteSection: MedicalNoteSection = initialMedicalNoteSection) {
+    const nextCategory = category ?? initialNewNoteCategory;
+    if (isCategoryReadOnly(nextCategory, medicalNoteSection)) {
+      setNotice(`${getCategoryDisplayLabel(nextCategory)} is read only for Doctor IPD role.`);
+      return;
+    }
     setEditingNote(null);
-    setNewNoteCategory(category ?? "Nurse Notes");
+    setNewNoteCategory(nextCategory);
     setNewMedicalNoteSection(medicalNoteSection);
     setNewNoteOpen(true);
   }
@@ -1395,6 +1417,10 @@ export function NotesPage({
   }
 
   function editNote(note: Note) {
+    if (isNoteReadOnly(note)) {
+      setNotice(`${note.title} is read only for Doctor IPD role.`);
+      return;
+    }
     setEditingNote(note);
     setNewNoteCategory(note.category);
     setNewMedicalNoteSection(note.medicalNoteSection ?? "ED Notes");
@@ -1402,6 +1428,10 @@ export function NotesPage({
   }
 
   function changeNoteStatus(note: Note, nextStatus: NoteStatus) {
+    if (isNoteReadOnly(note)) {
+      setNotice(`${note.title} is read only for Doctor IPD role.`);
+      return;
+    }
     if (nextStatus === "Signed" && !note.signatureAttested) {
       editNote(note);
       setNotice("Complete the electronic signature attestation before signing this note.");
@@ -1422,6 +1452,10 @@ export function NotesPage({
   }
 
   function deleteNote(note: Note) {
+    if (isNoteReadOnly(note)) {
+      setNotice(`${note.title} is read only for Doctor IPD role.`);
+      return;
+    }
     if (!window.confirm(`Delete "${note.title}"?`)) return;
     setNotes((current) => current.filter((item) => item.id !== note.id));
     setViewingNote(null);
@@ -1429,6 +1463,7 @@ export function NotesPage({
   }
 
   const tableActions = {
+    isReadOnly: isNoteReadOnly,
     onDelete: deleteNote,
     onEdit: editNote,
     onStatusChange: changeNoteStatus,
@@ -1489,6 +1524,8 @@ export function NotesPage({
         />
       ) : (
         <CategoryView
+          readOnlyCategories={readOnlyCategories}
+          readOnlyMedicalNoteSections={readOnlyMedicalNoteSections}
           category={categories.find((item) => item.id === activeTab) ?? categories[0]}
           key={`${activeTab}-${requestedSpecialty ?? ""}`}
           notes={visibleNotes}
@@ -1511,6 +1548,7 @@ export function NotesPage({
         open={newNoteOpen}
       />
       <NoteDetailsModal
+        isReadOnlyNote={isNoteReadOnly}
         note={viewingNote}
         onDelete={deleteNote}
         onEdit={(note) => {
@@ -1810,6 +1848,8 @@ function CategoryView({
   notes,
   onNewNote,
   onShowAll,
+  readOnlyCategories,
+  readOnlyMedicalNoteSections,
   specialty,
 }: {
   actions: NoteTableActions;
@@ -1817,6 +1857,8 @@ function CategoryView({
   notes: Note[];
   onNewNote: (category: NoteCategory, medicalNoteSection?: MedicalNoteSection) => void;
   onShowAll?: () => void;
+  readOnlyCategories: NoteCategory[];
+  readOnlyMedicalNoteSections: MedicalNoteSection[];
   specialty: string;
 }) {
   const requestedMedicalSection = useSearchParams().get("specialty");
@@ -1832,6 +1874,10 @@ function CategoryView({
       : categoryNotes;
   const visibleNotes = specialty === "All Specialties" ? sectionNotes : sectionNotes.filter((note) => note.specialty === specialty);
   const Icon = category.icon;
+  const categoryReadOnly = readOnlyCategories.includes(category.label);
+  const allMedicalSectionsReadOnly =
+    category.label === "Medical Notes" &&
+    (["ED Notes", "Physician Notes"] as MedicalNoteSection[]).every((section) => readOnlyMedicalNoteSections.includes(section));
 
   return (
     <Card className="overflow-hidden">
@@ -1850,18 +1896,22 @@ function CategoryView({
               All Notes
             </Button>
           ) : null}
-          <Button
-            size="sm"
-            onClick={() => {
-              if (category.label === "Medical Notes") {
-                setMedicalSectionChooserOpen(true);
-                return;
-              }
-              onNewNote(category.label);
-            }}
-          >
-            <Plus className="h-4 w-4" /> New Note
-          </Button>
+          {categoryReadOnly || allMedicalSectionsReadOnly ? (
+            <span className="text-xs font-semibold text-muted-foreground">Read only</span>
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => {
+                if (category.label === "Medical Notes") {
+                  setMedicalSectionChooserOpen(true);
+                  return;
+                }
+                onNewNote(category.label);
+              }}
+            >
+              <Plus className="h-4 w-4" /> New Note
+            </Button>
+          )}
         </div>
       </div>
       <div className="min-h-[420px] min-w-0">
@@ -1949,11 +1999,20 @@ function CategoryView({
                 icon: Stethoscope,
                 section: "Physician Notes" as const,
               },
-            ]).map(({ icon: SectionIcon, section }) => (
+            ]).map(({ icon: SectionIcon, section }) => {
+              const sectionReadOnly = readOnlyMedicalNoteSections.includes(section);
+              return (
               <button
-                className="flex items-center gap-3 rounded-lg border border-border bg-background p-4 text-left transition hover:border-primary/50 hover:bg-primary-soft/40 focus:outline-none focus:ring-2 focus:ring-ring/20"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border border-border bg-background p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-ring/20",
+                  sectionReadOnly
+                    ? "cursor-not-allowed opacity-60"
+                    : "hover:border-primary/50 hover:bg-primary-soft/40",
+                )}
+                disabled={sectionReadOnly}
                 key={section}
                 onClick={() => {
+                  if (sectionReadOnly) return;
                   setMedicalNoteSection(section);
                   setMedicalSectionChooserOpen(false);
                   onNewNote("Medical Notes", section);
@@ -1965,9 +2024,11 @@ function CategoryView({
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-foreground">{section}</span>
+                  {sectionReadOnly ? <span className="mt-1 block text-xs font-semibold text-muted-foreground">Read only</span> : null}
                 </span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </CenterModal>
       ) : null}
@@ -2093,7 +2154,7 @@ function FilterView(props: {
                 label="Category"
                 value={getCategoryDisplayLabel(props.category)}
                 options={["All Categories", ...notesCategories.map((item) => getCategoryDisplayLabel(item.label))]}
-                onChange={(value) => props.onCategoryChange(value === "Surgical Notes" ? "Surgery Notes" : value)}
+                onChange={(value) => props.onCategoryChange(value === "Surgeon Notes" ? "Surgery Notes" : value)}
               />
             )}
             <FilterSelect label="Note type" value={props.noteType} options={["All Note Types", ...allNoteTypes]} onChange={props.onNoteTypeChange} />
@@ -4621,16 +4682,20 @@ function CommunicationFields({
 }
 
 function NoteDetailsModal({
+  isReadOnlyNote,
   note,
   onDelete,
   onEdit,
   onOpenChange,
 }: {
+  isReadOnlyNote: (note: Note) => boolean;
   note: Note | null;
   onDelete: (note: Note) => void;
   onEdit: (note: Note) => void;
   onOpenChange: (open: boolean) => void;
 }) {
+  const readOnly = note ? isReadOnlyNote(note) : false;
+
   return (
     <CenterModal
       className="w-[min(94vw,880px)]"
@@ -4780,12 +4845,18 @@ function NoteDetailsModal({
           ) : null}
           <SignatureSummary note={note} />
           <div className="flex justify-between gap-2 border-t border-border pt-4">
-            <Button onClick={() => onDelete(note)} type="button" variant="danger">
-              <Trash2 className="h-4 w-4" /> Delete
-            </Button>
-            <Button onClick={() => onEdit(note)} type="button">
-              <FilePenLine className="h-4 w-4" /> Edit Note
-            </Button>
+            {readOnly ? (
+              <span className="text-xs font-semibold text-muted-foreground">Read only for Doctor IPD role</span>
+            ) : (
+              <>
+                <Button onClick={() => onDelete(note)} type="button" variant="danger">
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+                <Button onClick={() => onEdit(note)} type="button">
+                  <FilePenLine className="h-4 w-4" /> Edit Note
+                </Button>
+              </>
+            )}
           </div>
         </div>
       ) : null}
@@ -5424,7 +5495,11 @@ function NotesTable({ actions, notes: rows, compact = false }: { actions: NoteTa
                   >
                     <Eye className="h-3.5 w-3.5" />
                   </button>
-                  <NoteActionsMenu actions={actions} note={note} />
+                  {actions.isReadOnly(note) ? (
+                    <span className="pl-1 text-[11px] font-semibold text-muted-foreground">Read only</span>
+                  ) : (
+                    <NoteActionsMenu actions={actions} note={note} />
+                  )}
                 </div>
               </td>
             </tr>

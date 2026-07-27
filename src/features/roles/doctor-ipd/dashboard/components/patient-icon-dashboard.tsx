@@ -50,7 +50,7 @@ export function PatientIconDashboard({
             <HeaderCell className="h-14">Temperature<br />(°C)</HeaderCell>
             <HeaderCell className="h-14">Lab Results</HeaderCell>
             <HeaderCell className="h-14">Medication &<br />Intervention</HeaderCell>
-            <HeaderCell className="h-14">Add Progress<br />Note</HeaderCell>
+            <HeaderCell className="h-14">Progress<br />Note</HeaderCell>
             <HeaderCell className="h-14">Radiology</HeaderCell>
             <HeaderCell className="h-14">Events</HeaderCell>
             <HeaderCell className="h-14">Collaborate</HeaderCell>

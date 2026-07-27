@@ -233,7 +233,12 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
           </TabsContent>
           <TabsContent className="mt-0" value="add-progress">
             <React.Suspense fallback={<div className="rounded-md border border-border bg-white p-4 text-sm font-semibold text-muted-foreground">Loading notes...</div>}>
-              <NotesPage />
+              <NotesPage
+                initialMedicalNoteSection="Physician Notes"
+                initialNewNoteCategory="Medical Notes"
+                readOnlyCategories={["ED Notes", "Admission Notes", "Nurse Notes", "Surgery Notes", "Operative Notes"]}
+                readOnlyMedicalNoteSections={["ED Notes"]}
+              />
             </React.Suspense>
           </TabsContent>
           <TabsContent className="mt-0" value="shift-summary">

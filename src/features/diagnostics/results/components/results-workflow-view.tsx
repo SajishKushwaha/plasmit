@@ -928,7 +928,7 @@ export function ResultsWorkflowView({
       {showRadiologyOrderTabs && activeDepartment === "radiology" ? (
         <div className="overflow-x-auto rounded-xl border border-border bg-white p-1 shadow-sm">
           <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
-            {(["test-order", "order-summary", "result-review"] as const).map((tab) => (
+            {(["result-review", "order-summary", "test-order"] as const).map((tab) => (
               <Button
                 className={cn(
                   "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
@@ -940,7 +940,7 @@ export function ResultsWorkflowView({
                 type="button"
                 variant="ghost"
               >
-                {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result Review"}
+                {tab === "result-review" ? "Result Review" : tab === "order-summary" ? "Order Summary" : "New Order"}
               </Button>
             ))}
           </div>

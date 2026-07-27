@@ -79,7 +79,6 @@ export function RadiologyTestOrderTab({
   selectedTestIds,
   selectedGroupIds,
   onToggleTest,
-  onToggleGroup,
   priority,
   onPriorityChange,
   notes,
@@ -93,7 +92,6 @@ export function RadiologyTestOrderTab({
   selectedTestIds: string[];
   selectedGroupIds: string[];
   onToggleTest: (id: string) => void;
-  onToggleGroup: (id: string) => void;
   priority: RadiologyPriority;
   onPriorityChange: (value: RadiologyPriority) => void;
   notes: string;
@@ -101,7 +99,7 @@ export function RadiologyTestOrderTab({
   onOpenSummary: () => void;
   onSave: () => void;
 }) {
-  const [activeCategory, setActiveCategory] = React.useState("CT Scan");
+  const [activeCategory, setActiveCategory] = React.useState("X-Ray");
   const [selectedSpecs, setSelectedSpecs] = React.useState<string[]>(["Left"]);
   const [specificationById, setSpecificationById] = React.useState<Record<string, string>>({});
 
@@ -200,7 +198,6 @@ export function RadiologyTestOrderTab({
                           type="button"
                           onClick={() => {
                             setActiveCategory(group.name);
-                            onToggleGroup(group.id);
                           }}
                           className={["w-full text-left font-medium", activeCategory === group.name ? "text-primary" : "text-foreground"].join(" ")}
                         >

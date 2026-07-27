@@ -1,4 +1,4 @@
-export type ResultDepartment = "laboratory" | "radiology" | "poct";
+export type ResultDepartment = "laboratory" | "pathology" | "radiology" | "poct";
 
 export type ResultStatus =
   | "Sample Collected"

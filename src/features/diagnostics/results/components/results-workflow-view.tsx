@@ -1,7 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, FileText, FlaskConical, Image as ImageIcon, Plus, Printer, Search, X, Zap } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Eye, FileText, FlaskConical, Image as ImageIcon, Microscope, Plus, Printer, Search, X, Zap } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -52,12 +52,14 @@ type PrintPayload = {
 const departments: Array<{ id: DepartmentFilter; label: string; icon: typeof FileText }> = [
   { id: "all", label: "All Results", icon: FileText },
   { id: "laboratory", label: "Laboratory", icon: FlaskConical },
+  { id: "pathology", label: "Pathology", icon: Microscope },
   { id: "radiology", label: "Radiology", icon: ImageIcon },
   { id: "poct", label: "POCT", icon: Zap },
 ];
 
 const departmentCards: Array<{ id: ResultDepartment; title: string; icon: typeof FileText }> = [
   { id: "laboratory", title: "Laboratory Reports", icon: FlaskConical },
+  { id: "pathology", title: "Pathology Reports", icon: Microscope },
   { id: "radiology", title: "Radiology Reports", icon: ImageIcon },
   { id: "poct", title: "POCT Reports", icon: Zap },
 ];
@@ -148,6 +150,7 @@ function groupTotal(groups: ReportGroup[], department?: ResultDepartment) {
 
 function getReportName(result: ResultRecord) {
   if (result.department === "laboratory") return "Laboratory Report";
+  if (result.department === "pathology") return "Pathology Report";
   if (result.department === "radiology") return "Radiology Report";
   return "POCT Report";
 }
@@ -155,6 +158,7 @@ function getReportName(result: ResultRecord) {
 function getReportColumnLabel(reports: ResultRecord[]) {
   const department = reports[0]?.department;
   if (department === "laboratory") return "Laboratory";
+  if (department === "pathology") return "Pathology";
   if (department === "radiology") return "Radiology";
   if (department === "poct") return "POCT";
   return "Report Name";
@@ -162,6 +166,7 @@ function getReportColumnLabel(reports: ResultRecord[]) {
 
 function getDepartmentLabel(department: ResultDepartment) {
   if (department === "laboratory") return "Laboratory";
+  if (department === "pathology") return "Pathology";
   if (department === "radiology") return "Radiology";
   return "POCT";
 }
@@ -419,6 +424,52 @@ function buildAdditionalPatientReports(records: ResultRecord[], seed = 0) {
     },
     {
       ...base,
+      id: `PATH-2026-${reportSuffix}-HISTO`,
+      department: "pathology" as const,
+      testName: "Histopathology Review",
+      orderedAt: "2026-05-23T10:25:00",
+      collectedAt: "2026-05-23T10:40:00",
+      completedAt: "2026-05-23T13:10:00",
+      status: "Completed" as const,
+      imageAvailable: false,
+      resultSummary: "Submitted tissue sections reviewed. Benign inflammatory pathology noted.",
+      specimen: "Tissue biopsy",
+      values: [
+        { name: "Specimen adequacy", value: "Adequate", flag: "Normal" as const },
+        { name: "Microscopy", value: "Inflammatory changes", flag: "Normal" as const },
+        { name: "Impression", value: "Benign pathology", flag: "Normal" as const },
+      ],
+      timeline: [
+        { label: "Order created", at: "10:25", by: "ICU Doctor" },
+        { label: "Specimen received", at: "10:40", by: "Pathology Lab" },
+        { label: "Report verified", at: "13:10", by: "Dr. Kavita Rao" },
+      ],
+    },
+    {
+      ...base,
+      id: `PATH-2026-${reportSuffix}-CYTO`,
+      department: "pathology" as const,
+      testName: "Cytology Review",
+      orderedAt: "2026-05-21T11:05:00",
+      collectedAt: "2026-05-21T11:18:00",
+      completedAt: "2026-05-21T15:35:00",
+      status: "Completed" as const,
+      imageAvailable: false,
+      resultSummary: "Cytology smear examined. No atypical malignant cells seen.",
+      specimen: "Fluid cytology",
+      values: [
+        { name: "Cellularity", value: "Satisfactory", flag: "Normal" as const },
+        { name: "Atypia", value: "Not seen", flag: "Normal" as const },
+        { name: "Impression", value: "Negative for malignancy", flag: "Normal" as const },
+      ],
+      timeline: [
+        { label: "Order created", at: "11:05", by: "ICU Doctor" },
+        { label: "Sample processed", at: "12:10", by: "Pathology Lab" },
+        { label: "Report verified", at: "15:35", by: "Dr. Kavita Rao" },
+      ],
+    },
+    {
+      ...base,
       id: `RAD-2026-${reportSuffix}-PRIMARY`,
       department: "radiology" as const,
       testName: radiologyPair[0],
@@ -670,6 +721,7 @@ export function ResultsWorkflowView({
   viewDescription = "Laboratory, radiology, and POCT reports organized for IPD review.",
   onAddLaboratoryOrder,
   showLaboratoryOrderTabs = false,
+  showPathologyOrderTabs = false,
   showRadiologyOrderTabs = false,
 }: {
   autoOpenAllDepartment?: ResultDepartment;
@@ -684,6 +736,7 @@ export function ResultsWorkflowView({
   viewDescription?: string;
   onAddLaboratoryOrder?: (patientContext?: DoctorOrdersPatientContext) => void;
   showLaboratoryOrderTabs?: boolean;
+  showPathologyOrderTabs?: boolean;
   showRadiologyOrderTabs?: boolean;
 }) {
   const [activeDepartment, setActiveDepartment] = useState<DepartmentFilter>(criticalOnly ? "all" : defaultDepartment);
@@ -697,6 +750,7 @@ export function ResultsWorkflowView({
   const [reportModal, setReportModal] = useState<ReportModalState>(null);
   const [printPayload, setPrintPayload] = useState<PrintPayload | null>(null);
   const [laboratoryWorkflowTab, setLaboratoryWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
+  const [pathologyWorkflowTab, setPathologyWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
   const [radiologyWorkflowTab, setRadiologyWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
   const hasAutoOpenedAllDepartment = useRef(false);
   const dateFilterRef = useRef<HTMLDivElement | null>(null);
@@ -734,6 +788,7 @@ export function ResultsWorkflowView({
     () => ({
       all: records.filter((result) => (!criticalOnly || result.status === "Critical") && matchesDateFilter(result, selectedDate, rangeStart, rangeEnd)).length,
       laboratory: records.filter((result) => result.department === "laboratory" && (!criticalOnly || result.status === "Critical") && matchesDateFilter(result, selectedDate, rangeStart, rangeEnd)).length,
+      pathology: records.filter((result) => result.department === "pathology" && (!criticalOnly || result.status === "Critical") && matchesDateFilter(result, selectedDate, rangeStart, rangeEnd)).length,
       radiology: records.filter((result) => result.department === "radiology" && (!criticalOnly || result.status === "Critical") && matchesDateFilter(result, selectedDate, rangeStart, rangeEnd)).length,
       poct: records.filter((result) => result.department === "poct" && (!criticalOnly || result.status === "Critical") && matchesDateFilter(result, selectedDate, rangeStart, rangeEnd)).length,
     }),
@@ -827,9 +882,10 @@ export function ResultsWorkflowView({
   }
 
   const showLaboratoryWorkflowTabs = showLaboratoryOrderTabs && activeDepartment === "laboratory";
+  const showPathologyWorkflowTabs = showPathologyOrderTabs && activeDepartment === "pathology";
   const showRadiologyWorkflowTabs = showRadiologyOrderTabs && activeDepartment === "radiology";
-  const activeWorkflowTab = showLaboratoryWorkflowTabs ? laboratoryWorkflowTab : radiologyWorkflowTab;
-  const setActiveWorkflowTab = showLaboratoryWorkflowTabs ? setLaboratoryWorkflowTab : setRadiologyWorkflowTab;
+  const activeWorkflowTab = showLaboratoryWorkflowTabs ? laboratoryWorkflowTab : showPathologyWorkflowTabs ? pathologyWorkflowTab : radiologyWorkflowTab;
+  const setActiveWorkflowTab = showLaboratoryWorkflowTabs ? setLaboratoryWorkflowTab : showPathologyWorkflowTabs ? setPathologyWorkflowTab : setRadiologyWorkflowTab;
 
   return (
     <div className="space-y-4">
@@ -933,7 +989,7 @@ export function ResultsWorkflowView({
         </div>
       </section>
 
-      {showLaboratoryWorkflowTabs || showRadiologyWorkflowTabs ? (
+      {showLaboratoryWorkflowTabs || showPathologyWorkflowTabs || showRadiologyWorkflowTabs ? (
         <div className="overflow-x-auto rounded-xl border border-border bg-white p-1 shadow-sm">
           <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
             {(["result-review", "order-summary", "test-order"] as const).map((tab) => (
@@ -970,6 +1026,22 @@ export function ResultsWorkflowView({
           } : undefined}
           laboratoryDefaultTab={laboratoryWorkflowTab}
           laboratoryShowTabHeader={false}
+        />
+      ) : showPathologyWorkflowTabs && pathologyWorkflowTab !== "result-review" ? (
+        <DoctorOrdersPage
+          defaultTab="pathology"
+          onlyTab="pathology"
+          patientContext={patientContext ? {
+            id: patientContext.patientId ?? patientContext.uhid ?? patientContext.mrn ?? "dashboard-patient",
+            name: patientContext.name ?? "Selected patient",
+            uhid: patientContext.uhid,
+            ageSex: patientContext.ageSex,
+            wardBed: patientContext.wardBed ?? patientContext.bed,
+            diagnosis: viewDescription,
+            radiologyPatientId: patientContext.patientId,
+          } : undefined}
+          pathologyDefaultTab={pathologyWorkflowTab}
+          pathologyShowTabHeader={false}
         />
       ) : showRadiologyWorkflowTabs && radiologyWorkflowTab !== "result-review" ? (
         <DoctorOrdersPage
@@ -1305,6 +1377,7 @@ function toOrderPatientContext(result?: ResultRecord): DoctorOrdersPatientContex
 
 function SingleReportView({ result }: { result: ResultRecord }) {
   if (result.department === "laboratory") return <LaboratoryReportView result={result} />;
+  if (result.department === "pathology") return <PathologyReportView result={result} />;
   if (result.department === "radiology") return <RadiologyReportView result={result} />;
   return <PoctReportView result={result} />;
 }
@@ -1647,6 +1720,14 @@ function LaboratoryReportView({ result }: { result: ResultRecord }) {
     <div className="space-y-4">
       
       <ResultValueTable result={result} title="Laboratory Result Details" />
+    </div>
+  );
+}
+
+function PathologyReportView({ result }: { result: ResultRecord }) {
+  return (
+    <div className="space-y-4">
+      <ResultValueTable result={result} title="Pathology Result Details" />
     </div>
   );
 }

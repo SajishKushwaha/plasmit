@@ -28,6 +28,7 @@ export function DashboardLabResultsPopup({ onOpenLaboratoryOrder, patient }: { o
         }}
         onAddLaboratoryOrder={onOpenLaboratoryOrder}
         showLaboratoryOrderTabs
+        showPathologyOrderTabs
         showRadiologyOrderTabs
         viewDescription="Laboratory reports for the selected dashboard patient."
         viewTitle="Diagnosis Result"

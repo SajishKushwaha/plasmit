@@ -16,6 +16,7 @@ import { PathologyTestOrderTab } from "./pathology/test-order-tab";
 import type { PathologyPriority, PathologyResultBlock, PathologySummaryRow } from "./pathology/types";
 
 type MainTab = "test-order" | "order-summary" | "result-review" | "critical-findings";
+type PathologyWorkflowTab = Extract<MainTab, "test-order" | "order-summary" | "result-review">;
 type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
 
 const selectedByDefault = ["cbc", "kft"];
@@ -101,8 +102,13 @@ function buildSavedPathologyBlocks(testIds: string[], groupIds: string[]) {
   return buildPathologySnapshotBlocks(testIds, groupIds, initialResultBlocks);
 }
 
-export function PathologyTab() {
-  const [activeTab, setActiveTab] = React.useState<MainTab>("test-order");
+type PathologyTabProps = {
+  defaultTab?: PathologyWorkflowTab;
+  hideTabHeader?: boolean;
+};
+
+export function PathologyTab({ defaultTab = "test-order", hideTabHeader = false }: PathologyTabProps = {}) {
+  const [activeTab, setActiveTab] = React.useState<MainTab>(defaultTab);
   const [search, setSearch] = React.useState("");
   const [selectedTestIds, setSelectedTestIds] = React.useState<string[]>(selectedByDefault);
   const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(selectedGroupDefault);
@@ -129,6 +135,10 @@ export function PathologyTab() {
   const [selectedDiagnosisLabel, setSelectedDiagnosisLabel] = React.useState("");
   const [billingNote, setBillingNote] = React.useState("Orders are ready.");
   const [deleteTarget, setDeleteTarget] = React.useState<PathologySummaryRow | null>(null);
+
+  React.useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   const selectedCount = selectedTestIds.length + selectedGroupIds.length;
 
@@ -288,25 +298,27 @@ export function PathologyTab() {
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MainTab)} className="w-full">
         <Card>
           <CardContent className="space-y-4">
-            <div className="overflow-x-auto pb-1 sm:pb-0">
-              <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
-                {(["test-order", "order-summary", "result-review"] as const).map((tab) => (
-                  <Button
-                    key={tab}
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setActiveTab(tab)}
-                    className={[
-                      "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
-                      activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
-                    ].join(" ")}
-                  >
-                    {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : tab === "result-review" ? "Result Review" : ''}
-                  </Button>
-                ))}
+            {hideTabHeader ? null : (
+              <div className="overflow-x-auto pb-1 sm:pb-0">
+                <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
+                  {(["test-order", "order-summary", "result-review"] as const).map((tab) => (
+                    <Button
+                      key={tab}
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setActiveTab(tab)}
+                      className={[
+                        "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
+                        activeTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+                      ].join(" ")}
+                    >
+                      {tab === "test-order" ? "Test Order" : tab === "order-summary" ? "Order Summary" : "Result Review"}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
         <TabsContent value="test-order" className="mt-0">
           <PathologyTestOrderTab

@@ -27,6 +27,7 @@ export function RadiologyResultReview({ patient }: { patient: DoctorIpdPatient }
         }}
         showPoctTab={false}
         showLaboratoryOrderTabs
+        showPathologyOrderTabs
         showRadiologyOrderTabs
         viewDescription="Radiology reports for the selected dashboard patient."
         viewTitle="Diagnosis Result"

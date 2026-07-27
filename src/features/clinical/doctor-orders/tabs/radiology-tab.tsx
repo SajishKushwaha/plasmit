@@ -16,7 +16,7 @@ import type { RadiologyPriority, RadiologyResultBlock, RadiologySummaryRow } fro
 type MainTab = "test-order" | "order-summary" | "result-review";
 type SummarySortKey = keyof Pick<RadiologySummaryRow, "selectedTests" | "loincCode" | "category" | "specification" | "priority" | "status" | "orderDateTime">;
 
-const selectedByDefault = ["xray-chest"];
+const selectedByDefault = ["xray-x-ray-chest-pa-ap"];
 const selectedGroupDefault: string[] = [];
 
 function buildRadiologySnapshotRows(testIds: string[], groupIds: string[]) {
@@ -105,7 +105,7 @@ export function RadiologyTab({ defaultTab, hideTabHeader = false }: RadiologyTab
   const [activeTab, setActiveTab] = React.useState<MainTab>(initialTab);
   const [search, setSearch] = React.useState("");
   const [selectedTestIds, setSelectedTestIds] = React.useState<string[]>(selectedByDefault);
-  const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(selectedGroupDefault);
+  const [selectedGroupIds] = React.useState<string[]>(selectedGroupDefault);
   const [priority, setPriority] = React.useState<RadiologyPriority>("Routine");
   const [notes, setNotes] = React.useState("");
   const [savedSummaryRows, setSavedSummaryRows] = React.useState<RadiologySummaryRow[]>(() => buildRadiologySnapshotRows(selectedByDefault, selectedGroupDefault));
@@ -139,10 +139,6 @@ export function RadiologyTab({ defaultTab, hideTabHeader = false }: RadiologyTab
 
   const toggleTest = (id: string) => {
     setSelectedTestIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
-  };
-
-  const toggleGroup = (id: string) => {
-    setSelectedGroupIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   };
 
   const updateSummarySort = (key: SummarySortKey) => {
@@ -225,7 +221,6 @@ export function RadiologyTab({ defaultTab, hideTabHeader = false }: RadiologyTab
                 selectedTestIds={selectedTestIds}
                 selectedGroupIds={selectedGroupIds}
                 onToggleTest={toggleTest}
-                onToggleGroup={toggleGroup}
                 priority={priority}
                 onPriorityChange={setPriority}
                 notes={notes}

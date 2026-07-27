@@ -27,6 +27,8 @@ export function DashboardLabResultsPopup({ onOpenLaboratoryOrder, patient }: { o
           wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
         }}
         onAddLaboratoryOrder={onOpenLaboratoryOrder}
+        showLaboratoryOrderTabs
+        showRadiologyOrderTabs
         viewDescription="Laboratory reports for the selected dashboard patient."
         viewTitle="Diagnosis Result"
       />

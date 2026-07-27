@@ -17,6 +17,7 @@ import { LaboratoryOrderSummaryTab } from "./laboratory/order-summary-tab";
 import { LaboratoryResultReviewTab } from "./laboratory/result-review-tab";
 
 type MainTab = "test-order" | "order-summary" | "result-review" | "critical-findings";
+type LaboratoryWorkflowTab = Extract<MainTab, "test-order" | "order-summary" | "result-review">;
 type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
 
 const selectedByDefault = ["cbc"];
@@ -102,8 +103,13 @@ function buildSavedLaboratoryBlocks(testIds: string[], groupIds: string[]) {
   return buildLaboratorySnapshotBlocks(testIds, groupIds, initialResultBlocks);
 }
 
-export function LaboratoryTab() {
-  const [activeTab, setActiveTab] = React.useState<MainTab>("test-order");
+type LaboratoryTabProps = {
+  defaultTab?: LaboratoryWorkflowTab;
+  hideTabHeader?: boolean;
+};
+
+export function LaboratoryTab({ defaultTab = "test-order", hideTabHeader = false }: LaboratoryTabProps = {}) {
+  const [activeTab, setActiveTab] = React.useState<MainTab>(defaultTab);
   const [search, setSearch] = React.useState("");
   const [departmentFilter, setDepartmentFilter] = React.useState("All");
   const [selectedTestIds, setSelectedTestIds] = React.useState<string[]>(selectedByDefault);
@@ -131,6 +137,10 @@ export function LaboratoryTab() {
   const [selectedDiagnosisLabel, setSelectedDiagnosisLabel] = React.useState("");
   const [billingNote, setBillingNote] = React.useState("Orders are ready.");
   const [deleteTarget, setDeleteTarget] = React.useState<PathologySummaryRow | null>(null);
+
+  React.useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   const selectedCount = selectedTestIds.length + selectedGroupIds.length;
 
@@ -308,6 +318,7 @@ export function LaboratoryTab() {
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MainTab)} className="w-full">
           <Card>
             <CardContent className="space-y-4">
+              {hideTabHeader ? null : (
               <div className="overflow-x-auto pb-1 sm:pb-0">
                 <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
                   {(["test-order", "order-summary", "result-review"] as const).map((tab) => (
@@ -327,6 +338,7 @@ export function LaboratoryTab() {
                   ))}
                 </div>
               </div>
+              )}
   
           <TabsContent value="test-order" className="mt-0">
             <LaboratoryTestOrderTab

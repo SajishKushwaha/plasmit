@@ -669,6 +669,7 @@ export function ResultsWorkflowView({
   viewTitle = "Results Center",
   viewDescription = "Laboratory, radiology, and POCT reports organized for IPD review.",
   onAddLaboratoryOrder,
+  showLaboratoryOrderTabs = false,
   showRadiologyOrderTabs = false,
 }: {
   autoOpenAllDepartment?: ResultDepartment;
@@ -682,6 +683,7 @@ export function ResultsWorkflowView({
   viewTitle?: string;
   viewDescription?: string;
   onAddLaboratoryOrder?: (patientContext?: DoctorOrdersPatientContext) => void;
+  showLaboratoryOrderTabs?: boolean;
   showRadiologyOrderTabs?: boolean;
 }) {
   const [activeDepartment, setActiveDepartment] = useState<DepartmentFilter>(criticalOnly ? "all" : defaultDepartment);
@@ -694,6 +696,7 @@ export function ResultsWorkflowView({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [reportModal, setReportModal] = useState<ReportModalState>(null);
   const [printPayload, setPrintPayload] = useState<PrintPayload | null>(null);
+  const [laboratoryWorkflowTab, setLaboratoryWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
   const [radiologyWorkflowTab, setRadiologyWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
   const hasAutoOpenedAllDepartment = useRef(false);
   const dateFilterRef = useRef<HTMLDivElement | null>(null);
@@ -823,6 +826,11 @@ export function ResultsWorkflowView({
     setPrintPayload({ records: printRecords, title });
   }
 
+  const showLaboratoryWorkflowTabs = showLaboratoryOrderTabs && activeDepartment === "laboratory";
+  const showRadiologyWorkflowTabs = showRadiologyOrderTabs && activeDepartment === "radiology";
+  const activeWorkflowTab = showLaboratoryWorkflowTabs ? laboratoryWorkflowTab : radiologyWorkflowTab;
+  const setActiveWorkflowTab = showLaboratoryWorkflowTabs ? setLaboratoryWorkflowTab : setRadiologyWorkflowTab;
+
   return (
     <div className="space-y-4">
       <section className="rounded-xl border border-border bg-white shadow-sm">
@@ -925,17 +933,17 @@ export function ResultsWorkflowView({
         </div>
       </section>
 
-      {showRadiologyOrderTabs && activeDepartment === "radiology" ? (
+      {showLaboratoryWorkflowTabs || showRadiologyWorkflowTabs ? (
         <div className="overflow-x-auto rounded-xl border border-border bg-white p-1 shadow-sm">
           <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
             {(["result-review", "order-summary", "test-order"] as const).map((tab) => (
               <Button
                 className={cn(
                   "h-10 min-w-[132px] shrink-0 rounded-lg px-3 text-sm font-bold",
-                  radiologyWorkflowTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+                  activeWorkflowTab === tab ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
                 )}
                 key={tab}
-                onClick={() => setRadiologyWorkflowTab(tab)}
+                onClick={() => setActiveWorkflowTab(tab)}
                 size="sm"
                 type="button"
                 variant="ghost"
@@ -947,7 +955,23 @@ export function ResultsWorkflowView({
         </div>
       ) : null}
 
-      {showRadiologyOrderTabs && activeDepartment === "radiology" && radiologyWorkflowTab !== "result-review" ? (
+      {showLaboratoryWorkflowTabs && laboratoryWorkflowTab !== "result-review" ? (
+        <DoctorOrdersPage
+          defaultTab="lab"
+          onlyTab="lab"
+          patientContext={patientContext ? {
+            id: patientContext.patientId ?? patientContext.uhid ?? patientContext.mrn ?? "dashboard-patient",
+            name: patientContext.name ?? "Selected patient",
+            uhid: patientContext.uhid,
+            ageSex: patientContext.ageSex,
+            wardBed: patientContext.wardBed ?? patientContext.bed,
+            diagnosis: viewDescription,
+            radiologyPatientId: patientContext.patientId,
+          } : undefined}
+          laboratoryDefaultTab={laboratoryWorkflowTab}
+          laboratoryShowTabHeader={false}
+        />
+      ) : showRadiologyWorkflowTabs && radiologyWorkflowTab !== "result-review" ? (
         <DoctorOrdersPage
           defaultTab="radiology"
           onlyTab="radiology"

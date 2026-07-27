@@ -318,6 +318,7 @@ type Note = {
   status: NoteStatus;
   priority: "High" | "Medium" | "Low";
   content?: string;
+  carePlan?: string;
   assessment?: string;
   intervention?: string;
   patientResponse?: string;
@@ -614,14 +615,24 @@ function calculateObservedPainScore(scale: PainScale, scores: PainAssessment["sc
 }
 
 const categories: CategoryConfig[] = [
-  { id: "ed", label: "ED Notes", shortLabel: "ED", description: "Emergency department assessment and progress notes", count: 0, icon: HeartPulse, accent: "text-red-600", soft: "bg-red-50 dark:bg-red-950/35", specialties: medicalSpecialties },
-  { id: "procedural", label: "Procedural Notes", shortLabel: "Procedural", description: "Procedure details, findings and follow-up", count: 0, icon: ClipboardList, accent: "text-cyan-600", soft: "bg-cyan-50 dark:bg-cyan-950/35", specialties: medicalSpecialties },
-  { id: "icu", label: "ICU Notes", shortLabel: "ICU", description: "Critical care assessment and clinical progress", count: 0, icon: HeartPulse, accent: "text-indigo-600", soft: "bg-indigo-50 dark:bg-indigo-950/35", specialties: medicalSpecialties },
   { id: "admission", label: "Admission Notes", shortLabel: "Admission", description: "Admission history, examination, diagnosis and treatment plan", count: 0, icon: FilePenLine, accent: "text-teal-600", soft: "bg-teal-50 dark:bg-teal-950/35", specialties: medicalSpecialties },
+  { id: "ed", label: "ED Notes", shortLabel: "ED", description: "Emergency department assessment and progress notes", count: 0, icon: HeartPulse, accent: "text-red-600", soft: "bg-red-50 dark:bg-red-950/35", specialties: medicalSpecialties },
+  { id: "icu", label: "ICU Notes", shortLabel: "ICU", description: "Critical care assessment, care plan, and clinical progress", count: 0, icon: HeartPulse, accent: "text-indigo-600", soft: "bg-indigo-50 dark:bg-indigo-950/35", specialties: medicalSpecialties },
+  {
+    id: "surgery",
+    label: "Surgery Notes",
+    shortLabel: "Surgeon",
+    description: "Pre-operative, operative and post-operative surgeon documentation",
+    count: 0,
+    icon: Stethoscope,
+    accent: "text-rose-600",
+    soft: "bg-rose-50 dark:bg-rose-950/35",
+    specialties: surgerySpecialties,
+  },
   {
     id: "medical",
     label: "Medical Notes",
-    shortLabel: "Medical",
+    shortLabel: "Physician",
     description: "Physician notes, consults and evaluations",
     count: 28,
     icon: Stethoscope,
@@ -629,17 +640,7 @@ const categories: CategoryConfig[] = [
     soft: "bg-emerald-50 dark:bg-emerald-950/35",
     specialties: medicalSpecialties,
   },
-  {
-    id: "surgery",
-    label: "Surgery Notes",
-    shortLabel: "Surgical",
-    description: "Pre-operative, operative and post-operative surgical documentation",
-    count: 0,
-    icon: Stethoscope,
-    accent: "text-rose-600",
-    soft: "bg-rose-50 dark:bg-rose-950/35",
-    specialties: surgerySpecialties,
-  },
+  { id: "procedural", label: "Procedural Notes", shortLabel: "Procedural", description: "Procedure details, findings and follow-up", count: 0, icon: ClipboardList, accent: "text-cyan-600", soft: "bg-cyan-50 dark:bg-cyan-950/35", specialties: medicalSpecialties },
   {
     id: "operative",
     label: "Operative Notes",
@@ -689,13 +690,14 @@ const categories: CategoryConfig[] = [
 const notesCategories = categories;
 
 function getCategoryDisplayLabel(category: string) {
+  if (category === "Medical Notes") return "Physician Notes";
   return category === "Surgery Notes" || category === "Surgical Notes" ? "Surgeon Notes" : category;
 }
 
 const initialNotes: Note[] = [
   { id: 1, title: "Pain Management Note", category: "Nurse Notes", specialty: "ICU", author: "Nurse Mary", date: "26 May 2026, 09:30 AM", status: "Signed", priority: "High" },
   { id: 2, title: "Shift Assessment", category: "Nurse Notes", specialty: "ICU", author: "Nurse Mary", date: "26 May 2026, 06:30 AM", status: "Signed", priority: "Medium" },
-  { id: 3, title: "Care Plan Note", category: "Nurse Notes", specialty: "Cardiology", author: "Nurse Anna", date: "25 May 2026, 10:15 PM", status: "Draft", priority: "Low" },
+  { id: 3, title: "Care Plan Note", category: "ICU Notes", specialty: "Care Plan", author: "Nurse Anna", date: "25 May 2026, 10:15 PM", status: "Draft", priority: "Low" },
   { id: 4, title: "Progress Note", category: "Medical Notes", medicalNoteSection: "ED Notes", specialty: "Cardiology", author: "Dr. Smith", date: "26 May 2026, 08:15 AM", status: "Signed", priority: "Medium" },
   { id: 5, title: "Consultant Notes", category: "Medical Notes", medicalNoteSection: "Physician Notes", specialty: "Neurology", author: "Dr. William", date: "25 May 2026, 03:20 PM", status: "Signed", priority: "Low" },
   { id: 6, title: "Morning Ward Round", category: "Medical Notes", medicalNoteSection: "Physician Notes", specialty: "Cardiology", author: "Dr. Smith", date: "25 May 2026, 11:00 AM", status: "Draft", priority: "High" },
@@ -2154,7 +2156,11 @@ function FilterView(props: {
                 label="Category"
                 value={getCategoryDisplayLabel(props.category)}
                 options={["All Categories", ...notesCategories.map((item) => getCategoryDisplayLabel(item.label))]}
-                onChange={(value) => props.onCategoryChange(value === "Surgeon Notes" ? "Surgery Notes" : value)}
+                onChange={(value) =>
+                  props.onCategoryChange(
+                    value === "Surgeon Notes" ? "Surgery Notes" : value === "Physician Notes" ? "Medical Notes" : value,
+                  )
+                }
               />
             )}
             <FilterSelect label="Note type" value={props.noteType} options={["All Note Types", ...allNoteTypes]} onChange={props.onNoteTypeChange} />
@@ -2274,6 +2280,7 @@ export function NewNoteModal({
   const [designation, setDesignation] = React.useState("");
   const [priority, setPriority] = React.useState<Note["priority"]>("Medium");
   const [content, setContent] = React.useState("");
+  const [carePlan, setCarePlan] = React.useState("");
   const [formError, setFormError] = React.useState("");
   const [showSigning, setShowSigning] = React.useState(false);
   const [assessment, setAssessment] = React.useState("");
@@ -2323,6 +2330,7 @@ export function NewNoteModal({
   const isNurseNote = category === "Nurse Notes";
   const isEDNote = category === "ED Notes";
   const isAdmissionNote = category === "Admission Notes";
+  const isIcuNote = category === "ICU Notes";
   const isMedicalNote = category === "Medical Notes";
   const isSurgeryNote = category === "Surgery Notes";
   const isOperativeNote = category === "Operative Notes";
@@ -2387,6 +2395,7 @@ export function NewNoteModal({
     setDesignation(editingNote?.designation ?? "");
     setPriority(editingNote?.priority ?? "Medium");
     setContent(editingNote?.content ?? "");
+    setCarePlan(editingNote?.carePlan ?? "");
     setFormError("");
     setShowSigning(false);
     setAssessment(editingNote?.assessment ?? "");
@@ -2596,6 +2605,7 @@ export function NewNoteModal({
       bloodPressureDiastolic: isNurseNote ? bloodPressureDiastolic : undefined,
       bloodPressureSystolic: isNurseNote ? bloodPressureSystolic : undefined,
       category,
+      carePlan: isIcuNote ? carePlan.trim() : undefined,
       content: isOperativeNote ? undefined : isEDNote ? buildEdClinicalContent() : content.trim(),
       communication: isNurseNote ? communication.trim() : undefined,
       followUpPlan: isNurseNote ? followUpPlan.trim() : undefined,
@@ -3123,6 +3133,15 @@ export function NewNoteModal({
           />
           {formError === contentError ? <span className="mt-1.5 block text-xs font-medium text-destructive">{formError}</span> : null}
         </FormField>
+        ) : null}
+
+        {isIcuNote ? (
+          <ClinicalTextArea
+            label="Care Plan"
+            onChange={setCarePlan}
+            placeholder="Enter care plan, goals, monitoring, escalation and follow-up..."
+            value={carePlan}
+          />
         ) : null}
 
         {isMedicalNote ? (
@@ -4826,6 +4845,14 @@ function NoteDetailsModal({
                 <NarrativeField label="Safety / Risk" value={note.safetyRisk} />
                 <NarrativeField label="Communication" value={note.communication} />
                 <NarrativeField label="Follow-up Plan" value={note.followUpPlan} />
+              </div>
+            </div>
+          ) : null}
+          {note.category === "ICU Notes" && note.carePlan ? (
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground">Care Plan</h4>
+              <div className="mt-2 min-h-24 whitespace-pre-wrap rounded-md border border-border bg-background p-4 text-sm leading-6">
+                {note.carePlan}
               </div>
             </div>
           ) : null}

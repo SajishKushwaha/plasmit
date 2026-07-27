@@ -26,6 +26,7 @@ export function RadiologyResultReview({ patient }: { patient: DoctorIpdPatient }
           wardBed: rapidReviewPatient ? `${rapidReviewPatient.ward} / ${rapidReviewPatient.bed}` : patient.bed,
         }}
         showPoctTab={false}
+        showLaboratoryOrderTabs
         showRadiologyOrderTabs
         viewDescription="Radiology reports for the selected dashboard patient."
         viewTitle="Diagnosis Result"

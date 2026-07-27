@@ -187,6 +187,8 @@ type DoctorOrdersPageProps = {
   drugsOnly?: boolean;
   onlyTab?: string;
   patientContext?: DoctorOrdersPatientContext;
+  laboratoryDefaultTab?: "test-order" | "order-summary" | "result-review";
+  laboratoryShowTabHeader?: boolean;
   radiologyDefaultTab?: "test-order" | "order-summary" | "result-review";
   radiologyShowTabHeader?: boolean;
   showPatientBanner?: boolean;
@@ -203,6 +205,8 @@ export function DoctorOrdersPage({
   drugsOnly = false,
   onlyTab,
   patientContext,
+  laboratoryDefaultTab,
+  laboratoryShowTabHeader = true,
   radiologyDefaultTab,
   radiologyShowTabHeader = true,
   showPatientBanner = false,
@@ -257,7 +261,13 @@ export function DoctorOrdersPage({
           ) : null}
           {visibleTabs.map((tab) => (
             <TabsContent key={tab.id} value={tab.id} className="mt-2 sm:mt-3">
-              {tab.id === "radiology" ? <RadiologyTab defaultTab={radiologyDefaultTab} hideTabHeader={!radiologyShowTabHeader} /> : tab.component}
+              {tab.id === "lab" ? (
+                <LaboratoryTab defaultTab={laboratoryDefaultTab} hideTabHeader={!laboratoryShowTabHeader} />
+              ) : tab.id === "radiology" ? (
+                <RadiologyTab defaultTab={radiologyDefaultTab} hideTabHeader={!radiologyShowTabHeader} />
+              ) : (
+                tab.component
+              )}
             </TabsContent>
           ))}
         </div>

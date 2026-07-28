@@ -16,6 +16,9 @@ export type LaboratoryGroupedTest = {
   id: string;
   name: string;
   department: string;
+  section?: string;
+  notes?: string;
+  testIds: string[];
   selected?: boolean;
 };
 

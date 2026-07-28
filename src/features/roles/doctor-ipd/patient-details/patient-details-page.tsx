@@ -209,6 +209,9 @@ export function DoctorIpdPatientDetailsPage({ patientId }: { patientId: string }
                   setActiveTab("orders");
                   setOrdersDefaultTab("lab");
                 }}
+                showLaboratoryOrderTabs
+                showPathologyOrderTabs
+                showRadiologyOrderTabs
                 viewDescription="Laboratory, radiology, POCT, and critical results for the selected patient."
                 viewTitle="Results Center"
               />

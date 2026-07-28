@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search, Plus } from "lucide-react";
+import { Plus, Search, Trash2, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -154,6 +154,8 @@ export function LaboratoryTestOrderTab({
   onAddProblem,
   onToggleTest,
   onToggleGroup,
+  onSelectGroup,
+  onRemoveSelectedTest,
   specimenSourceById,
   onSpecimenSourceChange,
   priority,
@@ -271,6 +273,8 @@ export function LaboratoryTestOrderTab({
   onAddProblem?: () => void;
   onToggleTest?: (id: string) => void;
   onToggleGroup?: (id: string) => void;
+  onSelectGroup?: (id: string) => void;
+  onRemoveSelectedTest?: (id: string) => void;
   specimenSourceById?: Record<string, string>;
   onSpecimenSourceChange?: (id: string, value: string) => void;
   priority?: LaboratoryPriority;
@@ -292,10 +296,15 @@ export function LaboratoryTestOrderTab({
   onReorderPrevious?: (historyId: string) => void;
   onDownloadAllReports?: () => void;
 }) {
+  const [orderMode, setOrderMode] = React.useState<"single" | "bulk">("single");
+  const [panelSearch, setPanelSearch] = React.useState("");
+  const [activeGroupId, setActiveGroupId] = React.useState(groupedTests[0]?.id ?? "");
+  const [bulkPanelId, setBulkPanelId] = React.useState(groupedTests[0]?.id ?? "");
+  const [selectedBulkPatients, setSelectedBulkPatients] = React.useState<string[]>(["aisha"]);
   const historyOptions: LaboratoryOrderHistory[] = [
     { id: "hist-cbc", label: "CBC (12 Apr 2026)", selectedTestIds: ["cbc"], selectedGroupIds: [] },
-    { id: "hist-lft", label: "LFT (02 Mar 2025)", selectedTestIds: ["lft"], selectedGroupIds: ["liver"] },
-    { id: "hist-kft", label: "KFT (02 Mar 2025)", selectedTestIds: ["kft"], selectedGroupIds: ["renal"] },
+    { id: "hist-lft", label: "LFT (02 Mar 2025)", selectedTestIds: ["lft"], selectedGroupIds: ["liver-profile"] },
+    { id: "hist-kft", label: "KFT (02 Mar 2025)", selectedTestIds: ["rft-kft"], selectedGroupIds: ["renal-profile"] },
   ];
   const doctorSuggestions = ["Dr. Kavita Rao", "Dr. Aman Verma", "Dr. Priya Singh", "Dr. Rohit Mehta", "Dr. Neha Sharma", "Dr. Sandeep Yadav"];
   const safeProblems = problems ?? [];
@@ -304,12 +313,17 @@ export function LaboratoryTestOrderTab({
     if (!query) return safeProblems;
     return safeProblems.filter((problem) => problem.toLowerCase().includes(query));
   }, [newProblem, safeProblems]);
-  const selectedTests = filteredTests.filter((test) => selectedTestIds.includes(test.id));
-  const selectedGroups = groupedTests.filter((group) => selectedGroupIds.includes(group.id));
+  const selectedTests = testList.filter((test) => selectedTestIds.includes(test.id));
+  const activeGroup = groupedTests.find((group) => group.id === activeGroupId) ?? groupedTests[0];
+  const visibleTests = React.useMemo(() => {
+    const panelTests = activeGroup?.testIds.map((id) => testList.find((test) => test.id === id)).filter((test): test is LaboratoryTest => Boolean(test)) ?? filteredTests;
+    const filteredIds = new Set(filteredTests.map((test) => test.id));
+    return panelTests.filter((test) => filteredIds.has(test.id));
+  }, [activeGroup, filteredTests]);
   const getSpecimenSource = (id: string) => specimenSourceById?.[id] ?? "Blood";
   const selectedTestRows = React.useMemo<SelectedTestRow[]>(
-    () => [
-      ...selectedTests.map((test) => ({
+    () =>
+      selectedTests.map((test) => ({
         id: test.id,
         selectedTests: test.name,
         type: "Individual Test",
@@ -318,23 +332,30 @@ export function LaboratoryTestOrderTab({
         fastingStatus: Boolean(fasting),
         priority: priority ?? "Routine",
       })),
-      ...selectedGroups.map((group) => ({
-        id: group.id,
-        selectedTests: group.name,
-        type: "Profile",
-        department: group.department,
-        specimenSource: getSpecimenSource(group.id),
-        fastingStatus: Boolean(fasting),
-        priority: priority ?? "Routine",
-      })),
-    ],
-    [fasting, getSpecimenSource, priority, selectedGroups, selectedTests],
+    [fasting, getSpecimenSource, priority, selectedTests],
   );
   const filteredGroupedTests = React.useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = panelSearch.trim().toLowerCase();
     if (!query) return groupedTests;
-    return groupedTests.filter((group) => `${group.name}`.toLowerCase().includes(query));
-  }, [search]);
+    return groupedTests.filter((group) => `${group.name} ${group.department} ${group.section ?? ""}`.toLowerCase().includes(query));
+  }, [panelSearch]);
+  const bulkPatients = [
+    { id: "aisha", name: "Aisha Khan", uhid: "HN_40*ICU-10***", bed: "ICU-01" },
+    { id: "liam", name: "Liam Anderson", uhid: "HN_3*ICU-70***", bed: "ICU-02" },
+    { id: "meera", name: "Meera Sharma", uhid: "HN_53ICU--9***", bed: "ICU-03" },
+    { id: "oliver", name: "Oliver Brown", uhid: "HN_33*ICU-10***", bed: "ICU-04" },
+  ];
+  const bulkPanel = groupedTests.find((group) => group.id === bulkPanelId) ?? groupedTests[0];
+  const bulkTests = bulkPanel.testIds.map((id) => testList.find((test) => test.id === id)).filter((test): test is LaboratoryTest => Boolean(test));
+  const toggleBulkPatient = (id: string) => {
+    setSelectedBulkPatients((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  };
+  const selectPanel = (id: string) => {
+    const group = groupedTests.find((item) => item.id === id);
+    setActiveGroupId(id);
+    setPanelSearch(group?.name ?? "");
+    onSelectGroup?.(id);
+  };
   const selectedTestColumns = React.useMemo<ColumnDef<SelectedTestRow>[]>(
     () => [
       { accessorKey: "selectedTests", header: "Selected Tests" },
@@ -400,8 +421,17 @@ export function LaboratoryTestOrderTab({
           </select>
         ),
       },
+      {
+        id: "actions",
+        header: "Remove",
+        cell: ({ row }) => (
+          <Button type="button" size="sm" variant="outline" className="text-danger" onClick={() => onRemoveSelectedTest?.(row.original.id)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        ),
+      },
     ],
-    [onFastingChange, onPriorityChange, onSpecimenSourceChange],
+    [onFastingChange, onPriorityChange, onRemoveSelectedTest, onSpecimenSourceChange],
   );
   const departmentOptions = [
     "All",

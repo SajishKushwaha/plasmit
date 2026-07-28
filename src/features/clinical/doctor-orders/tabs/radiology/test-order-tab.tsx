@@ -48,6 +48,7 @@ type SelectedOrderRow = {
   category: string;
   specimenSource: string;
   specification: string;
+  specificationOptions: string[];
   priority: RadiologyPriority;
 };
 
@@ -66,7 +67,86 @@ const specOptionsByTest: Record<string, string[]> = {
   "Colour Doppler": ["Left", "Right", "Bilateral", "Arterial", "Venous"],
 };
 
-function getSpecificationOptions(testName: string) {
+const genericSpecificationLabels = new Set(["as specified", "optional", "default"]);
+
+function uniqueOptions(options: string[]) {
+  const seen = new Set<string>();
+  return options
+    .map((option) => option.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .filter((option) => {
+      const key = option.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function stripModalityPrefix(value: string) {
+  return value
+    .replace(/^(x-ray|ct|mri|usg)\s+/i, "")
+    .replace(/^doppler\s*-\s*/i, "")
+    .replace(/^mammography\s+/i, "")
+    .trim();
+}
+
+function splitSpecificationParts(value: string) {
+  const withoutParentheses = value.replace(/\([^)]*\)/g, "");
+  return withoutParentheses
+    .split(/\s*\/\s*|\s*,\s*|\s+\bor\b\s+/i)
+    .map((part) => stripModalityPrefix(part.replace(/\betc\.?/i, "").replace(/\band\b/i, "").trim()))
+    .filter(Boolean);
+}
+
+function combineSpecificationParts(subjects: string[], suffixes: string[]) {
+  if (!suffixes.length) return subjects;
+  return subjects.flatMap((subject) => suffixes.map((suffix) => `${subject} ${suffix}`.trim()));
+}
+
+function deriveSpecificationOptions(test: RadiologyTest) {
+  const name = test.name.replace(/\s+/g, " ").trim();
+  const explicitSpecs = test.specifications ?? [];
+  const usefulExplicitSpecs = explicitSpecs.filter((option) => !genericSpecificationLabels.has(option.toLowerCase()));
+  const hasOptionalContrast = explicitSpecs.some((option) => option.toLowerCase() === "optional");
+  const hasContrast = explicitSpecs.some((option) => option.toLowerCase() === "contrast");
+  const hasRadiotracer = explicitSpecs.some((option) => option.toLowerCase() === "radiotracer");
+  const hasFdg = explicitSpecs.some((option) => option.toLowerCase() === "fdg");
+
+  if (/^doppler\s*-/i.test(name)) {
+    return splitSpecificationParts(name.replace(/^doppler\s*-\s*/i, "")).map((part) => `${part} Doppler`);
+  }
+
+  if (/angiography/i.test(name) && /\//.test(name)) {
+    const body = stripModalityPrefix(name.replace(/^(ct|mri)\s+/i, "").replace(/angiography/i, "").replace(/\(.*?\)/g, ""));
+    return splitSpecificationParts(body).map((part) => `${part} Angiography`);
+  }
+
+  const [rawSubject = name, rawProtocol] = name.split(/\s+-\s+/, 2);
+  const subject = stripModalityPrefix(rawSubject);
+  const protocol = rawProtocol?.replace(/\)$/g, "").trim();
+  const subjects = splitSpecificationParts(subject);
+  const protocolParts = protocol ? splitSpecificationParts(protocol) : [];
+
+  if (/with\s+/i.test(subject)) {
+    const [base, withPart] = subject.split(/\s+with\s+/i, 2);
+    return combineSpecificationParts(splitSpecificationParts(base), splitSpecificationParts(withPart));
+  }
+
+  if (protocolParts.length) return combineSpecificationParts(subjects, protocolParts);
+
+  if (hasOptionalContrast) return combineSpecificationParts(subjects.length ? subjects : usefulExplicitSpecs, ["Plain", "Contrast"]);
+  if (hasContrast) return combineSpecificationParts(subjects.length ? subjects : usefulExplicitSpecs, ["Contrast"]);
+  if (hasRadiotracer) return combineSpecificationParts(subjects.length ? subjects : usefulExplicitSpecs, ["Radiotracer"]);
+  if (hasFdg) return combineSpecificationParts(subjects.length ? subjects : usefulExplicitSpecs, ["FDG"]);
+
+  return uniqueOptions(subjects.length ? subjects : usefulExplicitSpecs);
+}
+
+function getSpecificationOptions(test: RadiologyTest) {
+  const derivedOptions = deriveSpecificationOptions(test);
+  if (derivedOptions.length) return uniqueOptions(derivedOptions);
+
+  const testName = test.name;
   const baseName = testName.includes(" - ") ? testName.split(" - ")[0] : testName;
   const matchedKey = Object.keys(specOptionsByTest).find((key) => baseName.toLowerCase().includes(key.toLowerCase()));
   return matchedKey ? specOptionsByTest[matchedKey] : ["Default"];
@@ -104,21 +184,29 @@ export function RadiologyTestOrderTab({
   const [specificationById, setSpecificationById] = React.useState<Record<string, string>>({});
 
   const visibleTests = React.useMemo(() => filteredTests.filter((test) => !activeCategory || test.category === activeCategory), [activeCategory, filteredTests]);
-  const selectedOrders = filteredTests.filter((test) => selectedTestIds.includes(test.id));
+  const selectedOrders = React.useMemo(() => filteredTests.filter((test) => selectedTestIds.includes(test.id)), [filteredTests, selectedTestIds]);
   const activeTest = selectedOrders[0] ?? visibleTests[0] ?? filteredTests[0];
-  const currentSpecs = activeTest?.specifications ?? ["Left", "Right", "Upper", "Lower", "Lateral"];
+  const currentSpecs = React.useMemo(() => (activeTest ? getSpecificationOptions(activeTest) : ["Left", "Right", "Upper", "Lower", "Lateral"]), [activeTest]);
+  const currentSpecsKey = currentSpecs.join("|");
 
   const selectedOrderRows = React.useMemo<SelectedOrderRow[]>(
     () =>
-      selectedOrders.map((test) => ({
-        id: test.id,
-        selectedTests: test.name,
-        loincCode: test.code || "-",
-        category: test.category ?? test.modality,
-        specimenSource: "Blood",
-        specification: specificationById[test.id] ?? getSpecificationOptions(test.name)[0] ?? "-",
-        priority: priority ?? "Routine",
-      })),
+      selectedOrders.map((test) => {
+        const options = getSpecificationOptions(test);
+        const savedSpecification = specificationById[test.id];
+        const specification = savedSpecification && options.includes(savedSpecification) ? savedSpecification : options[0] ?? "-";
+
+        return {
+          id: test.id,
+          selectedTests: test.name,
+          loincCode: test.code || "-",
+          category: test.category ?? test.modality,
+          specimenSource: "Blood",
+          specificationOptions: options,
+          specification,
+          priority: priority ?? "Routine",
+        };
+      }),
     [priority, selectedOrders, specificationById],
   );
 
@@ -131,7 +219,7 @@ export function RadiologyTestOrderTab({
         accessorKey: "specification",
         header: "Specification",
         cell: ({ row }) => {
-          const options = getSpecificationOptions(row.original.selectedTests);
+          const options = row.original.specificationOptions.length ? row.original.specificationOptions : ["Default"];
           return (
             <select
               className="h-9 w-full rounded-md border border-input px-3 text-sm"
@@ -169,8 +257,12 @@ export function RadiologyTestOrderTab({
   );
 
   React.useEffect(() => {
-    setSelectedSpecs((current) => current.filter((spec) => currentSpecs.includes(spec)));
-  }, [currentSpecs]);
+    setSelectedSpecs((current) => {
+      const next = current.filter((spec) => currentSpecs.includes(spec));
+      if (next.length === current.length && next.every((spec, index) => spec === current[index])) return current;
+      return next;
+    });
+  }, [currentSpecsKey]);
 
   const toggleSpec = (label: string) => {
     setSelectedSpecs((current) => (current.includes(label) ? current.filter((item) => item !== label) : [...current, label]));
@@ -262,7 +354,7 @@ export function RadiologyTestOrderTab({
               <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Select tests</div>
               <div className="max-h-[360px] overflow-auto px-3">
                 {visibleTests.map((test) => (
-                  <CheckboxRow key={test.id} label={`${test.name} - ${test.description}`} checked={selectedTestIds.includes(test.id)} onToggle={() => onToggleTest(test.id)} />
+                  <CheckboxRow key={test.id} label={test.name} checked={selectedTestIds.includes(test.id)} onToggle={() => onToggleTest(test.id)} />
                 ))}
               </div>
             </div>

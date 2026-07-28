@@ -7,10 +7,9 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { previousTestOrders, resultBlocks as initialResultBlocks, groupedTests, summaryRows as initialSummaryRows, testList } from "./pathology/data";
+import { previousTestOrders, resultBlocks as initialResultBlocks, groupedTests, summaryRows as initialSummaryRows, testList } from "./laboratory/data";
 
-import type { PathologyPriority, PathologyResultBlock, PathologySummaryRow } from "./pathology/types";
-import type { LaboratoryResultBlock } from "./laboratory/types";
+import type { LaboratoryPriority, LaboratoryResultBlock, LaboratorySummaryRow } from "./laboratory/types";
 import { LaboratoryCriticalFindingsTab } from "./laboratory/critical-findings-tab";
 import { LaboratoryTestOrderTab } from "./laboratory/test-order-tab";
 import { LaboratoryOrderSummaryTab } from "./laboratory/order-summary-tab";
@@ -18,7 +17,7 @@ import { LaboratoryResultReviewTab } from "./laboratory/result-review-tab";
 
 type MainTab = "test-order" | "order-summary" | "result-review" | "critical-findings";
 type LaboratoryWorkflowTab = Extract<MainTab, "test-order" | "order-summary" | "result-review">;
-type SummarySortKey = keyof Pick<PathologySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
+type SummarySortKey = keyof Pick<LaboratorySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
 
 const selectedByDefault = ["cbc"];
 const selectedGroupDefault: string[] = [];
@@ -27,10 +26,11 @@ function normalizeSelectionLabel(value: string) {
   return value.toLowerCase().replace(/[-_]/g, " ").trim();
 }
 
-function buildLaboratorySnapshotRows(testIds: string[], groupIds: string[], fallbackRows: PathologySummaryRow[]) {
-  const rows: PathologySummaryRow[] = [];
+function buildLaboratorySnapshotRows(testIds: string[], groupIds: string[], fallbackRows: LaboratorySummaryRow[]) {
+  const rows: LaboratorySummaryRow[] = [];
+  const ids = Array.from(new Set([...testIds, ...groupIds.flatMap((id) => groupedTests.find((item) => item.id === id)?.testIds ?? [])]));
 
-  for (const id of testIds) {
+  for (const id of ids) {
     const test = testList.find((item) => item.id === id);
     if (!test) continue;
     rows.push({
@@ -40,25 +40,8 @@ function buildLaboratorySnapshotRows(testIds: string[], groupIds: string[], fall
       cpt: "-",
       department: test.department,
       specimen: "Blood",
-      priority: "Routine" as PathologySummaryRow["priority"],
-      status: "Ordered" as PathologySummaryRow["status"],
-      orderedBy: "Saved order",
-      orderDateTime: new Date().toISOString().slice(0, 16).replace("T", " "),
-    });
-  }
-
-  for (const id of groupIds) {
-    const group = groupedTests.find((item) => item.id === id);
-    if (!group) continue;
-    rows.push({
-      id: `saved-${group.id}`,
-      name: group.name,
-      loinc: "-",
-      cpt: "-",
-      department: group.department,
-      specimen: "Blood",
-      priority: "Routine" as PathologySummaryRow["priority"],
-      status: "Ordered" as PathologySummaryRow["status"],
+      priority: "Routine" as LaboratorySummaryRow["priority"],
+      status: "Ordered" as LaboratorySummaryRow["status"],
       orderedBy: "Saved order",
       orderDateTime: new Date().toISOString().slice(0, 16).replace("T", " "),
     });
@@ -67,28 +50,19 @@ function buildLaboratorySnapshotRows(testIds: string[], groupIds: string[], fall
   return rows.length ? rows : fallbackRows;
 }
 
-function buildLaboratorySnapshotBlocks(testIds: string[], groupIds: string[], fallbackBlocks: PathologyResultBlock[]) {
-  const blocks: PathologyResultBlock[] = [];
+function buildLaboratorySnapshotBlocks(testIds: string[], groupIds: string[], fallbackBlocks: LaboratoryResultBlock[]) {
+  const blocks: LaboratoryResultBlock[] = [];
+  const ids = Array.from(new Set([...testIds, ...groupIds.flatMap((id) => groupedTests.find((item) => item.id === id)?.testIds ?? [])]));
 
-  for (const id of testIds) {
+  for (const id of ids) {
     const test = testList.find((item) => item.id === id);
     if (!test) continue;
     blocks.push({
       id: `saved-${test.id}`,
       name: `${test.name} - ${test.description}`,
       specialty: test.department,
+      specimen: "Blood",
       rows: [{ parameter: test.name, result: "Pending", unit: "-", referenceRange: "-", flag: "N" }],
-    });
-  }
-
-  for (const id of groupIds) {
-    const group = groupedTests.find((item) => item.id === id);
-    if (!group) continue;
-    blocks.push({
-      id: `saved-${group.id}`,
-      name: `${group.name} - grouped request`,
-      specialty: group.department,
-      rows: [{ parameter: group.name, result: "Pending", unit: "-", referenceRange: "-", flag: "N" }],
     });
   }
 
@@ -116,15 +90,15 @@ export function LaboratoryTab({ defaultTab = "test-order", hideTabHeader = false
   const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>(selectedGroupDefault);
   const [savedTestIds, setSavedTestIds] = React.useState<string[]>(selectedByDefault);
   const [savedGroupIds, setSavedGroupIds] = React.useState<string[]>(selectedGroupDefault);
-  const [savedSummaryRows, setSavedSummaryRows] = React.useState<PathologySummaryRow[]>(() => buildSavedLaboratoryRows(selectedByDefault, selectedGroupDefault));
-  const [savedResultBlocks, setSavedResultBlocks] = React.useState<PathologyResultBlock[]>(() => buildSavedLaboratoryBlocks(selectedByDefault, selectedGroupDefault));
+  const [savedSummaryRows, setSavedSummaryRows] = React.useState<LaboratorySummaryRow[]>(() => buildSavedLaboratoryRows(selectedByDefault, selectedGroupDefault));
+  const [savedResultBlocks, setSavedResultBlocks] = React.useState<LaboratoryResultBlock[]>(() => buildSavedLaboratoryBlocks(selectedByDefault, selectedGroupDefault));
   const [savedInstructionsForLab, setSavedInstructionsForLab] = React.useState("");
   const [problemListVisible, setProblemListVisible] = React.useState(true);
   const [activeProblemView, setActiveProblemView] = React.useState<"Active" | "Find">("Active");
   const [problems, setProblems] = React.useState(["Diabetes Type 2", "Hypertension", "Fatigue"]);
   const [newProblem, setNewProblem] = React.useState("");
   const [specimenSourceById, setSpecimenSourceById] = React.useState<Record<string, string>>({});
-  const [priority, setPriority] = React.useState<PathologyPriority>("Routine");
+  const [priority, setPriority] = React.useState<LaboratoryPriority>("Routine");
   const [fasting, setFasting] = React.useState(false);
   const [clinicalNotes, setClinicalNotes] = React.useState("");
   const [instructionsForLab, setInstructionsForLab] = React.useState("");
@@ -136,13 +110,13 @@ export function LaboratoryTab({ defaultTab = "test-order", hideTabHeader = false
   const [diagnosisOpen, setDiagnosisOpen] = React.useState(false);
   const [selectedDiagnosisLabel, setSelectedDiagnosisLabel] = React.useState("");
   const [billingNote, setBillingNote] = React.useState("Orders are ready.");
-  const [deleteTarget, setDeleteTarget] = React.useState<PathologySummaryRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<LaboratorySummaryRow | null>(null);
 
   React.useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab]);
 
-  const selectedCount = selectedTestIds.length + selectedGroupIds.length;
+  const selectedCount = selectedTestIds.length;
 
   const filteredTests = React.useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -195,7 +169,26 @@ export function LaboratoryTab({ defaultTab = "test-order", hideTabHeader = false
   };
 
   const toggleGroup = (id: string) => {
-    setSelectedGroupIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+    const group = groupedTests.find((item) => item.id === id);
+    const groupTestIds = group?.testIds ?? [];
+    const isSelected = selectedGroupIds.includes(id);
+
+    setSelectedGroupIds((current) => (isSelected ? current.filter((item) => item !== id) : Array.from(new Set([...current, id]))));
+    setSelectedTestIds((current) =>
+      isSelected ? current.filter((item) => !groupTestIds.includes(item)) : Array.from(new Set([...current, ...groupTestIds])),
+    );
+  };
+
+  const selectGroup = (id: string) => {
+    const group = groupedTests.find((item) => item.id === id);
+    if (!group) return;
+    setSelectedGroupIds((current) => Array.from(new Set([...current, id])));
+    setSelectedTestIds((current) => Array.from(new Set([...current, ...group.testIds])));
+  };
+
+  const removeSelectedTest = (id: string) => {
+    setSelectedTestIds((current) => current.filter((item) => item !== id));
+    setSelectedGroupIds((current) => current.filter((groupId) => !(groupedTests.find((group) => group.id === groupId)?.testIds ?? []).includes(id)));
   };
 
   const updateSpecimenSource = (id: string, value: string) => {
@@ -227,9 +220,9 @@ export function LaboratoryTab({ defaultTab = "test-order", hideTabHeader = false
 
   const saveOrder = () => {
     commitSavedSelection();
-    setBillingNote("Pathology order saved successfully.");
+    setBillingNote("Laboratory order saved successfully.");
     setActiveTab("order-summary");
-    toast.success("Pathology order saved");
+    toast.success("Laboratory order saved");
   };
 
   const saveAndBill = () => {
@@ -359,6 +352,8 @@ export function LaboratoryTab({ defaultTab = "test-order", hideTabHeader = false
               onAddProblem={addProblem}
               onToggleTest={toggleTest}
               onToggleGroup={toggleGroup}
+              onSelectGroup={selectGroup}
+              onRemoveSelectedTest={removeSelectedTest}
               specimenSourceById={specimenSourceById}
               onSpecimenSourceChange={updateSpecimenSource}
               priority={priority}

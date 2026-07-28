@@ -38,6 +38,9 @@ function getFieldValue(field: HTMLInputElement | HTMLSelectElement | HTMLTextAre
     if (field.type === "radio") {
       return field.checked ? field.closest("label")?.textContent?.trim() ?? field.value : "";
     }
+    if (field.type === "checkbox") {
+      return field.checked ? field.closest("label")?.textContent?.trim() ?? field.value : "";
+    }
     if (field.type === "file") return field.files?.[0]?.name ?? "";
   }
   return field.value.trim();

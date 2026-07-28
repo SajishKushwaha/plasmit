@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { DoctorOrdersPage, type DoctorOrdersPatientContext } from "@/features/clinical/doctor-orders/doctor-orders";
 import { cn } from "@/lib/utils";
 import { resultRecords } from "@/features/diagnostics/results/data/mockResults";
+import { ResultsOrderAddMenu, type ResultsOrderTarget } from "@/features/diagnostics/results/components/ResultsOrderAddMenu";
 import type { ResultDepartment, ResultRecord, ResultStatus, ResultValue } from "@/features/diagnostics/results/types";
 
 type DepartmentFilter = ResultDepartment | "all";
@@ -752,6 +753,7 @@ export function ResultsWorkflowView({
   const [laboratoryWorkflowTab, setLaboratoryWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
   const [pathologyWorkflowTab, setPathologyWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
   const [radiologyWorkflowTab, setRadiologyWorkflowTab] = useState<RadiologyWorkflowTab>("result-review");
+  const [orderPopupTab, setOrderPopupTab] = useState<ResultsOrderTarget | null>(null);
   const hasAutoOpenedAllDepartment = useRef(false);
   const dateFilterRef = useRef<HTMLDivElement | null>(null);
   const visibleDepartments = useMemo(
@@ -886,6 +888,21 @@ export function ResultsWorkflowView({
   const showRadiologyWorkflowTabs = showRadiologyOrderTabs && activeDepartment === "radiology";
   const activeWorkflowTab = showLaboratoryWorkflowTabs ? laboratoryWorkflowTab : showPathologyWorkflowTabs ? pathologyWorkflowTab : radiologyWorkflowTab;
   const setActiveWorkflowTab = showLaboratoryWorkflowTabs ? setLaboratoryWorkflowTab : showPathologyWorkflowTabs ? setPathologyWorkflowTab : setRadiologyWorkflowTab;
+  const orderMenuOptions = [
+    ...(showLaboratoryOrderTabs ? [{ id: "lab" as const, label: "Laboratory" }] : []),
+    ...(showPathologyOrderTabs ? [{ id: "pathology" as const, label: "Pathology" }] : []),
+    ...(showRadiologyOrderTabs ? [{ id: "radiology" as const, label: "Radiology" }] : []),
+  ];
+  const orderPatientContext = patientContext ? {
+    id: patientContext.patientId ?? patientContext.uhid ?? patientContext.mrn ?? "dashboard-patient",
+    name: patientContext.name ?? "Selected patient",
+    uhid: patientContext.uhid,
+    ageSex: patientContext.ageSex,
+    wardBed: patientContext.wardBed ?? patientContext.bed,
+    diagnosis: viewDescription,
+    radiologyPatientId: patientContext.patientId,
+  } : undefined;
+  const orderPopupTitle = orderPopupTab === "pathology" ? "Pathology Order" : orderPopupTab === "radiology" ? "Radiology Order" : "Laboratory Order";
 
   return (
     <div className="space-y-4">
@@ -916,8 +933,9 @@ export function ResultsWorkflowView({
                 );
               })}
             </div>
-            <div className="flex w-full shrink-0 sm:w-[260px]">
-              <div className="relative w-full min-w-0" ref={dateFilterRef}>
+            <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+              <ResultsOrderAddMenu onSelect={setOrderPopupTab} options={orderMenuOptions} />
+              <div className="relative min-w-0 flex-1 sm:w-[260px]" ref={dateFilterRef}>
                 <button
                   className="flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-left text-sm font-semibold text-foreground outline-none transition hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/20"
                   onClick={() => {
@@ -1110,7 +1128,6 @@ export function ResultsWorkflowView({
                           allReports={reports}
                           icon={card.icon}
                           key={`${group.dateKey}-${card.id}`}
-                          onAddLaboratoryOrder={onAddLaboratoryOrder}
                           onAllView={(department, recordsToView) => {
                             const selectedReportNames = new Set(recordsToView.map((result) => result.testName));
                             const comparisonRecords = records.filter((result) => {
@@ -1143,6 +1160,25 @@ export function ResultsWorkflowView({
         onClose={() => setReportModal(null)}
         onPrint={(recordsToPrint, title) => printReports(recordsToPrint, title)}
       />
+      <CenterModal
+        bodyClassName="p-0"
+        className="h-[min(92dvh,900px)] w-[min(96vw,1560px)]"
+        description={patientContext?.name ? `${patientContext.name} | ${patientContext.wardBed ?? patientContext.bed ?? "Selected patient"}` : undefined}
+        onOpenChange={(open) => !open && setOrderPopupTab(null)}
+        open={Boolean(orderPopupTab)}
+        title={orderPopupTitle}
+      >
+        {orderPopupTab ? (
+          <DoctorOrdersPage
+            defaultTab={orderPopupTab}
+            laboratoryDefaultTab={orderPopupTab === "lab" ? "test-order" : undefined}
+            onlyTab={orderPopupTab}
+            pathologyDefaultTab={orderPopupTab === "pathology" ? "test-order" : undefined}
+            patientContext={orderPatientContext}
+            radiologyDefaultTab={orderPopupTab === "radiology" ? "test-order" : undefined}
+          />
+        ) : null}
+      </CenterModal>
       <ReportPrintView patientContext={patientContext} payload={printPayload} />
     </div>
   );
@@ -1151,7 +1187,6 @@ export function ResultsWorkflowView({
 function ResultCategorySection({
   allReports,
   icon: Icon,
-  onAddLaboratoryOrder,
   onAllView,
   onPrint,
   onView,
@@ -1160,7 +1195,6 @@ function ResultCategorySection({
 }: {
   allReports: ResultRecord[];
   icon: typeof FileText;
-  onAddLaboratoryOrder?: (patientContext?: DoctorOrdersPatientContext) => void;
   onAllView: (department: ResultDepartment, records: ResultRecord[]) => void;
   onPrint: (result: ResultRecord) => void;
   onView: (result: ResultRecord) => void;
@@ -1172,17 +1206,6 @@ function ResultCategorySection({
   const department = allReports[0]?.department ?? reports[0]?.department;
   const headerActions = (
     <>
-      {department === "laboratory" && onAddLaboratoryOrder ? (
-        <Button
-          aria-label="Add laboratory order"
-          className="h-9 w-9 rounded-full p-0"
-          onClick={() => onAddLaboratoryOrder(toOrderPatientContext(reports[0] ?? allReports[0]))}
-          title="Add Laboratory Order"
-          type="button"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      ) : null}
       <Button disabled={!department || allReports.length === 0} size="sm" variant="outline" onClick={() => department && onAllView(department, allReports)}>
         <Icon className="h-4 w-4" />
         All View

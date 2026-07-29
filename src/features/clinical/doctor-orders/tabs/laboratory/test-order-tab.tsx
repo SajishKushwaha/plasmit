@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Plus, Search, Trash2, Users } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -144,18 +144,19 @@ export function LaboratoryTestOrderTab({
   consentText = "",
   onConsentTextChange = () => {},
   errors = [],
-  problems,
-  newProblem,
-  onNewProblemChange,
-  problemListVisible,
-  activeProblemView,
-  onProblemListVisibleChange,
-  onActiveProblemViewChange,
-  onAddProblem,
+  problems: _problems,
+  newProblem: _newProblem,
+  onNewProblemChange: _onNewProblemChange,
+  problemListVisible: _problemListVisible,
+  activeProblemView: _activeProblemView,
+  onProblemListVisibleChange: _onProblemListVisibleChange,
+  onActiveProblemViewChange: _onActiveProblemViewChange,
+  onAddProblem: _onAddProblem,
   onToggleTest,
   onToggleGroup,
   onSelectGroup,
   onRemoveSelectedTest,
+  onClearSelection,
   specimenSourceById,
   onSpecimenSourceChange,
   priority,
@@ -275,6 +276,7 @@ export function LaboratoryTestOrderTab({
   onToggleGroup?: (id: string) => void;
   onSelectGroup?: (id: string) => void;
   onRemoveSelectedTest?: (id: string) => void;
+  onClearSelection?: () => void;
   specimenSourceById?: Record<string, string>;
   onSpecimenSourceChange?: (id: string, value: string) => void;
   priority?: LaboratoryPriority;
@@ -296,25 +298,24 @@ export function LaboratoryTestOrderTab({
   onReorderPrevious?: (historyId: string) => void;
   onDownloadAllReports?: () => void;
 }) {
-  const [orderMode, setOrderMode] = React.useState<"single" | "bulk">("single");
-  const [panelSearch, setPanelSearch] = React.useState("");
-  const [activeGroupId, setActiveGroupId] = React.useState(groupedTests[0]?.id ?? "");
-  const [bulkPanelId, setBulkPanelId] = React.useState(groupedTests[0]?.id ?? "");
-  const [selectedBulkPatients, setSelectedBulkPatients] = React.useState<string[]>(["aisha"]);
+  const [orderMode, setOrderMode] = React.useState<"single" | "public">("single");
+  const [activeGroupId, setActiveGroupId] = React.useState("er-emergency-basic");
   const historyOptions: LaboratoryOrderHistory[] = [
     { id: "hist-cbc", label: "CBC (12 Apr 2026)", selectedTestIds: ["cbc"], selectedGroupIds: [] },
     { id: "hist-lft", label: "LFT (02 Mar 2025)", selectedTestIds: ["lft"], selectedGroupIds: ["liver-profile"] },
     { id: "hist-kft", label: "KFT (02 Mar 2025)", selectedTestIds: ["rft-kft"], selectedGroupIds: ["renal-profile"] },
   ];
-  const doctorSuggestions = ["Dr. Kavita Rao", "Dr. Aman Verma", "Dr. Priya Singh", "Dr. Rohit Mehta", "Dr. Neha Sharma", "Dr. Sandeep Yadav"];
-  const safeProblems = problems ?? [];
-  const filteredProblems = React.useMemo(() => {
-    const query = (newProblem ?? "").trim().toLowerCase();
-    if (!query) return safeProblems;
-    return safeProblems.filter((problem) => problem.toLowerCase().includes(query));
-  }, [newProblem, safeProblems]);
   const selectedTests = testList.filter((test) => selectedTestIds.includes(test.id));
-  const activeGroup = groupedTests.find((group) => group.id === activeGroupId) ?? groupedTests[0];
+  const commonOrderGroups = React.useMemo(
+    () => groupedTests.filter((group) => group.section?.toLowerCase().includes("common order sets")),
+    [],
+  );
+  const publicOrderGroups = React.useMemo(
+    () => groupedTests.filter((group) => group.section?.toLowerCase().includes("admission & ot")),
+    [],
+  );
+  const activeGroups = orderMode === "single" ? commonOrderGroups : publicOrderGroups;
+  const activeGroup = activeGroups.find((group) => group.id === activeGroupId) ?? activeGroups[0] ?? groupedTests[0];
   const visibleTests = React.useMemo(() => {
     const panelTests = activeGroup?.testIds.map((id) => testList.find((test) => test.id === id)).filter((test): test is LaboratoryTest => Boolean(test)) ?? filteredTests;
     const filteredIds = new Set(filteredTests.map((test) => test.id));
@@ -335,26 +336,20 @@ export function LaboratoryTestOrderTab({
     [fasting, getSpecimenSource, priority, selectedTests],
   );
   const filteredGroupedTests = React.useMemo(() => {
-    const query = panelSearch.trim().toLowerCase();
-    if (!query) return groupedTests;
-    return groupedTests.filter((group) => `${group.name} ${group.department} ${group.section ?? ""}`.toLowerCase().includes(query));
-  }, [panelSearch]);
-  const bulkPatients = [
-    { id: "aisha", name: "Aisha Khan", uhid: "HN_40*ICU-10***", bed: "ICU-01" },
-    { id: "liam", name: "Liam Anderson", uhid: "HN_3*ICU-70***", bed: "ICU-02" },
-    { id: "meera", name: "Meera Sharma", uhid: "HN_53ICU--9***", bed: "ICU-03" },
-    { id: "oliver", name: "Oliver Brown", uhid: "HN_33*ICU-10***", bed: "ICU-04" },
-  ];
-  const bulkPanel = groupedTests.find((group) => group.id === bulkPanelId) ?? groupedTests[0];
-  const bulkTests = bulkPanel.testIds.map((id) => testList.find((test) => test.id === id)).filter((test): test is LaboratoryTest => Boolean(test));
-  const toggleBulkPatient = (id: string) => {
-    setSelectedBulkPatients((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
-  };
+    return activeGroups;
+  }, [activeGroups]);
   const selectPanel = (id: string) => {
-    const group = groupedTests.find((item) => item.id === id);
     setActiveGroupId(id);
-    setPanelSearch(group?.name ?? "");
-    onSelectGroup?.(id);
+  };
+  const showSingleOrders = () => {
+    setOrderMode("single");
+    setActiveGroupId("er-emergency-basic");
+    onClearSelection?.();
+  };
+  const showPublicOrders = () => {
+    setOrderMode("public");
+    setActiveGroupId("adm-er");
+    onClearSelection?.();
   };
   const selectedTestColumns = React.useMemo<ColumnDef<SelectedTestRow>[]>(
     () => [
@@ -461,66 +456,71 @@ export function LaboratoryTestOrderTab({
           </CardContent>
         </Card>
       ) : null}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex w-max min-w-max gap-1 rounded-lg bg-surface-muted/70 p-1">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={showSingleOrders}
+            className={[
+              "h-10 min-w-[120px] shrink-0 rounded-lg px-3 text-sm font-bold",
+              orderMode === "single" ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+            ].join(" ")}
+          >
+            Single
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={showPublicOrders}
+            className={[
+              "h-10 min-w-[120px] shrink-0 rounded-lg px-3 text-sm font-bold",
+              orderMode === "public" ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+            ].join(" ")}
+          >
+            Public
+          </Button>
+        </div>
+      </div>
       {/* <Card>
         <CardContent className="space-y-4 p-4"> */}
         <div className="grid min-w-0 gap-4 overflow-x-hidden lg:grid-cols-[360px_minmax(0,1fr)]">
           <div className="grid gap-3">
             <div className="max-w-full overflow-hidden rounded-md border border-border p-3">
               <div className="flex items-center gap-2">
-                <SectionTitle>Clinical Diagnosis</SectionTitle>
-                {/* <Button type="button" size="sm" variant="outline" onClick={onAddProblem}>
-                  <Plus className="h-4 w-4" />
-                  Add
-                </Button> */}
-                <div className="ml-auto flex overflow-hidden border border-input bg-surface-muted">
-                  {(["Active", "Find"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      className={[
-                        "border-l border-input px-3 py-1 text-xs font-medium first:border-l-0",
-                        activeProblemView === mode ? "bg-white text-primary shadow-sm" : "text-muted-foreground",
-                      ].join(" ")}
-                      onClick={() => onActiveProblemViewChange?.(mode)}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
+                <SectionTitle>{orderMode === "single" ? "Common Order Sets / Profiles" : "Admission & OT Profiles"}</SectionTitle>
               </div>
-              {activeProblemView === "Find" ? (
-                <div className="mt-3">
-                  <Input placeholder="Search problem..." value={newProblem} onChange={(event) => onNewProblemChange?.(event.target.value)} />
-                </div>
-              ) : null}
               <div className="mt-3 max-w-full overflow-hidden border border-border">
                 <table className="w-full text-xs">
-                  <thead className="bg-surface-muted text-muted-foreground">
-                    <tr>
-                      <th className="border-r border-border px-2 py-2 text-left">Date</th>
-                      <th className="border-r border-border px-2 py-2 text-left">Clinical Dx</th>
-                      <th className="px-2 py-2 text-left">Code</th>
-                    </tr>
-                  </thead>
                   <tbody>
-                    {(problemListVisible ? filteredProblems : []).slice(0, 4).map((problem, index) => (
-                      <tr key={problem} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
-                        <td className="border-t border-r border-border px-2 py-2 text-muted-foreground">12 May 2026</td>
-                        <td className="border-t border-r border-border px-2 py-2 text-foreground">{problem}</td>
-                        <td className="border-t border-border px-2 py-2 text-muted-foreground">-</td>
+                    {filteredGroupedTests.map((group, index) => (
+                      <tr key={group.id} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
+                        <td className="border-t border-border px-2 py-2">
+                          <button
+                            type="button"
+                            onClick={() => selectPanel(group.id)}
+                            className={[
+                              "w-full text-left font-medium",
+                              activeGroupId === group.id || selectedGroupIds.includes(group.id) ? "text-primary" : "text-foreground",
+                            ].join(" ")}
+                          >
+                            {group.name}
+                          </button>
+                        </td>
                       </tr>
                     ))}
-                    {problemListVisible && !filteredProblems.length ? (
+                    {!filteredGroupedTests.length ? (
                       <tr>
-                        <td colSpan={3} className="border-t border-border px-2 py-4 text-center text-muted-foreground">
-                          No problems reported
+                        <td className="border-t border-border px-2 py-4 text-center text-muted-foreground">
+                          No profiles found
                         </td>
                       </tr>
                     ) : null}
                   </tbody>
                 </table>
               </div>
-              
             </div>
 
             <div className="max-w-full overflow-hidden rounded-md border border-border p-3">
@@ -576,25 +576,18 @@ export function LaboratoryTestOrderTab({
               </select>
             </div>
 
-            <div className="grid min-w-0 gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="grid min-w-0 gap-4">
               <div className="min-w-0 overflow-hidden rounded-md border border-border bg-surface-muted">
-                <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Select grouped tests</div>
-                <div className="max-h-[360px] overflow-auto px-3">
-                  {filteredGroupedTests.map((group) => (
-                    <CheckboxRow key={group.id} label={group.name} checked={selectedGroupIds.includes(group.id)} onToggle={() => onToggleGroup?.(group.id)} />
-                  ))}
+                <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Select tests {activeGroup?.name ? `- ${activeGroup.name}` : ""}
                 </div>
-              </div>
-
-              <div className="min-w-0 overflow-hidden rounded-md border border-border bg-surface-muted">
-                <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Select tests</div>
                 <div className="max-h-[360px] overflow-auto px-3">
-                  {filteredTests.map((test) => (
+                  {visibleTests.map((test) => (
                     <CheckboxRow key={test.id} label={`${test.name} - ${test.description}`} checked={selectedTestIds.includes(test.id)} onToggle={() => onToggleTest?.(test.id)} />
                   ))}
-                  {filteredTests.some((test) => test.children?.length) ? (
+                  {visibleTests.some((test) => test.children?.length) ? (
                     <div className="pl-5">
-                      {filteredTests.flatMap((test) => (test.children ?? []).map((child) => <CheckboxRow key={`${test.id}-${child}`} label={child} indent />))}
+                      {visibleTests.flatMap((test) => (test.children ?? []).map((child) => <CheckboxRow key={`${test.id}-${child}`} label={child} indent />))}
                     </div>
                   ) : null}
                 </div>
@@ -603,46 +596,49 @@ export function LaboratoryTestOrderTab({
           </div>
 
         </div>
-          <div className="grid min-w-0 gap-4">
-            <DataTable data={selectedTestRows} columns={selectedTestColumns} />
+          {selectedTestRows.length ? (
+            <>
+              <div className="grid min-w-0 gap-4">
+                <DataTable data={selectedTestRows} columns={selectedTestColumns} />
 
-            <label className="space-y-2">
-              <SectionTitle>Instructions</SectionTitle>
-              <textarea
-                className="min-h-[92px] w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:border-border focus:ring-0"
-                placeholder="Instructions for the lab"
-                value={instructionsForLab}
-                onChange={(event) => onInstructionsForLabChange?.(event.target.value)}
-              />
-            </label>
-          </div>
+                <label className="space-y-2">
+                  <SectionTitle>Instructions</SectionTitle>
+                  <textarea
+                    className="min-h-[92px] w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:border-border focus:ring-0"
+                    placeholder="Instructions for the lab"
+                    value={instructionsForLab}
+                    onChange={(event) => onInstructionsForLabChange?.(event.target.value)}
+                  />
+                </label>
+              </div>
 
+              <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-border bg-white p-4">
+                <div className="text-sm text-muted-foreground">
+                  {selectedTestIds.length + selectedGroupIds.length} tests selected
+                  {selectedTestIds.length ? `, ${selectedTestIds.length} test(s)` : ""}
+                  {selectedGroupIds.length ? `, ${selectedGroupIds.length} group(s)` : ""}
+                </div>
 
-          <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-border bg-white p-4">
-            <div className="text-sm text-muted-foreground">
-              {selectedTestIds.length + selectedGroupIds.length} tests selected
-              {selectedTestIds.length ? `, ${selectedTestIds.length} test(s)` : ""}
-              {selectedGroupIds.length ? `, ${selectedGroupIds.length} group(s)` : ""}
-            </div>
-            
-            <div className="ml-auto flex flex-wrap gap-2">
-              {/* <Button type="button" variant="outline" onClick={() => onDownloadAllReports?.()}>
-                Download All Reports
-              </Button> */}
-              <Button type="button" variant="outline" onClick={() => onOpenSummary?.()}>
-                View
-              </Button>
-              <Button type="button"  onClick={() => onSave?.()}>
-                Save
-              </Button>
-              {/* <Button type="button" variant="outline" onClick={onAddToBill}>
-                Add to bill
-              </Button>
-              <Button type="button" onClick={onSaveAndBill}>
-                Save & add to bill
-              </Button> */}
-            </div>
-          </div>
+                <div className="ml-auto flex flex-wrap gap-2">
+                  {/* <Button type="button" variant="outline" onClick={() => onDownloadAllReports?.()}>
+                    Download All Reports
+                  </Button> */}
+                  <Button type="button" variant="outline" onClick={() => onOpenSummary?.()}>
+                    View
+                  </Button>
+                  <Button type="button"  onClick={() => onSave?.()}>
+                    Save
+                  </Button>
+                  {/* <Button type="button" variant="outline" onClick={onAddToBill}>
+                    Add to bill
+                  </Button>
+                  <Button type="button" onClick={onSaveAndBill}>
+                    Save & add to bill
+                  </Button> */}
+                </div>
+              </div>
+            </>
+          ) : null}
       {/* </CardContent>
     </Card> */}
       </div>

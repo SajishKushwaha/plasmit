@@ -19,7 +19,7 @@ type MainTab = "test-order" | "order-summary" | "result-review" | "critical-find
 type LaboratoryWorkflowTab = Extract<MainTab, "test-order" | "order-summary" | "result-review">;
 type SummarySortKey = keyof Pick<LaboratorySummaryRow, "name" | "loinc" | "cpt" | "department" | "specimen" | "priority">;
 
-const selectedByDefault = ["cbc"];
+const selectedByDefault: string[] = [];
 const selectedGroupDefault: string[] = [];
 
 function normalizeSelectionLabel(value: string) {
@@ -191,6 +191,11 @@ export function LaboratoryTab({ defaultTab = "test-order", hideTabHeader = false
     setSelectedGroupIds((current) => current.filter((groupId) => !(groupedTests.find((group) => group.id === groupId)?.testIds ?? []).includes(id)));
   };
 
+  const clearSelection = () => {
+    setSelectedTestIds([]);
+    setSelectedGroupIds([]);
+  };
+
   const updateSpecimenSource = (id: string, value: string) => {
     setSpecimenSourceById((current) => ({ ...current, [id]: value }));
   };
@@ -354,6 +359,7 @@ export function LaboratoryTab({ defaultTab = "test-order", hideTabHeader = false
               onToggleGroup={toggleGroup}
               onSelectGroup={selectGroup}
               onRemoveSelectedTest={removeSelectedTest}
+              onClearSelection={clearSelection}
               specimenSourceById={specimenSourceById}
               onSpecimenSourceChange={updateSpecimenSource}
               priority={priority}

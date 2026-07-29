@@ -30,7 +30,7 @@ export const roleRoutes: Record<Role, string> = {
   "ICU Pharmacist": "/icu-command-center",
   "Quality Audit": "/icu-command-center",
   "Blood Bank": "/blood-bank/blood-request",
-  "ER Nurse": "/receptionist/emergency-reception",
+  "ER Nurse": "/receptionist/er-dashboard",
   Receptionist: "/receptionist",
   "Lab Technician": "/dashboard",
   Radiologist: "/dashboard",

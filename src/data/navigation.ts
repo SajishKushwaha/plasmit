@@ -619,8 +619,17 @@ export function getNavigationItemsForRole(role: Role): NavigationItem[] {
     return [
       {
         id: "er-nurse-dashboard",
-        label: "Dashboard",
+        label: "ER Dashboard",
         icon: LayoutDashboard,
+        route: "/receptionist/er-dashboard",
+        group: "Main",
+        allowedRoles: ["ER Nurse"],
+        status: "ready",
+      },
+      {
+        id: "er-nurse-emergency-reception",
+        label: "Emergency Reception",
+        icon: Ambulance,
         route: "/receptionist/emergency-reception",
         group: "Main",
         allowedRoles: ["ER Nurse"],

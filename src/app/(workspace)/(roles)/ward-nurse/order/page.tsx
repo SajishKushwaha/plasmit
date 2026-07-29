@@ -9,7 +9,7 @@ function firstParam(value: string | string[] | undefined) {
 export default async function WardNurseOrderRoute({
   searchParams,
 }: {
-  searchParams?: SearchParams | Promise<SearchParams>;
+  searchParams?: Promise<SearchParams>;
 }) {
   const params = searchParams ? await searchParams : {};
   const patientId = firstParam(params.patientId);

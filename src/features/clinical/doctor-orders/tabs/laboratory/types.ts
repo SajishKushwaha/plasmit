@@ -22,6 +22,20 @@ export type LaboratoryGroupedTest = {
   selected?: boolean;
 };
 
+export type LaboratoryPackageBundle = {
+  id: string;
+  label: string;
+  testIds: string[];
+  purpose?: string;
+};
+
+export type LaboratoryPackageProfile = {
+  id: string;
+  name: string;
+  trigger: string;
+  bundles: LaboratoryPackageBundle[];
+};
+
 export type LaboratoryResultRow = {
   parameter: string;
   result: string;

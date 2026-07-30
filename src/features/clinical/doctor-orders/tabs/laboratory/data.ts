@@ -1,6 +1,7 @@
 import type {
   LaboratoryGroupedTest,
   LaboratoryOrderHistory,
+  LaboratoryPackageProfile,
   LaboratoryPriority,
   LaboratoryResultBlock,
   LaboratorySummaryRow,
@@ -24,6 +25,7 @@ const labTests: Array<Omit<LaboratoryTest, "description"> & { description?: stri
   { id: "rbs", name: "RBS", description: "Random blood sugar", department: "Biochemistry" },
   { id: "pt-inr-aptt", name: "PT/INR + aPTT", description: "Coagulation screen", department: "Hematology" },
   { id: "urine-rm", name: "Urine R/M", description: "Routine urine microscopy", department: "Clinical Pathology" },
+  { id: "urine-ketone", name: "Urine Ketone", description: "Urine ketone test", department: "Clinical Pathology" },
   { id: "troponin", name: "Troponin I/T", description: "Cardiac marker", department: "Biochemistry" },
   { id: "ck-mb", name: "CK-MB", description: "Cardiac enzyme", department: "Biochemistry" },
   { id: "ecg", name: "ECG", description: "Electrocardiogram", department: "Cardiology" },
@@ -203,6 +205,56 @@ export const groupedTests: LaboratoryGroupedTest[] = [
     section: "Admission & OT profiles",
     notes: "Ordered on shift from OT to ICU/Ward recovery.",
     testIds: ["cbc", "rft-kft", "electrolytes", "rbs", "pt-inr", "abg-major"],
+  },
+];
+
+export const admissionPackageProfiles: LaboratoryPackageProfile[] = [
+  {
+    id: "package-adm-er",
+    name: "ER ADMISSION PROFILE (ADM-ER)",
+    trigger: "triggered when Plan of Action = Admit",
+    bundles: [
+      { id: "adm-er-haematology", label: "Haematology", testIds: ["cbc", "pt-inr", "aptt"] },
+      { id: "adm-er-biochemistry", label: "Biochemistry", testIds: ["rft-kft", "electrolytes-basic", "rbs"] },
+      { id: "adm-er-clinical-path", label: "Clinical Path", testIds: ["urine-rm", "urine-ketone"] },
+      { id: "adm-er-cardiac-imaging", label: "Cardiac / Imaging", testIds: ["ecg-12", "chest-xray", "fast"] },
+    ],
+  },
+  {
+    id: "package-adm-icu",
+    name: "ICU ADMISSION PROFILE (ADM-ICU)",
+    trigger: "triggered at ICU admission (B6)",
+    bundles: [
+      { id: "adm-icu-haematology", label: "Haematology", testIds: ["cbc", "pt-inr", "aptt", "d-dimer"] },
+      { id: "adm-icu-biochemistry", label: "Biochemistry", testIds: ["rft-kft", "lft", "electrolytes-icu", "rbs", "abg", "serum-lactate"] },
+      { id: "adm-icu-cardiac-markers", label: "Cardiac markers", testIds: ["troponin", "ck-mb", "cardiac-biomarkers"] },
+      { id: "adm-icu-inflammatory", label: "Inflammatory", testIds: ["crp", "procalcitonin"] },
+      { id: "adm-icu-transfusion", label: "Transfusion", testIds: ["blood-rh-crossmatch"] },
+      { id: "adm-icu-microbiology", label: "Microbiology", testIds: ["blood-culture", "urine-culture"] },
+      { id: "adm-icu-imaging", label: "Imaging", testIds: ["ecg", "portable-chest-xray", "echo-2d", "fast"], purpose: "Bedside" },
+    ],
+  },
+  {
+    id: "package-adm-ot",
+    name: "OT / PRE-OPERATIVE PROFILE (ADM-OT)",
+    trigger: "Pre-Anaesthetic Check-up (PAC)",
+    bundles: [
+      { id: "adm-ot-haematology", label: "Haematology", testIds: ["cbc", "pt-inr", "aptt"], purpose: "Bleeding risk" },
+      { id: "adm-ot-biochemistry", label: "Biochemistry", testIds: ["rft-kft", "lft", "rbs", "electrolytes"], purpose: "Fitness for anaesthesia" },
+      { id: "adm-ot-transfusion", label: "Transfusion", testIds: ["blood-rh-crossmatch"], purpose: "Blood availability before OT" },
+      { id: "adm-ot-viral-markers", label: "Viral markers", testIds: ["viral-markers"], purpose: "Mandatory pre-op screen" },
+      { id: "adm-ot-clinical-path", label: "Clinical Path", testIds: ["urine-rm"] },
+      { id: "adm-ot-cardiac-imaging", label: "Cardiac / Imaging", testIds: ["ecg-12", "chest-xray"] },
+    ],
+  },
+  {
+    id: "package-adm-post",
+    name: "POST-OP / POST-PROCEDURE PROFILE (ADM-POST)",
+    trigger: "on shift from OT",
+    bundles: [
+      { id: "adm-post-core", label: "Core", testIds: ["cbc", "rft-kft", "electrolytes", "rbs"], purpose: "Recovery baseline" },
+      { id: "adm-post-conditional", label: "Conditional", testIds: ["pt-inr", "abg-major", "blood-culture", "urine-culture"], purpose: "As indicated or advice" },
+    ],
   },
 ];
 

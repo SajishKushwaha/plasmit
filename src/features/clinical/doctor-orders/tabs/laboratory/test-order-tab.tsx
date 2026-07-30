@@ -9,8 +9,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 
-import { groupedTests, priorities, specimenSources, testList, visitProblems } from "./data";
-import type { LaboratoryIndicationType, LaboratoryPriority, LaboratoryOrderHistory, LaboratoryRequestType, LaboratorySex, LaboratoryTest } from "./types";
+import { admissionPackageProfiles, groupedTests, priorities, specimenSources, testList, visitProblems } from "./data";
+import type {
+  LaboratoryIndicationType,
+  LaboratoryOrderHistory,
+  LaboratoryPackageBundle,
+  LaboratoryPriority,
+  LaboratoryRequestType,
+  LaboratorySex,
+  LaboratoryTest,
+} from "./types";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">{children}</div>;
@@ -298,8 +306,9 @@ export function LaboratoryTestOrderTab({
   onReorderPrevious?: (historyId: string) => void;
   onDownloadAllReports?: () => void;
 }) {
-  const [orderMode, setOrderMode] = React.useState<"single" | "public">("single");
+  const [orderMode, setOrderMode] = React.useState<"single" | "public" | "package">("single");
   const [activeGroupId, setActiveGroupId] = React.useState("er-emergency-basic");
+  const [activePackageId, setActivePackageId] = React.useState(admissionPackageProfiles[0]?.id ?? "");
   const historyOptions: LaboratoryOrderHistory[] = [
     { id: "hist-cbc", label: "CBC (12 Apr 2026)", selectedTestIds: ["cbc"], selectedGroupIds: [] },
     { id: "hist-lft", label: "LFT (02 Mar 2025)", selectedTestIds: ["lft"], selectedGroupIds: ["liver-profile"] },
@@ -314,13 +323,26 @@ export function LaboratoryTestOrderTab({
     () => groupedTests.filter((group) => group.section?.toLowerCase().includes("admission & ot")),
     [],
   );
-  const activeGroups = orderMode === "single" ? commonOrderGroups : publicOrderGroups;
+  const activeGroups = orderMode === "single" ? commonOrderGroups : orderMode === "public" ? publicOrderGroups : [];
   const activeGroup = activeGroups.find((group) => group.id === activeGroupId) ?? activeGroups[0] ?? groupedTests[0];
+  const activePackage = admissionPackageProfiles.find((profile) => profile.id === activePackageId) ?? admissionPackageProfiles[0];
   const visibleTests = React.useMemo(() => {
+    if (orderMode === "package") return [];
     const panelTests = activeGroup?.testIds.map((id) => testList.find((test) => test.id === id)).filter((test): test is LaboratoryTest => Boolean(test)) ?? filteredTests;
     const filteredIds = new Set(filteredTests.map((test) => test.id));
     return panelTests.filter((test) => filteredIds.has(test.id));
-  }, [activeGroup, filteredTests]);
+  }, [activeGroup, filteredTests, orderMode]);
+  const visiblePackageBundles = React.useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const bundles = activePackage?.bundles ?? [];
+    if (!query) return bundles;
+    return bundles.filter((bundle) => {
+      const testNames = bundle.testIds
+        .map((id) => testList.find((test) => test.id === id)?.name ?? id)
+        .join(" ");
+      return `${bundle.label} ${testNames} ${bundle.purpose ?? ""}`.toLowerCase().includes(query);
+    });
+  }, [activePackage, search]);
   const getSpecimenSource = (id: string) => specimenSourceById?.[id] ?? "Blood";
   const selectedTestRows = React.useMemo<SelectedTestRow[]>(
     () =>
@@ -340,6 +362,25 @@ export function LaboratoryTestOrderTab({
   }, [activeGroups]);
   const selectPanel = (id: string) => {
     setActiveGroupId(id);
+    if (orderMode === "public") {
+      onClearSelection?.();
+      onSelectGroup?.(id);
+    }
+  };
+  const selectPackage = (id: string) => {
+    setActivePackageId(id);
+  };
+  const getBundleLabel = (bundle: LaboratoryPackageBundle) => {
+    const names = bundle.testIds.map((id) => testList.find((test) => test.id === id)?.name ?? id).join(", ");
+    return `${bundle.label} (${names})`;
+  };
+  const isBundleSelected = (bundle: LaboratoryPackageBundle) => bundle.testIds.every((id) => selectedTestIds.includes(id));
+  const toggleBundle = (bundle: LaboratoryPackageBundle) => {
+    const checked = isBundleSelected(bundle);
+    bundle.testIds.forEach((id) => {
+      const selected = selectedTestIds.includes(id);
+      if ((checked && selected) || (!checked && !selected)) onToggleTest?.(id);
+    });
   };
   const showSingleOrders = () => {
     setOrderMode("single");
@@ -349,6 +390,12 @@ export function LaboratoryTestOrderTab({
   const showPublicOrders = () => {
     setOrderMode("public");
     setActiveGroupId("adm-er");
+    onClearSelection?.();
+    onSelectGroup?.("adm-er");
+  };
+  const showPackageOrders = () => {
+    setOrderMode("package");
+    setActivePackageId(admissionPackageProfiles[0]?.id ?? "");
     onClearSelection?.();
   };
   const selectedTestColumns = React.useMemo<ColumnDef<SelectedTestRow>[]>(
@@ -482,6 +529,18 @@ export function LaboratoryTestOrderTab({
           >
             Public
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={showPackageOrders}
+            className={[
+              "h-10 min-w-[140px] shrink-0 rounded-lg px-3 text-sm font-bold",
+              orderMode === "package" ? "bg-white text-primary shadow-sm hover:bg-white" : "bg-transparent text-slate-600 hover:bg-white/70 hover:text-slate-900",
+            ].join(" ")}
+          >
+            Package Name
+          </Button>
         </div>
       </div>
       {/* <Card>
@@ -490,28 +549,45 @@ export function LaboratoryTestOrderTab({
           <div className="grid gap-3">
             <div className="max-w-full overflow-hidden rounded-md border border-border p-3">
               <div className="flex items-center gap-2">
-                <SectionTitle>{orderMode === "single" ? "Common Order Sets / Profiles" : "Admission & OT Profiles"}</SectionTitle>
+                <SectionTitle>
+                  {orderMode === "single" ? "Common Order Sets / Profiles" : orderMode === "public" ? "Admission & OT Profiles" : "Package Name"}
+                </SectionTitle>
               </div>
               <div className="mt-3 max-w-full overflow-hidden border border-border">
                 <table className="w-full text-xs">
                   <tbody>
-                    {filteredGroupedTests.map((group, index) => (
-                      <tr key={group.id} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
-                        <td className="border-t border-border px-2 py-2">
-                          <button
-                            type="button"
-                            onClick={() => selectPanel(group.id)}
-                            className={[
-                              "w-full text-left font-medium",
-                              activeGroupId === group.id || selectedGroupIds.includes(group.id) ? "text-primary" : "text-foreground",
-                            ].join(" ")}
-                          >
-                            {group.name}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {!filteredGroupedTests.length ? (
+                    {orderMode === "package"
+                      ? admissionPackageProfiles.map((profile, index) => (
+                          <tr key={profile.id} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
+                            <td className="border-t border-border px-2 py-2">
+                              <button
+                                type="button"
+                                onClick={() => selectPackage(profile.id)}
+                                className={["w-full text-left font-medium", activePackageId === profile.id ? "text-primary" : "text-foreground"].join(" ")}
+                              >
+                                <span className="block">{profile.name}</span>
+                                <span className="block text-[11px] font-medium text-muted-foreground">{profile.trigger}</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      : filteredGroupedTests.map((group, index) => (
+                          <tr key={group.id} className={index % 2 === 0 ? "bg-background" : "bg-surface-muted/40"}>
+                            <td className="border-t border-border px-2 py-2">
+                              <button
+                                type="button"
+                                onClick={() => selectPanel(group.id)}
+                                className={[
+                                  "w-full text-left font-medium",
+                                  activeGroupId === group.id || selectedGroupIds.includes(group.id) ? "text-primary" : "text-foreground",
+                                ].join(" ")}
+                              >
+                                {group.name}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    {orderMode !== "package" && !filteredGroupedTests.length ? (
                       <tr>
                         <td className="border-t border-border px-2 py-4 text-center text-muted-foreground">
                           No profiles found
@@ -579,16 +655,26 @@ export function LaboratoryTestOrderTab({
             <div className="grid min-w-0 gap-4">
               <div className="min-w-0 overflow-hidden rounded-md border border-border bg-surface-muted">
                 <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Select tests {activeGroup?.name ? `- ${activeGroup.name}` : ""}
+                  {orderMode === "package" ? activePackage?.name : `Select tests ${activeGroup?.name ? `- ${activeGroup.name}` : ""}`}
                 </div>
                 <div className="max-h-[360px] overflow-auto px-3">
-                  {visibleTests.map((test) => (
-                    <CheckboxRow key={test.id} label={`${test.name} - ${test.description}`} checked={selectedTestIds.includes(test.id)} onToggle={() => onToggleTest?.(test.id)} />
-                  ))}
-                  {visibleTests.some((test) => test.children?.length) ? (
+                  {orderMode === "package"
+                    ? visiblePackageBundles.map((bundle) => (
+                        <div key={bundle.id} className="border-b border-border/60 last:border-0">
+                          <CheckboxRow label={getBundleLabel(bundle)} checked={isBundleSelected(bundle)} onToggle={() => toggleBundle(bundle)} />
+                          {bundle.purpose ? <div className="-mt-1 pb-2 pl-6 text-xs text-muted-foreground">{bundle.purpose}</div> : null}
+                        </div>
+                      ))
+                    : visibleTests.map((test) => (
+                        <CheckboxRow key={test.id} label={`${test.name} - ${test.description}`} checked={selectedTestIds.includes(test.id)} onToggle={() => onToggleTest?.(test.id)} />
+                      ))}
+                  {orderMode !== "package" && visibleTests.some((test) => test.children?.length) ? (
                     <div className="pl-5">
                       {visibleTests.flatMap((test) => (test.children ?? []).map((child) => <CheckboxRow key={`${test.id}-${child}`} label={child} indent />))}
                     </div>
+                  ) : null}
+                  {orderMode === "package" && !visiblePackageBundles.length ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">No package rows found</div>
                   ) : null}
                 </div>
               </div>

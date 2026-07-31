@@ -27970,7 +27970,7 @@ function IcuDischargeSummaryTab({ row, destination, completion }: { row: IcuDisc
                 </div>
               </details>
 
-              <details className="rounded-lg border border-border bg-surface-muted p-3">
+              <details className="rounded-lg border border-border bg-surface-muted p-3" open>
                 <summary className="cursor-pointer text-sm font-semibold text-foreground">Vitals, investigations and procedures</summary>
                 <div className="mt-3 space-y-3">
                   <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
@@ -27987,6 +27987,8 @@ function IcuDischargeSummaryTab({ row, destination, completion }: { row: IcuDisc
                       </div>
                     ))}
                   </div>
+                  <IcuDischargeLabReportTrendCard patientName={row.patient.patientName} />
+                  <IcuInvestigationMedicationProcedureSummary patientName={row.patient.patientName} />
                   <IcuSummaryMiniTable headers={["Test", "Date/time", "Value", "Flag"]} rows={labRows.map((item) => [item.test, item.at, item.value, item.flag])} />
                   <IcuSummaryMiniTable headers={["Procedure", "Date", "Consultant", "Finding"]} rows={procedureRows.map((item) => [item.name, item.at, item.doctor, item.finding])} />
                 </div>
@@ -28013,6 +28015,7 @@ function IcuDischargeSummaryTab({ row, destination, completion }: { row: IcuDisc
                   </div>
                 </div>
               </details>
+              <IcuDischargePreparedApprovedCard doctorName={row.patient.admittingDoctor} />
             </div>
           </div>
 
@@ -28125,6 +28128,39 @@ function IcuSummaryTextArea({ label, value }: { label: string; value: string }) 
   );
 }
 
+function IcuDischargePreparedApprovedCard({ doctorName }: { doctorName: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-3">
+      <p className="text-sm font-semibold text-foreground">Prepared By / Approved By</p>
+      <p className="text-xs text-muted-foreground">Doctor name and signature are carried into the discharge summary.</p>
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <div className="rounded-md border border-border bg-surface-muted p-3">
+          <div className="text-xs font-bold uppercase text-muted-foreground">Prepared by</div>
+          <label className="mt-2 block text-xs font-medium text-foreground">
+            Name
+            <Input className="mt-1" defaultValue={doctorName} />
+          </label>
+          <label className="mt-2 block text-xs font-medium text-foreground">
+            Signature
+            <Input className="mt-1" placeholder="Doctor signature" />
+          </label>
+        </div>
+        <div className="rounded-md border border-border bg-surface-muted p-3">
+          <div className="text-xs font-bold uppercase text-muted-foreground">Approved by</div>
+          <label className="mt-2 block text-xs font-medium text-foreground">
+            Name
+            <Input className="mt-1" defaultValue={doctorName} />
+          </label>
+          <label className="mt-2 block text-xs font-medium text-foreground">
+            Signature
+            <Input className="mt-1" placeholder="Approver signature" />
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function IcuClinicalFindingsEditor({ findings, onChange }: { findings: string[]; onChange: (findings: string[]) => void }) {
   return (
     <div className="rounded-lg border border-border bg-background p-3">
@@ -28190,6 +28226,184 @@ function IcuSummaryMiniTable({ headers, rows }: { headers: string[]; rows: strin
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+type IcuDischargeLabTrendTone = "danger" | "info";
+
+type IcuDischargeLabTrendGroup = {
+  title: string;
+  rows: Array<{
+    parameter: string;
+    normalRange: string;
+    current: string;
+    previous: string;
+    baseline: string;
+    currentTone?: IcuDischargeLabTrendTone;
+    previousTone?: IcuDischargeLabTrendTone;
+    baselineTone?: IcuDischargeLabTrendTone;
+  }>;
+};
+
+const icuDischargeLabTrendGroups: IcuDischargeLabTrendGroup[] = [
+  {
+    title: "Complete Blood Count",
+    rows: [
+      { parameter: "Hemoglobin", normalRange: "13.0 - 17.0", current: "13.8 ↑", previous: "12.0 ↑", baseline: "11.6", previousTone: "info" },
+      { parameter: "WBC Count", normalRange: "4.0 - 11.0", current: "7.4 ↓", previous: "10.8 ↓", baseline: "14.8", baselineTone: "danger" },
+      { parameter: "Platelets", normalRange: "150 - 450", current: "245 ↓", previous: "253 ↑", baseline: "225" },
+    ],
+  },
+  {
+    title: "HbA1c",
+    rows: [
+      { parameter: "HbA1c", normalRange: "< 5.7", current: "5.9", previous: "-", baseline: "-", currentTone: "danger" },
+      { parameter: "Estimated Average Glucose", normalRange: "70 - 140", current: "131", previous: "-", baseline: "-" },
+    ],
+  },
+  {
+    title: "Liver Function Test",
+    rows: [
+      { parameter: "SGPT", normalRange: "7 - 56", current: "31", previous: "-", baseline: "65", baselineTone: "danger" },
+      { parameter: "SGOT", normalRange: "8 - 40", current: "25", previous: "-", baseline: "47", baselineTone: "danger" },
+      { parameter: "Bilirubin Total", normalRange: "0.1 - 1.2", current: "0.8", previous: "-", baseline: "0.9" },
+    ],
+  },
+  {
+    title: "Renal Function Panel",
+    rows: [
+      { parameter: "Creatinine", normalRange: "0.7 - 1.3", current: "1.5", previous: "-", baseline: "2.5", currentTone: "danger", baselineTone: "danger" },
+      { parameter: "BUN", normalRange: "7 - 20", current: "21", previous: "-", baseline: "41", currentTone: "danger", baselineTone: "danger" },
+      { parameter: "Sodium", normalRange: "135 - 145", current: "138", previous: "-", baseline: "136" },
+    ],
+  },
+] as const;
+
+const icuDischargeInvestigationMedicationProcedureRows = [
+  {
+    date: "18 May 2026",
+    investigations: "Baseline CBC, LFT and renal function panel reviewed.",
+    medication: "Initial ICU medicines started as per admission plan.",
+    procedures: "ICU monitoring and stabilization initiated.",
+  },
+  {
+    date: "21 May 2026",
+    investigations: "CBC trend reviewed; WBC improved from baseline.",
+    medication: "Medication titration continued with nursing monitoring.",
+    procedures: "Lines, oxygen support and bedside care reviewed.",
+  },
+  {
+    date: "23 May 2026",
+    investigations: "Current CBC, HbA1c, LFT and renal panel compared with previous results.",
+    medication: "Active MAR reconciled for discharge / transfer plan.",
+    procedures: "Procedure handover completed with receiving team instructions.",
+  },
+] as const;
+
+function labTrendToneClass(tone?: IcuDischargeLabTrendTone) {
+  if (tone === "danger") return "text-danger";
+  if (tone === "info") return "text-info";
+  return "text-foreground";
+}
+
+function IcuInvestigationMedicationProcedureSummary({ patientName }: { patientName: string }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
+      <div className="border-b border-border px-3 py-2">
+        <p className="text-sm font-semibold text-foreground">Investigation / Medication / Procedure Summary</p>
+        <p className="text-xs text-muted-foreground">{patientName} | Date-wise summary with comparison-ready findings</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-xs">
+          <thead className="bg-surface-muted text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 text-left font-semibold uppercase">Date</th>
+              <th className="px-3 py-2 text-left font-semibold uppercase">Investigations</th>
+              <th className="px-3 py-2 text-left font-semibold uppercase">Medication</th>
+              <th className="px-3 py-2 text-left font-semibold uppercase">Procedures</th>
+            </tr>
+          </thead>
+          <tbody>
+            {icuDischargeInvestigationMedicationProcedureRows.map((row) => (
+              <tr className="border-t border-border align-top" key={row.date}>
+                <td className="px-3 py-2 font-semibold text-foreground">{row.date}</td>
+                <td className="px-3 py-2 text-muted-foreground">{row.investigations}</td>
+                <td className="px-3 py-2 text-muted-foreground">{row.medication}</td>
+                <td className="px-3 py-2 text-muted-foreground">{row.procedures}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="border-t border-border bg-surface-muted px-3 py-2 text-xs text-muted-foreground">
+        Comparison format: Week 1 vs Week 2 can be reviewed side-by-side from the same date-wise summary.
+      </div>
+    </div>
+  );
+}
+
+function IcuDischargeLabReportTrendCard({ patientName }: { patientName: string }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
+      <div className="border-b border-border px-3 py-2">
+        <p className="text-sm font-semibold text-foreground">All Laboratory Reports</p>
+        <p className="text-xs font-medium text-muted-foreground">{patientName} | 23 May 2026 | 4 laboratory report(s)</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-xs">
+          <thead className="bg-surface-muted text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 text-left font-semibold uppercase">Laboratory parameter</th>
+              <th className="px-3 py-2 text-left font-semibold uppercase">Normal range</th>
+              <th className="px-3 py-2 text-center font-semibold">
+                <span className="block text-foreground">23 May</span>
+                <span className="text-[10px] italic">Current</span>
+              </th>
+              <th className="px-3 py-2 text-center font-semibold">
+                <span className="block text-foreground">21 May</span>
+                <span className="text-[10px] italic">Previous 1</span>
+              </th>
+              <th className="px-3 py-2 text-center font-semibold">
+                <span className="block text-foreground">18 May</span>
+                <span className="text-[10px] italic">Baseline</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {icuDischargeLabTrendGroups.map((group) => (
+              <React.Fragment key={group.title}>
+                <tr className="border-t border-border bg-muted/30">
+                  <td className="px-3 py-2 text-xs font-bold uppercase text-muted-foreground" colSpan={5}>{group.title}</td>
+                </tr>
+                {group.rows.map((row) => (
+                  <tr className="border-t border-border" key={`${group.title}-${row.parameter}`}>
+                    <td className="px-3 py-2 font-semibold text-foreground">{row.parameter}</td>
+                    <td className="px-3 py-2 font-medium text-muted-foreground">{row.normalRange}</td>
+                    <td className={cn("px-3 py-2 text-center font-semibold", labTrendToneClass(row.currentTone))}>{row.current}</td>
+                    <td className={cn("px-3 py-2 text-center font-semibold", labTrendToneClass(row.previousTone))}>{row.previous}</td>
+                    <td className={cn("px-3 py-2 text-center font-semibold", labTrendToneClass(row.baselineTone))}>{row.baseline}</td>
+                  </tr>
+                ))}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid gap-2 border-t border-border bg-surface-muted p-3 md:grid-cols-3">
+        <div className="rounded-md border border-danger/20 bg-danger/10 px-3 py-2">
+          <div className="text-[10px] font-bold uppercase text-muted-foreground">Critical flags</div>
+          <div className="mt-1 text-sm font-semibold text-danger">1 Active</div>
+        </div>
+        <div className="rounded-md border border-info/20 bg-info/10 px-3 py-2">
+          <div className="text-[10px] font-bold uppercase text-muted-foreground">Improvement rate</div>
+          <div className="mt-1 text-sm font-semibold text-foreground">+48% Overall</div>
+        </div>
+        <div className="rounded-md border border-warning/20 bg-warning/10 px-3 py-2">
+          <div className="text-[10px] font-bold uppercase text-muted-foreground">Last update</div>
+          <div className="mt-1 text-sm font-semibold text-foreground">23 May 2026, 02:05 pm</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -28465,6 +28679,7 @@ function IcuDischargeSummaryA4({
         </div>
         <IcuPdfTable headers={["Test", "Date/time", "Value", "Flag"]} rows={labRows.map((item) => [item.test, item.at, item.value, item.flag])} />
         <IcuPdfTable headers={["Procedure name", "Date", "Consultant", "Finding"]} rows={procedureRows.map((item) => [item.name, item.at, item.doctor, item.finding])} />
+        <IcuPdfTable headers={["Date", "Investigations", "Medication", "Procedures"]} rows={icuDischargeInvestigationMedicationProcedureRows.map((item) => [item.date, item.investigations, item.medication, item.procedures])} />
       </IcuPdfSection>
 
       <IcuPdfSection title="Medication During Admission">
@@ -28492,14 +28707,17 @@ function IcuDischargeSummaryA4({
         <IcuPdfTable headers={["Pending item", "Owner", "Status"]} rows={pendingRows.map((item) => [item.item, item.owner, item.status])} />
       </IcuPdfSection>
 
-      <IcuPdfSection title="Consultant Signature">
-        <div className="grid gap-3 text-[11px] sm:grid-cols-4">
-          <IcuPdfLine label="Name" value={row.patient.admittingDoctor} />
-          <IcuPdfLine label="Registration" value="ICU-REG-20451" />
-          <IcuPdfLine label="Date" value="12 Jun 2026" />
-          <div className="h-20 rounded border border-slate-300 p-2">
-            <div className="text-slate-500">Signature</div>
-            <div className="mt-8 border-t border-slate-300 pt-1">Signed by consultant</div>
+      <IcuPdfSection title="Prepared By / Approved By">
+        <div className="grid gap-3 text-[11px] sm:grid-cols-2">
+          <div className="rounded border border-slate-300 p-3">
+            <div className="font-bold text-slate-700">Prepared by</div>
+            <div className="mt-2">Name: {row.patient.admittingDoctor}</div>
+            <div className="mt-10 border-t border-slate-300 pt-1">Signature</div>
+          </div>
+          <div className="rounded border border-slate-300 p-3">
+            <div className="font-bold text-slate-700">Approved by</div>
+            <div className="mt-2">Name: {row.patient.dutyDoctor}</div>
+            <div className="mt-10 border-t border-slate-300 pt-1">Signature</div>
           </div>
         </div>
       </IcuPdfSection>

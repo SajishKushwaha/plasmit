@@ -384,29 +384,18 @@ type NoteTableActions = {
 
 const medicalOtherSpecialty = "Others";
 const medicalSpecialties = [
-  "Neurology",
-  "Respiratory Medicine",
+  "General Medicine / Internal Medicine",
   "Cardiology",
-  "Hepatology",
-  "Infectious Diseases",
-  "Dermatology",
-  "Ophthalmology",
-  "Palliative Care",
-  "Rehabilitation",
-  "Geriatrics",
-  "Radiology",
-  "General Medicine",
-  "Rheumatology",
-  "Immunology",
-  "Gastroenterology",
-  "Reproductive Medicine",
-  "Obstetrics & Gynecology",
-  "Pediatrics",
-  "Endocrinology",
   "Nephrology",
+  "Neurology",
+  "Gastroenterology",
+  "Endocrinology",
+  "Pulmonology / Respiratory Medicine",
+  "Infectious Disease",
+  "Rheumatology",
+  "Hematology (Medical)",
+  "Oncology (Medical)",
   "Psychiatry",
-  "Psychology",
-  "Pain Medicine",
   medicalOtherSpecialty,
 ];
 const diagnosisOtherOption = "Others";
@@ -437,25 +426,36 @@ const medicalDiagnosisBySpecialty: Record<string, string[]> = {
 };
 const surgeryOtherSpecialty = "Others";
 const surgerySpecialties = [
-  "Neurosurgery",
-  "Ophthalmology",
-  "ENT",
-  "Cardiothoracic Surgery",
-  "Thoracic Surgery",
-  "Hepatobiliary Surgery",
   "General Surgery",
-  "Colorectal Surgery",
-  "Upper GI Surgery",
-  "Lower GI Surgery",
+  "Orthopaedics",
+  "Neurosurgery",
+  "Cardiothoracic & Vascular Surgery (CTVS)",
   "Vascular Surgery",
-  "Orthopedic Surgery",
-  "Interventional Radiology",
-  "Gynecology",
-  "Transplant Surgery",
-  "Plastic and Reconstructive Surgery",
-  "Maxillo-facial Surgery",
   "Urology",
+  "Gastrointestinal (GI) Surgery",
+  "Plastic & Reconstructive Surgery",
+  "ENT Surgery",
+  "Obstetrics & Gynecology (Surgical)",
+  "Interventional Radiology (Procedural)",
+  "Interventional Cardiology (Procedural)",
   surgeryOtherSpecialty,
+];
+const proceduralSpecialties = [
+  "Central Line Insertion (CVC)",
+  "Arterial Line Insertion",
+  "Intubation / Airway Management",
+  "Tracheostomy",
+  "Chest Tube Insertion (ICD)",
+  "Ryles Tube / NG Tube Insertion",
+  "Urinary Catheterization (Foley)",
+  "Lumbar Puncture",
+  "Paracentesis (Ascitic Tap)",
+  "Thoracocentesis (Pleural Tap)",
+  "Bone Marrow Aspiration / Biopsy",
+  "Temporary Dialysis Catheter Insertion",
+  "Temporary Pacemaker Insertion",
+  "Bedside Wound Debridement",
+  medicalOtherSpecialty,
 ];
 
 const cpotDomains: Array<{ key: PainDomainKey; label: string; options: PainScoreOption[] }> = [
@@ -640,7 +640,7 @@ const categories: CategoryConfig[] = [
     soft: "bg-emerald-50 dark:bg-emerald-950/35",
     specialties: medicalSpecialties,
   },
-  { id: "procedural", label: "Procedural Notes", shortLabel: "Procedural", description: "Procedure details, findings and follow-up", count: 0, icon: ClipboardList, accent: "text-cyan-600", soft: "bg-cyan-50 dark:bg-cyan-950/35", specialties: medicalSpecialties },
+  { id: "procedural", label: "Procedural Notes", shortLabel: "Procedural", description: "Procedure details, findings and follow-up", count: 0, icon: ClipboardList, accent: "text-cyan-600", soft: "bg-cyan-50 dark:bg-cyan-950/35", specialties: proceduralSpecialties },
   {
     id: "operative",
     label: "Operative Notes",
@@ -2333,6 +2333,7 @@ export function NewNoteModal({
   const isIcuNote = category === "ICU Notes";
   const isMedicalNote = category === "Medical Notes";
   const isSurgeryNote = category === "Surgery Notes";
+  const isProceduralNote = category === "Procedural Notes";
   const isOperativeNote = category === "Operative Notes";
   const isPharmacyNote = category === "Pharmacy Notes";
   const isAlliedHealthNote = category === "Allied Health Notes";
@@ -2340,8 +2341,10 @@ export function NewNoteModal({
   const shouldSaveSpecialInstruction = isAdditionalProgressNote;
   const hasSharedClinicalNoteType = isMedicalNote || isSurgeryNote;
   const hasSurgerySpecialty = isSurgeryNote || isOperativeNote;
-  const hasCustomSpecialty = isMedicalNote || hasSurgerySpecialty;
-  const specialtyError = `Please enter the ${hasSurgerySpecialty ? "surgery" : "medical"} specialty.`;
+  const hasCustomSpecialty = isMedicalNote || hasSurgerySpecialty || isProceduralNote;
+  const specialtyOtherOption = hasSurgerySpecialty ? surgeryOtherSpecialty : medicalOtherSpecialty;
+  const specialtyPlaceholder = isProceduralNote ? "Enter procedure type" : `Enter ${hasSurgerySpecialty ? "surgery" : "medical"} specialty`;
+  const specialtyError = isProceduralNote ? "Please enter the procedure type." : `Please enter the ${hasSurgerySpecialty ? "surgery" : "medical"} specialty.`;
   const noteTypeError = `Please enter the ${isSurgeryNote ? "surgery" : "medical"} note type.`;
   const contentError = isNurseNote
     ? "Nursing note is required."
@@ -2382,14 +2385,19 @@ export function NewNoteModal({
     const isCustomSurgerySpecialty =
       (nextCategory.label === "Surgery Notes" || nextCategory.label === "Operative Notes") &&
       !surgerySpecialties.includes(savedSpecialty);
+    const isCustomProceduralSpecialty =
+      nextCategory.label === "Procedural Notes" &&
+      !proceduralSpecialties.includes(savedSpecialty);
     setSpecialty(
       isCustomMedicalSpecialty
         ? medicalOtherSpecialty
         : isCustomSurgerySpecialty
           ? surgeryOtherSpecialty
+          : isCustomProceduralSpecialty
+            ? medicalOtherSpecialty
           : savedSpecialty,
     );
-    setCustomMedicalSpecialty(isCustomMedicalSpecialty || isCustomSurgerySpecialty ? savedSpecialty : "");
+    setCustomMedicalSpecialty(isCustomMedicalSpecialty || isCustomSurgerySpecialty || isCustomProceduralSpecialty ? savedSpecialty : "");
     setCustomSpecialtyPopupOpen(false);
     setAuthor(editingNote?.author ?? defaultAuthor);
     setDesignation(editingNote?.designation ?? "");
@@ -2476,7 +2484,7 @@ export function NewNoteModal({
       setTransplantPopupOpen(false);
     }
     if (
-      (category === "Medical Notes" && value !== medicalOtherSpecialty) ||
+      ((category === "Medical Notes" || category === "Procedural Notes") && value !== medicalOtherSpecialty) ||
       ((category === "Surgery Notes" || category === "Operative Notes") && value !== surgeryOtherSpecialty)
     ) {
       setCustomMedicalSpecialty("");
@@ -2547,7 +2555,7 @@ export function NewNoteModal({
 
   function submitNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (hasCustomSpecialty && specialty === "Others" && !customMedicalSpecialty.trim()) {
+    if (hasCustomSpecialty && specialty === specialtyOtherOption && !customMedicalSpecialty.trim()) {
       setFormError(specialtyError);
       return;
     }
@@ -2582,7 +2590,7 @@ export function NewNoteModal({
 
     const nextStatus: NoteStatus = isSigned ? "Signed" : "Draft";
     const savedSpecialty =
-      hasCustomSpecialty && specialty === "Others" ? customMedicalSpecialty.trim() : specialty;
+      hasCustomSpecialty && specialty === specialtyOtherOption ? customMedicalSpecialty.trim() : specialty;
     const savedMedicalNoteType =
       hasSharedClinicalNoteType && medicalNoteType === "Others"
         ? customMedicalNoteType.trim()
@@ -2733,7 +2741,7 @@ export function NewNoteModal({
                   onOpenChange={setCustomSpecialtyPopupOpen}
                   open={customSpecialtyPopupOpen}
                   options={selectedCategory.specialties}
-                  placeholder={`Enter ${hasSurgerySpecialty ? "surgery" : "medical"} specialty`}
+                  placeholder={specialtyPlaceholder}
                   value={specialty}
                   customValue={customMedicalSpecialty}
                 />
@@ -3192,7 +3200,7 @@ export function NewNoteModal({
           ) : (
             <Button
               onClick={() => {
-                if (hasCustomSpecialty && specialty === "Others" && !customMedicalSpecialty.trim()) {
+                if (hasCustomSpecialty && specialty === specialtyOtherOption && !customMedicalSpecialty.trim()) {
                   setFormError(specialtyError);
                   return;
                 }
@@ -5712,29 +5720,34 @@ function SearchableCombobox({
       <Popover.Portal>
         <Popover.Content
           align="start"
-          className="z-[9999] max-h-64 min-w-[var(--radix-popover-trigger-width)] overflow-y-auto rounded-lg border-2 border-primary/25 bg-white p-1.5 text-foreground shadow-[0_16px_40px_rgba(15,23,42,0.24)] ring-1 ring-black/5 dark:bg-slate-950"
+          className="z-[9999] min-w-[var(--radix-popover-trigger-width)] rounded-lg border-2 border-primary/25 bg-white p-1.5 text-foreground shadow-[0_16px_40px_rgba(15,23,42,0.24)] ring-1 ring-black/5 dark:bg-slate-950"
           collisionPadding={12}
           onOpenAutoFocus={(event) => event.preventDefault()}
           sideOffset={4}
         >
-          {filteredOptions.length ? (
-            filteredOptions.map((option) => (
-              <button
-                className={cn(
-                  "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm text-foreground outline-none transition hover:bg-primary-soft hover:text-primary focus:bg-primary-soft focus:text-primary",
-                  option.value === value && "bg-primary-soft font-semibold text-primary",
-                )}
-                key={option.value}
-                onClick={() => choose(option)}
-                type="button"
-              >
-                <span>{option.label}</span>
-                {option.value === value ? <Check className="h-4 w-4" /> : null}
-              </button>
-            ))
-          ) : (
-            <div className="px-3 py-2 text-sm text-muted-foreground">No matching option</div>
-          )}
+          <div
+            className="max-h-[min(18rem,var(--radix-popover-content-available-height))] overflow-y-auto overscroll-contain pr-1"
+            onWheel={(event) => event.stopPropagation()}
+          >
+            {filteredOptions.length ? (
+              filteredOptions.map((option) => (
+                <button
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm text-foreground outline-none transition hover:bg-primary-soft hover:text-primary focus:bg-primary-soft focus:text-primary",
+                    option.value === value && "bg-primary-soft font-semibold text-primary",
+                  )}
+                  key={option.value}
+                  onClick={() => choose(option)}
+                  type="button"
+                >
+                  <span>{option.label}</span>
+                  {option.value === value ? <Check className="h-4 w-4" /> : null}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-sm text-muted-foreground">No matching option</div>
+            )}
+          </div>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
